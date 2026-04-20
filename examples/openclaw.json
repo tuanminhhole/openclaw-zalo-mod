@@ -1,7 +1,7 @@
 {
   "plugins": {
     "entries": {
-      "zaloguard": {
+      "zalo-mod": {
         "enabled": true,
         "config": {
           "groupName": "My Awesome Group",

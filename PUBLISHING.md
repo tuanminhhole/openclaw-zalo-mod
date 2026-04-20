@@ -56,13 +56,13 @@ clawhub package publish .
 From ClawHub:
 
 ```bash
-openclaw plugins install clawhub:openclaw-zaloguard
+openclaw plugins install clawhub:openclaw-zalo-mod
 ```
 
 From npm:
 
 ```bash
-openclaw plugins install openclaw-zaloguard
+openclaw plugins install openclaw-zalo-mod
 ```
 
 ## After Installation
@@ -73,7 +73,7 @@ Enable the plugin in `openclaw.json`:
 {
   "plugins": {
     "entries": {
-      "zaloguard": {
+      "zalo-mod": {
         "enabled": true,
         "config": {
           "groupName": "My Group",

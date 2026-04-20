@@ -1,5 +1,5 @@
 {
-  "name": "openclaw-zaloguard",
+  "name": "openclaw-zalo-mod",
   "version": "1.0.0",
   "description": "Zero-token Zalo group moderation plugin for OpenClaw — slash commands, anti-spam, warn system, and memory integration.",
   "type": "module",
@@ -19,20 +19,22 @@
     "zalo",
     "moderation",
     "group",
+    "admin",
     "anti-spam",
     "plugin",
     "zero-token",
-    "zaloguard"
+    "zalo-mod",
+    "zalo-group"
   ],
   "author": "tuanminhole",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tuanminhhole/openclaw-zaloguard.git"
+    "url": "git+https://github.com/tuanminhhole/openclaw-zalo-mod.git"
   },
-  "homepage": "https://github.com/tuanminhhole/openclaw-zaloguard#readme",
+  "homepage": "https://github.com/tuanminhhole/openclaw-zalo-mod#readme",
   "bugs": {
-    "url": "https://github.com/tuanminhhole/openclaw-zaloguard/issues"
+    "url": "https://github.com/tuanminhhole/openclaw-zalo-mod/issues"
   },
   "publishConfig": {
     "access": "public"

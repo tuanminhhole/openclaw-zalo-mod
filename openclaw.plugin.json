@@ -1,11 +1,11 @@
 {
-  "id": "zaloguard",
-  "name": "ZaloGuard",
+  "id": "zalo-mod",
+  "name": "Zalo Mod",
   "description": "Zero-token Zalo group moderation — slash commands, anti-spam, warn system, memory integration. Blocks LLM for non-mention messages.",
   "version": "1.0.0",
   "kind": "runtime",
   "enabledByDefault": false,
-  "runtimeId": "zaloguard",
+  "runtimeId": "zalo-mod",
   "capabilityTags": [
     "zalo",
     "moderation",

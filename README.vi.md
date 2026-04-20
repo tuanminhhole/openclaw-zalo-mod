@@ -1,4 +1,4 @@
-# 🛡️ ZaloGuard — Plugin Quản Lý Nhóm Zalo Không Tốn Token
+# 🛡️ zalo-mod — Plugin Quản Lý Nhóm Zalo Không Tốn Token
 
 > Plugin runtime OpenClaw dành cho quản trị nhóm Zalo. Xử lý moderation, slash commands, anti-spam **hoàn toàn miễn phí token LLM**. Chỉ chuyển câu hỏi `@mention` lên AI agent.
 
@@ -38,13 +38,13 @@ Tin nhắn Zalo đến
 ### Từ ClawHub
 
 ```bash
-openclaw plugins install clawhub:openclaw-zaloguard
+openclaw plugins install clawhub:openclaw-zalo-mod
 ```
 
 ### Từ npm
 
 ```bash
-openclaw plugins install openclaw-zaloguard
+openclaw plugins install openclaw-zalo-mod
 ```
 
 ### Thủ công
@@ -52,7 +52,7 @@ openclaw plugins install openclaw-zaloguard
 Copy plugin vào thư mục `extensions/`:
 
 ```bash
-cp -r openclaw-zaloguard ~/.openclaw/extensions/
+cp -r openclaw-zalo-mod ~/.openclaw/extensions/
 ```
 
 ## ⚙️ Cấu Hình
@@ -63,7 +63,7 @@ Thêm vào `openclaw.json`:
 {
   "plugins": {
     "entries": {
-      "zaloguard": {
+      "zalo-mod": {
         "enabled": true,
         "config": {
           "groupName": "Tên Nhóm Của Bạn",
@@ -118,7 +118,7 @@ Thêm vào `openclaw.json`:
 
 ## 🧠 Tích Hợp Memory
 
-ZaloGuard tự đồng bộ dữ liệu moderation vào file markdown trong `skills/memory/zalo-groups/{group-slug}/`:
+zalo-mod tự đồng bộ dữ liệu moderation vào file markdown trong `skills/memory/zalo-groups/{group-slug}/`:
 
 ```
 skills/memory/zalo-groups/ten-nhom-cua-ban/
@@ -144,7 +144,7 @@ Vi phạm được log vào store và sync vào `violations.md`.
 
 ## 🤖 Auto Trả Lời Thông Minh
 
-Khi ai đó `@mention` bot với câu hỏi quản lý nhóm, ZaloGuard trả lời trực tiếp từ store — không tốn token LLM:
+Khi ai đó `@mention` bot với câu hỏi quản lý nhóm, zalo-mod trả lời trực tiếp từ store — không tốn token LLM:
 
 | Pattern câu hỏi | Nguồn dữ liệu |
 |-----------------|---------------|

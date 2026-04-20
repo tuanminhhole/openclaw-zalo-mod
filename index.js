@@ -1,5 +1,5 @@
 /**
- * openclaw-zaloguard — Zero-Token Zalo Group Moderation Plugin
+ * openclaw-zalo-mod — Zero-Token Zalo Group Moderation Plugin
  * ─────────────────────────────────────────────────────────────
  * Hook vào before_dispatch của zalouser channel.
  * Xử lý slash commands + anti-spam tức thì, 0 token.
@@ -15,8 +15,8 @@ import path from 'node:path';
 import { definePluginEntry } from 'openclaw/plugin-sdk/plugin-entry';
 
 // ── Constants ────────────────────────────────────────────────
-const PLUGIN_ID = 'zaloguard';
-const DATA_DIR_NAME = '.zaloguard';
+const PLUGIN_ID = 'zalo-mod';
+const DATA_DIR_NAME = '.zalo-mod';
 
 const SPAM_LINK_RE = /bit\.ly\/|tinyurl\.com\/|t\.ly\/|rb\.gy\/|cutt\.ly\/|\?ref=|\?aff=|kiếm tiền|miễn phí|nhận quà|t\.me\/joinchat\//i;
 const EMOJI_FLOOD_RE = /^[\u{1F300}-\u{1FAFF}\s]{5,}$/u;
@@ -263,8 +263,8 @@ function isMessageMentioningBot(event, botNames) {
 // ── Plugin Entry ─────────────────────────────────────────────
 const plugin = definePluginEntry({
   id: PLUGIN_ID,
-  name: 'ZaloGuard',
-  description: 'Zero-token Zalo group moderation — slash commands, anti-spam, violations log.',
+  name: 'Zalo Mod',
+  description: 'Zero-token Zalo group moderation — slash commands, anti-spam, warn system, memory integration.',
   kind: 'runtime',
 
   register(api) {
@@ -272,9 +272,9 @@ const plugin = definePluginEntry({
     const cfg = api.config;
 
     // Plugin config: read from api.pluginConfig (OpenClaw SDK) or fallback
-    const pluginCfg = api.pluginConfig || cfg?.plugins?.entries?.zaloguard || {};
+    const pluginCfg = api.pluginConfig || cfg?.plugins?.entries?.['zalo-mod'] || {};
     const groupName     = String(pluginCfg.groupName || 'Nhóm');
-    const botName       = String(pluginCfg.botName || 'Williams');
+    const botName       = String(pluginCfg.botName || 'Bot');
     const zaloNames     = (pluginCfg.zaloDisplayNames || []).map(String);
     const botNames      = [botName, ...zaloNames].filter(Boolean);
     const adminIds      = new Set((pluginCfg.adminIds || []).map(String));
@@ -282,12 +282,7 @@ const plugin = definePluginEntry({
     const spamRepeatN   = Number(pluginCfg.spamRepeatN || 3);
     const spamWindowMs  = Number(pluginCfg.spamWindowSeconds || 300) * 1000;
 
-    if (api.runtime) {
-      logger.info(`[zaloguard] runtime keys: ${Object.keys(api.runtime || {}).join(', ')}`);
-      if (api.runtime.channels) {
-        logger.info(`[zaloguard] registered channels: ${Object.keys(api.runtime.channels || {}).join(', ')}`);
-      }
-    }
+
 
     // Data dir — sibling to workspace
     const workspaceDir  = String(cfg?.agents?.defaults?.workspace || '/root/project/.openclaw/workspace');
@@ -320,7 +315,7 @@ const plugin = definePluginEntry({
         await fs.mkdir(memoryDir, { recursive: true });
         await fs.appendFile(filePath, line + '\n', 'utf8');
       } catch (e) {
-        logger.warn(`[zaloguard] memory append failed (${filename}): ${e.message}`);
+        logger.warn(`[zalo-mod] memory append failed (${filename}): ${e.message}`);
       }
     }
 
@@ -361,10 +356,10 @@ const plugin = definePluginEntry({
         if (!Object.keys(violations).length) vioLines.push('| — | — | — | — |');
         await fs.writeFile(path.join(memoryDir, 'violations.md'), vioLines.join('\n') + '\n', 'utf8');
 
-        logger.info(`[zaloguard] memory digest written to ${memoryDir}`);
+        logger.info(`[zalo-mod] memory digest written to ${memoryDir}`);
         return { warnCount: Object.keys(warns).length, vioCount: Object.keys(violations).length };
       } catch (e) {
-        logger.warn(`[zaloguard] writeMemoryDigest failed: ${e.message}`);
+        logger.warn(`[zalo-mod] writeMemoryDigest failed: ${e.message}`);
         return { warnCount: 0, vioCount: 0 };
       }
     }
@@ -396,10 +391,10 @@ const plugin = definePluginEntry({
           zpsid:   get('zpsid', 'zalo.me'),
           zpw_sek: get('zpw_sek', 'chat.zalo.me'),
         };
-        logger.info(`[zaloguard] Zalo session loaded (imei=${_zaloImei.slice(0, 8)}...)`);
+        logger.info(`[zalo-mod] Zalo session loaded (imei=${_zaloImei.slice(0, 8)}...)`);
         return _zaloCookies;
       } catch (e) {
-        logger.warn(`[zaloguard] loadZaloSession failed: ${String(e)}`);
+        logger.warn(`[zalo-mod] loadZaloSession failed: ${String(e)}`);
         return null;
       }
     }
@@ -408,7 +403,7 @@ const plugin = definePluginEntry({
     async function sendGroupMsg(ctx, groupId, text) {
       if (!groupId || !text) return;
       const profile = ctx?.accountId || 'default';
-      logger.info(`[zaloguard] sendGroupMsg → threadId=${groupId}, profile=${profile}, textLen=${text.length}`);
+      logger.info(`[zalo-mod] sendGroupMsg → threadId=${groupId}, profile=${profile}, textLen=${text.length}`);
       try {
         const { sendMessageZalouser } = await import('file:///usr/local/lib/node_modules/openclaw/dist/extensions/zalouser/test-api.js');
         const result = await sendMessageZalouser(String(groupId), String(text), { 
@@ -417,12 +412,12 @@ const plugin = definePluginEntry({
           textMode: 'markdown'
         });
         if (result && !result.ok) {
-           logger.error(`[zaloguard] Native Zalo send failed: ${result.error}`);
+           logger.error(`[zalo-mod] Native Zalo send failed: ${result.error}`);
         } else {
-           logger.info(`[zaloguard] Native message delivered to group ${groupId}`);
+           logger.info(`[zalo-mod] Native message delivered to group ${groupId}`);
         }
       } catch (err) {
-        logger.error(`[zaloguard] Native Zalo send exception: ${err.message}`);
+        logger.error(`[zalo-mod] Native Zalo send exception: ${err.message}`);
       }
     }
 
@@ -434,12 +429,6 @@ const plugin = definePluginEntry({
     api.on('before_dispatch', async (event, ctx) => {
       // 1. Chỉ bắt event từ Zalo
       if (ctx?.channelId !== 'zalouser') return;
-      
-      // DEBUG: log full structures
-      logger.info(`[zaloguard] EVENT keys: ${Object.keys(event || {}).join(', ')}`);
-      logger.info(`[zaloguard] CTX keys: ${Object.keys(ctx || {}).join(', ')}`);
-      logger.info(`[zaloguard] ctx.conversationId=${ctx?.conversationId}, ctx.accountId=${ctx?.accountId}, ctx.senderId=${ctx?.senderId}`);
-      logger.info(`[zaloguard] event.content=${String(event?.content || '').substring(0,50)}, event.body=${String(event?.body || '').substring(0,50)}`);
       
       // NOTE: Zalo strips @mention from event.content but keeps it in event.body
       const content = String(event?.body || event?.content || '').trim();
@@ -564,7 +553,7 @@ const plugin = definePluginEntry({
       const isMention = isMessageMentioningBot(event, botNames);
       if (isMention) {
         // Log mention + sync to memory
-        logger.info(`[zaloguard] @mention from ${senderName} in group ${groupId}: ${content.slice(0, 80)}`);
+        logger.info(`[zalo-mod] @mention from ${senderName} in group ${groupId}: ${content.slice(0, 80)}`);
         await appendToMemoryFile('chat-highlights.md', `| ${nowShort()} | ${senderName} | ${content.slice(0, 80)} |`);
 
         // ── Auto-answer group management questions locally (0 token) ──
@@ -616,7 +605,7 @@ const plugin = definePluginEntry({
         }
 
         // For all other @mention questions → forward to LLM
-        logger.info(`[zaloguard] forwarding to LLM: ${content.slice(0, 80)}`);
+        logger.info(`[zalo-mod] forwarding to LLM: ${content.slice(0, 80)}`);
         return; // undefined = let LLM handle
       }
 
@@ -630,7 +619,7 @@ const plugin = definePluginEntry({
           await store.saveViolations();
           // Sync to memory
           await appendToMemoryFile('violations.md', `| ${nowShort()} | ${senderName} | ${spamType} | ${content.slice(0, 40)} |`);
-          logger.info(`[zaloguard] spam detected: ${spamType} from ${senderName}`);
+          logger.info(`[zalo-mod] spam detected: ${spamType} from ${senderName}`);
         }
         return { handled: true }; // silent — don't forward to LLM
       }
@@ -642,7 +631,7 @@ const plugin = definePluginEntry({
         await store.saveViolations();
         // Sync to memory
         await appendToMemoryFile('violations.md', `| ${nowShort()} | ${senderName} | ${spamType} | ${content.slice(0, 40)} |`);
-        logger.info(`[zaloguard] spam detected (logged silently): ${spamType} from ${senderName}`);
+        logger.info(`[zalo-mod] spam detected (logged silently): ${spamType} from ${senderName}`);
         return { handled: true }; // spam always silently blocked
       }
 
@@ -650,7 +639,7 @@ const plugin = definePluginEntry({
       return;
     }, { priority: 300 }); // priority 300 = runs before relay plugin (200)
 
-    logger.info(`[zaloguard] loaded — group="${groupName}" bot="${botName}" adminIds=${adminIds.size || 'any'}`);
+    logger.info(`[zalo-mod] loaded — group="${groupName}" bot="${botName}" adminIds=${adminIds.size || 'any'}`);
   },
 });
 

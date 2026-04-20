@@ -1,4 +1,4 @@
-# 🛡️ ZaloGuard — Zero-Token Zalo Group Moderation
+# 🛡️ zalo-mod — Zero-Token Zalo Group Moderation
 
 > OpenClaw runtime plugin for Zalo group administration. Handles moderation, slash commands, and anti-spam with **zero LLM token cost**. Only `@mention` queries are forwarded to the AI agent.
 
@@ -38,13 +38,13 @@ Incoming Zalo message
 ### From ClawHub
 
 ```bash
-openclaw plugins install clawhub:openclaw-zaloguard
+openclaw plugins install clawhub:openclaw-zalo-mod
 ```
 
 ### From npm
 
 ```bash
-openclaw plugins install openclaw-zaloguard
+openclaw plugins install openclaw-zalo-mod
 ```
 
 ### Manual
@@ -52,7 +52,7 @@ openclaw plugins install openclaw-zaloguard
 Copy the plugin to your `extensions/` directory:
 
 ```bash
-cp -r openclaw-zaloguard ~/.openclaw/extensions/
+cp -r openclaw-zalo-mod ~/.openclaw/extensions/
 ```
 
 ## ⚙️ Configuration
@@ -63,7 +63,7 @@ Add to your `openclaw.json`:
 {
   "plugins": {
     "entries": {
-      "zaloguard": {
+      "zalo-mod": {
         "enabled": true,
         "config": {
           "groupName": "My Awesome Group",
@@ -118,7 +118,7 @@ Add to your `openclaw.json`:
 
 ## 🧠 Memory Integration
 
-ZaloGuard automatically syncs moderation data to markdown files in `skills/memory/zalo-groups/{group-slug}/`:
+zalo-mod automatically syncs moderation data to markdown files in `skills/memory/zalo-groups/{group-slug}/`:
 
 ```
 skills/memory/zalo-groups/my-awesome-group/
@@ -144,7 +144,7 @@ Violations are logged to the store and synced to `violations.md`.
 
 ## 🤖 Smart Auto-Answer
 
-When someone `@mentions` the bot with common group management questions, ZaloGuard answers directly from the local store — no LLM tokens used:
+When someone `@mentions` the bot with common group management questions, zalo-mod answers directly from the local store — no LLM tokens used:
 
 | Question Pattern | Source |
 |-----------------|--------|

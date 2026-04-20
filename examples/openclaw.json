@@ -1,0 +1,18 @@
+{
+  "plugins": {
+    "entries": {
+      "zaloguard": {
+        "enabled": true,
+        "config": {
+          "groupName": "My Awesome Group",
+          "botName": "GuardBot",
+          "zaloDisplayNames": ["Guard Bot", "Bot Zalo Name"],
+          "adminIds": [],
+          "welcomeEnabled": true,
+          "spamRepeatN": 3,
+          "spamWindowSeconds": 300
+        }
+      }
+    }
+  }
+}

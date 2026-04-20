@@ -1,0 +1,60 @@
+{
+  "id": "zaloguard",
+  "name": "ZaloGuard",
+  "description": "Zero-token Zalo group moderation — slash commands, anti-spam, warn system, memory integration. Blocks LLM for non-mention messages.",
+  "version": "1.0.0",
+  "kind": "runtime",
+  "enabledByDefault": false,
+  "runtimeId": "zaloguard",
+  "capabilityTags": [
+    "zalo",
+    "moderation",
+    "group",
+    "anti-spam",
+    "zero-token",
+    "memory"
+  ],
+  "configSchema": {
+    "type": "object",
+    "properties": {
+      "groupName": {
+        "type": "string",
+        "description": "Display name of the group (used in templates and memory). Default: 'Nhóm'"
+      },
+      "adminIds": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "Zalo user IDs allowed to use admin commands (/warn, /report, /rules, /memory). If empty, all users can use admin commands."
+      },
+      "botName": {
+        "type": "string",
+        "description": "Bot display name in menus and guides. Default: 'Bot'"
+      },
+      "zaloDisplayNames": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "Zalo display name aliases for @mention detection. e.g. ['Minh Tuan', 'William']"
+      },
+      "welcomeEnabled": {
+        "type": "boolean",
+        "description": "Enable welcome message for new members. Default: true"
+      },
+      "spamRepeatN": {
+        "type": "number",
+        "description": "Number of repeated messages in the time window to trigger spam detection. Default: 3"
+      },
+      "spamWindowSeconds": {
+        "type": "number",
+        "description": "Time window in seconds for spam repeat detection. Default: 300"
+      },
+      "memoryGroupSlug": {
+        "type": "string",
+        "description": "Override the memory folder name. Auto-generated from groupName if not set."
+      }
+    },
+    "additionalProperties": false
+  },
+  "skills": [],
+  "providers": [],
+  "channels": []
+}

@@ -12,11 +12,14 @@
 
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { definePluginEntry } from 'openclaw/plugin-sdk/plugin-entry';
+
+// ── Plugin directory (for data storage) ──────────────────────
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // ── Constants ────────────────────────────────────────────────
 const PLUGIN_ID = 'zalo-mod';
-const DATA_DIR_NAME = '.zalo-mod';
 
 const SPAM_LINK_RE = /bit\.ly\/|tinyurl\.com\/|t\.ly\/|rb\.gy\/|cutt\.ly\/|\?ref=|\?aff=|kiếm tiền|miễn phí|nhận quà|t\.me\/joinchat\//i;
 const EMOJI_FLOOD_RE = /^[\u{1F300}-\u{1FAFF}\s]{5,}$/u;
@@ -284,9 +287,11 @@ const plugin = definePluginEntry({
 
 
 
-    // Data dir — sibling to workspace
+    // Data dir — store JSON data alongside the plugin code
+    const dataDir = path.join(__dirname, 'data');
+
+    // Workspace + Memory dir
     const workspaceDir  = String(cfg?.agents?.defaults?.workspace || '/root/project/.openclaw/workspace');
-    const dataDir = path.join(path.dirname(workspaceDir), DATA_DIR_NAME);
 
     // Memory dir — skills/memory/zalo-groups/{group-slug}/
     const autoSlug = groupName.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'default-group';

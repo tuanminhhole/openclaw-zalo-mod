@@ -6,8 +6,13 @@
  * @mention → để lọt lên LLM agent bình thường.
  * Tin thường → block hoàn toàn (silent).
  *
+ * v1.1.0: Polling-based member watcher for welcome messages.
+ *   OpenClaw zalouser channel does NOT expose system events (join/leave)
+ *   to plugins. Workaround: poll group member list via OpenClaw internal
+ *   listZaloGroupMembers API, diff with previous snapshot.
+ *
  * @author Kent x Williams
- * @version 1.0.0
+ * @version 1.1.0
  */
 
 import fs from 'node:fs/promises';
@@ -101,6 +106,8 @@ function createStore(dataDir) {
     getWarnCount(groupId, userId) {
       return (warned[String(groupId)]?.[String(userId)] || []).length;
     },
+    getAllWarned() { return warned; },
+    getAllViolations() { return violations; },
 
     // Settings
     getSetting(groupId, key, def) {
@@ -116,7 +123,6 @@ function createStore(dataDir) {
 
 // ── Spam Tracker ─────────────────────────────────────────────
 function createSpamTracker(repeatN, windowMs) {
-  // { userId: [{ msg, ts }] }
   const cache = new Map();
 
   return {
@@ -141,12 +147,11 @@ function buildNoiQuy(groupName) {
   return `📋 NỘI QUY — ${groupName}
 ━━━━━━━━━━━━━━━━━━
 
-1️⃣ Nói đúng chủ đề — ưu tiên nội dung có ích
-2️⃣ Không spam — không xả tin vô nghĩa, lặp nội dung
-3️⃣ Không công kích — tranh luận được, toxic thì không
-4️⃣ Không quảng cáo bừa — phải xin phép trước
-5️⃣ Link phải rõ mục đích — gửi link thì note 1 câu kèm
-6️⃣ Tôn trọng thời gian — nói rõ vấn đề
+1️⃣ Hỏi thoải mái - không câu hỏi nào là ngu, ai cũng từng mới
+2️⃣ Biết gì chia sẻ nấy - văn hoá cho đi là nhận lại
+3️⃣ Tôn trọng nhau - không toxic, không chê trình độ
+4️⃣ Không spam - quảng cáo
+5️⃣ Tôn trọng thời gian — nói rõ vấn đề
 
 ⚠️ Mức xử lý:
 • Lần 1: Nhắc
@@ -186,7 +191,7 @@ function buildHuongDan(botName) {
 👋 ${botName} là trợ lý AI của nhóm này.
 
 🗣️ Cách giao tiếp:
-  • Tag trực tiếp: @${botName} [câu hỏi]
+  • Tag trực tiếp: @${botName} [câu hỏi bất kỳ]
   • Gõ lệnh: /[tên lệnh]
 
 📌 Ví dụ:
@@ -202,30 +207,33 @@ function buildHuongDan(botName) {
 ❓ Cần hỗ trợ thêm → @${botName}`;
 }
 
-function buildReport(groupId, violations, warned) {
+function buildReport(groupId, allViolations, allWarned) {
   const lines = [`📊 BÁO CÁO GROUP`, `🕐 ${nowIso().slice(0, 16).replace('T', ' ')}`];
-  const v = violations[String(groupId)] || {};
-  const w = warned[String(groupId)] || {};
 
-  const vKeys = Object.keys(v);
-  if (vKeys.length) {
-    lines.push('\n📌 Vi phạm ghi nhận:');
-    for (const uid of vKeys) {
-      const list = v[uid];
-      const last = list[list.length - 1];
-      lines.push(`  - ${last.name || uid}: ${last.type}, ${list.length} lần, lần cuối ${last.ts.slice(0, 10)}`);
-    }
-  } else {
-    lines.push('\n✅ Không có vi phạm mới');
+  // Filter violations for this group
+  let hasVio = false;
+  for (const [uid, list] of Object.entries(allViolations)) {
+    if (!list.length || uid === 'admin-note') continue; // skip admin notes
+    if (!hasVio) { lines.push('\n📌 Vi phạm ghi nhận:'); hasVio = true; }
+    const last = list[list.length - 1];
+    lines.push(`  - ${(last.name || uid).replace(/^@/, '')}: ${last.type}, ${list.length} lần, lần cuối ${last.ts.slice(0, 10)}`);
   }
+  if (!hasVio) lines.push('\n✅ Không có vi phạm mới');
 
-  const wKeys = Object.keys(w);
-  if (wKeys.length) {
-    lines.push('\n⚠️ Đã warn:');
-    for (const uid of wKeys) {
-      const list = w[uid];
-      const last = list[list.length - 1];
-      lines.push(`  - ${last.name || uid}: ${list.length} lần`);
+  // Filter warns for this group
+  let hasWarn = false;
+  for (const [uid, list] of Object.entries(allWarned)) {
+    if (!list.length) continue;
+    if (!hasWarn) { lines.push('\n⚠️ Đã warn:'); hasWarn = true; }
+    const last = list[list.length - 1];
+    lines.push(`  - ${(last.name || uid).replace(/^@/, '')}: ${list.length} lần`);
+  }
+  // Show admin notes if any
+  const noteList = allViolations['admin-note'];
+  if (noteList && noteList.length) {
+    lines.push('\n📝 Admin notes:');
+    for (const n of noteList) {
+      lines.push(`  - ${(n.ts || '').slice(0, 16).replace('T', ' ')}: ${n.preview || '—'}`);
     }
   }
 
@@ -235,12 +243,18 @@ function buildReport(groupId, violations, warned) {
 function buildWelcome(memberName, botName) {
   return `👋 Chào mừng ${memberName} đã join nhóm!
 
-Đây là vài thứ để bắt đầu:
-📋 /noi-quy   — Xem nội quy nhóm (đọc trước nhé!)
-📖 /huong-dan — Hướng dẫn dùng bot
-💬 @${botName} [câu hỏi] — Hỏi bot bất cứ điều gì
+Mình là bot và đây là hướng dẫn để bác có thể sử dụng mình trong Group:
+📋 /noi-quy   - Xem nội quy nhóm (đọc trước nhé!)
+📖 /huong-dan hoặc /menu - Hướng dẫn dùng bot, menu của bot
+💬 @${botName} [câu hỏi bất kỳ] - Hỏi bot bất cứ điều gì
 
-Chào mừng bro! 🎉`;
+Group này mình hỗ trợ AE dùng repo Openclaw Setup và setup bot chạy cho ae trải nghiệm.
+
+Mong các ae đã cài đặt đc r thì chia sẻ kinh nghiệm với ae khác khi cần vì mình làm ra repo cũng đang open source cho tất cả ae.
+
+Ngoài ra khi có bản update mới mình cũng sẽ báo lên đây và hỗ trợ ae cập nhật.
+
+Chào mừng bác! 🎉 Nếu có bất kỳ thăc mắc nào hoặc cần hỗ trợ cứ nhắn lên đừng ngại nha!`;
 }
 
 
@@ -284,14 +298,14 @@ const plugin = definePluginEntry({
     const welcomeEnabled = pluginCfg.welcomeEnabled !== false;
     const spamRepeatN   = Number(pluginCfg.spamRepeatN || 3);
     const spamWindowMs  = Number(pluginCfg.spamWindowSeconds || 300) * 1000;
-
-
+    const watchGroupIds = (pluginCfg.watchGroupIds || []).map(String).filter(Boolean);
+    const welcomePollSec = Number(pluginCfg.welcomePollSeconds || 30);
 
     // Data dir — store JSON data alongside the plugin code
     const dataDir = path.join(__dirname, 'data');
 
     // Workspace + Memory dir
-    const workspaceDir  = String(cfg?.agents?.defaults?.workspace || '/root/project/.openclaw/workspace');
+    const workspaceDir  = String(cfg?.agents?.defaults?.workspace || '/mnt/d/SecondBrain/.openclaw/workspace');
 
     // Memory dir — skills/memory/zalo-groups/{group-slug}/
     const autoSlug = groupName.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'default-group';
@@ -309,6 +323,12 @@ const plugin = definePluginEntry({
       }
     }
 
+    // Force reload store from disk (for /memory, /report)
+    async function reloadStore() {
+      await store.load();
+      storeLoaded = true;
+    }
+
     // ── Memory Sync Helpers ──────────────────────────────────
     function nowShort() {
       return new Date().toISOString().slice(0, 16).replace('T', ' ');
@@ -324,10 +344,26 @@ const plugin = definePluginEntry({
       }
     }
 
+    // Smart group lookup — match groupId with/without "group:" prefix, merge duplicate userIds
+    function getStoreDataForGroup(allData, gId) {
+      const plain = String(gId).replace(/^group:/, '');
+      const merged = {};
+      for (const [key, users] of Object.entries(allData)) {
+        const keyPlain = String(key).replace(/^group:/, '');
+        if (keyPlain !== plain) continue;
+        for (const [uid, list] of Object.entries(users)) {
+          const normUid = String(uid).replace(/^@/, '');
+          merged[normUid] = merged[normUid] || [];
+          merged[normUid].push(...list);
+        }
+      }
+      return merged;
+    }
+
     async function writeMemoryDigest(gId) {
       try {
-        const warns = store.getWarned(gId);
-        const violations = store.getViolations(gId);
+        const warns = getStoreDataForGroup(store.getAllWarned(), gId);
+        const violations = getStoreDataForGroup(store.getAllViolations(), gId);
 
         // Overwrite members.md with full warn digest
         const memberLines = [
@@ -337,12 +373,15 @@ const plugin = definePluginEntry({
           '| Tên | Số warn | Lý do gần nhất | Lần cuối |',
           '|-----|---------|-----------------|----------|',
         ];
+        let totalWarns = 0;
         for (const [uid, list] of Object.entries(warns)) {
           if (!list.length) continue;
-          const last = list[list.length - 1];
-          memberLines.push(`| ${last.name || uid} | ${list.length} | ${last.reason || '—'} | ${(last.ts || '').slice(0, 10)} |`);
+          totalWarns++;
+          list.sort((a, b) => (b.ts || '').localeCompare(a.ts || ''));
+          const last = list[0];
+          memberLines.push(`| ${(last.name || uid).replace(/^@/, '')} | ${list.length} | ${last.reason || '—'} | ${(last.ts || '').slice(0, 10)} |`);
         }
-        if (!Object.keys(warns).length) memberLines.push('| — | — | — | — |');
+        if (!totalWarns) memberLines.push('| — | — | — | — |');
         await fs.writeFile(path.join(memoryDir, 'members.md'), memberLines.join('\n') + '\n', 'utf8');
 
         // Overwrite violations.md with full log
@@ -353,16 +392,19 @@ const plugin = definePluginEntry({
           '| Thời gian | Member | Loại | Preview |',
           '|-----------|--------|------|---------|',
         ];
+        let totalVio = 0;
         for (const [uid, list] of Object.entries(violations)) {
+          if (uid === 'admin-note') continue; // skip admin notes from violation count
           for (const v of list) {
-            vioLines.push(`| ${(v.ts || '').slice(0, 16).replace('T', ' ')} | ${v.name || uid} | ${v.type} | ${(v.preview || '').slice(0, 40)} |`);
+            totalVio++;
+            vioLines.push(`| ${(v.ts || '').slice(0, 16).replace('T', ' ')} | ${(v.name || uid).replace(/^@/, '')} | ${v.type} | ${(v.preview || '').slice(0, 40)} |`);
           }
         }
-        if (!Object.keys(violations).length) vioLines.push('| — | — | — | — |');
+        if (!totalVio) vioLines.push('| — | — | — | — |');
         await fs.writeFile(path.join(memoryDir, 'violations.md'), vioLines.join('\n') + '\n', 'utf8');
 
-        logger.info(`[zalo-mod] memory digest written to ${memoryDir}`);
-        return { warnCount: Object.keys(warns).length, vioCount: Object.keys(violations).length };
+        logger.info(`[zalo-mod] memory digest — warns=${totalWarns}, violations=${totalVio} for group=${gId}`);
+        return { warnCount: totalWarns, vioCount: totalVio };
       } catch (e) {
         logger.warn(`[zalo-mod] writeMemoryDigest failed: ${e.message}`);
         return { warnCount: 0, vioCount: 0 };
@@ -370,14 +412,14 @@ const plugin = definePluginEntry({
     }
 
     // ── Zalo session (loaded once) ────────────────────────────
-    let _zaloCookies = null;  // { zpsid, zpw_sek }
+    let _zaloCookies = null;
     let _zaloImei = '';
 
     async function loadZaloSession() {
       if (_zaloCookies) return _zaloCookies;
       try {
         const credPath = path.join(
-          String(cfg?.agents?.defaults?.workspace || '/root/project/.openclaw/workspace'),
+          String(cfg?.agents?.defaults?.workspace || '/mnt/d/SecondBrain/.openclaw/workspace'),
           '../credentials/zalouser/credentials.json'
         );
         const raw = await safeReadJson(credPath);
@@ -430,6 +472,156 @@ const plugin = definePluginEntry({
       return adminIds.size === 0 || adminIds.has(String(senderId));
     }
 
+    // ── Member Watcher — polling-based welcome ─────────────────
+    // OpenClaw zalouser channel ONLY forwards text messages to before_dispatch.
+    // System events (member join/leave) are silently filtered — they never reach plugins.
+    // Workaround: poll group member list via OpenClaw internal API, diff with previous snapshot.
+    //
+    // IMPORTANT: Use globalThis to persist state across gateway hot-reloads.
+    // OpenClaw may re-register() the plugin in the SAME Node.js process,
+    // creating new local vars but leaving old setInterval timers running.
+    // globalThis ensures: (1) only ONE watcher runs, (2) dedup survives hot-reload.
+    const _G = globalThis.__zaloModWatcher = globalThis.__zaloModWatcher || {
+      memberSnapshots: new Map(),   // groupId → Set<userId>
+      welcomedDedup: new Set(),     // "groupId:userId"
+      watcherTimer: null,
+      initTimer: null,
+      zaloApiModule: null,
+    };
+
+    async function loadZaloApi() {
+      if (_G.zaloApiModule) return _G.zaloApiModule;
+      try {
+        _G.zaloApiModule = await import('file:///usr/local/lib/node_modules/openclaw/dist/extensions/zalouser/test-api.js');
+        return _G.zaloApiModule;
+      } catch (e) {
+        logger.warn(`[zalo-mod] [WATCHER] failed to load zalouser API: ${e.message}`);
+        return null;
+      }
+    }
+
+    async function pollGroupMembers(groupId) {
+      try {
+        const api = await loadZaloApi();
+        if (!api?.listZaloGroupMembers) {
+          logger.warn(`[zalo-mod] [WATCHER] listZaloGroupMembers not available`);
+          return null;
+        }
+        const members = await api.listZaloGroupMembers('default', String(groupId));
+        if (!Array.isArray(members)) return null;
+        return members.map(m => ({
+          id: String(m.userId || m.id || ''),
+          name: String(m.displayName || m.name || m.zaloName || ''),
+        })).filter(m => m.id);
+      } catch (e) {
+        logger.warn(`[zalo-mod] [WATCHER] poll failed for group ${groupId}: ${e.message}`);
+        return null;
+      }
+    }
+
+    async function checkForNewMembers(groupId) {
+      const members = await pollGroupMembers(groupId);
+      if (!members) return;
+
+      const currentIds = new Set(members.map(m => m.id));
+      const prevIds = _G.memberSnapshots.get(groupId);
+
+      if (!prevIds) {
+        // First poll — just save snapshot, don't welcome everyone
+        _G.memberSnapshots.set(groupId, currentIds);
+        logger.info(`[zalo-mod] [WATCHER] initial snapshot for group ${groupId}: ${currentIds.size} members`);
+        return;
+      }
+
+      // Find new members (in current but not in previous)
+      const newMembers = members.filter(m => !prevIds.has(m.id));
+      // Update snapshot
+      _G.memberSnapshots.set(groupId, currentIds);
+
+      if (newMembers.length === 0) return;
+
+      // Dedup: skip members already welcomed recently (survives hot-reloads via globalThis)
+      const dedupKey = (gId, mId) => `${gId}:${mId}`;
+      const toWelcome = newMembers.filter(m => !_G.welcomedDedup.has(dedupKey(groupId, m.id)));
+      if (toWelcome.length === 0) {
+        logger.info(`[zalo-mod] [WATCHER] ${newMembers.length} new member(s) detected but all already welcomed (dedup)`);
+        return;
+      }
+
+      logger.info(`[zalo-mod] [WATCHER] ${toWelcome.length} new member(s) in group ${groupId}: ${toWelcome.map(m => m.name || m.id).join(', ')}`);
+
+      // Check welcome setting
+      const welcomeOn = store.getSetting(groupId, 'welcome', true);
+      if (!welcomeOn) {
+        logger.info(`[zalo-mod] [WATCHER] welcome disabled for group ${groupId}, skipping`);
+        return;
+      }
+
+      // Send welcome for new members (batch — don't spam if many join at once)
+      for (const member of toWelcome.slice(0, 5)) {
+        const memberName = member.name || 'bạn';
+        try {
+          await sendGroupMsg({ accountId: 'default' }, groupId, buildWelcome(memberName, botName));
+          await appendToMemoryFile('chat-highlights.md', `| ${nowShort()} | SYSTEM | Welcome: ${memberName} joined (detected by watcher) |`);
+          // Mark as welcomed (dedup for 1 hour)
+          _G.welcomedDedup.add(dedupKey(groupId, member.id));
+          setTimeout(() => _G.welcomedDedup.delete(dedupKey(groupId, member.id)), 3600000);
+          logger.info(`[zalo-mod] [WATCHER] welcome sent for ${memberName} in group ${groupId}`);
+        } catch (e) {
+          logger.error(`[zalo-mod] [WATCHER] welcome send failed for ${memberName}: ${e.message}`);
+        }
+        // Small delay between messages to avoid rate limiting
+        await new Promise(r => setTimeout(r, 2000));
+      }
+      if (toWelcome.length > 5) {
+        await sendGroupMsg({ accountId: 'default' }, groupId,
+          `👋 Và ${toWelcome.length - 5} bạn mới nữa — chào mừng tất cả! 🎉\n/noi-quy để xem nội quy nhóm.`
+        );
+      }
+    }
+
+    function startMemberWatcher() {
+      if (!welcomeEnabled || watchGroupIds.length === 0) {
+        if (watchGroupIds.length === 0) {
+          logger.info(`[zalo-mod] [WATCHER] no watchGroupIds configured — welcome watcher disabled`);
+        }
+        return;
+      }
+
+      // CRITICAL: Clear any existing timer from previous register() hot-reload
+      if (_G.watcherTimer) {
+        clearInterval(_G.watcherTimer);
+        _G.watcherTimer = null;
+        logger.info(`[zalo-mod] [WATCHER] cleared previous watcher timer (hot-reload detected)`);
+      }
+      if (_G.initTimer) {
+        clearTimeout(_G.initTimer);
+        _G.initTimer = null;
+      }
+
+      const intervalMs = Math.max(welcomePollSec, 30) * 1000; // min 30s to avoid Zalo rate limits
+      logger.info(`[zalo-mod] [WATCHER] starting member watcher for ${watchGroupIds.length} group(s), poll every ${intervalMs/1000}s`);
+
+      // Initial snapshot after a delay (let zalouser fully connect first)
+      _G.initTimer = setTimeout(async () => {
+        _G.initTimer = null;
+        await ensureStore();
+        for (const gId of watchGroupIds) {
+          await checkForNewMembers(gId);
+        }
+        // Then start periodic polling
+        _G.watcherTimer = setInterval(async () => {
+          for (const gId of watchGroupIds) {
+            try {
+              await checkForNewMembers(gId);
+            } catch (e) {
+              logger.warn(`[zalo-mod] [WATCHER] poll error for ${gId}: ${e.message}`);
+            }
+          }
+        }, intervalMs);
+      }, 30000); // 30s delay for zalouser to connect
+    }
+
     // ── Event: before_dispatch (main hook) ───────────────────
     api.on('before_dispatch', async (event, ctx) => {
       // 1. Chỉ bắt event từ Zalo
@@ -437,20 +629,35 @@ const plugin = definePluginEntry({
       
       // NOTE: Zalo strips @mention from event.content but keeps it in event.body
       const content = String(event?.body || event?.content || '').trim();
-      if (!content) return { handled: true }; // Return early if no text content is found
-      
+
       await ensureStore();
 
+      // NOTE: Welcome detection is handled by the member watcher (polling-based).
+      // OpenClaw zalouser channel does NOT pass system events (join/leave) to plugins.
+
+      if (!content) return { handled: true }; // empty content — skip
+
       const rawConvId = String(ctx.conversationId || event.conversationId || '');
+      const isGroupMsg = rawConvId.startsWith('group:');
+
+      // DMs — let pass through to LLM agent (no moderation needed)
+      if (!isGroupMsg) return; // undefined = forward to LLM
+
       const groupId   = rawConvId.replace(/^group:/, '');
       const senderId  = String(ctx.senderId || event.senderId || '');
       const senderName = String(event.senderName || senderId);
 
-      // ── Slash command router (0 token) ────────────────────
-      if (content.startsWith('/')) {
-        const parts   = content.trim().split(/\s+/);
-        const command = parts[0].toLowerCase();
-        const args    = parts.slice(1);
+      // ── Extract slash command from anywhere in message ─────
+      // Support: "/command args" AND "@BotName text /command args"
+      const slashMatch = content.match(/(?:^|\s)(\/[a-z][a-z0-9-]*)(.*)$/i);
+      if (slashMatch) {
+        const command = slashMatch[1].toLowerCase();
+        const cmdArgs = slashMatch[2].trim();
+        const args    = cmdArgs ? cmdArgs.split(/\s+/) : [];
+        // Text before the slash command (e.g. "@Bot mai 5h @Mkt đi đá banh /note" → "mai 5h @Mkt đi đá banh")
+        const botMentionRe = new RegExp(botNames.map(n => '@' + n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'), 'gi');
+        const textBefore = content.slice(0, slashMatch.index + (slashMatch[0].startsWith(' ') ? 1 : 0)).trim()
+          .replace(botMentionRe, '').replace(/\s{2,}/g, ' ').trim(); // strip only bot @mentions
 
         // /noi-quy
         if (command === '/noi-quy') {
@@ -471,7 +678,10 @@ const plugin = definePluginEntry({
         // /report — admin only
         if (command === '/report') {
           if (!isAdmin(senderId)) return { handled: true };
-          const text = buildReport(groupId, store.getViolations(groupId), store.getWarned(groupId));
+          await reloadStore();
+          const vio = getStoreDataForGroup(store.getAllViolations(), groupId);
+          const wrn = getStoreDataForGroup(store.getAllWarned(), groupId);
+          const text = buildReport(groupId, vio, wrn);
           await sendGroupMsg(ctx, groupId, text);
           return { handled: true };
         }
@@ -482,11 +692,9 @@ const plugin = definePluginEntry({
           const targetMentions = (event.mentions || []);
           // Strip leading @ from args since Zalo body includes @name
           const rawTarget  = (args[0] || '').replace(/^@/, '');
-          const targetId   = targetMentions[0]?.uid || rawTarget || '';
+          const targetId   = (targetMentions[0]?.uid || rawTarget || '').replace(/^@/, '');
           const targetName = (targetMentions[0]?.name || rawTarget || targetId).replace(/^@/, '');
-          // Collect remaining args as reason (skip multi-word names)
           const reasonArgs = args.slice(1);
-          // If target name is multi-word (e.g. "Minh Tuan"), skip those args too  
           const reason     = reasonArgs.join(' ').trim() || 'Vui lòng giữ nội dung phù hợp group';
           if (!targetId) return { handled: true };
           store.addWarn(groupId, targetId, targetName, reason);
@@ -505,13 +713,13 @@ const plugin = definePluginEntry({
         // /note [text] — admin only
         if (command === '/note') {
           if (!isAdmin(senderId)) return { handled: true };
-          const text = args.join(' ');
-          if (!text) return { handled: true };
-          store.addViolation(groupId, 'admin-note', senderName, 'note', text);
+          const noteText = textBefore || args.join(' ');
+          if (!noteText) return { handled: true };
+          store.addViolation(groupId, 'admin-note', senderName, 'note', noteText);
           await store.saveViolations();
           // Sync to memory
-          await appendToMemoryFile('admin-notes.md', `| ${nowShort()} | ${senderName} | ${text} |`);
-          await sendGroupMsg(ctx, groupId, `📝 Ghi nhận: ${text}`);
+          await appendToMemoryFile('admin-notes.md', `| ${nowShort()} | ${senderName} | ${noteText} |`);
+          await sendGroupMsg(ctx, groupId, `📝 Ghi nhận: ${noteText}`);
           return { handled: true };
         }
 
@@ -540,12 +748,20 @@ const plugin = definePluginEntry({
           return { handled: true };
         }
 
-        // /memory — admin manual digest
+        // /memory — admin manual digest (optionally with note text)
         if (command === '/memory') {
           if (!isAdmin(senderId)) return { handled: true };
+          const memText = (textBefore || args.join(' ')).replace(/\s{2,}/g, ' ').trim();
+          if (memText) {
+            store.addViolation(groupId, 'admin-note', senderName, 'note', memText);
+            await store.saveViolations();
+            await appendToMemoryFile('admin-notes.md', `| ${nowShort()} | ${senderName} | ${memText} |`);
+          }
+          await reloadStore(); // Fresh read from disk
           const { warnCount, vioCount } = await writeMemoryDigest(groupId);
+          const extra = memText ? `\n📝 Note: ${memText}` : '';
           await sendGroupMsg(ctx, groupId,
-            `📝 Đã lưu memory digest!\n📁 skills/memory/zalo-groups/${memoryGroupSlug}/\n⚠️ ${warnCount} member warned\n🚫 ${vioCount} vi phạm ghi nhận`
+            `📝 Đã lưu memory digest!${extra}\n📁 skills/memory/zalo-groups/${memoryGroupSlug}/\n⚠️ ${warnCount} member warned\n🚫 ${vioCount} vi phạm ghi nhận`
           );
           return { handled: true };
         }
@@ -560,6 +776,20 @@ const plugin = definePluginEntry({
         // Log mention + sync to memory
         logger.info(`[zalo-mod] @mention from ${senderName} in group ${groupId}: ${content.slice(0, 80)}`);
         await appendToMemoryFile('chat-highlights.md', `| ${nowShort()} | ${senderName} | ${content.slice(0, 80)} |`);
+
+        // ── File context injection ─────────────────────────────
+        // OpenClaw zalouser ONLY forwards text to before_dispatch — file types are silently dropped.
+        // When user @mentions bot about a file/image, inject a system note so the LLM
+        // knows to ask for a link instead of hallucinating "chưa thấy file".
+        const FILE_KEYWORDS_RE = /\b(file|pdf|ảnh|hình\s*ảnh|tài\s*liệu|doc|docx|xlsx?|excel|video|mp4|zip|rar|link|tải|download|attachment|đính\s*kèm|xem\s*file|đọc\s*file)\b/i;
+        if (FILE_KEYWORDS_RE.test(content)) {
+          const note = '\n[BOT SYSTEM NOTE: Đây là Group Zalo. File/ảnh đính kèm KHÔNG được forward tới bot trong group — zalouser channel chỉ truyền text. Nếu user đang đề cập tới file, hãy hỏi user: (1) copy+paste link tải về, hoặc (2) paste nội dung text trực tiếp vào chat. KHÔNG nói "gửi file vào đây" vì user đã gửi rồi mà bot không nhận được.]';
+          if (event.body !== undefined) event.body = content + note;
+          if (event.content !== undefined) event.content = content + note;
+          logger.info(`[zalo-mod] injected file-context note for @mention in group ${groupId}`);
+        }
+
+
 
         // ── Auto-answer group management questions locally (0 token) ──
         const lc = content.toLowerCase();
@@ -583,10 +813,11 @@ const plugin = definePluginEntry({
         }
 
         // "Vi phạm" / "violations" / "spam"
-        if (/(?:vi.*ph[ạa]m|violation|spam.*g[ầa]n|report)/i.test(lc)) {
+        if (/(?:vi.*ph[ạa]m|violation|spam.*g[ầa]n)/i.test(lc)) {
           const violations = store.getViolations(groupId);
           const allVio = [];
           for (const [uid, list] of Object.entries(violations)) {
+            if (uid === 'admin-note') continue; // skip admin notes
             for (const v of list) allVio.push(v);
           }
           if (!allVio.length) {
@@ -644,7 +875,10 @@ const plugin = definePluginEntry({
       return;
     }, { priority: 300 }); // priority 300 = runs before relay plugin (200)
 
-    logger.info(`[zalo-mod] loaded — group="${groupName}" bot="${botName}" adminIds=${adminIds.size || 'any'}`);
+    // Start member watcher for welcome messages
+    startMemberWatcher();
+
+    logger.info(`[zalo-mod] loaded — group="${groupName}" bot="${botName}" adminIds=${adminIds.size || 'any'} watchGroups=${watchGroupIds.length}`);
   },
 });
 

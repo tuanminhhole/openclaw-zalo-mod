@@ -2,7 +2,7 @@
   "id": "zalo-mod",
   "name": "Zalo Mod",
   "description": "Zero-token Zalo group moderation — slash commands, anti-spam, warn system, memory integration. Blocks LLM for non-mention messages.",
-  "version": "1.0.1",
+  "version": "1.2.0",
   "kind": "runtime",
   "enabledByDefault": false,
   "runtimeId": "zalo-mod",
@@ -50,6 +50,15 @@
       "memoryGroupSlug": {
         "type": "string",
         "description": "Override the memory folder name. Auto-generated from groupName if not set."
+      },
+      "watchGroupIds": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "Zalo group IDs to watch for new members. Required for welcome messages since zalouser channel does not expose join events."
+      },
+      "welcomePollSeconds": {
+        "type": "number",
+        "description": "Polling interval in seconds for member watcher. Min 15. Default: 30"
       }
     },
     "additionalProperties": false

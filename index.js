@@ -6,13 +6,13 @@
  * @mention → để lọt lên LLM agent bình thường.
  * Tin thường → block hoàn toàn (silent).
  *
- * v1.1.0: Polling-based member watcher for welcome messages.
+ * v1.2.0: Polling-based member watcher + /groupid command.
  *   OpenClaw zalouser channel does NOT expose system events (join/leave)
  *   to plugins. Workaround: poll group member list via OpenClaw internal
  *   listZaloGroupMembers API, diff with previous snapshot.
  *
  * @author Kent x Williams
- * @version 1.1.0
+ * @version 1.2.0
  */
 
 import fs from 'node:fs/promises';
@@ -169,6 +169,7 @@ function buildMenu(botName) {
   /noi-quy    — Xem nội quy nhóm
   /menu       — Menu lệnh này
   /huong-dan  — Hướng dẫn dùng bot
+  /groupid    — Xem ID của group này
 
 💬 Hỏi đáp
   @${botName} [câu hỏi] — Hỏi bot bất kỳ điều gì
@@ -672,6 +673,14 @@ const plugin = definePluginEntry({
         }
         if (command === '/huong-dan') {
           await sendGroupMsg(ctx, groupId, buildHuongDan(botName));
+          return { handled: true };
+        }
+
+        // /groupid — trả về group ID hiện tại (dùng để config watchGroupIds)
+        if (command === '/groupid') {
+          await sendGroupMsg(ctx, groupId,
+            `🆔 Group ID: ${groupId}\n📋 Dùng ID này để config watchGroupIds trong openclaw.json`
+          );
           return { handled: true };
         }
 

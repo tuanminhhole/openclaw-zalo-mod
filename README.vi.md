@@ -49,15 +49,50 @@ openclaw plugins install openclaw-zalo-mod
 
 ### Thủ công
 
-Copy plugin vào thư mục `extensions/`:
+1. Copy plugin vào thư mục `extensions/`:
 
 ```bash
-cp -r openclaw-zalo-mod ~/.openclaw/extensions/
+# Windows
+xcopy /E /I openclaw-zalo-mod %OPENCLAW_HOME%\extensions\zalo-mod
+
+# Linux / macOS
+cp -r openclaw-zalo-mod ~/.openclaw/extensions/zalo-mod
 ```
 
-## ⚙️ Cấu Hình
+2. Chạy script setup tự động (⭐ **khuyên dùng**):
 
-Thêm vào `openclaw.json`:
+```bash
+cd ~/.openclaw/extensions/zalo-mod
+node setup.js
+```
+
+Script sẽ:
+- ✅ Tự detect thư mục `.openclaw`
+- ✅ Hỏi tên nhóm, tên bot, Zalo display names, admin IDs
+- ✅ Tự detect Docker hay Native để đặt đúng đường dẫn
+- ✅ Backup `openclaw.json` trước khi sửa
+- ✅ Tự thêm config plugin vào `openclaw.json`
+- ✅ Tạo thư mục `data/` cho plugin
+
+> 💡 **Tip:** Nếu script không tìm thấy `.openclaw`, hãy chỉ đường dẫn:
+> ```bash
+> node setup.js --openclaw-home "D:\bot\.openclaw"
+> ```
+
+> 💡 **Non-interactive mode** (dùng config mặc định):
+> ```bash
+> node setup.js --non-interactive
+> ```
+
+3. Khởi động lại gateway:
+
+```bash
+openclaw gateway run
+```
+
+## ⚙️ Cấu Hình (Thủ Công)
+
+Nếu không dùng `setup.js`, thêm vào `openclaw.json`:
 
 ```json
 {

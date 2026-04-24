@@ -49,15 +49,50 @@ openclaw plugins install openclaw-zalo-mod
 
 ### Manual
 
-Copy the plugin to your `extensions/` directory:
+1. Copy the plugin to your `extensions/` directory:
 
 ```bash
-cp -r openclaw-zalo-mod ~/.openclaw/extensions/
+# Windows
+xcopy /E /I openclaw-zalo-mod %OPENCLAW_HOME%\extensions\zalo-mod
+
+# Linux / macOS
+cp -r openclaw-zalo-mod ~/.openclaw/extensions/zalo-mod
 ```
 
-## ⚙️ Configuration
+2. Run the auto-setup script (⭐ **recommended**):
 
-Add to your `openclaw.json`:
+```bash
+cd ~/.openclaw/extensions/zalo-mod
+node setup.js
+```
+
+The script will:
+- ✅ Auto-detect your `.openclaw` directory
+- ✅ Ask for group name, bot name, Zalo display names, admin IDs
+- ✅ Auto-detect Docker vs Native for correct install path
+- ✅ Backup `openclaw.json` before modifying
+- ✅ Patch `openclaw.json` with the correct plugin config
+- ✅ Create the `data/` directory for plugin storage
+
+> 💡 **Tip:** If the script can't find `.openclaw`, specify the path:
+> ```bash
+> node setup.js --openclaw-home "D:\bot\.openclaw"
+> ```
+
+> 💡 **Non-interactive mode** (uses default config):
+> ```bash
+> node setup.js --non-interactive
+> ```
+
+3. Restart the gateway:
+
+```bash
+openclaw gateway run
+```
+
+## ⚙️ Configuration (Manual)
+
+If you don't use `setup.js`, add to your `openclaw.json`:
 
 ```json
 {

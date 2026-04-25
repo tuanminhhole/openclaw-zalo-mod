@@ -23,6 +23,99 @@ import { definePluginEntry } from 'openclaw/plugin-sdk/plugin-entry';
 // ── Plugin directory (for data storage) ──────────────────────
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+// ── Auto-config helpers ──────────────────────────────────────
+// Resolve OPENCLAW_HOME from plugin install path:
+// plugin at {OPENCLAW_HOME}/extensions/zalo-mod/ → 2 levels up
+const _openclawHome = path.resolve(__dirname, '..', '..');
+
+/**
+ * Read bot name from IDENTITY.md in workspace dir.
+ * Parses `**Tên:** BotName` pattern.
+ */
+async function _readBotNameFromIdentity(workspaceDir) {
+  try {
+    const identityPath = path.join(workspaceDir, 'IDENTITY.md');
+    const content = await fs.readFile(identityPath, 'utf8');
+    const match = content.match(/\*\*Tên:\*\*\s*(.+)/);
+    return match ? match[1].trim() : null;
+  } catch { return null; }
+}
+
+/**
+ * Scan sessions.json for group sessions.
+ * Returns array of { groupId, groupName } from session keys like:
+ *   "agent:{agentId}:zalouser:group:{groupId}" with origin.label = groupName
+ */
+async function _scanGroupsFromSessions(openclawHome, agentId) {
+  const groups = [];
+  // Try multiple possible agent IDs
+  const agentIds = agentId ? [agentId] : [];
+  // Also scan agents/ dir for any agent
+  try {
+    const agentsDir = path.join(openclawHome, 'agents');
+    const entries = await fs.readdir(agentsDir, { withFileTypes: true });
+    for (const e of entries) {
+      if (e.isDirectory() && !agentIds.includes(e.name)) agentIds.push(e.name);
+    }
+  } catch { /* no agents dir */ }
+
+  for (const aid of agentIds) {
+    const sessPath = path.join(openclawHome, 'agents', aid, 'sessions', 'sessions.json');
+    try {
+      const raw = await fs.readFile(sessPath, 'utf8');
+      const sessions = JSON.parse(raw);
+      for (const [key, val] of Object.entries(sessions)) {
+        const m = key.match(/:zalouser:group:(\d+)$/);
+        if (m && val.origin?.label) {
+          const gId = m[1];
+          if (!groups.some(g => g.groupId === gId)) {
+            groups.push({ groupId: gId, groupName: String(val.origin.label) });
+          }
+        }
+      }
+    } catch { /* no sessions file for this agent */ }
+  }
+  return groups;
+}
+
+/**
+ * Auto-patch openclaw.json — merge discovered config into plugins.entries.zalo-mod.config.
+ * Only sets values that are currently empty/default.
+ * Returns true if file was modified.
+ */
+async function _patchOpenclawConfig(openclawHome, patch, logger, force = false) {
+  const configPath = path.join(openclawHome, 'openclaw.json');
+  try {
+    const raw = await fs.readFile(configPath, 'utf8');
+    const config = JSON.parse(raw);
+    config.plugins = config.plugins || {};
+    config.plugins.entries = config.plugins.entries || {};
+    config.plugins.entries['zalo-mod'] = config.plugins.entries['zalo-mod'] || { enabled: true };
+    const existing = config.plugins.entries['zalo-mod'].config || {};
+
+    let changed = false;
+    for (const [key, val] of Object.entries(patch)) {
+      if (val == null) continue;
+      const cur = existing[key];
+      const isEmpty = cur == null || cur === '' || (Array.isArray(cur) && cur.length === 0);
+      if (force || isEmpty) {
+        existing[key] = val;
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      config.plugins.entries['zalo-mod'].config = existing;
+      await fs.writeFile(configPath, JSON.stringify(config, null, 2) + '\n', 'utf8');
+      if (logger) logger.info(`[zalo-mod] auto-patched openclaw.json config`);
+    }
+    return changed;
+  } catch (e) {
+    if (logger) logger.warn(`[zalo-mod] auto-patch config failed: ${e.message}`);
+    return false;
+  }
+}
+
 // ── Constants ────────────────────────────────────────────────
 const PLUGIN_ID = 'zalo-mod';
 
@@ -305,8 +398,14 @@ const plugin = definePluginEntry({
     // Data dir — store JSON data alongside the plugin code
     const dataDir = path.join(__dirname, 'data');
 
-    // Workspace + Memory dir
-    const workspaceDir  = String(cfg?.agents?.defaults?.workspace || '/mnt/d/SecondBrain/.openclaw/workspace');
+    // Workspace + Memory dir — resolve from agent config or OPENCLAW_HOME
+    const _agentWorkspace = cfg?.agents?.list?.[0]?.workspace;
+    const _defaultWorkspace = cfg?.agents?.defaults?.workspace;
+    const workspaceDir = String(
+      _agentWorkspace
+        ? path.resolve(_openclawHome, '..', _agentWorkspace)  // relative to project root
+        : _defaultWorkspace || path.join(_openclawHome, 'workspace')
+    );
 
     // Memory dir — skills/memory/zalo-groups/{group-slug}/
     const autoSlug = groupName.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'default-group';
@@ -329,6 +428,141 @@ const plugin = definePluginEntry({
       await store.load();
       storeLoaded = true;
     }
+
+    // ── Auto-bootstrap workspace files on first load ─────────
+    // Creates SKILL.md + memory INDEX.md if they don't exist.
+    // This runs automatically so ClawHub installs work without manual setup.js.
+    async function bootstrapWorkspaceFiles() {
+      try {
+        // 1. Create skills/zalo-group-admin/SKILL.md
+        const skillDir = path.join(workspaceDir, 'skills', 'zalo-group-admin');
+        const skillMdPath = path.join(skillDir, 'SKILL.md');
+        try {
+          await fs.access(skillMdPath);
+        } catch {
+          // File doesn't exist — create it
+          await fs.mkdir(skillDir, { recursive: true });
+          const skillContent = [
+            '---',
+            'name: Zalo Group Admin',
+            'slug: zalo-group-admin',
+            'version: 1.0.0',
+            `description: Quy tắc reply và quản lý group Zalo "${groupName}" — ưu tiên ngắn gọn, súc tích.`,
+            '---',
+            '',
+            '# Zalo Group Admin 💬',
+            '',
+            '## Khi nào dùng skill này',
+            '',
+            'Khi `chat_id` chứa `group:` → Bot đang ở trong Zalo group. Áp dụng toàn bộ quy tắc bên dưới.',
+            '',
+            '---',
+            '',
+            '## ⚡ NGUYÊN TẮC SỐ 1 — NGẮN GỌN LÀ ĐẶC QUYỀN CỦA GROUP',
+            '',
+            '> Trong group chat, **ngắn gọn = tôn trọng**. AI nói dài = spam group.',
+            '',
+            '### Giới hạn cứng (KHÔNG vi phạm):',
+            '- **Tối đa 5 dòng** mỗi reply trong group',
+            '- **KHÔNG dùng markdown headers** (`##`, `###`) — Zalo không render',
+            '- **KHÔNG dùng bullet list dài** — tối đa 3 bullets',
+            '- **KHÔNG dùng bold italic** (`**text**`) — Zalo không render',
+            '- **Chỉ 1 câu hỏi nếu cần làm rõ**',
+            '',
+            '---',
+            '',
+            `## 📖 Đọc Group Memory Trước Khi Reply`,
+            '',
+            `Khi @mention trong group "${groupName}":`,
+            `1. Đọc \`~/skills/memory/zalo-groups/${memoryGroupSlug}/INDEX.md\``,
+            '2. Kiểm tra `chat-highlights.md` xem context gần nhất',
+            '3. Nếu user từng mention trước → reference lại, không hỏi lại',
+            '',
+            `**Path:** \`~/skills/memory/zalo-groups/${memoryGroupSlug}/\``,
+            '',
+            '---',
+            '',
+            '## 🎯 Xưng Hô Trong Group',
+            '',
+            '- Với **member thường**: xưng "mình", gọi "bác" hoặc tên',
+            '- Với **câu hỏi kỹ thuật**: trả lời thẳng, không giải thích quá nhiều',
+            '- Với **câu hỏi mơ hồ**: hỏi 1 câu làm rõ — chỉ 1 câu thôi',
+            '',
+            '---',
+            '',
+            '## 📝 Ghi Memory Sau Reply',
+            '',
+            'Sau mỗi @mention được xử lý:',
+            '```',
+            `~/skills/memory/zalo-groups/${memoryGroupSlug}/chat-highlights.md`,
+            '```',
+            'Format: `| YYYY-MM-DD HH:MM | {tên user} | {tóm tắt 1 dòng} |`',
+            '',
+          ].join('\n');
+          await fs.writeFile(skillMdPath, skillContent, 'utf8');
+          logger.info('[zalo-mod] auto-created skills/zalo-group-admin/SKILL.md');
+        }
+
+        // 2. Create memory INDEX.md
+        const indexMdPath = path.join(memoryDir, 'INDEX.md');
+        try {
+          await fs.access(indexMdPath);
+        } catch {
+          await fs.mkdir(memoryDir, { recursive: true });
+          const indexContent = [
+            `# ${groupName} — Memory`,
+            '',
+            '> Auto-generated by zalo-mod plugin. Plugin sẽ tự cập nhật khi có events.',
+            '',
+            '## Files',
+            '- `chat-highlights.md` — Log @mention và tương tác quan trọng',
+            '- `members.md` — Danh sách member đã warn',
+            '- `violations.md` — Log vi phạm (spam, link, emoji flood)',
+            '- `admin-notes.md` — Ghi chú admin (/note)',
+            '',
+          ].join('\n');
+          await fs.writeFile(indexMdPath, indexContent, 'utf8');
+          logger.info(`[zalo-mod] auto-created skills/memory/zalo-groups/${memoryGroupSlug}/INDEX.md`);
+        }
+
+        // 3. Create data dir for plugin storage
+        await fs.mkdir(dataDir, { recursive: true });
+
+        // 4. Auto-detect & patch config if empty (ClawHub install flow)
+        const configNeedsPatch = !pluginCfg.botName || !pluginCfg.groupName || pluginCfg.groupName === 'Nhóm';
+        if (configNeedsPatch) {
+          const patch = {};
+
+          // 4a. Read bot name from IDENTITY.md
+          const detectedBotName = await _readBotNameFromIdentity(workspaceDir);
+          if (detectedBotName) {
+            patch.botName = detectedBotName;
+            patch.zaloDisplayNames = [detectedBotName];
+            logger.info(`[zalo-mod] auto-detected botName="${detectedBotName}" from IDENTITY.md`);
+          }
+
+          // 4b. Scan session data for groups
+          const agentId = cfg?.agents?.list?.[0]?.id;
+          const groups = await _scanGroupsFromSessions(_openclawHome, agentId);
+          if (groups.length > 0) {
+            patch.watchGroupIds = groups.map(g => g.groupId);
+            patch.groupName = groups[0].groupName;
+            logger.info(`[zalo-mod] auto-detected ${groups.length} group(s) from sessions: ${groups.map(g => g.groupName).join(', ')}`);
+          } else {
+            logger.info('[zalo-mod] no group sessions found yet — user should chat in a group then run /groupid');
+          }
+
+          if (Object.keys(patch).length > 0) {
+            await _patchOpenclawConfig(_openclawHome, patch, logger);
+          }
+        }
+      } catch (e) {
+        logger.warn(`[zalo-mod] bootstrap workspace files failed: ${e.message}`);
+      }
+    }
+
+    // Fire-and-forget bootstrap (don't block plugin registration)
+    bootstrapWorkspaceFiles();
 
     // ── Memory Sync Helpers ──────────────────────────────────
     function nowShort() {
@@ -676,11 +910,57 @@ const plugin = definePluginEntry({
           return { handled: true };
         }
 
-        // /groupid — trả về group ID hiện tại (dùng để config watchGroupIds)
+        // /groupid — scan sessions, auto-update config, reply groups list
         if (command === '/groupid') {
-          await sendGroupMsg(ctx, groupId,
-            `🆔 Group ID: ${groupId}\n📋 Dùng ID này để config watchGroupIds trong openclaw.json`
-          );
+          try {
+            const agentId = cfg?.agents?.list?.[0]?.id;
+            const groups = await _scanGroupsFromSessions(_openclawHome, agentId);
+
+            // Always include current group
+            if (!groups.some(g => g.groupId === groupId)) {
+              groups.push({ groupId, groupName: '(group hiện tại)' });
+            }
+
+            // Build patch
+            const patch = {
+              watchGroupIds: groups.map(g => g.groupId),
+            };
+            // Set groupName if only 1 group or first time
+            if (!pluginCfg.groupName || pluginCfg.groupName === 'Nhóm') {
+              const namedGroup = groups.find(g => g.groupName && g.groupName !== '(group hiện tại)');
+              if (namedGroup) patch.groupName = namedGroup.groupName;
+            }
+            // Auto-detect botName if not set
+            if (!pluginCfg.botName || pluginCfg.botName === 'Bot') {
+              const detectedName = await _readBotNameFromIdentity(workspaceDir);
+              if (detectedName) {
+                patch.botName = detectedName;
+                patch.zaloDisplayNames = [detectedName];
+              }
+            }
+
+            const patched = await _patchOpenclawConfig(_openclawHome, patch, logger, true);
+
+            // Build reply
+            const lines = [`🆔 Groups đã cập nhật config (${groups.length}):`];
+            for (const g of groups) {
+              lines.push(`  • ${g.groupName} — ${g.groupId}`);
+            }
+            if (patched) {
+              lines.push('');
+              lines.push('✅ Đã tự động cập nhật openclaw.json!');
+              lines.push('🔄 Restart gateway để áp dụng config mới.');
+            } else {
+              lines.push('');
+              lines.push('ℹ️ Config đã có sẵn, không cần cập nhật.');
+            }
+            await sendGroupMsg(ctx, groupId, lines.join('\n'));
+          } catch (e) {
+            logger.warn(`[zalo-mod] /groupid auto-config failed: ${e.message}`);
+            await sendGroupMsg(ctx, groupId,
+              `🆔 Group ID: ${groupId}\n⚠️ Auto-config lỗi: ${e.message}`
+            );
+          }
           return { handled: true };
         }
 

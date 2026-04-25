@@ -84,6 +84,30 @@ The script will:
 > node setup.js --non-interactive
 > ```
 
+> 🐳 **Docker Compose:** on Windows bind mounts, Docker often reports plugin files as `mode=777`, and OpenClaw refuses to load world-writable plugin paths. The stable setup is to COPY the plugin into the image/container filesystem and `chmod 755`.
+> ```yaml
+> services:
+>   ai-bot:
+>     build:
+>       context: D:/bot
+>       dockerfile: docker/openclaw/Dockerfile
+>     volumes:
+>       - D:/bot/.openclaw:/root/project/.openclaw
+> ```
+> Add to `Dockerfile`:
+> ```dockerfile
+> COPY extensions/zalo-mod /opt/openclaw/extensions/zalo-mod
+> RUN chmod -R 755 /opt/openclaw/extensions/zalo-mod \
+>   && mkdir -p /opt/openclaw/extensions/zalo-mod/node_modules \
+>   && ln -s /usr/local/lib/node_modules/openclaw /opt/openclaw/extensions/zalo-mod/node_modules/openclaw
+> ```
+> Run setup:
+> ```bash
+> node setup.js --openclaw-home "D:\bot\.openclaw" --install-path "/opt/openclaw/extensions/zalo-mod"
+> ```
+> This writes `plugins.load.paths: ["/opt/openclaw/extensions/zalo-mod"]`. That is the documented discovery mechanism for a local plugin path; do not rely on hand-written `plugins.installs`.
+> If you previously copied the plugin to `.openclaw/extensions/zalo-mod`, delete or rename that old directory; its existence is enough for OpenClaw to scan it and log the warning.
+
 3. Restart the gateway:
 
 ```bash

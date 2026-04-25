@@ -84,6 +84,30 @@ Script sẽ:
 > node setup.js --non-interactive
 > ```
 
+> 🐳 **Docker Compose:** với Windows bind mount, Docker thường báo file plugin là `mode=777`, OpenClaw sẽ không load plugin. Cách ổn định nhất là COPY plugin vào image/container filesystem rồi `chmod 755`.
+> ```yaml
+> services:
+>   ai-bot:
+>     build:
+>       context: D:/bot
+>       dockerfile: docker/openclaw/Dockerfile
+>     volumes:
+>       - D:/bot/.openclaw:/root/project/.openclaw
+> ```
+> Thêm vào `Dockerfile`:
+> ```dockerfile
+> COPY extensions/zalo-mod /opt/openclaw/extensions/zalo-mod
+> RUN chmod -R 755 /opt/openclaw/extensions/zalo-mod \
+>   && mkdir -p /opt/openclaw/extensions/zalo-mod/node_modules \
+>   && ln -s /usr/local/lib/node_modules/openclaw /opt/openclaw/extensions/zalo-mod/node_modules/openclaw
+> ```
+> Chạy setup:
+> ```bash
+> node setup.js --openclaw-home "D:\bot\.openclaw" --install-path "/opt/openclaw/extensions/zalo-mod"
+> ```
+> Khi đó setup sẽ ghi `plugins.load.paths: ["/opt/openclaw/extensions/zalo-mod"]`. Đây là cơ chế discovery chính thức cho local plugin path; không nên tự ghi tay `plugins.installs`.
+> Nếu đã từng copy plugin vào `.openclaw/extensions/zalo-mod`, hãy xóa hoặc đổi tên thư mục cũ đó; chỉ cần thư mục tồn tại là OpenClaw vẫn tự quét và log warning.
+
 3. Khởi động lại gateway:
 
 ```bash

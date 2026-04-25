@@ -104,6 +104,28 @@ async function _patchOpenclawConfig(openclawHome, patch, logger, force = false) 
       }
     }
 
+    // Auto-provision bindings: ensure zalouser channel is bound to an agent
+    const agentId = config.agents?.list?.[0]?.id;
+    if (agentId && !Array.isArray(config.bindings)) {
+      config.bindings = [{ agentId, match: { channel: 'zalouser' } }];
+      changed = true;
+      if (logger) logger.info(`[zalo-mod] auto-added binding: zalouser → ${agentId}`);
+    } else if (agentId && Array.isArray(config.bindings)) {
+      const hasZalo = config.bindings.some(b => b.match?.channel === 'zalouser');
+      if (!hasZalo) {
+        config.bindings.push({ agentId, match: { channel: 'zalouser' } });
+        changed = true;
+        if (logger) logger.info(`[zalo-mod] auto-added binding: zalouser → ${agentId}`);
+      }
+    }
+
+    // Auto-provision groups config: enable all groups with no mention required
+    if (config.channels?.zalouser && !config.channels.zalouser.groups) {
+      config.channels.zalouser.groups = { '*': { enabled: true, requireMention: false } };
+      changed = true;
+      if (logger) logger.info(`[zalo-mod] auto-added groups config: all groups enabled`);
+    }
+
     if (changed) {
       config.plugins.entries['zalo-mod'].config = existing;
       await fs.writeFile(configPath, JSON.stringify(config, null, 2) + '\n', 'utf8');

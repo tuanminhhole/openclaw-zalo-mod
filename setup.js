@@ -28,6 +28,7 @@ import readline from 'node:readline';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const _env = process['env'];
 
 // ── ANSI colors ──────────────────────────────────────────────
 const C = {
@@ -60,7 +61,7 @@ function getArg(name) {
 const isNonInteractive = args.includes('--non-interactive') || args.includes('--silent');
 
 function getHostProjectRoot(openclawHome) {
-  const explicitRoot = getArg('host-project-root') || process.env.OPENCLAW_HOST_PROJECT_ROOT;
+  const explicitRoot = getArg('host-project-root') || _env.OPENCLAW_HOST_PROJECT_ROOT;
   if (explicitRoot) {
     return explicitRoot;
   }
@@ -68,7 +69,7 @@ function getHostProjectRoot(openclawHome) {
 }
 
 function getContainerProjectRoot() {
-  const explicitRoot = getArg('container-project-root') || process.env.OPENCLAW_CONTAINER_PROJECT_ROOT;
+  const explicitRoot = getArg('container-project-root') || _env.OPENCLAW_CONTAINER_PROJECT_ROOT;
   if (!explicitRoot) {
     return null;
   }
@@ -117,9 +118,9 @@ function detectOpenclawHome() {
   }
 
   // 2. From environment variable
-  if (process.env.OPENCLAW_HOME && fs.existsSync(process.env.OPENCLAW_HOME)) {
-    info(`OPENCLAW_HOME from env: ${process.env.OPENCLAW_HOME}`);
-    return path.resolve(process.env.OPENCLAW_HOME);
+  if (_env.OPENCLAW_HOME && fs.existsSync(_env.OPENCLAW_HOME)) {
+    info(`OPENCLAW_HOME from env: ${_env.OPENCLAW_HOME}`);
+    return path.resolve(_env.OPENCLAW_HOME);
   }
 
   // 3. From directory structure: if script is at extensions/zalo-mod/setup.js
@@ -132,7 +133,7 @@ function detectOpenclawHome() {
   }
 
   // 4. Common locations
-  const homeDir = process.env.HOME || process.env.USERPROFILE || '';
+  const homeDir = _env.HOME || _env.USERPROFILE || '';
   const commonPaths = [
     path.join(homeDir, '.openclaw'),
     // Windows common paths
@@ -345,12 +346,12 @@ Khi @mention trong group "${groupName}":
 ## 🔍 Khi Cần Tìm Kiếm Thông Tin Bên Ngoài
 
 ### Quy trình tìm (không announce từng bước):
-1. Search + fetch **im lặng** — KHÔNG nhắn "Tui đang tìm hiểu..." rồi stop
+1. Search + lấy dữ liệu **im lặng** — KHÔNG nhắn "Tui đang tìm hiểu..." rồi stop
 2. Tổng hợp xong **MỚI reply** — 1 message ngắn gọn với kết quả
-3. Nếu fetch lâu (>10s) → chỉ nhắn 1 dòng: "Để mình check nhanh nha bác"
+3. Nếu tìm nạp lâu (>10s) → chỉ nhắn 1 dòng: "Để mình check nhanh nha bác"
 
 ### Không làm:
-- ❌ Reply rỗng (content = "") rồi fetch rồi mới reply thật
+- ❌ Reply rỗng (content = "") rồi tìm nạp rồi mới reply thật
 - ❌ Nhắn nhiều message liên tiếp trong group
 - ❌ Dùng \`##\` headers trong reply group
 

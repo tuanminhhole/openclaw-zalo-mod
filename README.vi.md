@@ -7,6 +7,15 @@
 
 **[🇬🇧 English Version](./README.md)**
 
+# 🛡️ zalo-mod — Plugin Quản Lý Nhóm Zalo Không Tốn Token
+
+> Plugin runtime OpenClaw dành cho quản trị nhóm Zalo. Xử lý moderation, slash commands, anti-spam **hoàn toàn miễn phí token LLM**. Chỉ chuyển câu hỏi `@mention` lên AI agent.
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![OpenClaw Plugin](https://img.shields.io/badge/OpenClaw-Plugin-blue.svg)](https://openclaw.ai)
+
+**[🇬🇧 English Version](./README.md)**
+
 ---
 
 ## ✨ Tính Năng
@@ -109,91 +118,6 @@ Script sẽ:
 > Nếu đã từng copy plugin vào `.openclaw/extensions/zalo-mod`, hãy xóa hoặc đổi tên thư mục cũ đó; chỉ cần thư mục tồn tại là OpenClaw vẫn tự quét và log warning.
 
 3. Khởi động lại gateway:
-
-```bash
-openclaw gateway run
-```
-
-## ⚙️ Cấu Hình (Thủ Công)
-
-Nếu không dùng `setup.js`, thêm vào `openclaw.json`:
-
-```json
-{
-  "plugins": {
-    "entries": {
-      "zalo-mod": {
-        "enabled": true,
-        "config": {
-          "groupName": "Tên Nhóm Của Bạn",
-          "botName": "TênBot",
-          "zaloDisplayNames": ["Tên Hiển Thị Zalo"],
-          "adminIds": ["1234567890"],
-          "welcomeEnabled": true,
-          "spamRepeatN": 3,
-          "spamWindowSeconds": 300
-        }
-      }
-    }
-  }
-}
-```
-
-### Tùy Chọn Config
-
-| Tùy chọn | Kiểu | Mặc định | Mô tả |
-|----------|------|----------|-------|
-| `groupName` | string | `"Nhóm"` | Tên group hiển thị trong templates và file memory |
-| `botName` | string | `"Bot"` | Tên bot hiện trong menu |
-| `zaloDisplayNames` | string[] | `[]` | Tên hiển thị Zalo của bot để detect @mention |
-| `adminIds` | string[] | `[]` | Zalo user IDs cho lệnh admin. Rỗng = tất cả |
-| `welcomeEnabled` | boolean | `true` | Bật chào mừng member mới |
-| `spamRepeatN` | number | `3` | Ngưỡng tin lặp để coi là spam |
-| `spamWindowSeconds` | number | `300` | Cửa sổ thời gian (giây) detect spam lặp |
-| `memoryGroupSlug` | string | tự động | Override tên thư mục memory (tự sinh từ `groupName`) |
-
-## 📋 Slash Commands
-
-### Mọi Người Dùng Được
-
-| Lệnh | Mô tả |
-|-------|-------|
-| `/noi-quy` | Xem nội quy nhóm |
-| `/menu` | Xem tất cả lệnh |
-| `/huong-dan` | Hướng dẫn dùng bot |
-
-### Chỉ Admin
-
-| Lệnh | Mô tả |
-|-------|-------|
-| `/warn @name [lý do]` | Cảnh cáo member (lưu vào store + memory) |
-| `/note [text]` | Ghi chú admin |
-| `/report` | Xem báo cáo vi phạm |
-| `/memory` | Lưu digest đầy đủ vào file memory |
-| `/rules` | Bảng cấu hình bot |
-| `/rules silent-on/off` | Bật/tắt chế độ im lặng |
-| `/rules welcome-on/off` | Bật/tắt chào member mới |
-| `/rules status` | Xem cấu hình hiện tại |
-
-## 🧠 Tích Hợp Memory
-
-zalo-mod tự đồng bộ dữ liệu moderation vào file markdown trong `skills/memory/zalo-groups/{group-slug}/`:
-
-```
-skills/memory/zalo-groups/ten-nhom-cua-ban/
-├── members.md          ← Log warn (tự sync khi /warn)
-├── violations.md       ← Vi phạm spam (tự sync)
-├── chat-highlights.md  ← Cuộc hội thoại @mention (tự sync)
-└── admin-notes.md      ← Ghi chú admin (tự sync khi /note)
-```
-
-Lệnh `/memory` ghi digest đầy đủ, overwrite `members.md` và `violations.md` với dữ liệu sạch từ store.
-
-## 🔒 Chống Spam
-
-Tự detect 3 loại spam:
-
-| Loại | Cách detect |
 |------|------------|
 | **Tin lặp** | Cùng nội dung gửi N lần trong cửa sổ thời gian |
 | **Link Spam** | Tin chứa URL đáng ngờ (bit.ly, tinyurl, affiliate links) |

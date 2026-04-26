@@ -680,7 +680,7 @@ async function main() {
         '- `chat-highlights.md` — Log @mention và tương tác quan trọng',
         '- `members.md` — Danh sách member đã warn',
         '- `violations.md` — Log vi phạm (spam, link, emoji flood)',
-        '- `admin-notes.md` — Ghi chú admin (/note)',
+        '- `admin-notes.md` — Ghi chú admin (/ghi-chu)',
         '',
       ].join('\n'), 'utf8');
       ok(`Đã tạo: skills/memory/zalo-groups/${memoryGroupSlug}/INDEX.md`);
@@ -740,7 +740,7 @@ async function main() {
     log(`     docker compose logs ai-bot --tail 20 --no-log-prefix`);
     log(`     (Tìm dòng: [zalo-mod] loaded)`);
     log(`  4. ${C.cyan}Lấy Group ID (gõ trong group Zalo):${C.reset}`);
-    log(`     /groupid`);
+    log(`     /ma-nhom`);
     log(`  5. ${C.cyan}Sửa config nếu cần:${C.reset}`);
     log(`     Mở ${configPath}`);
     log(`     Thêm Group ID vào "watchGroupIds" để bật welcome message\n`);
@@ -750,7 +750,7 @@ async function main() {
     log(`  2. ${C.cyan}Khởi động lại gateway:${C.reset}`);
     log(`     openclaw gateway run`);
     log(`  3. ${C.cyan}Lấy Group ID (gõ trong group Zalo):${C.reset}`);
-    log(`     /groupid`);
+    log(`     /ma-nhom`);
     log(`  4. ${C.cyan}Sửa config nếu cần:${C.reset}`);
     log(`     Mở ${configPath}`);
     log(`     Thêm Group ID vào "watchGroupIds" để bật welcome message\n`);

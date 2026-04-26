@@ -281,9 +281,9 @@ function buildMenu(botName) {
 ━━━━━━━━━━━━━━━━━━
 
 📋 Thông tin
-  /noi-quy    — Xem nội quy nhóm
-  /menu       — Menu lệnh này
-  /huong-dan  — Hướng dẫn dùng bot
+  /noi-quy   — Xem nội quy nhóm
+  /menu   — Menu lệnh này
+  /huong-dan    — Hướng dẫn dùng bot
   /groupid    — Xem ID của group này
 
 💬 Hỏi đáp
@@ -291,10 +291,10 @@ function buildMenu(botName) {
 
 🔧 Admin (chỉ admin dùng được)
   /warn @name [lý do]  — Cảnh cáo member
-  /note [text]          — Ghi chú admin
-  /report               — Báo cáo vi phạm
-  /memory               — Lưu memory digest
-  /rules                — Cấu hình bot
+  /note [text]           — Ghi chú admin
+  /report                  — Báo cáo vi phạm
+  /memory                  — Lưu memory digest
+  /rules                 — Cấu hình bot
 
 ━━━━━━━━━━━━━━━━━━
 💡 Tip: Tag @${botName} để hỏi thêm!`;
@@ -313,7 +313,7 @@ function buildHuongDan(botName) {
 📌 Ví dụ:
   @${botName} giải thích quy trình XYZ
   /noi-quy → xem nội quy
-  /menu    → xem tất cả lệnh
+  /menu → xem tất cả lệnh
 
 ⚠️ Lưu ý:
   • Bot KHÔNG tự reply tin thường — cần @tag hoặc gõ lệnh
@@ -360,7 +360,7 @@ function buildWelcome(memberName, botName) {
   return `👋 Chào mừng ${memberName} đã join nhóm!
 
 Mình là bot và đây là hướng dẫn để bác có thể sử dụng mình trong Group:
-📋 /noi-quy   - Xem nội quy nhóm (đọc trước nhé!)
+📋 /noi-quy  - Xem nội quy nhóm (đọc trước nhé!)
 📖 /huong-dan hoặc /menu - Hướng dẫn dùng bot, menu của bot
 💬 @${botName} [câu hỏi bất kỳ] - Hỏi bot bất cứ điều gì
 
@@ -406,16 +406,24 @@ const plugin = definePluginEntry({
 
     // Plugin config: read from api.pluginConfig (OpenClaw SDK) or fallback
     const pluginCfg = api.pluginConfig || cfg?.plugins?.entries?.['zalo-mod'] || {};
-    const groupName     = String(pluginCfg.groupName || 'Nhóm');
+    const groupNames    = pluginCfg.groupNames || {};  // map groupId → display name
     const botName       = String(pluginCfg.botName || 'Bot');
     const zaloNames     = (pluginCfg.zaloDisplayNames || []).map(String);
     const botNames      = [botName, ...zaloNames].filter(Boolean);
     const adminIds      = new Set((pluginCfg.adminIds || []).map(String));
+    const ownerId       = String(pluginCfg.ownerId || '');  // Zalo ID chủ nhân bot
+    const allowedDmUsers = new Set((pluginCfg.allowedDmUsers || []).map(String)); // DM whitelist
     const welcomeEnabled = pluginCfg.welcomeEnabled !== false;
     const spamRepeatN   = Number(pluginCfg.spamRepeatN || 3);
     const spamWindowMs  = Number(pluginCfg.spamWindowSeconds || 300) * 1000;
     const watchGroupIds = (pluginCfg.watchGroupIds || []).map(String).filter(Boolean);
     const welcomePollSec = Number(pluginCfg.welcomePollSeconds || 30);
+
+    /** Tra tên group theo ID — dùng groupNames map, fallback 'Nhóm' */
+    function getGroupName(gId) {
+      const plain = String(gId || '').replace(/^group:/, '');
+      return groupNames[plain] || 'Nhóm';
+    }
 
     // Data dir — store JSON data alongside the plugin code
     const dataDir = path.join(__dirname, 'data');
@@ -429,10 +437,22 @@ const plugin = definePluginEntry({
         : _defaultWorkspace || path.join(_openclawHome, 'workspace')
     );
 
-    // Memory dir — skills/memory/zalo-groups/{group-slug}/
-    const autoSlug = groupName.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'default-group';
-    const memoryGroupSlug = String(pluginCfg.memoryGroupSlug || autoSlug);
-    const memoryDir = path.join(workspaceDir, 'skills/memory/zalo-groups', memoryGroupSlug);
+    // Memory dir — per-group: skills/memory/zalo-groups/{group-slug}/
+    function _slugify(name) {
+      return (name || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'default-group';
+    }
+    /** Trả về memory dir cho 1 group cụ thể */
+    function getMemoryDir(groupId) {
+      const plain = String(groupId || '').replace(/^group:/, '');
+      const slug = pluginCfg.memoryGroupSlug || _slugify(groupNames[plain] || 'nhom-' + plain.slice(-6));
+      return path.join(workspaceDir, 'skills/memory/zalo-groups', slug);
+    }
+    /** Trả về slug cho 1 group */
+    function getMemorySlug(groupId) {
+      const plain = String(groupId || '').replace(/^group:/, '');
+      return pluginCfg.memoryGroupSlug || _slugify(groupNames[plain] || 'nhom-' + plain.slice(-6));
+    }
 
     const store       = createStore(dataDir);
     const spamTracker = createSpamTracker(spamRepeatN, spamWindowMs);
@@ -469,7 +489,7 @@ const plugin = definePluginEntry({
             'name: Zalo Group Admin',
             'slug: zalo-group-admin',
             'version: 1.0.0',
-            `description: Quy tắc reply và quản lý group Zalo "${groupName}" — ưu tiên ngắn gọn, súc tích.`,
+            `description: Quy tắc reply và quản lý group Zalo — ưu tiên ngắn gọn, súc tích.`,
             '---',
             '',
             '# Zalo Group Admin 💬',
@@ -495,12 +515,12 @@ const plugin = definePluginEntry({
             '',
             `## 📖 Đọc Group Memory Trước Khi Reply`,
             '',
-            `Khi @mention trong group "${groupName}":`,
-            `1. Đọc \`~/skills/memory/zalo-groups/${memoryGroupSlug}/INDEX.md\``,
+            `Khi @mention trong group:`,
+            `1. Đọc memory dir tương ứng trong ~/skills/memory/zalo-groups/`,
             '2. Kiểm tra `chat-highlights.md` xem context gần nhất',
             '3. Nếu user từng mention trước → reference lại, không hỏi lại',
             '',
-            `**Path:** \`~/skills/memory/zalo-groups/${memoryGroupSlug}/\``,
+            `**Path:** \`~/skills/memory/zalo-groups/\``,
             '',
             '---',
             '',
@@ -516,7 +536,7 @@ const plugin = definePluginEntry({
             '',
             'Sau mỗi @mention được xử lý:',
             '```',
-            `~/skills/memory/zalo-groups/${memoryGroupSlug}/chat-highlights.md`,
+            `~/skills/memory/zalo-groups/*/chat-highlights.md`,
             '```',
             'Format: `| YYYY-MM-DD HH:MM | {tên user} | {tóm tắt 1 dòng} |`',
             '',
@@ -525,33 +545,39 @@ const plugin = definePluginEntry({
           logger.info('[zalo-mod] auto-created skills/zalo-group-admin/SKILL.md');
         }
 
-        // 2. Create memory INDEX.md
-        const indexMdPath = path.join(memoryDir, 'INDEX.md');
-        try {
-          await fs.access(indexMdPath);
-        } catch {
-          await fs.mkdir(memoryDir, { recursive: true });
-          const indexContent = [
-            `# ${groupName} — Memory`,
-            '',
-            '> Auto-generated by zalo-mod plugin. Plugin sẽ tự cập nhật khi có events.',
-            '',
-            '## Files',
-            '- `chat-highlights.md` — Log @mention và tương tác quan trọng',
-            '- `members.md` — Danh sách member đã warn',
-            '- `violations.md` — Log vi phạm (spam, link, emoji flood)',
-            '- `admin-notes.md` — Ghi chú admin (/note)',
-            '',
-          ].join('\n');
-          await fs.writeFile(indexMdPath, indexContent, 'utf8');
-          logger.info(`[zalo-mod] auto-created skills/memory/zalo-groups/${memoryGroupSlug}/INDEX.md`);
+        // 2. Create memory INDEX.md cho mỗi group đang follow
+        for (const gId of watchGroupIds) {
+          const isFollowed = store.getSetting(gId, 'follow', false);
+          if (!isFollowed) continue;
+          const mDir = getMemoryDir(gId);
+          const indexMdPath = path.join(mDir, 'INDEX.md');
+          try {
+            await fs.access(indexMdPath);
+          } catch {
+            await fs.mkdir(mDir, { recursive: true });
+            const indexContent = [
+              `# ${getGroupName(gId)} — Memory`,
+              '',
+              '> Auto-generated by zalo-mod plugin. Plugin sẽ tự cập nhật khi có events.',
+              '',
+              '## Files',
+              '- `chat-highlights.md` — Log @mention và tương tác quan trọng',
+              '- `members.md` — Danh sách member đã warn',
+              '- `violations.md` — Log vi phạm (spam, link, emoji flood)',
+              '- `admin-notes.md` — Ghi chú admin (/note)',
+              '- `chat-log.md` — Lịch sử chat nhóm (khi tracking bật)',
+              '',
+            ].join('\n');
+            await fs.writeFile(indexMdPath, indexContent, 'utf8');
+            logger.info(`[zalo-mod] auto-created memory dir for ${getGroupName(gId)} (${gId})`);
+          }
         }
 
         // 3. Create data dir for plugin storage
         await fs.mkdir(dataDir, { recursive: true });
 
         // 4. Auto-detect & patch config if empty (ClawHub install flow)
-        const configNeedsPatch = !pluginCfg.botName || !pluginCfg.groupName || pluginCfg.groupName === 'Nhóm';
+        const configNeedsPatch = !pluginCfg.botName || Object.keys(groupNames).length === 0;
         if (configNeedsPatch) {
           const patch = {};
 
@@ -568,7 +594,10 @@ const plugin = definePluginEntry({
           const groups = await _scanGroupsFromSessions(_openclawHome, agentId);
           if (groups.length > 0) {
             patch.watchGroupIds = groups.map(g => g.groupId);
-            patch.groupName = groups[0].groupName;
+            // Build groupNames map: mỗi group có tên riêng
+            const namesMap = {};
+            for (const g of groups) namesMap[g.groupId] = g.groupName;
+            patch.groupNames = { ...(pluginCfg.groupNames || {}), ...namesMap };
             logger.info(`[zalo-mod] auto-detected ${groups.length} group(s) from sessions: ${groups.map(g => g.groupName).join(', ')}`);
           } else {
             logger.info('[zalo-mod] no group sessions found yet — user should chat in a group then run /groupid');
@@ -591,13 +620,89 @@ const plugin = definePluginEntry({
       return new Date().toISOString().slice(0, 16).replace('T', ' ');
     }
 
-    async function appendToMemoryFile(filename, line) {
+    async function appendToMemoryFile(groupId, filename, line) {
       try {
-        const filePath = path.join(memoryDir, filename);
-        await fs.mkdir(memoryDir, { recursive: true });
+        const mDir = getMemoryDir(groupId);
+        const filePath = path.join(mDir, filename);
+        await fs.mkdir(mDir, { recursive: true });
         await fs.appendFile(filePath, line + '\n', 'utf8');
       } catch (e) {
         logger.warn(`[zalo-mod] memory append failed (${filename}): ${e.message}`);
+      }
+    }
+
+    // ── Chat Tracking — lịch sử chat thông minh ──────────────
+    const _trackingDedup = new Set();
+    const DEDUP_MAX = 500;
+    const CHAT_LOG_MAX_BYTES = 200 * 1024; // 200KB
+    const CHAT_CONTENT_MAX = 200; // ký tự/dòng
+    let _lastLogDate = ''; // cache ngày cuối ghi log
+
+    function chatFingerprint(senderId, content) {
+      const raw = `${senderId}:${String(content).slice(0, 60)}`;
+      let h = 0;
+      for (let i = 0; i < raw.length; i++) {
+        h = ((h << 5) - h + raw.charCodeAt(i)) | 0;
+      }
+      return String(h);
+    }
+
+    function isTrackingDuplicate(fp) {
+      if (_trackingDedup.has(fp)) return true;
+      _trackingDedup.add(fp);
+      if (_trackingDedup.size > DEDUP_MAX) {
+        const first = _trackingDedup.values().next().value;
+        _trackingDedup.delete(first);
+      }
+      return false;
+    }
+
+    async function appendChatLog(groupId, senderName, content) {
+      try {
+        // 1. Dedup check
+        const fp = chatFingerprint(String(groupId) + senderName, content);
+        if (isTrackingDuplicate(fp)) return;
+
+        const mDir = getMemoryDir(groupId);
+        const logPath = path.join(mDir, 'chat-log.md');
+        await fs.mkdir(mDir, { recursive: true });
+
+        // 2. Rotate nếu file > 200KB
+        try {
+          const stat = await fs.stat(logPath);
+          if (stat.size > CHAT_LOG_MAX_BYTES) {
+            const today = new Date().toISOString().slice(0, 10);
+            const bakPath = path.join(mDir, `chat-log-${today}.md.bak`);
+            await fs.rename(logPath, bakPath);
+            logger.info(`[zalo-mod] chat-log rotated → ${bakPath}`);
+          }
+        } catch { /* file chưa tồn tại — OK */ }
+
+        // 3. Ngày mới → thêm date header
+        const today = new Date().toISOString().slice(0, 10);
+        let prefix = '';
+        if (_lastLogDate !== today) {
+          // Kiểm tra file có tồn tại + nội dung không
+          let needHeader = true;
+          try {
+            const existing = await fs.readFile(logPath, 'utf8');
+            if (existing.includes(`## ${today}`)) needHeader = false;
+          } catch { /* file chưa có */ }
+          if (needHeader) {
+            prefix = `\n## ${today}\n\n| Giờ | Người gửi | Nội dung |\n|-----|-----------|----------|\n`;
+          }
+          _lastLogDate = today;
+        }
+
+        // 4. Append dòng
+        const time = new Date().toISOString().slice(11, 16); // HH:MM
+        const safeContent = String(content).replace(/\|/g, '│').replace(/\n/g, ' ').slice(0, CHAT_CONTENT_MAX);
+        const safeName = String(senderName).replace(/\|/g, '│').slice(0, 30);
+        const line = `| ${time} | ${safeName} | ${safeContent} |`;
+
+        await fs.appendFile(logPath, prefix + line + '\n', 'utf8');
+      } catch (e) {
+        logger.warn(`[zalo-mod] chat-log append failed: ${e.message}`);
       }
     }
 
@@ -624,7 +729,7 @@ const plugin = definePluginEntry({
 
         // Overwrite members.md with full warn digest
         const memberLines = [
-          `# ${groupName} — Members & Warn Log\n`,
+          `# ${getGroupName(gId)} — Members & Warn Log\n`,
           '> **Cập nhật:** ' + nowShort() + ' bởi /memory command\n',
           '## Members Đã Warn\n',
           '| Tên | Số warn | Lý do gần nhất | Lần cuối |',
@@ -639,11 +744,11 @@ const plugin = definePluginEntry({
           memberLines.push(`| ${(last.name || uid).replace(/^@/, '')} | ${list.length} | ${last.reason || '—'} | ${(last.ts || '').slice(0, 10)} |`);
         }
         if (!totalWarns) memberLines.push('| — | — | — | — |');
-        await fs.writeFile(path.join(memoryDir, 'members.md'), memberLines.join('\n') + '\n', 'utf8');
+        await fs.writeFile(path.join(getMemoryDir(gId), 'members.md'), memberLines.join('\n') + '\n', 'utf8');
 
         // Overwrite violations.md with full log
         const vioLines = [
-          `# ${groupName} — Vi Phạm\n`,
+          `# ${getGroupName(gId)} — Vi Phạm\n`,
           '> **Cập nhật:** ' + nowShort() + ' bởi /memory command\n',
           '## Log Vi Phạm\n',
           '| Thời gian | Member | Loại | Preview |',
@@ -658,7 +763,7 @@ const plugin = definePluginEntry({
           }
         }
         if (!totalVio) vioLines.push('| — | — | — | — |');
-        await fs.writeFile(path.join(memoryDir, 'violations.md'), vioLines.join('\n') + '\n', 'utf8');
+        await fs.writeFile(path.join(getMemoryDir(gId), 'violations.md'), vioLines.join('\n') + '\n', 'utf8');
 
         logger.info(`[zalo-mod] memory digest — warns=${totalWarns}, violations=${totalVio} for group=${gId}`);
         return { warnCount: totalWarns, vioCount: totalVio };
@@ -725,9 +830,73 @@ const plugin = definePluginEntry({
       }
     }
 
+    // Helper: send DM (non-group) via Zalouser API
+    async function sendDmMsg(ctx, userId, text) {
+      if (!userId || !text) return;
+      const profile = ctx?.accountId || 'default';
+      try {
+        const { sendMessageZalouser } = await import('file:///usr/local/lib/node_modules/openclaw/dist/extensions/zalouser/test-api.js');
+        await sendMessageZalouser(String(userId), String(text), {
+          isGroup: false,
+          profile,
+          textMode: 'markdown'
+        });
+      } catch (err) {
+        logger.error(`[zalo-mod] DM send failed to ${userId}: ${err.message}`);
+      }
+    }
+
     function isAdmin(senderId) {
       return adminIds.size === 0 || adminIds.has(String(senderId));
     }
+
+    // ── Member Directory — persistent name↔ID mapping ────────
+    const memberDirPath = path.join(dataDir, 'group-members.json');
+    let _memberDir = {}; // { groupId: { userId: displayName, ... }, ... }
+
+    async function loadMemberDir() {
+      try {
+        const raw = await fs.readFile(memberDirPath, 'utf8');
+        _memberDir = JSON.parse(raw) || {};
+      } catch { _memberDir = {}; }
+    }
+
+    async function saveMemberDir() {
+      try {
+        await fs.mkdir(dataDir, { recursive: true });
+        await fs.writeFile(memberDirPath, JSON.stringify(_memberDir, null, 2), 'utf8');
+      } catch (e) {
+        logger.warn(`[zalo-mod] save member-dir failed: ${e.message}`);
+      }
+    }
+
+    /** Cập nhật member directory cho 1 group từ kết quả poll */
+    function updateMemberDir(groupId, members) {
+      if (!Array.isArray(members)) return;
+      if (!_memberDir[groupId]) _memberDir[groupId] = {};
+      for (const m of members) {
+        if (m.id) _memberDir[groupId][m.id] = m.name || _memberDir[groupId][m.id] || m.id;
+      }
+    }
+
+    /** Tìm userId theo tên hiển thị (tìm trong tất cả groups) */
+    function findUserByName(nameQuery) {
+      const q = nameQuery.toLowerCase().trim();
+      const results = [];
+      for (const [gId, members] of Object.entries(_memberDir)) {
+        for (const [uid, name] of Object.entries(members)) {
+          if (String(name).toLowerCase().includes(q)) {
+            results.push({ userId: uid, name, groupId: gId });
+          }
+        }
+      }
+      // Dedupe by userId
+      const seen = new Set();
+      return results.filter(r => { if (seen.has(r.userId)) return false; seen.add(r.userId); return true; });
+    }
+
+    // Load member directory on startup
+    loadMemberDir();
 
     // ── Member Watcher — polling-based welcome ─────────────────
     // OpenClaw zalouser channel ONLY forwards text messages to before_dispatch.
@@ -746,32 +915,50 @@ const plugin = definePluginEntry({
       zaloApiModule: null,
     };
 
+    let _watcherApiUnavailable = false;  // flag: API đã confirmed không khả dụng
+    let _pollFailCounts = {};            // groupId → consecutive fail count
+
     async function loadZaloApi() {
       if (_G.zaloApiModule) return _G.zaloApiModule;
-      try {
-        _G.zaloApiModule = await import('file:///usr/local/lib/node_modules/openclaw/dist/extensions/zalouser/test-api.js');
-        return _G.zaloApiModule;
-      } catch (e) {
-        logger.warn(`[zalo-mod] [WATCHER] failed to load zalouser API: ${e.message}`);
-        return null;
+      if (_watcherApiUnavailable) return null;  // đã biết không có, không thử nữa
+
+      // Thử nhiều path — tùy phiên bản OpenClaw
+      const paths = [
+        'file:///usr/local/lib/node_modules/openclaw/dist/extensions/zalouser/test-api.js',
+        'openclaw/dist/extensions/zalouser/test-api.js',
+      ];
+      for (const p of paths) {
+        try {
+          _G.zaloApiModule = await import(p);
+          return _G.zaloApiModule;
+        } catch { /* thử path tiếp theo */ }
       }
+      // Tất cả path fail
+      logger.warn(`[zalo-mod] [WATCHER] zalouser API not available — member watcher disabled. Restart gateway nếu vừa cài xong OpenClaw.`);
+      _watcherApiUnavailable = true;
+      return null;
     }
 
     async function pollGroupMembers(groupId) {
+      const failKey = String(groupId);
       try {
         const api = await loadZaloApi();
-        if (!api?.listZaloGroupMembers) {
-          logger.warn(`[zalo-mod] [WATCHER] listZaloGroupMembers not available`);
-          return null;
-        }
+        if (!api?.listZaloGroupMembers) return null;
+
         const members = await api.listZaloGroupMembers('default', String(groupId));
         if (!Array.isArray(members)) return null;
+
+        // Reset fail count khi thành công
+        _pollFailCounts[failKey] = 0;
         return members.map(m => ({
           id: String(m.userId || m.id || ''),
           name: String(m.displayName || m.name || m.zaloName || ''),
         })).filter(m => m.id);
       } catch (e) {
-        logger.warn(`[zalo-mod] [WATCHER] poll failed for group ${groupId}: ${e.message}`);
+        _pollFailCounts[failKey] = (_pollFailCounts[failKey] || 0) + 1;
+        if (_pollFailCounts[failKey] === 1 || _pollFailCounts[failKey] % 10 === 0) {
+          logger.warn(`[zalo-mod] [WATCHER] poll failed for group ${groupId} (x${_pollFailCounts[failKey]}): ${e.message}`);
+        }
         return null;
       }
     }
@@ -780,13 +967,17 @@ const plugin = definePluginEntry({
       const members = await pollGroupMembers(groupId);
       if (!members) return;
 
+      // Cập nhật member directory (persistent)
+      updateMemberDir(groupId, members);
+      saveMemberDir(); // fire-and-forget
+
       const currentIds = new Set(members.map(m => m.id));
       const prevIds = _G.memberSnapshots.get(groupId);
 
       if (!prevIds) {
         // First poll — just save snapshot, don't welcome everyone
         _G.memberSnapshots.set(groupId, currentIds);
-        logger.info(`[zalo-mod] [WATCHER] initial snapshot for group ${groupId}: ${currentIds.size} members`);
+        logger.info(`[zalo-mod] [WATCHER] initial snapshot for group ${groupId}: ${currentIds.size} members (member-dir updated)`);
         return;
       }
 
@@ -819,7 +1010,7 @@ const plugin = definePluginEntry({
         const memberName = member.name || 'bạn';
         try {
           await sendGroupMsg({ accountId: 'default' }, groupId, buildWelcome(memberName, botName));
-          await appendToMemoryFile('chat-highlights.md', `| ${nowShort()} | SYSTEM | Welcome: ${memberName} joined (detected by watcher) |`);
+          await appendToMemoryFile(groupId, 'chat-highlights.md', `| ${nowShort()} | SYSTEM | Welcome: ${memberName} joined (detected by watcher) |`);
           // Mark as welcomed (dedup for 1 hour)
           _G.welcomedDedup.add(dedupKey(groupId, member.id));
           setTimeout(() => _G.welcomedDedup.delete(dedupKey(groupId, member.id)), 3600000);
@@ -857,7 +1048,7 @@ const plugin = definePluginEntry({
       }
 
       const intervalMs = Math.max(welcomePollSec, 30) * 1000; // min 30s to avoid Zalo rate limits
-      logger.info(`[zalo-mod] [WATCHER] starting member watcher for ${watchGroupIds.length} group(s), poll every ${intervalMs/1000}s`);
+      logger.info(`[zalo-mod] [WATCHER] starting member watcher for ${watchGroupIds.length} group(s), poll every ${intervalMs/1000}s: ${watchGroupIds.join(', ')}`);
 
       // Initial snapshot after a delay (let zalouser fully connect first)
       _G.initTimer = setTimeout(async () => {
@@ -865,6 +1056,8 @@ const plugin = definePluginEntry({
         await ensureStore();
         for (const gId of watchGroupIds) {
           await checkForNewMembers(gId);
+          // Delay 3s giữa mỗi group — tránh Zalo rate limit
+          if (watchGroupIds.length > 1) await new Promise(r => setTimeout(r, 3000));
         }
         // Then start periodic polling
         _G.watcherTimer = setInterval(async () => {
@@ -874,9 +1067,198 @@ const plugin = definePluginEntry({
             } catch (e) {
               logger.warn(`[zalo-mod] [WATCHER] poll error for ${gId}: ${e.message}`);
             }
+            // Delay 3s giữa mỗi group
+            if (watchGroupIds.length > 1) await new Promise(r => setTimeout(r, 3000));
           }
         }, intervalMs);
       }, 30000); // 30s delay for zalouser to connect
+    }
+
+    // ── Owner DM Command Handler ──────────────────────────────
+    async function handleOwnerDm(content, senderId, ctx) {
+      const slashMatch = content.match(/^(\/[a-z][a-z0-9-]*)(.*)$/i);
+      if (!slashMatch) return null; // không phải lệnh → forward LLM
+
+      const command = slashMatch[1].toLowerCase();
+      const cmdArgs = slashMatch[2].trim();
+      const args = cmdArgs ? cmdArgs.split(/\s+/) : [];
+
+      if (command !== '/rules') return null; // chỉ xử lý /rules
+
+      const sub = args[0]?.toLowerCase();
+      if (!sub) {
+        await sendDmMsg(ctx, senderId,
+          `🔐 OWNER PANEL — /rules\n━━━━━━━━━━━━━━━━━━\n\n🎉 Welcome (chào mem mới):\n  /rules welcome-list\n  /rules welcome <groupId> on/off\n\n👁️ Follow (theo dõi chat + memory):\n  /rules follow-list\n  /rules follow <groupId> on/off\n\n💬 DM Whitelist:\n  /rules dm-list\n  /rules dm-add <tên member>\n  /rules dm-remove <tên member>\n\n📊 /rules status`
+        );
+        return { handled: true };
+      }
+
+      // ── welcome-list: danh sách groups + trạng thái welcome
+      if (sub === 'welcome-list') {
+        const lines = ['🎉 WELCOME PER-GROUP\n━━━━━━━━━━━━━━━━━━'];
+        for (const gId of watchGroupIds) {
+          const name = getGroupName(gId);
+          const on = store.getSetting(gId, 'welcome', true);
+          const memberCount = _memberDir[gId] ? Object.keys(_memberDir[gId]).length : '?';
+          lines.push(`${on ? '✅' : '❌'} ${name}\n   ID: ${gId} | Members: ${memberCount}`);
+        }
+        if (watchGroupIds.length === 0) lines.push('⚠️ Chưa có group nào. Dùng /groupid trong group để quét.');
+        await sendDmMsg(ctx, senderId, lines.join('\n'));
+        return { handled: true };
+      }
+
+      // ── welcome <groupId> on/off
+      if (sub === 'welcome' && args[1]) {
+        const targetGid = args[1];
+        const toggle = args[2]?.toLowerCase();
+        if (toggle === 'on') {
+          store.setSetting(targetGid, 'welcome', true);
+          await store.saveSettings();
+          await sendDmMsg(ctx, senderId, `✅ Welcome BẬT cho ${getGroupName(targetGid)} (${targetGid})`);
+        } else if (toggle === 'off') {
+          store.setSetting(targetGid, 'welcome', false);
+          await store.saveSettings();
+          await sendDmMsg(ctx, senderId, `✅ Welcome TẮT cho ${getGroupName(targetGid)} (${targetGid})`);
+        } else {
+          await sendDmMsg(ctx, senderId, '⚠️ Cú pháp: /rules welcome <groupId> on/off');
+        }
+        return { handled: true };
+      }
+
+      // ── dm-list: danh sách users được DM
+      if (sub === 'dm-list') {
+        if (allowedDmUsers.size === 0) {
+          await sendDmMsg(ctx, senderId, '💬 DM Whitelist: TRỐNG\n\nTất cả mọi người đều có thể DM bot.\nDùng /rules dm-add <tên> để giới hạn.');
+        } else {
+          const lines = [`💬 DM WHITELIST (${allowedDmUsers.size} users)\n━━━━━━━━━━━━━━━━━━`];
+          for (const uid of allowedDmUsers) {
+            // Tìm tên từ member directory
+            let name = uid;
+            for (const members of Object.values(_memberDir)) {
+              if (members[uid]) { name = members[uid]; break; }
+            }
+            lines.push(`• ${name} (${uid})`);
+          }
+          lines.push('\n👑 Owner luôn được phép DM.');
+          await sendDmMsg(ctx, senderId, lines.join('\n'));
+        }
+        return { handled: true };
+      }
+
+      // ── dm-add <tên member>
+      if (sub === 'dm-add' && args.slice(1).length > 0) {
+        const nameQuery = args.slice(1).join(' ');
+        const matches = findUserByName(nameQuery);
+        if (matches.length === 0) {
+          await sendDmMsg(ctx, senderId, `❌ Không tìm thấy member tên "${nameQuery}" trong danh sách.\nDùng /rules welcome-list để kiểm tra member directory.`);
+        } else if (matches.length === 1) {
+          const m = matches[0];
+          allowedDmUsers.add(m.userId);
+          // Lưu vào config
+          await _patchOpenclawConfig(_openclawHome, {
+            allowedDmUsers: [...allowedDmUsers]
+          }, logger, true);
+          await sendDmMsg(ctx, senderId, `✅ Đã thêm ${m.name} (${m.userId}) vào DM whitelist.`);
+        } else {
+          const lines = [`⚠️ Tìm thấy ${matches.length} kết quả cho "${nameQuery}":`];
+          for (const m of matches.slice(0, 10)) {
+            lines.push(`• ${m.name} — ID: ${m.userId} (${getGroupName(m.groupId)})`);
+          }
+          lines.push('\nVui lòng cung cấp tên chính xác hơn.');
+          await sendDmMsg(ctx, senderId, lines.join('\n'));
+        }
+        return { handled: true };
+      }
+
+      // ── dm-remove <tên member>
+      if (sub === 'dm-remove' && args.slice(1).length > 0) {
+        const nameQuery = args.slice(1).join(' ');
+        const matches = findUserByName(nameQuery).filter(m => allowedDmUsers.has(m.userId));
+        if (matches.length === 0) {
+          await sendDmMsg(ctx, senderId, `❌ Không tìm thấy "${nameQuery}" trong DM whitelist.`);
+        } else if (matches.length === 1) {
+          const m = matches[0];
+          allowedDmUsers.delete(m.userId);
+          await _patchOpenclawConfig(_openclawHome, {
+            allowedDmUsers: [...allowedDmUsers]
+          }, logger, true);
+          await sendDmMsg(ctx, senderId, `✅ Đã xóa ${m.name} (${m.userId}) khỏi DM whitelist.`);
+        } else {
+          const lines = [`⚠️ Tìm thấy ${matches.length} kết quả trong whitelist:`];
+          for (const m of matches.slice(0, 10)) {
+            lines.push(`• ${m.name} — ID: ${m.userId}`);
+          }
+          lines.push('\nVui lòng cung cấp tên chính xác hơn.');
+          await sendDmMsg(ctx, senderId, lines.join('\n'));
+        }
+        return { handled: true };
+      }
+
+      // ── follow-list: danh sách groups + trạng thái follow (theo dõi)
+      if (sub === 'follow-list') {
+        const lines = ['👁️ FOLLOW PER-GROUP (theo dõi chat + memory)\n━━━━━━━━━━━━━━━━━━'];
+        for (const gId of watchGroupIds) {
+          const name = getGroupName(gId);
+          const on = store.getSetting(gId, 'follow', false);
+          const tracking = store.getSetting(gId, 'tracking', false);
+          lines.push(`${on ? '✅' : '❌'} ${name}\n   ID: ${gId} | Tracking: ${tracking ? 'BẬT' : 'TẮT'}`);
+        }
+        if (watchGroupIds.length === 0) lines.push('⚠️ Chưa có group nào.');
+        lines.push('\n💡 Follow = lưu memory + chat-log cho group đó.');
+        await sendDmMsg(ctx, senderId, lines.join('\n'));
+        return { handled: true };
+      }
+
+      // ── follow <groupId> on/off
+      if (sub === 'follow' && args[1]) {
+        const targetGid = args[1];
+        const toggle = args[2]?.toLowerCase();
+        if (toggle === 'on') {
+          store.setSetting(targetGid, 'follow', true);
+          store.setSetting(targetGid, 'tracking', true); // follow bật = tracking bật
+          await store.saveSettings();
+          // Bootstrap memory dir ngay lập tức
+          const mDir = getMemoryDir(targetGid);
+          try {
+            await fs.mkdir(mDir, { recursive: true });
+            const idxPath = path.join(mDir, 'INDEX.md');
+            try { await fs.access(idxPath); } catch {
+              const indexContent = [
+                `# ${getGroupName(targetGid)} \u2014 Memory`, '',
+                '> Auto-generated by zalo-mod plugin.', '',
+                '## Files',
+                '- `chat-log.md` \u2014 L\u1ecbch s\u1eed chat nh\u00f3m',
+                '- `chat-highlights.md` \u2014 @mention quan tr\u1ecdng',
+                '- `members.md` \u2014 Warn log',
+                '- `violations.md` \u2014 Vi ph\u1ea1m', '',
+              ].join('\n');
+              await fs.writeFile(idxPath, indexContent, 'utf8');
+            }
+          } catch { /* ok */ }
+          await sendDmMsg(ctx, senderId, `✅ Follow BẬT cho ${getGroupName(targetGid)} (${targetGid})\n📁 Memory: ${getMemorySlug(targetGid)}/`);
+        } else if (toggle === 'off') {
+          store.setSetting(targetGid, 'follow', false);
+          store.setSetting(targetGid, 'tracking', false);
+          await store.saveSettings();
+          await sendDmMsg(ctx, senderId, `✅ Follow TẮT cho ${getGroupName(targetGid)} (${targetGid})`);
+        } else {
+          await sendDmMsg(ctx, senderId, '⚠️ Cú pháp: /rules follow <groupId> on/off');
+        }
+        return { handled: true };
+      }
+
+      // ── status: tổng quan
+      if (sub === 'status') {
+        const welcomeOn = watchGroupIds.filter(gId => store.getSetting(gId, 'welcome', true)).length;
+        const followOn = watchGroupIds.filter(gId => store.getSetting(gId, 'follow', false)).length;
+        const totalMembers = Object.values(_memberDir).reduce((sum, m) => sum + Object.keys(m).length, 0);
+        await sendDmMsg(ctx, senderId,
+          `🔐 OWNER STATUS\n━━━━━━━━━━━━━━━━━━\n📡 Groups: ${watchGroupIds.length}\n🎉 Welcome: ${welcomeOn} bật\n👁️ Follow: ${followOn} bật\n👥 Members tracked: ${totalMembers}\n💬 DM whitelist: ${allowedDmUsers.size === 0 ? 'Tất cả' : allowedDmUsers.size + ' users'}\n🤖 Bot: ${botName}`
+        );
+        return { handled: true };
+      }
+
+      return null; // lệnh /rules không nhận ra → forward LLM
     }
 
     // ── Event: before_dispatch (main hook) ───────────────────
@@ -896,13 +1278,27 @@ const plugin = definePluginEntry({
 
       const rawConvId = String(ctx.conversationId || event.conversationId || '');
       const isGroupMsg = rawConvId.startsWith('group:');
-
-      // DMs — let pass through to LLM agent (no moderation needed)
-      if (!isGroupMsg) return; // undefined = forward to LLM
-
-      const groupId   = rawConvId.replace(/^group:/, '');
       const senderId  = String(ctx.senderId || event.senderId || '');
       const senderName = String(event.senderName || senderId);
+
+      // ── DM Flow — Owner config + whitelist gating ──────────
+      if (!isGroupMsg) {
+        // Owner DM → config commands hoặc forward LLM
+        if (ownerId && senderId === ownerId) {
+          const ownerResult = await handleOwnerDm(content, senderId, ctx);
+          if (ownerResult) return ownerResult;
+          return; // forward to LLM
+        }
+
+        // Allowed user → forward to LLM
+        if (allowedDmUsers.size === 0 || allowedDmUsers.has(senderId)) return;
+
+        // Không nằm trong whitelist → block im lặng
+        logger.info(`[zalo-mod] DM blocked from ${senderName} (${senderId}) — not in allowedDmUsers`);
+        return { handled: true };
+      }
+
+      const groupId = rawConvId.replace(/^group:/, '');
 
       // ── Extract slash command from anywhere in message ─────
       // Support: "/command args" AND "@BotName text /command args"
@@ -916,15 +1312,20 @@ const plugin = definePluginEntry({
         const textBefore = content.slice(0, slashMatch.index + (slashMatch[0].startsWith(' ') ? 1 : 0)).trim()
           .replace(botMentionRe, '').replace(/\s{2,}/g, ' ').trim(); // strip only bot @mentions
 
-        // /noi-quy
+        // /noi-quy (nội quy)
         if (command === '/noi-quy') {
-          await sendGroupMsg(ctx, groupId, buildNoiQuy(groupName));
+          await sendGroupMsg(ctx, groupId, buildNoiQuy(getGroupName(groupId)));
           return { handled: true };
         }
 
         // /menu | /huong-dan
         if (command === '/menu') {
-          await sendGroupMsg(ctx, groupId, buildMenu(botName));
+          let menu = buildMenu(botName);
+          // Nếu sender là owner → hiện thêm owner commands
+          if (ownerId && senderId === ownerId) {
+            menu += '\n\n👑 OWNER (DM riêng với bot):\n  /rules welcome-list\n  /rules welcome <groupId> on/off\n  /rules follow-list\n  /rules follow <groupId> on/off\n  /rules dm-list\n  /rules dm-add <tên>\n  /rules dm-remove <tên>\n  /rules status';
+          }
+          await sendGroupMsg(ctx, groupId, menu);
           return { handled: true };
         }
         if (command === '/huong-dan') {
@@ -943,15 +1344,17 @@ const plugin = definePluginEntry({
               groups.push({ groupId, groupName: '(group hiện tại)' });
             }
 
-            // Build patch
+            // Build patch — update cả groupNames map lẫn watchGroupIds
+            const namesMap = {};
+            for (const g of groups) {
+              if (g.groupName && g.groupName !== '(group hiện tại)') {
+                namesMap[g.groupId] = g.groupName;
+              }
+            }
             const patch = {
               watchGroupIds: groups.map(g => g.groupId),
+              groupNames: { ...(pluginCfg.groupNames || {}), ...namesMap },
             };
-            // Set groupName if only 1 group or first time
-            if (!pluginCfg.groupName || pluginCfg.groupName === 'Nhóm') {
-              const namedGroup = groups.find(g => g.groupName && g.groupName !== '(group hiện tại)');
-              if (namedGroup) patch.groupName = namedGroup.groupName;
-            }
             // Auto-detect botName if not set
             if (!pluginCfg.botName || pluginCfg.botName === 'Bot') {
               const detectedName = await _readBotNameFromIdentity(workspaceDir);
@@ -1013,8 +1416,8 @@ const plugin = definePluginEntry({
           const warnCount = store.getWarnCount(groupId, targetId);
           const kickNote  = warnCount >= 3 ? '\n⛔ Đã warn 3 lần — cân nhắc kick.' : '';
           // Sync to memory
-          await appendToMemoryFile('members.md', `| ${targetName} | ${warnCount} | ${reason} | ${nowShort()} |`);
-          await appendToMemoryFile('chat-highlights.md', `| ${nowShort()} | Admin | /warn ${targetName}: ${reason} |`);
+          await appendToMemoryFile(groupId, 'members.md', `| ${targetName} | ${warnCount} | ${reason} | ${nowShort()} |`);
+          await appendToMemoryFile(groupId, 'chat-highlights.md', `| ${nowShort()} | Admin | /warn ${targetName}: ${reason} |`);
           await sendGroupMsg(ctx, groupId,
             `⚠️ ${targetName} — ${reason}.\nLần tiếp theo admin sẽ xử lý.${kickNote}\n✅ Đã ghi nhận. Lần ${warnCount}.`
           );
@@ -1029,7 +1432,7 @@ const plugin = definePluginEntry({
           store.addViolation(groupId, 'admin-note', senderName, 'note', noteText);
           await store.saveViolations();
           // Sync to memory
-          await appendToMemoryFile('admin-notes.md', `| ${nowShort()} | ${senderName} | ${noteText} |`);
+          await appendToMemoryFile(groupId, 'admin-notes.md', `| ${nowShort()} | ${senderName} | ${noteText} |`);
           await sendGroupMsg(ctx, groupId, `📝 Ghi nhận: ${noteText}`);
           return { handled: true };
         }
@@ -1040,7 +1443,7 @@ const plugin = definePluginEntry({
           const sub = args[0]?.toLowerCase();
           if (!sub) {
             await sendGroupMsg(ctx, groupId,
-              `⚙️ ADMIN COMMANDS — /rules\n━━━━━━━━━━━━━━━━━━\n\n🔇 Silent Mode:\n  /rules silent-on  — Bot chỉ reply khi @tag\n  /rules silent-off — Bot reply mọi tin\n\n🎉 Welcome:\n  /rules welcome-on  — Bật chào member mới\n  /rules welcome-off — Tắt chào\n\n📊 /rules status`
+              `⚙️ ADMIN COMMANDS — /rules\n━━━━━━━━━━━━━━━━━━\n\n🔇 Silent Mode:\n  /rules silent-on  — Bot chỉ reply khi @tag\n  /rules silent-off — Bot reply mọi tin\n\n🎉 Welcome:\n  /rules welcome-on  — Bật chào member mới\n  /rules welcome-off — Tắt chào\n\n📋 Tracking:\n  /rules tracking-on  — Bật ghi lịch sử chat\n  /rules tracking-off — Tắt ghi lịch sử\n\n📊 /rules status`
             );
             return { handled: true };
           }
@@ -1048,11 +1451,14 @@ const plugin = definePluginEntry({
           if (sub === 'silent-off') { store.setSetting(groupId, 'silent', false); await store.saveSettings(); await sendGroupMsg(ctx, groupId, '✅ Silent mode: TẮT'); return { handled: true }; }
           if (sub === 'welcome-on')  { store.setSetting(groupId, 'welcome', true);  await store.saveSettings(); await sendGroupMsg(ctx, groupId, '✅ Welcome: BẬT'); return { handled: true }; }
           if (sub === 'welcome-off') { store.setSetting(groupId, 'welcome', false); await store.saveSettings(); await sendGroupMsg(ctx, groupId, '✅ Welcome: TẮT'); return { handled: true }; }
+          if (sub === 'tracking-on')  { store.setSetting(groupId, 'tracking', true);  await store.saveSettings(); await sendGroupMsg(ctx, groupId, '✅ Tracking lịch sử chat: BẬT\n📋 Mọi tin nhắn trong group sẽ được ghi vào chat-log.md'); return { handled: true }; }
+          if (sub === 'tracking-off') { store.setSetting(groupId, 'tracking', false); await store.saveSettings(); await sendGroupMsg(ctx, groupId, '✅ Tracking lịch sử chat: TẮT'); return { handled: true }; }
           if (sub === 'status') {
-            const silent  = store.getSetting(groupId, 'silent', true);
-            const welcome = store.getSetting(groupId, 'welcome', true);
+            const silent   = store.getSetting(groupId, 'silent', true);
+            const welcome  = store.getSetting(groupId, 'welcome', true);
+            const tracking = store.getSetting(groupId, 'tracking', false);
             await sendGroupMsg(ctx, groupId,
-              `⚙️ CẤU HÌNH BOT\n━━━━━━━━━━━━━━━━━━\n🔇 Silent Mode: ${silent ? 'BẬT' : 'TẮT'}\n🎉 Welcome: ${welcome ? 'BẬT' : 'TẮT'}`
+              `⚙️ CẤU HÌNH BOT\n━━━━━━━━━━━━━━━━━━\n🔇 Silent Mode: ${silent ? 'BẬT' : 'TẮT'}\n🎉 Welcome: ${welcome ? 'BẬT' : 'TẮT'}\n📋 Tracking: ${tracking ? 'BẬT' : 'TẮT'}`
             );
             return { handled: true };
           }
@@ -1066,13 +1472,13 @@ const plugin = definePluginEntry({
           if (memText) {
             store.addViolation(groupId, 'admin-note', senderName, 'note', memText);
             await store.saveViolations();
-            await appendToMemoryFile('admin-notes.md', `| ${nowShort()} | ${senderName} | ${memText} |`);
+            await appendToMemoryFile(groupId, 'admin-notes.md', `| ${nowShort()} | ${senderName} | ${memText} |`);
           }
           await reloadStore(); // Fresh read from disk
           const { warnCount, vioCount } = await writeMemoryDigest(groupId);
           const extra = memText ? `\n📝 Note: ${memText}` : '';
           await sendGroupMsg(ctx, groupId,
-            `📝 Đã lưu memory digest!${extra}\n📁 skills/memory/zalo-groups/${memoryGroupSlug}/\n⚠️ ${warnCount} member warned\n🚫 ${vioCount} vi phạm ghi nhận`
+            `📝 Đã lưu memory digest!${extra}\n📁 ${getMemorySlug(groupId)}/\n⚠️ ${warnCount} member đã cảnh cáo\n🚫 ${vioCount} vi phạm ghi nhận`
           );
           return { handled: true };
         }
@@ -1086,7 +1492,12 @@ const plugin = definePluginEntry({
       if (isMention) {
         // Log mention + sync to memory
         logger.info(`[zalo-mod] @mention from ${senderName} in group ${groupId}: ${content.slice(0, 80)}`);
-        await appendToMemoryFile('chat-highlights.md', `| ${nowShort()} | ${senderName} | ${content.slice(0, 80)} |`);
+        await appendToMemoryFile(groupId, 'chat-highlights.md', `| ${nowShort()} | ${senderName} | ${content.slice(0, 80)} |`);
+
+        // Tracking: ghi cả @mention vào chat-log
+        if (store.getSetting(groupId, 'tracking', false)) {
+          await appendChatLog(groupId, senderName, content);
+        }
 
         // ── File context injection ─────────────────────────────
         // OpenClaw zalouser ONLY forwards text to before_dispatch — file types are silently dropped.
@@ -1165,8 +1576,12 @@ const plugin = definePluginEntry({
           store.addViolation(groupId, senderId, senderName, spamType, content);
           await store.saveViolations();
           // Sync to memory
-          await appendToMemoryFile('violations.md', `| ${nowShort()} | ${senderName} | ${spamType} | ${content.slice(0, 40)} |`);
+          await appendToMemoryFile(groupId, 'violations.md', `| ${nowShort()} | ${senderName} | ${spamType} | ${content.slice(0, 40)} |`);
           logger.info(`[zalo-mod] spam detected: ${spamType} from ${senderName}`);
+        }
+        // Tracking: ghi lịch sử chat (kể cả silent mode)
+        if (store.getSetting(groupId, 'tracking', false)) {
+          await appendChatLog(groupId, senderName, content);
         }
         return { handled: true }; // silent — don't forward to LLM
       }
@@ -1177,9 +1592,14 @@ const plugin = definePluginEntry({
         store.addViolation(groupId, senderId, senderName, spamType, content);
         await store.saveViolations();
         // Sync to memory
-        await appendToMemoryFile('violations.md', `| ${nowShort()} | ${senderName} | ${spamType} | ${content.slice(0, 40)} |`);
+        await appendToMemoryFile(groupId, 'violations.md', `| ${nowShort()} | ${senderName} | ${spamType} | ${content.slice(0, 40)} |`);
         logger.info(`[zalo-mod] spam detected (logged silently): ${spamType} from ${senderName}`);
         return { handled: true }; // spam always silently blocked
+      }
+
+      // Tracking: ghi lịch sử chat (non-silent, non-mention)
+      if (store.getSetting(groupId, 'tracking', false)) {
+        await appendChatLog(groupId, senderName, content);
       }
 
       // Non-mention, non-slash, non-spam, non-silent → let LLM decide
@@ -1189,7 +1609,7 @@ const plugin = definePluginEntry({
     // Start member watcher for welcome messages
     startMemberWatcher();
 
-    logger.info(`[zalo-mod] loaded — group="${groupName}" bot="${botName}" adminIds=${adminIds.size || 'any'} watchGroups=${watchGroupIds.length}`);
+    logger.info(`[zalo-mod] loaded — bot="${botName}" owner=${ownerId || 'none'} adminIds=${adminIds.size || 'any'} watchGroups=${watchGroupIds.length} groupNames=${Object.keys(groupNames).length}`);
   },
 });
 

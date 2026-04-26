@@ -2,7 +2,7 @@
   "id": "zalo-mod",
   "name": "Zalo Mod",
   "description": "Zero-token Zalo group moderation — slash commands, anti-spam, warn system, memory integration. Blocks LLM for non-mention messages.",
-  "version": "1.4.1",
+  "version": "1.3.1",
   "kind": "runtime",
   "enabledByDefault": false,
   "runtimeId": "zalo-mod",
@@ -17,14 +17,15 @@
   "configSchema": {
     "type": "object",
     "properties": {
-      "groupName": {
-        "type": "string",
-        "description": "Display name of the group (used in templates and memory). Default: 'Nhóm'"
+      "groupNames": {
+        "type": "object",
+        "description": "Map groupId → display name. Tự động cập nhật từ sessions. VD: {\"123456\": \"Nhóm ABC\"}",
+        "additionalProperties": { "type": "string" }
       },
       "adminIds": {
         "type": "array",
         "items": { "type": "string" },
-        "description": "Zalo user IDs allowed to use admin commands (/warn, /report, /rules, /memory). If empty, all users can use admin commands."
+        "description": "Zalo user IDs allowed to use admin commands (/canh-cao, /bao-cao, /cau-hinh, /luu-tru). If empty, all users can use admin commands."
       },
       "botName": {
         "type": "string",
@@ -49,7 +50,7 @@
       },
       "memoryGroupSlug": {
         "type": "string",
-        "description": "Override the memory folder name. Auto-generated from groupName if not set."
+        "description": "Override the memory folder name. Auto-generated from first entry in groupNames if not set."
       },
       "watchGroupIds": {
         "type": "array",
@@ -59,6 +60,15 @@
       "welcomePollSeconds": {
         "type": "number",
         "description": "Polling interval in seconds for member watcher. Min 15. Default: 30"
+      },
+      "ownerId": {
+        "type": "string",
+        "description": "Zalo user ID của chủ nhân bot. Có quyền cấu hình mọi thứ qua DM riêng."
+      },
+      "allowedDmUsers": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "Danh sách Zalo user IDs được phép DM với bot. Nếu để trống, tất cả đều có thể DM. Owner luôn được phép."
       }
     },
     "additionalProperties": false

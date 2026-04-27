@@ -418,7 +418,7 @@ const plugin = definePluginEntry({
     const ownerId       = String(pluginCfg.ownerId || '');  // Zalo ID chủ nhân bot
     const allowedDmUsers = new Set((pluginCfg.allowedDmUsers || []).map(String)); // DM whitelist
     const welcomeEnabled = pluginCfg.welcomeEnabled !== false;
-    const spamRepeatN   = Number(pluginCfg.spamRepeatN || 3);
+    const spamRepeatN   = Number(pluginCfg.spamRepeatN || 5);
     const spamWindowMs  = Number(pluginCfg.spamWindowSeconds || 300) * 1000;
     const watchGroupIds = (pluginCfg.watchGroupIds || []).map(String).filter(Boolean);
     const welcomePollSec = Number(pluginCfg.welcomePollSeconds || 30);
@@ -1282,8 +1282,21 @@ const plugin = definePluginEntry({
 
       // NOTE: Welcome detection is handled by the member watcher (polling-based).
       // OpenClaw zalouser channel does NOT pass system events (join/leave) to plugins.
+      // NOTE: Sticker/image/file messages in groups are silently dropped by zalouser channel core
+      // — they never reach before_dispatch. Only text messages are forwarded.
 
       if (!content) return { handled: true }; // empty content — skip
+
+      // ── Sticker/media detection ──────────────────────────────
+      // Zalo sends stickers as JSON: {"id":21532,"catId":10306,"type":7}
+      // Transform to human-readable so agent doesn't try parsing raw JSON
+      try {
+        const parsed = JSON.parse(content);
+        if (parsed && typeof parsed === 'object' && parsed.id && parsed.catId && parsed.type) {
+          event.body = '[Sticker]';
+          if (event.content) event.content = '[Sticker]';
+        }
+      } catch (_) { /* not JSON, normal text — continue */ }
 
       const rawConvId = String(ctx.conversationId || event.conversationId || '');
       const isGroupMsg = rawConvId.startsWith('group:');
@@ -1577,7 +1590,7 @@ const plugin = definePluginEntry({
       }
 
       // ── Silent mode check ─────────────────────────────────
-      const silentMode = store.getSetting(groupId, 'silent', true);
+      const silentMode = store.getSetting(groupId, 'silent', false);
       if (silentMode) {
         // Anti-spam detect silently even in silent mode
         const spamType = spamTracker.check(senderId, content);
@@ -1602,7 +1615,7 @@ const plugin = definePluginEntry({
         await store.saveViolations();
         // Sync to memory
         await appendToMemoryFile(groupId, 'violations.md', `| ${nowShort()} | ${senderName} | ${spamType} | ${content.slice(0, 40)} |`);
-        logger.info(`[zalo-mod] spam detected (logged silently): ${spamType} from ${senderName}`);
+        logger.info(`[zalo-mod] ❌ BLOCKED by anti-spam: type=${spamType} sender=${senderName} msg="${content.slice(0, 60)}"`);
         return { handled: true }; // spam always silently blocked
       }
 

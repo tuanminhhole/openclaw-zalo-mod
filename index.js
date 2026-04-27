@@ -6,6 +6,10 @@
  * @mention → để lọt lên LLM agent bình thường.
  * Tin thường → block hoàn toàn (silent).
  *
+ * v2.1.0: Watcher optimization — skip poll for welcome-off groups.
+ *   Groups with welcome disabled are completely skipped during polling,
+ *   saving Zalo API calls. Welcome setting check moved before API call.
+ *
  * v1.2.0: Polling-based member watcher + /groupid command.
  *   OpenClaw zalouser channel does NOT expose system events (join/leave)
  *   to plugins. Workaround: poll group member list via OpenClaw internal
@@ -964,6 +968,10 @@ const plugin = definePluginEntry({
     }
 
     async function checkForNewMembers(groupId) {
+      // Skip poll entirely if welcome is disabled for this group — saves API calls
+      const welcomeOn = store.getSetting(groupId, 'welcome', true);
+      if (!welcomeOn) return;
+
       const members = await pollGroupMembers(groupId);
       if (!members) return;
 
@@ -998,12 +1006,6 @@ const plugin = definePluginEntry({
 
       logger.info(`[zalo-mod] [WATCHER] ${toWelcome.length} new member(s) in group ${groupId}: ${toWelcome.map(m => m.name || m.id).join(', ')}`);
 
-      // Check welcome setting
-      const welcomeOn = store.getSetting(groupId, 'welcome', true);
-      if (!welcomeOn) {
-        logger.info(`[zalo-mod] [WATCHER] welcome disabled for group ${groupId}, skipping`);
-        return;
-      }
 
       // Send welcome for new members (batch — don't spam if many join at once)
       for (const member of toWelcome.slice(0, 5)) {
@@ -1048,16 +1050,23 @@ const plugin = definePluginEntry({
       }
 
       const intervalMs = Math.max(welcomePollSec, 30) * 1000; // min 30s to avoid Zalo rate limits
-      logger.info(`[zalo-mod] [WATCHER] starting member watcher for ${watchGroupIds.length} group(s), poll every ${intervalMs/1000}s: ${watchGroupIds.join(', ')}`);
 
       // Initial snapshot after a delay (let zalouser fully connect first)
       _G.initTimer = setTimeout(async () => {
         _G.initTimer = null;
         await ensureStore();
-        for (const gId of watchGroupIds) {
+
+        // Filter: only poll groups where welcome is ON
+        const activeGroups = watchGroupIds.filter(gId => store.getSetting(gId, 'welcome', true));
+        const skippedGroups = watchGroupIds.filter(gId => !store.getSetting(gId, 'welcome', true));
+        logger.info(`[zalo-mod] [WATCHER] starting member watcher — polling ${activeGroups.length}/${watchGroupIds.length} group(s), poll every ${intervalMs/1000}s`);
+        if (activeGroups.length > 0) logger.info(`[zalo-mod] [WATCHER] active: ${activeGroups.map(g => getGroupName(g)).join(', ')}`);
+        if (skippedGroups.length > 0) logger.info(`[zalo-mod] [WATCHER] skipped (welcome off): ${skippedGroups.map(g => getGroupName(g)).join(', ')}`);
+
+        for (const gId of activeGroups) {
           await checkForNewMembers(gId);
           // Delay 3s giữa mỗi group — tránh Zalo rate limit
-          if (watchGroupIds.length > 1) await new Promise(r => setTimeout(r, 3000));
+          if (activeGroups.length > 1) await new Promise(r => setTimeout(r, 3000));
         }
         // Then start periodic polling
         _G.watcherTimer = setInterval(async () => {
@@ -1067,8 +1076,8 @@ const plugin = definePluginEntry({
             } catch (e) {
               logger.warn(`[zalo-mod] [WATCHER] poll error for ${gId}: ${e.message}`);
             }
-            // Delay 3s giữa mỗi group
-            if (watchGroupIds.length > 1) await new Promise(r => setTimeout(r, 3000));
+            // Delay 3s giữa mỗi group (only between actual polls)
+            if (watchGroupIds.length > 1) await new Promise(r => setTimeout(r, 1000));
           }
         }, intervalMs);
       }, 30000); // 30s delay for zalouser to connect

@@ -8,6 +8,7 @@
   "sideEffects": false,
   "files": [
     "index.js",
+    "setup.js",
     "openclaw.plugin.json",
     "README.md",
     "README.vi.md",

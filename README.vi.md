@@ -13,7 +13,7 @@
 
 | Tính năng | Chi phí token | Mô tả |
 |-----------|--------------|-------|
-| **Slash Commands** | 0 | `/noi-quy`, `/menu`, `/huong-dan`, `/report`, `/rules` |
+| **Slash Commands** | 0 | `/noi-quy`, `/menu`, `/huong-dan`, `/groupid`, `/ownerid`, `/report`, `/rules` |
 | **Hệ thống Warn** | 0 | `/warn @name [lý do]` — theo dõi cảnh cáo từng member |
 | **Chống Spam** | 0 | Tự detect tin lặp, link spam, emoji flood |
 | **Ghi chú Admin** | 0 | `/note [text]` — chỉ admin dùng |
@@ -60,6 +60,15 @@ cp -r openclaw-zalo-mod ~/.openclaw/extensions/zalo-mod
 ```bash
 openclaw gateway restart
 ```
+
+### Resolve đường dẫn
+
+`zalo-mod` không bắt buộc native install phải có file `.env`. Runtime sẽ tìm OpenClaw config theo thứ tự:
+
+1. Biến môi trường `OPENCLAW_HOME`, thường dùng trong Docker/openclaw-setup.
+2. Đường dẫn cài plugin, thường là `{OPENCLAW_HOME}/extensions/zalo-mod`.
+
+Sau khi bot nhận được tin nhắn group, gõ `/groupid` trong group đó. Plugin sẽ scan Zalo sessions đã lưu và ghi cả `watchGroupIds` lẫn `groupNames` vào `openclaw.json`.
 
 ## 🛑 Phát Hiện Spam
 

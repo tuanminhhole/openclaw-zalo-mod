@@ -13,7 +13,7 @@
 
 | Feature | Token Cost | Description |
 |---------|-----------|-------------|
-| **Slash Commands** | 0 | `/noi-quy`, `/menu`, `/huong-dan`, `/report`, `/rules` |
+| **Slash Commands** | 0 | `/noi-quy`, `/menu`, `/huong-dan`, `/groupid`, `/ownerid`, `/report`, `/rules` |
 | **Warn System** | 0 | `/warn @name [reason]` — track warnings per member |
 | **Anti-Spam** | 0 | Auto-detect repeated messages, link spam, emoji flood |
 | **Admin Notes** | 0 | `/note [text]` — admin-only notes |
@@ -60,6 +60,15 @@ cp -r openclaw-zalo-mod ~/.openclaw/extensions/zalo-mod
 ```bash
 openclaw gateway restart
 ```
+
+### Path resolution
+
+`zalo-mod` does not require a `.env` file in native installs. At runtime it resolves OpenClaw config in this order:
+
+1. `OPENCLAW_HOME` environment variable, used by Docker/openclaw-setup.
+2. The plugin install path, usually `{OPENCLAW_HOME}/extensions/zalo-mod`.
+
+After the bot receives a group message, run `/groupid` in that group. The plugin scans saved Zalo sessions and writes both `watchGroupIds` and `groupNames` to `openclaw.json`.
 
 ## 🛑 Anti-Spam Detection
 

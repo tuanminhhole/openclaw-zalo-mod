@@ -62,13 +62,21 @@ function detectOpenclawHome() {
   const envHome = process.env.OPENCLAW_HOME;
   if (envHome && fs.existsSync(envHome)) return path.resolve(envHome);
 
+  const envStateDir = process.env.OPENCLAW_STATE_DIR;
+  if (envStateDir && fs.existsSync(path.join(envStateDir, 'openclaw.json'))) {
+    return path.resolve(envStateDir);
+  }
+
   // From directory structure: extensions/zalo-mod/setup.js → ../../
   const parent = path.resolve(__dirname, '..', '..');
   if (fs.existsSync(path.join(parent, 'openclaw.json'))) return parent;
 
-  // Common locations
+  // Common locations across native installs and openclaw-setup project roots.
   const home = process.env.HOME || process.env.USERPROFILE || '';
+  const cwd = process.cwd();
   for (const p of [
+    cwd,
+    path.join(cwd, '.openclaw'),
     path.join(home, '.openclaw'),
     'D:\\bot\\.openclaw', 'C:\\bot\\.openclaw',
     '/root/.openclaw', '/home/bot/.openclaw',
@@ -92,7 +100,7 @@ function detectBotName(openclawHome) {
       workspaceDirs.push(config.agents.defaults.workspace);
     }
     for (const ws of workspaceDirs) {
-      const idPath = path.join(ws, 'IDENTITY.md');
+      const idPath = path.join(path.isAbsolute(ws) ? ws : path.resolve(openclawHome, '..', ws), 'IDENTITY.md');
       if (fs.existsSync(idPath)) {
         const content = fs.readFileSync(idPath, 'utf8');
         const nameMatch = content.match(/\*\*Tên:\*\*\s*(.+)/);
@@ -181,6 +189,8 @@ function main() {
       botName,
       groupNames: {},
       zaloDisplayNames: [botName],
+      ownerId: '',
+      adminIds: [],
       welcomeEnabled: true,
       spamRepeatN: 3,
       spamWindowSeconds: 300,

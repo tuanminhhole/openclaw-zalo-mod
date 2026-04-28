@@ -1596,6 +1596,8 @@ const plugin = definePluginEntry({
             );
             return { handled: true };
           }
+          // Fallback: sub-command không nhận ra → báo lỗi thay vì nuốt im lặng
+          await sendGroupMsg(ctx, groupId, `⚠️ Lệnh /rules ${sub} không hợp lệ.\nGõ /rules để xem danh sách lệnh.`);
           return { handled: true };
         }
 

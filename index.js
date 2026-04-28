@@ -1014,12 +1014,13 @@ const plugin = definePluginEntry({
       // Send welcome for new members (batch — don't spam if many join at once)
       for (const member of toWelcome.slice(0, 5)) {
         const memberName = member.name || 'bạn';
+        // Mark as welcomed FIRST (before sending) to prevent race condition
+        // where a concurrent poll also tries to welcome the same member
+        _G.welcomedDedup.add(dedupKey(groupId, member.id));
+        setTimeout(() => _G.welcomedDedup.delete(dedupKey(groupId, member.id)), 3600000);
         try {
           await sendGroupMsg({ accountId: 'default' }, groupId, buildWelcome(memberName, botName));
           await appendToMemoryFile(groupId, 'chat-highlights.md', `| ${nowShort()} | SYSTEM | Welcome: ${memberName} joined (detected by watcher) |`);
-          // Mark as welcomed (dedup for 1 hour)
-          _G.welcomedDedup.add(dedupKey(groupId, member.id));
-          setTimeout(() => _G.welcomedDedup.delete(dedupKey(groupId, member.id)), 3600000);
           logger.info(`[zalo-mod] [WATCHER] welcome sent for ${memberName} in group ${groupId}`);
         } catch (e) {
           logger.error(`[zalo-mod] [WATCHER] welcome send failed for ${memberName}: ${e.message}`);

@@ -266,9 +266,9 @@ function buildNoiQuy(groupName) {
   return `📋 NỘI QUY — ${groupName}
 ━━━━━━━━━━━━━━━━━━
 
-1️⃣ Hỏi thoải mái - không câu hỏi nào là ngu, ai cũng từng mới
+1️⃣ Hỏi thoải mái - ai cũng từng là người mới
 2️⃣ Biết gì chia sẻ nấy - văn hoá cho đi là nhận lại
-3️⃣ Tôn trọng nhau - không toxic, không chê trình độ
+3️⃣ Tôn trọng nhau - không toxic, không chê trình độ gây war
 4️⃣ Không spam - quảng cáo
 5️⃣ Tôn trọng thời gian — nói rõ vấn đề
 
@@ -365,20 +365,10 @@ function buildReport(groupId, allViolations, allWarned) {
 }
 
 function buildWelcome(memberName, botName) {
-  return `👋 Chào mừng ${memberName} đã join nhóm!
-
-Mình là bot và đây là hướng dẫn để bác có thể sử dụng mình trong Group:
-📋 /noi-quy  - Xem nội quy nhóm (đọc trước nhé!)
-📖 /huong-dan hoặc /menu - Hướng dẫn dùng bot, menu của bot
-💬 @${botName} [câu hỏi bất kỳ] - Hỏi bot bất cứ điều gì
-
-Group này mình hỗ trợ AE dùng repo Openclaw Setup và setup bot chạy cho ae trải nghiệm.
-
-Mong các ae đã cài đặt đc r thì chia sẻ kinh nghiệm với ae khác khi cần vì mình làm ra repo cũng đang open source cho tất cả ae.
-
-Ngoài ra khi có bản update mới mình cũng sẽ báo lên đây và hỗ trợ ae cập nhật.
-
-Chào mừng bác! 🎉 Nếu có bất kỳ thăc mắc nào hoặc cần hỗ trợ cứ nhắn lên đừng ngại nha!`;
+  return `👋 Chào mừng ${memberName} vào nhóm!
+📋 /noi-quy để xem nội quy
+📖 /menu để xem lệnh
+💬 @${botName} nếu cần hỏi bot`;
 }
 
 
@@ -1120,9 +1110,23 @@ const plugin = definePluginEntry({
         return { handled: true };
       }
 
+      // ── mute all on/off
+      if (sub === 'mute' && args[1]?.toLowerCase() === 'all') {
+        const toggle = args[2]?.toLowerCase();
+        if (toggle === 'on' || toggle === 'off') {
+          const val = toggle === 'on';
+          for (const gId of watchGroupIds) { store.setSetting(gId, 'muted', val); }
+          await store.saveSettings();
+          await sendDmMsg(ctx, senderId, `${val ? '🔇' : '🔊'} Mute ${val ? 'BẬT' : 'TẮT'} cho TẤT CẢ ${watchGroupIds.length} groups`);
+        } else {
+          await sendDmMsg(ctx, senderId, '⚠️ Cú pháp: /rules mute all on/off');
+        }
+        return { handled: true };
+      }
+
       // ── mute <groupId> on/off
       if (sub === 'mute' && args[1]) {
-        const targetGid = args[1];
+        const targetGid = args[1].replace(/^<|>$/g, ''); // strip <>
         const toggle = args[2]?.toLowerCase();
         if (toggle === 'on') {
           store.setSetting(targetGid, 'muted', true);
@@ -1152,9 +1156,23 @@ const plugin = definePluginEntry({
         return { handled: true };
       }
 
+      // ── welcome all on/off
+      if (sub === 'welcome' && args[1]?.toLowerCase() === 'all') {
+        const toggle = args[2]?.toLowerCase();
+        if (toggle === 'on' || toggle === 'off') {
+          const val = toggle === 'on';
+          for (const gId of watchGroupIds) { store.setSetting(gId, 'welcome', val); }
+          await store.saveSettings();
+          await sendDmMsg(ctx, senderId, `${val ? '🎉' : '🔕'} Welcome ${val ? 'BẬT' : 'TẮT'} cho TẤT CẢ ${watchGroupIds.length} groups`);
+        } else {
+          await sendDmMsg(ctx, senderId, '⚠️ Cú pháp: /rules welcome all on/off');
+        }
+        return { handled: true };
+      }
+
       // ── welcome <groupId> on/off
       if (sub === 'welcome' && args[1]) {
-        const targetGid = args[1];
+        const targetGid = args[1].replace(/^<|>$/g, ''); // strip <>
         const toggle = args[2]?.toLowerCase();
         if (toggle === 'on') {
           store.setSetting(targetGid, 'welcome', true);
@@ -1254,9 +1272,26 @@ const plugin = definePluginEntry({
         return { handled: true };
       }
 
+      // ── follow all on/off
+      if (sub === 'follow' && args[1]?.toLowerCase() === 'all') {
+        const toggle = args[2]?.toLowerCase();
+        if (toggle === 'on' || toggle === 'off') {
+          const val = toggle === 'on';
+          for (const gId of watchGroupIds) {
+            store.setSetting(gId, 'follow', val);
+            store.setSetting(gId, 'tracking', val);
+          }
+          await store.saveSettings();
+          await sendDmMsg(ctx, senderId, `${val ? '👁️' : '🚫'} Follow ${val ? 'BẬT' : 'TẮT'} cho TẤT CẢ ${watchGroupIds.length} groups`);
+        } else {
+          await sendDmMsg(ctx, senderId, '⚠️ Cú pháp: /rules follow all on/off');
+        }
+        return { handled: true };
+      }
+
       // ── follow <groupId> on/off
       if (sub === 'follow' && args[1]) {
-        const targetGid = args[1];
+        const targetGid = args[1].replace(/^<|>$/g, ''); // strip <>
         const toggle = args[2]?.toLowerCase();
         if (toggle === 'on') {
           store.setSetting(targetGid, 'follow', true);

@@ -404,23 +404,38 @@ const plugin = definePluginEntry({
 
     // Plugin config: read from api.pluginConfig (OpenClaw SDK) or fallback
     const pluginCfg = api.pluginConfig || cfg?.plugins?.entries?.['zalo-mod'] || {};
-    const groupNames    = pluginCfg.groupNames || {};  // map groupId → display name
+    // ── groupNames: source of truth cho danh sách groups đang quản lý ──
+    // Format mới: { groupId: { name, admins, creatorId } }
+    // Backward-compat: nếu value là string (format cũ) → auto-convert sang object
+    const _rawGroupNames = pluginCfg.groupNames || {};
+    const groupNames = {};
+    for (const [gId, val] of Object.entries(_rawGroupNames)) {
+      if (typeof val === 'string') {
+        groupNames[gId] = { name: val, admins: [], creatorId: '' };
+      } else if (val && typeof val === 'object') {
+        groupNames[gId] = { name: val.name || '', admins: val.admins || [], creatorId: val.creatorId || '' };
+      }
+    }
+    // watchGroupIds được derive từ groupNames keys — không cần config riêng
+    const watchGroupIds = Object.keys(groupNames).filter(Boolean);
+
     const botName       = String(pluginCfg.botName || 'Bot');
     const zaloNames     = (pluginCfg.zaloDisplayNames || []).map(String);
     const botNames      = [botName, ...zaloNames].filter(Boolean);
-    const adminIds      = new Set((pluginCfg.adminIds || []).map(String));
     const ownerId       = String(pluginCfg.ownerId || '');  // Zalo ID chủ nhân bot
+    // adminIds: derive từ ownerId — không cần config riêng
+    // (per-group admins lưu trong groupNames[gId].admins và settings.json)
+    const adminIds = new Set(ownerId ? [ownerId] : []);
     const allowedDmUsers = new Set((pluginCfg.allowedDmUsers || []).map(String)); // DM whitelist
     const welcomeEnabled = pluginCfg.welcomeEnabled !== false;
     const spamRepeatN   = Number(pluginCfg.spamRepeatN || 5);
     const spamWindowMs  = Number(pluginCfg.spamWindowSeconds || 300) * 1000;
-    const watchGroupIds = (pluginCfg.watchGroupIds || []).map(String).filter(Boolean);
-    const welcomePollSec = Number(pluginCfg.welcomePollSeconds || 30);
+    const welcomePollSec = Number(pluginCfg.welcomePollSeconds || 60);
 
     /** Tra tên group theo ID — dùng groupNames map, fallback 'Nhóm' */
     function getGroupName(gId) {
       const plain = String(gId || '').replace(/^group:/, '');
-      return groupNames[plain] || 'Nhóm';
+      return groupNames[plain]?.name || 'Nhóm';
     }
 
     // Data dir — store JSON data alongside the plugin code
@@ -443,13 +458,13 @@ const plugin = definePluginEntry({
     /** Trả về memory dir cho 1 group cụ thể */
     function getMemoryDir(groupId) {
       const plain = String(groupId || '').replace(/^group:/, '');
-      const slug = pluginCfg.memoryGroupSlug || _slugify(groupNames[plain] || 'nhom-' + plain.slice(-6));
+      const slug = pluginCfg.memoryGroupSlug || _slugify(getGroupName(plain) || 'nhom-' + plain.slice(-6));
       return path.join(workspaceDir, 'skills/memory/zalo-groups', slug);
     }
     /** Trả về slug cho 1 group */
     function getMemorySlug(groupId) {
       const plain = String(groupId || '').replace(/^group:/, '');
-      return pluginCfg.memoryGroupSlug || _slugify(groupNames[plain] || 'nhom-' + plain.slice(-6));
+      return pluginCfg.memoryGroupSlug || _slugify(getGroupName(plain) || 'nhom-' + plain.slice(-6));
     }
 
     const store       = createStore(dataDir);
@@ -545,7 +560,7 @@ const plugin = definePluginEntry({
 
         // 2. Create memory INDEX.md cho mỗi group đang follow
         for (const gId of watchGroupIds) {
-          const isFollowed = store.getSetting(gId, 'follow', false);
+          const isFollowed = store.getSetting(gId, 'follow', true);
           if (!isFollowed) continue;
           const mDir = getMemoryDir(gId);
           const indexMdPath = path.join(mDir, 'INDEX.md');
@@ -591,11 +606,17 @@ const plugin = definePluginEntry({
           const agentId = cfg?.agents?.list?.[0]?.id;
           const groups = await _scanGroupsFromSessions(_openclawHome, agentId);
           if (groups.length > 0) {
-            patch.watchGroupIds = groups.map(g => g.groupId);
-            // Build groupNames map: mỗi group có tên riêng
-            const namesMap = {};
-            for (const g of groups) namesMap[g.groupId] = g.groupName;
-            patch.groupNames = { ...(pluginCfg.groupNames || {}), ...namesMap };
+            // Build groupNames map: mỗi group có object {name, admins, creatorId}
+            const existingNames = pluginCfg.groupNames || {};
+            const namesMap = { ...existingNames };
+            for (const g of groups) {
+              if (!namesMap[g.groupId]) {
+                namesMap[g.groupId] = { name: g.groupName, admins: [], creatorId: '' };
+              } else if (typeof namesMap[g.groupId] === 'string') {
+                namesMap[g.groupId] = { name: namesMap[g.groupId], admins: [], creatorId: '' };
+              }
+            }
+            patch.groupNames = namesMap;
             logger.info(`[zalo-mod] auto-detected ${groups.length} group(s) from sessions: ${groups.map(g => g.groupName).join(', ')}`);
           } else {
             logger.info('[zalo-mod] no group sessions found yet — user should chat in a group then run /groupid');
@@ -844,8 +865,15 @@ const plugin = definePluginEntry({
       }
     }
 
-    function isAdmin(senderId) {
-      return adminIds.size === 0 || adminIds.has(String(senderId));
+    function isAdmin(senderId, groupId) {
+      if (String(senderId) === ownerId) return true;
+      if (adminIds.has(String(senderId))) return true;
+      // Check per-group admins (từ ZCA sync)
+      if (groupId) {
+        const gAdmins = groupNames[groupId]?.admins || getGroupAdmins(groupId);
+        if (gAdmins.includes(String(senderId))) return true;
+      }
+      return false;
     }
 
     // ── Member Directory — persistent name↔ID mapping ────────
@@ -954,7 +982,8 @@ const plugin = definePluginEntry({
         })).filter(m => m.id);
       } catch (e) {
         _pollFailCounts[failKey] = (_pollFailCounts[failKey] || 0) + 1;
-        if (_pollFailCounts[failKey] === 1 || _pollFailCounts[failKey] % 10 === 0) {
+        // Chỉ log khi fail >= 3 lần liên tiếp (Zalo rate-limit tạm thời là bình thường)
+        if (_pollFailCounts[failKey] >= 3 && (_pollFailCounts[failKey] === 3 || _pollFailCounts[failKey] % 10 === 0)) {
           logger.warn(`[zalo-mod] [WATCHER] poll failed for group ${groupId} (x${_pollFailCounts[failKey]}): ${e.message}`);
         }
         return null;
@@ -964,9 +993,19 @@ const plugin = definePluginEntry({
     // ── Group Admin tracking via direct ZCA API ──────────────────
     // OpenClaw wrapper strips creatorId/adminIds from getGroupInfo response.
     // Solution: import zca-js directly, login with saved credentials, call raw API.
+    // ZCA direct API — tạo on-demand, KHÔNG giữ session lâu dài
+    // để tránh conflict với session chính của OpenClaw (Zalo đá session)
     let _zcaApi = null;
+    let _zcaApiCreatedAt = 0;
+    const ZCA_SESSION_TTL = 30_000; // 30s — đủ cho 1 batch quét, sau đó expire
+
     async function _getZcaApi() {
-      if (_zcaApi) return _zcaApi;
+      // Reuse nếu vẫn còn trong TTL
+      if (_zcaApi && (Date.now() - _zcaApiCreatedAt) < ZCA_SESSION_TTL) {
+        return _zcaApi;
+      }
+      // Invalidate cũ
+      _zcaApi = null;
       try {
         const zcaPath = path.resolve('/usr/local/lib/node_modules/openclaw/node_modules/zca-js');
         const { Zalo } = require(zcaPath);
@@ -974,12 +1013,19 @@ const plugin = definePluginEntry({
         const creds = JSON.parse(await fs.readFile(credsPath, 'utf8'));
         const zalo = new Zalo({ checkUpdate: false, logging: false });
         _zcaApi = await zalo.login(creds);
-        logger.info('[zalo-mod] ZCA direct API initialized OK');
+        _zcaApiCreatedAt = Date.now();
+        logger.info('[zalo-mod] ZCA direct API initialized (TTL=30s)');
         return _zcaApi;
       } catch (e) {
         logger.warn(`[zalo-mod] ZCA direct API init failed: ${e.message}`);
         return null;
       }
+    }
+
+    /** Gọi sau khi batch xong — hủy session ZCA để không conflict */
+    function _invalidateZcaApi() {
+      _zcaApi = null;
+      _zcaApiCreatedAt = 0;
     }
 
     /**
@@ -1021,7 +1067,7 @@ const plugin = definePluginEntry({
     }
 
     /**
-     * Sync group admins từ ZCA API → settings.json
+     * Sync group admins từ ZCA API → settings.json + groupNames config
      * Gọi khi /groupid-add hoặc /rules groupid
      */
     async function syncGroupAdminsFromZCA(groupId) {
@@ -1031,10 +1077,24 @@ const plugin = definePluginEntry({
       const allAdmins = new Set(getGroupAdmins(groupId));
       if (zcaInfo.creatorId) allAdmins.add(String(zcaInfo.creatorId));
       for (const id of zcaInfo.adminIds) allAdmins.add(String(id));
-      store.setSetting(groupId, 'groupAdmins', [...allAdmins]);
+      const adminList = [...allAdmins];
+      // Update settings.json (per-group)
+      store.setSetting(groupId, 'groupAdmins', adminList);
       store.setSetting(groupId, 'creatorId', zcaInfo.creatorId);
       await store.saveSettings();
-      logger.info(`[zalo-mod] synced admins for group ${groupId}: creator=${zcaInfo.creatorId}, admins=${[...allAdmins].join(',')}`);
+      // Update in-memory groupNames + persist to openclaw.json
+      if (groupNames[groupId]) {
+        groupNames[groupId].admins = adminList;
+        groupNames[groupId].creatorId = zcaInfo.creatorId || '';
+        if (zcaInfo.name) groupNames[groupId].name = zcaInfo.name;
+      } else {
+        groupNames[groupId] = { name: zcaInfo.name || '', admins: adminList, creatorId: zcaInfo.creatorId || '' };
+      }
+      // Persist groupNames to openclaw.json
+      const mergedNames = { ...(pluginCfg.groupNames || {}) };
+      mergedNames[groupId] = groupNames[groupId];
+      await _patchOpenclawConfig(_openclawHome, { groupNames: mergedNames }, logger, true);
+      logger.info(`[zalo-mod] synced admins for group ${groupId}: creator=${zcaInfo.creatorId}, admins=${adminList.join(',')}, members=${zcaInfo.totalMember}`);
       return zcaInfo;
     }
 
@@ -1339,7 +1399,7 @@ const plugin = definePluginEntry({
         const lines = ['👁️ FOLLOW PER-GROUP (theo dõi chat + memory)\n━━━━━━━━━━━━━━━━━━'];
         for (const gId of watchGroupIds) {
           const name = getGroupName(gId);
-          const on = store.getSetting(gId, 'follow', false);
+          const on = store.getSetting(gId, 'follow', true);
           const tracking = store.getSetting(gId, 'tracking', false);
           lines.push(`${on ? '✅' : '❌'} ${name}\n   ID: ${gId} | Tracking: ${tracking ? 'BẬT' : 'TẮT'}`);
         }
@@ -1408,7 +1468,7 @@ const plugin = definePluginEntry({
       if (sub === 'status') {
         const mutedOn = watchGroupIds.filter(gId => store.getSetting(gId, 'muted', false)).length;
         const welcomeOn = watchGroupIds.filter(gId => store.getSetting(gId, 'welcome', true)).length;
-        const followOn = watchGroupIds.filter(gId => store.getSetting(gId, 'follow', false)).length;
+        const followOn = watchGroupIds.filter(gId => store.getSetting(gId, 'follow', true)).length;
         const totalMembers = Object.values(_memberDir).reduce((sum, m) => sum + Object.keys(m).length, 0);
         await sendDmMsg(ctx, senderId,
           `🔐 OWNER STATUS\n━━━━━━━━━━━━━━━━━━\n📡 Groups: ${watchGroupIds.length}\n🔇 Muted: ${mutedOn} group(s)\n🎉 Welcome: ${welcomeOn} bật\n👁️ Follow: ${followOn} bật\n👥 Members tracked: ${totalMembers}\n💬 DM whitelist: ${allowedDmUsers.size === 0 ? 'Tất cả' : allowedDmUsers.size + ' users'}\n🤖 Bot: ${botName}`
@@ -1434,12 +1494,13 @@ const plugin = definePluginEntry({
       if (sub === 'groupid-add' && args[1]) {
         const targetGid = args[1].replace(/^<|>$/g, ''); // strip <>
         const gName = args.slice(2).join(' ') || `Group ${targetGid.slice(-6)}`;
-        const patch = { watchGroupIds: [...new Set([...watchGroupIds, targetGid])] };
-        patch.groupNames = { ...(pluginCfg.groupNames || {}), [targetGid]: gName };
-        const patched = await _patchOpenclawConfig(_openclawHome, patch, logger, true);
+        const newEntry = { name: gName, admins: [], creatorId: '' };
+        // Merge vào groupNames hiện tại
+        const mergedNames = { ...(pluginCfg.groupNames || {}), [targetGid]: newEntry };
+        const patched = await _patchOpenclawConfig(_openclawHome, { groupNames: mergedNames }, logger, true);
         if (patched) {
           if (!watchGroupIds.includes(targetGid)) watchGroupIds.push(targetGid);
-          groupNames[targetGid] = gName;
+          groupNames[targetGid] = newEntry;
         }
         // Sync admins từ ZCA API (creatorId + adminIds)
         const zcaInfo = await syncGroupAdminsFromZCA(targetGid);
@@ -1448,6 +1509,7 @@ const plugin = definePluginEntry({
           ? `👑 Admins: ${adminNames.join(', ')}`
           : '👑 Admin: chưa sync được (ZCA unavailable)';
         const memberLine = zcaInfo ? `👥 Members: ${zcaInfo.totalMember}` : '';
+        _invalidateZcaApi(); // Hủy ZCA session ngay sau khi dùng xong
         if (patched) {
           await sendDmMsg(ctx, senderId, `✅ Đã thêm group: ${zcaInfo?.name || gName}\n🆔 ID: ${targetGid}\n${adminLine}${memberLine ? '\n' + memberLine : ''}\n🔄 Restart gateway để áp dụng.`);
         } else {
@@ -1504,7 +1566,7 @@ const plugin = definePluginEntry({
         if (ownerIdMatch) {
           if (!ownerId) {
             // Chưa có owner → auto-claim sender
-            const patch = { ownerId: senderId, adminIds: [...new Set([...adminIds, senderId])] };
+            const patch = { ownerId: senderId };
             const patched = await _patchOpenclawConfig(_openclawHome, patch, logger, true);
             if (patched) {
               await sendDmMsg(ctx, senderId,
@@ -1544,7 +1606,7 @@ const plugin = definePluginEntry({
       if (isMuted) {
         // Only allow /unmute from admin to pass through
         const unmuteMatch = content.match(/^\/(unmute|bat-bot)$/i);
-        if (unmuteMatch && isAdmin(senderId)) {
+        if (unmuteMatch && isAdmin(senderId, groupId)) {
           store.setSetting(groupId, 'muted', false);
           await store.saveSettings();
           logger.info(`[zalo-mod] group ${groupId} UNMUTED by ${senderName}`);
@@ -1575,7 +1637,7 @@ const plugin = definePluginEntry({
 
         // /mute — admin only: tắt bot hoàn toàn trong group
         if (command === '/mute' || command === '/tat-bot') {
-          if (!isAdmin(senderId)) return { handled: true };
+          if (!isAdmin(senderId, groupId)) return { handled: true };
           store.setSetting(groupId, 'muted', true);
           await store.saveSettings();
           logger.info(`[zalo-mod] group ${groupId} MUTED by ${senderName}`);
@@ -1585,7 +1647,7 @@ const plugin = definePluginEntry({
 
         // /unmute — admin only: bật lại bot (also handled in mute gate above, but kept here for non-muted state)
         if (command === '/unmute' || command === '/bat-bot') {
-          if (!isAdmin(senderId)) return { handled: true };
+          if (!isAdmin(senderId, groupId)) return { handled: true };
           store.setSetting(groupId, 'muted', false);
           await store.saveSettings();
           await sendGroupMsg(ctx, groupId, '🔊 Bot đang hoạt động bình thường!');
@@ -1607,55 +1669,106 @@ const plugin = definePluginEntry({
           return { handled: true };
         }
 
-        // /rules groupid — thêm group hiện tại vào config (owner only, trong group)
+        // /rules groupid — quét TẤT CẢ groups từ session, sync ZCA, auto-enable welcome/follow
         if (command === '/rules' && cmdArgs.toLowerCase().startsWith('groupid')) {
           try {
-            const gName = currentGroupName || senderName + "'s group";
-            const alreadyExists = watchGroupIds.includes(groupId);
-            if (!alreadyExists) {
-              const patch = {
-                watchGroupIds: [...new Set([...watchGroupIds, groupId])],
-                groupNames: { ...(pluginCfg.groupNames || {}), [groupId]: gName },
-              };
-              if (!pluginCfg.botName || pluginCfg.botName === 'Bot') {
-                const detectedName = await _readBotNameFromIdentity(workspaceDir);
-                if (detectedName) {
-                  patch.botName = detectedName;
-                  patch.zaloDisplayNames = [detectedName];
-                }
+            await sendGroupMsg(ctx, groupId, '🔍 Đang quét tất cả groups từ session...');
+
+            // 1. Scan tất cả groups từ session data
+            const agentId = cfg?.agents?.list?.[0]?.id;
+            const sessionGroups = await _scanGroupsFromSessions(_openclawHome, agentId);
+
+            // Merge group hiện tại nếu chưa có trong session
+            const currentInSession = sessionGroups.some(g => g.groupId === groupId);
+            if (!currentInSession) {
+              sessionGroups.push({ groupId, groupName: currentGroupName || senderName + "'s group" });
+            }
+
+            // 2. Build groupNames + gọi ZCA cho mỗi group
+            const mergedNames = { ...(pluginCfg.groupNames || {}) };
+            const results = [];
+            let autoEnabled = 0;
+
+            for (const g of sessionGroups) {
+              const gId = g.groupId;
+              // Tạo entry nếu chưa có
+              if (!mergedNames[gId] || typeof mergedNames[gId] === 'string') {
+                mergedNames[gId] = { name: (typeof mergedNames[gId] === 'string' ? mergedNames[gId] : g.groupName) || '', admins: [], creatorId: '' };
               }
-              await _patchOpenclawConfig(_openclawHome, patch, logger, true);
-              watchGroupIds.push(groupId);
-              groupNames[groupId] = gName;
+
+              // Gọi ZCA lấy admin info
+              const zcaInfo = await fetchGroupAdminsFromZCA(gId);
+              if (zcaInfo) {
+                const allAdmins = new Set(mergedNames[gId].admins || []);
+                if (zcaInfo.creatorId) allAdmins.add(String(zcaInfo.creatorId));
+                for (const id of zcaInfo.adminIds) allAdmins.add(String(id));
+                mergedNames[gId].admins = [...allAdmins];
+                mergedNames[gId].creatorId = zcaInfo.creatorId || '';
+                if (zcaInfo.name) mergedNames[gId].name = zcaInfo.name;
+
+                // Cập nhật settings.json
+                store.setSetting(gId, 'groupAdmins', [...allAdmins]);
+                store.setSetting(gId, 'creatorId', zcaInfo.creatorId);
+
+                // 3. Auto-enable welcome + follow nếu ownerId là admin/creator của group
+                const ownerIsAdmin = allAdmins.has(ownerId);
+                if (ownerIsAdmin) {
+                  store.setSetting(gId, 'welcome', true);
+                  store.setSetting(gId, 'follow', true);
+                  store.setSetting(gId, 'tracking', true);
+                  autoEnabled++;
+                  results.push(`✅ ${mergedNames[gId].name}\n   ID: ${gId} | 👥 ${zcaInfo.totalMember} | 🎉 welcome+follow BẬT`);
+                } else {
+                  results.push(`⬜ ${mergedNames[gId].name}\n   ID: ${gId} | 👥 ${zcaInfo.totalMember} | ⏸️ owner không phải admin`);
+                }
+              } else {
+                results.push(`⚠️ ${mergedNames[gId].name || gId}\n   ID: ${gId} | ZCA unavailable`);
+              }
             }
-            // Sync admins từ ZCA API (creatorId + adminIds)
-            const zcaInfo = await syncGroupAdminsFromZCA(groupId);
-            const adminNames = getGroupAdminNames(groupId);
-            const adminLine = adminNames.length > 0
-              ? `👑 Admins: ${adminNames.join(', ')}`
-              : `👑 Admin: ${senderName} (ZCA unavailable)`;
-            const memberLine = zcaInfo ? `👥 Members: ${zcaInfo.totalMember}` : '';
-            if (!alreadyExists) {
-              await sendGroupMsg(ctx, groupId,
-                `✅ Đã thêm group vào config!\n🆔 ID: ${groupId}\n📛 Tên: ${zcaInfo?.name || gName}\n${adminLine}${memberLine ? '\n' + memberLine : ''}\n🔄 Restart gateway để áp dụng.`
-              );
-            } else {
-              await sendGroupMsg(ctx, groupId,
-                `ℹ️ Group đã có trong config rồi.\n🆔 ID: ${groupId}\n📛 Tên: ${getGroupName(groupId)}\n${adminLine}${memberLine ? '\n' + memberLine : ''}`
-              );
+
+            // 4. Detect bot name nếu chưa có
+            const patch = { groupNames: mergedNames };
+            if (!pluginCfg.botName || pluginCfg.botName === 'Bot') {
+              const detectedName = await _readBotNameFromIdentity(workspaceDir);
+              if (detectedName) {
+                patch.botName = detectedName;
+                patch.zaloDisplayNames = [detectedName];
+              }
             }
+
+            // 5. Persist
+            await _patchOpenclawConfig(_openclawHome, patch, logger, true);
+            await store.saveSettings();
+            _invalidateZcaApi(); // Hủy ZCA session ngay sau batch
+
+            // Update in-memory
+            for (const [gId, entry] of Object.entries(mergedNames)) {
+              groupNames[gId] = entry;
+              if (!watchGroupIds.includes(gId)) watchGroupIds.push(gId);
+            }
+
+            // 6. Report
+            const report = [
+              `📡 QUÉT GROUPS HOÀN TẤT`,
+              `━━━━━━━━━━━━━━━━━━`,
+              ...results,
+              ``,
+              `📊 Tổng: ${sessionGroups.length} groups`,
+              `🎉 Auto-enabled: ${autoEnabled} groups (owner là admin)`,
+              `🔄 Restart gateway để áp dụng.`
+            ].join('\n');
+            await sendGroupMsg(ctx, groupId, report);
+
           } catch (e) {
             logger.warn(`[zalo-mod] /rules groupid failed: ${e.message}`);
-            await sendGroupMsg(ctx, groupId,
-              `🆔 Group ID: ${groupId}\n⚠️ Lỗi: ${e.message}`
-            );
+            await sendGroupMsg(ctx, groupId, `🆔 Group ID: ${groupId}\n⚠️ Lỗi: ${e.message}`);
           }
           return { handled: true };
         }
 
         // /report — admin only
         if (command === '/report') {
-          if (!isAdmin(senderId)) return { handled: true };
+          if (!isAdmin(senderId, groupId)) return { handled: true };
           await reloadStore();
           const vio = getStoreDataForGroup(store.getAllViolations(), groupId);
           const wrn = getStoreDataForGroup(store.getAllWarned(), groupId);
@@ -1666,7 +1779,7 @@ const plugin = definePluginEntry({
 
         // /warn @name [reason] — admin only
         if (command === '/warn') {
-          if (!isAdmin(senderId)) return { handled: true };
+          if (!isAdmin(senderId, groupId)) return { handled: true };
           const targetMentions = (event.mentions || []);
           // Strip leading @ from args since Zalo body includes @name
           const rawTarget  = (args[0] || '').replace(/^@/, '');
@@ -1690,7 +1803,7 @@ const plugin = definePluginEntry({
 
         // /note [text] — admin only
         if (command === '/note') {
-          if (!isAdmin(senderId)) return { handled: true };
+          if (!isAdmin(senderId, groupId)) return { handled: true };
           const noteText = textBefore || args.join(' ');
           if (!noteText) return { handled: true };
           store.addViolation(groupId, 'admin-note', senderName, 'note', noteText);
@@ -1734,7 +1847,7 @@ const plugin = definePluginEntry({
 
         // /memory — admin manual digest (optionally with note text)
         if (command === '/memory') {
-          if (!isAdmin(senderId)) return { handled: true };
+          if (!isAdmin(senderId, groupId)) return { handled: true };
           const memText = (textBefore || args.join(' ')).replace(/\s{2,}/g, ' ').trim();
           if (memText) {
             store.addViolation(groupId, 'admin-note', senderName, 'note', memText);
@@ -1882,7 +1995,7 @@ const plugin = definePluginEntry({
     // Start member watcher for welcome messages
     startMemberWatcher();
 
-    logger.info(`[zalo-mod] loaded — bot="${botName}" owner=${ownerId || 'none'} adminIds=${adminIds.size || 'any'} watchGroups=${watchGroupIds.length} groupNames=${Object.keys(groupNames).length}`);
+    logger.info(`[zalo-mod] loaded — bot="${botName}" owner=${ownerId || 'none'} groups=${watchGroupIds.length} groupNames=${Object.keys(groupNames).length}`);
   },
 });
 

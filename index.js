@@ -1092,7 +1092,7 @@ const plugin = definePluginEntry({
       const sub = args[0]?.toLowerCase();
       if (!sub) {
         await sendDmMsg(ctx, senderId,
-          `🔐 OWNER PANEL — /rules\n━━━━━━━━━━━━━━━━━━\n\n🔇 Mute (tắt bot hoàn toàn):\n  /rules mute-list\n  /rules mute <groupId> on/off\n\n🎉 Welcome (chào mem mới):\n  /rules welcome-list\n  /rules welcome <groupId> on/off\n\n👁️ Follow (theo dõi chat + memory):\n  /rules follow-list\n  /rules follow <groupId> on/off\n\n💬 DM Whitelist:\n  /rules dm-list\n  /rules dm-add <tên member>\n  /rules dm-remove <tên member>\n\n🆔 Group:\n  /rules groupid-list\n  /rules groupid-add <groupId>\n\n📊 /rules status`
+          `🔐 OWNER PANEL — /rules\n━━━━━━━━━━━━━━━━━━\n\n🔇 Mute (tắt bot hoàn toàn):\n  /rules mute-list\n  /rules mute <groupId> on/off\n  /rules mute all on/off\n\n🎉 Welcome (chào mem mới):\n  /rules welcome-list\n  /rules welcome <groupId> on/off\n  /rules welcome all on/off\n\n👁️ Follow (theo dõi chat + memory):\n  /rules follow-list\n  /rules follow <groupId> on/off\n  /rules follow all on/off\n\n💬 DM Whitelist:\n  /rules dm-list\n  /rules dm-add <tên member>\n  /rules dm-remove <tên member>\n\n🆔 Group:\n  /rules groupid-list\n  /rules groupid-add <groupId>\n\n📊 /rules status`
         );
         return { handled: true };
       }

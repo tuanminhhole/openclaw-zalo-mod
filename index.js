@@ -1214,7 +1214,9 @@ const plugin = definePluginEntry({
             if (watchGroupIds.length > 1) await new Promise(r => setTimeout(r, 1000));
           }
         }, intervalMs);
+        if (_G.watcherTimer && _G.watcherTimer.unref) _G.watcherTimer.unref();
       }, 30000); // 30s delay for zalouser to connect
+      if (_G.initTimer && _G.initTimer.unref) _G.initTimer.unref();
     }
 
     // ── Owner DM Command Handler ──────────────────────────────

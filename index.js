@@ -1222,7 +1222,9 @@ const plugin = definePluginEntry({
       const slashMatch = content.match(/^(\/[a-z][a-z0-9-]*)(.*)$/i);
       if (!slashMatch) return null; // không phải lệnh → forward LLM
 
-      const command = slashMatch[1].toLowerCase();
+      const rawCommand = slashMatch[1].toLowerCase();
+      if (!rawCommand.startsWith(cmdPrefix)) return null;
+      const command = '/' + rawCommand.slice(cmdPrefix.length);
       const cmdArgs = slashMatch[2].trim();
       const args = cmdArgs ? cmdArgs.split(/\s+/) : [];
 
@@ -1715,7 +1717,9 @@ const plugin = definePluginEntry({
       // Support: "/command args" AND "@BotName text /command args"
       const slashMatch = content.match(/(?:^|\s)(\/[a-z][a-z0-9-]*)(.*)$/i);
       if (slashMatch) {
-        const command = slashMatch[1].toLowerCase();
+        const rawCommand = slashMatch[1].toLowerCase();
+        if (!rawCommand.startsWith(cmdPrefix)) return;
+        const command = '/' + rawCommand.slice(cmdPrefix.length);
         const cmdArgs = slashMatch[2].trim();
         const args    = cmdArgs ? cmdArgs.split(/\s+/) : [];
         // Text before the slash command (e.g. "@Bot mai 5h @Mkt đi đá banh /note" → "mai 5h @Mkt đi đá banh")

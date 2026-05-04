@@ -262,7 +262,7 @@ function createSpamTracker(repeatN, windowMs) {
 }
 
 // ── Template Builders ────────────────────────────────────────
-function buildNoiQuy(groupName) {
+function buildNoiQuy(groupName, cmdPrefix) {
   return `📋 NỘI QUY — ${groupName}
 ━━━━━━━━━━━━━━━━━━
 
@@ -280,35 +280,35 @@ function buildNoiQuy(groupName) {
 📌 Hỏi thêm: @Williams [câu hỏi]`;
 }
 
-function buildMenu(botName) {
+function buildMenu(botName, cmdPrefix) {
   return `🤖 ${botName.toUpperCase()} — MENU LỆNH
 ━━━━━━━━━━━━━━━━━━
 
 📋 Thông tin
-  /noi-quy   — Xem nội quy nhóm
-  /menu   — Menu lệnh này
-  /huong-dan    — Hướng dẫn dùng bot
+  ${cmdPrefix}noi-quy   — Xem nội quy nhóm
+  ${cmdPrefix}menu   — Menu lệnh này
+  ${cmdPrefix}huong-dan    — Hướng dẫn dùng bot
 
 
 💬 Hỏi đáp
   @${botName} [câu hỏi] — Hỏi bot bất kỳ điều gì
 
 🔧 Admin (chỉ admin dùng được)
-  /mute                    — Tắt bot hoàn toàn
-  /unmute                  — Bật lại bot
-  /warn @name [lý do]  — Cảnh cáo member
-  /note [text]           — Ghi chú admin
-  /report                  — Báo cáo vi phạm
-  /memory                  — Lưu memory digest
+  ${cmdPrefix}mute                    — Tắt bot hoàn toàn
+  ${cmdPrefix}unmute                  — Bật lại bot
+  ${cmdPrefix}warn @name [lý do]  — Cảnh cáo member
+  ${cmdPrefix}note [text]           — Ghi chú admin
+  ${cmdPrefix}report                  — Báo cáo vi phạm
+  ${cmdPrefix}memory                  — Lưu memory digest
 
 👑 Owner (chỉ chủ bot)
-  /rules                 — Cấu hình bot
+  ${cmdPrefix}rules                 — Cấu hình bot
 
 ━━━━━━━━━━━━━━━━━━
 💡 Tip: Tag @${botName} để hỏi thêm!`;
 }
 
-function buildHuongDan(botName) {
+function buildHuongDan(botName, cmdPrefix) {
   return `📖 HƯỚNG DẪN SỬ DỤNG BOT ${botName.toUpperCase()}
 ━━━━━━━━━━━━━━━━━━
 
@@ -320,12 +320,12 @@ function buildHuongDan(botName) {
 
 📌 Ví dụ:
   @${botName} giải thích quy trình XYZ
-  /noi-quy → xem nội quy
-  /menu → xem tất cả lệnh
+  ${cmdPrefix}noi-quy → xem nội quy
+  ${cmdPrefix}menu → xem tất cả lệnh
 
 ⚠️ Lưu ý:
   • Bot KHÔNG tự reply tin thường — cần @tag hoặc gõ lệnh
-  • Lệnh admin: /report /warn (chỉ admin dùng được)
+  • Lệnh admin: ${cmdPrefix}report và ${cmdPrefix}warn (chỉ admin dùng được)
 
 ━━━━━━━━━━━━━━━━━━
 ❓ Cần hỗ trợ thêm → @${botName}`;
@@ -364,7 +364,7 @@ function buildReport(groupId, allViolations, allWarned) {
   return lines.join('\n');
 }
 
-function buildWelcome(memberName, botName) {
+function buildWelcome(memberName,  botName, cmdPrefix) {
   return `👋 Chào mừng ${memberName} vào nhóm!
 📋 /noi-quy để xem nội quy
 📖 /menu để xem lệnh
@@ -422,6 +422,8 @@ const plugin = definePluginEntry({
     const botName       = String(pluginCfg.botName || 'Bot');
     const zaloNames     = (pluginCfg.zaloDisplayNames || []).map(String);
     const botNames      = [botName, ...zaloNames].filter(Boolean);
+    const pfx = String(pluginCfg.slashPrefix || botName).toLowerCase().replace(/[^a-z0-9]/g, '');
+    const cmdPrefix = '/' + (pfx || 'bot') + '-';
     const ownerId       = String(pluginCfg.ownerId || '');  // Zalo ID chủ nhân bot
     // adminIds: derive từ ownerId — không cần config riêng
     // (per-group admins lưu trong groupNames[gId].admins và settings.json)
@@ -1068,7 +1070,7 @@ const plugin = definePluginEntry({
 
     /**
      * Sync group admins từ ZCA API → settings.json + groupNames config
-     * Gọi khi /groupid-add hoặc /rules groupid
+     * Gọi khi /groupid-add hoặc ${cmdPrefix}rules groupid
      */
     async function syncGroupAdminsFromZCA(groupId) {
       const zcaInfo = await fetchGroupAdminsFromZCA(groupId);
@@ -1146,7 +1148,7 @@ const plugin = definePluginEntry({
         _G.welcomedDedup.add(dedupKey(groupId, member.id));
         setTimeout(() => _G.welcomedDedup.delete(dedupKey(groupId, member.id)), 3600000);
         try {
-          await sendGroupMsg({ accountId: 'default' }, groupId, buildWelcome(memberName, botName));
+          await sendGroupMsg({ accountId: 'default' }, groupId, buildWelcome(memberName,  botName, cmdPrefix));
           await appendToMemoryFile(groupId, 'chat-highlights.md', `| ${nowShort()} | SYSTEM | Welcome: ${memberName} joined (detected by watcher) |`);
           logger.info(`[zalo-mod] [WATCHER] welcome sent for ${memberName} in group ${groupId}`);
         } catch (e) {
@@ -1216,7 +1218,7 @@ const plugin = definePluginEntry({
     }
 
     // ── Owner DM Command Handler ──────────────────────────────
-    async function handleOwnerDm(content, senderId, ctx) {
+    async function handleOwnerDm(content, senderId, ctx, cmdPrefix) {
       const slashMatch = content.match(/^(\/[a-z][a-z0-9-]*)(.*)$/i);
       if (!slashMatch) return null; // không phải lệnh → forward LLM
 
@@ -1229,7 +1231,7 @@ const plugin = definePluginEntry({
       const sub = args[0]?.toLowerCase();
       if (!sub) {
         await sendDmMsg(ctx, senderId,
-          `🔐 OWNER PANEL — /rules\n━━━━━━━━━━━━━━━━━━\n\n🔇 Mute (tắt bot hoàn toàn):\n  /rules mute-list\n  /rules mute <groupId> on/off\n  /rules mute all on/off\n\n🎉 Welcome (chào mem mới):\n  /rules welcome-list\n  /rules welcome <groupId> on/off\n  /rules welcome all on/off\n\n👁️ Follow (theo dõi chat + memory):\n  /rules follow-list\n  /rules follow <groupId> on/off\n  /rules follow all on/off\n\n💬 DM Whitelist:\n  /rules dm-list\n  /rules dm-add <tên member>\n  /rules dm-remove <tên member>\n\n🆔 Group:\n  /rules groupid-list\n  /rules groupid-add <groupId>\n\n📊 /rules status`
+          `🔐 OWNER PANEL — ${cmdPrefix}rules\n━━━━━━━━━━━━━━━━━━\n\n🔇 Mute (tắt bot hoàn toàn):\n  ${cmdPrefix}rules mute-list\n  ${cmdPrefix}rules mute <groupId> on/off\n  ${cmdPrefix}rules mute all on/off\n\n🔕 Silent Mode (chỉ reply khi tag):\n  ${cmdPrefix}rules silent-list\n  ${cmdPrefix}rules silent <groupId> on/off\n  ${cmdPrefix}rules silent all on/off\n\n🎉 Welcome (chào mem mới):\n  ${cmdPrefix}rules welcome-list\n  ${cmdPrefix}rules welcome <groupId> on/off\n  ${cmdPrefix}rules welcome all on/off\n\n📋 Tracking (ghi lịch sử chat):\n  ${cmdPrefix}rules tracking-list\n  ${cmdPrefix}rules tracking <groupId> on/off\n  ${cmdPrefix}rules tracking all on/off\n\n👁️ Follow (theo dõi chat + memory):\n  ${cmdPrefix}rules follow-list\n  ${cmdPrefix}rules follow <groupId> on/off\n  ${cmdPrefix}rules follow all on/off\n\n💬 DM Whitelist:\n  ${cmdPrefix}rules dm-list\n  ${cmdPrefix}rules dm-add <tên member>\n  ${cmdPrefix}rules dm-remove <tên member>\n\n🆔 Group:\n  ${cmdPrefix}rules groupid-list\n  ${cmdPrefix}rules groupid-add <groupId>\n\n📊 ${cmdPrefix}rules status`
         );
         return { handled: true };
       }
@@ -1256,7 +1258,7 @@ const plugin = definePluginEntry({
           await store.saveSettings();
           await sendDmMsg(ctx, senderId, `${val ? '🔇' : '🔊'} Mute ${val ? 'BẬT' : 'TẮT'} cho TẤT CẢ ${watchGroupIds.length} groups`);
         } else {
-          await sendDmMsg(ctx, senderId, '⚠️ Cú pháp: /rules mute all on/off');
+          await sendDmMsg(ctx, senderId, '⚠️ Cú pháp: ${cmdPrefix}rules mute all on/off');
         }
         return { handled: true };
       }
@@ -1274,7 +1276,53 @@ const plugin = definePluginEntry({
           await store.saveSettings();
           await sendDmMsg(ctx, senderId, `🔊 Mute TẮT cho ${getGroupName(targetGid)} (${targetGid})\nBot hoạt động bình thường trở lại.`);
         } else {
-          await sendDmMsg(ctx, senderId, '⚠️ Cú pháp: /rules mute <groupId> on/off');
+          await sendDmMsg(ctx, senderId, '⚠️ Cú pháp: ${cmdPrefix}rules mute <groupId> on/off');
+        }
+        return { handled: true };
+      }
+
+      
+      // ── silent-list
+      if (sub === 'silent-list') {
+        const lines = ['🔕 SILENT MODE PER-GROUP\n━━━━━━━━━━━━━━━━━━'];
+        for (const gId of watchGroupIds) {
+          const name = getGroupName(gId);
+          const silent = store.getSetting(gId, 'silent', true);
+          lines.push(`${silent ? '🔕' : '🔊'} ${name}\n   ID: ${gId} | ${silent ? 'BẬT' : 'TẮT'}`);
+        }
+        if (watchGroupIds.length === 0) lines.push('⚠️ Chưa có group nào.');
+        await sendDmMsg(ctx, senderId, lines.join('\n'));
+        return { handled: true };
+      }
+
+      // ── silent all on/off
+      if (sub === 'silent' && args[1]?.toLowerCase() === 'all') {
+        const toggle = args[2]?.toLowerCase();
+        if (toggle === 'on' || toggle === 'off') {
+          const val = toggle === 'on';
+          for (const gId of watchGroupIds) { store.setSetting(gId, 'silent', val); }
+          await store.saveSettings();
+          await sendDmMsg(ctx, senderId, `${val ? '🔕' : '🔊'} Silent mode ${val ? 'BẬT' : 'TẮT'} cho TẤT CẢ ${watchGroupIds.length} groups`);
+        } else {
+          await sendDmMsg(ctx, senderId, '⚠️ Cú pháp: ${cmdPrefix}rules silent all on/off');
+        }
+        return { handled: true };
+      }
+
+      // ── silent <groupId> on/off
+      if (sub === 'silent' && args[1]) {
+        const targetGid = args[1].replace(/^<|>$/g, '');
+        const toggle = args[2]?.toLowerCase();
+        if (toggle === 'on') {
+          store.setSetting(targetGid, 'silent', true);
+          await store.saveSettings();
+          await sendDmMsg(ctx, senderId, `🔕 Silent mode BẬT cho ${getGroupName(targetGid)} (${targetGid})`);
+        } else if (toggle === 'off') {
+          store.setSetting(targetGid, 'silent', false);
+          await store.saveSettings();
+          await sendDmMsg(ctx, senderId, `🔊 Silent mode TẮT cho ${getGroupName(targetGid)} (${targetGid})`);
+        } else {
+          await sendDmMsg(ctx, senderId, '⚠️ Cú pháp: ${cmdPrefix}rules silent <groupId> on/off');
         }
         return { handled: true };
       }
@@ -1302,7 +1350,7 @@ const plugin = definePluginEntry({
           await store.saveSettings();
           await sendDmMsg(ctx, senderId, `${val ? '🎉' : '🔕'} Welcome ${val ? 'BẬT' : 'TẮT'} cho TẤT CẢ ${watchGroupIds.length} groups`);
         } else {
-          await sendDmMsg(ctx, senderId, '⚠️ Cú pháp: /rules welcome all on/off');
+          await sendDmMsg(ctx, senderId, '⚠️ Cú pháp: ${cmdPrefix}rules welcome all on/off');
         }
         return { handled: true };
       }
@@ -1320,7 +1368,53 @@ const plugin = definePluginEntry({
           await store.saveSettings();
           await sendDmMsg(ctx, senderId, `✅ Welcome TẮT cho ${getGroupName(targetGid)} (${targetGid})`);
         } else {
-          await sendDmMsg(ctx, senderId, '⚠️ Cú pháp: /rules welcome <groupId> on/off');
+          await sendDmMsg(ctx, senderId, '⚠️ Cú pháp: ${cmdPrefix}rules welcome <groupId> on/off');
+        }
+        return { handled: true };
+      }
+
+      
+      // ── tracking-list
+      if (sub === 'tracking-list') {
+        const lines = ['📋 TRACKING PER-GROUP\n━━━━━━━━━━━━━━━━━━'];
+        for (const gId of watchGroupIds) {
+          const name = getGroupName(gId);
+          const tracking = store.getSetting(gId, 'tracking', false);
+          lines.push(`${tracking ? '✅' : '❌'} ${name}\n   ID: ${gId} | Tracking: ${tracking ? 'BẬT' : 'TẮT'}`);
+        }
+        if (watchGroupIds.length === 0) lines.push('⚠️ Chưa có group nào.');
+        await sendDmMsg(ctx, senderId, lines.join('\n'));
+        return { handled: true };
+      }
+
+      // ── tracking all on/off
+      if (sub === 'tracking' && args[1]?.toLowerCase() === 'all') {
+        const toggle = args[2]?.toLowerCase();
+        if (toggle === 'on' || toggle === 'off') {
+          const val = toggle === 'on';
+          for (const gId of watchGroupIds) { store.setSetting(gId, 'tracking', val); }
+          await store.saveSettings();
+          await sendDmMsg(ctx, senderId, `${val ? '✅' : '❌'} Tracking ${val ? 'BẬT' : 'TẮT'} cho TẤT CẢ ${watchGroupIds.length} groups`);
+        } else {
+          await sendDmMsg(ctx, senderId, '⚠️ Cú pháp: ${cmdPrefix}rules tracking all on/off');
+        }
+        return { handled: true };
+      }
+
+      // ── tracking <groupId> on/off
+      if (sub === 'tracking' && args[1]) {
+        const targetGid = args[1].replace(/^<|>$/g, '');
+        const toggle = args[2]?.toLowerCase();
+        if (toggle === 'on') {
+          store.setSetting(targetGid, 'tracking', true);
+          await store.saveSettings();
+          await sendDmMsg(ctx, senderId, `✅ Tracking BẬT cho ${getGroupName(targetGid)} (${targetGid})`);
+        } else if (toggle === 'off') {
+          store.setSetting(targetGid, 'tracking', false);
+          await store.saveSettings();
+          await sendDmMsg(ctx, senderId, `✅ Tracking TẮT cho ${getGroupName(targetGid)} (${targetGid})`);
+        } else {
+          await sendDmMsg(ctx, senderId, '⚠️ Cú pháp: ${cmdPrefix}rules tracking <groupId> on/off');
         }
         return { handled: true };
       }
@@ -1328,7 +1422,7 @@ const plugin = definePluginEntry({
       // ── dm-list: danh sách users được DM
       if (sub === 'dm-list') {
         if (allowedDmUsers.size === 0) {
-          await sendDmMsg(ctx, senderId, '💬 DM Whitelist: TRỐNG\n\nTất cả mọi người đều có thể DM bot.\nDùng /rules dm-add <tên> để giới hạn.');
+          await sendDmMsg(ctx, senderId, '💬 DM Whitelist: TRỐNG\n\nTất cả mọi người đều có thể DM bot.\nDùng ${cmdPrefix}rules dm-add <tên> để giới hạn.');
         } else {
           const lines = [`💬 DM WHITELIST (${allowedDmUsers.size} users)\n━━━━━━━━━━━━━━━━━━`];
           for (const uid of allowedDmUsers) {
@@ -1350,7 +1444,7 @@ const plugin = definePluginEntry({
         const nameQuery = args.slice(1).join(' ');
         const matches = findUserByName(nameQuery);
         if (matches.length === 0) {
-          await sendDmMsg(ctx, senderId, `❌ Không tìm thấy member tên "${nameQuery}" trong danh sách.\nDùng /rules welcome-list để kiểm tra member directory.`);
+          await sendDmMsg(ctx, senderId, `❌ Không tìm thấy member tên "${nameQuery}" trong danh sách.\nDùng ${cmdPrefix}rules welcome-list để kiểm tra member directory.`);
         } else if (matches.length === 1) {
           const m = matches[0];
           allowedDmUsers.add(m.userId);
@@ -1421,7 +1515,7 @@ const plugin = definePluginEntry({
           await store.saveSettings();
           await sendDmMsg(ctx, senderId, `${val ? '👁️' : '🚫'} Follow ${val ? 'BẬT' : 'TẮT'} cho TẤT CẢ ${watchGroupIds.length} groups`);
         } else {
-          await sendDmMsg(ctx, senderId, '⚠️ Cú pháp: /rules follow all on/off');
+          await sendDmMsg(ctx, senderId, '⚠️ Cú pháp: ${cmdPrefix}rules follow all on/off');
         }
         return { handled: true };
       }
@@ -1459,7 +1553,7 @@ const plugin = definePluginEntry({
           await store.saveSettings();
           await sendDmMsg(ctx, senderId, `✅ Follow TẮT cho ${getGroupName(targetGid)} (${targetGid})`);
         } else {
-          await sendDmMsg(ctx, senderId, '⚠️ Cú pháp: /rules follow <groupId> on/off');
+          await sendDmMsg(ctx, senderId, '⚠️ Cú pháp: ${cmdPrefix}rules follow <groupId> on/off');
         }
         return { handled: true };
       }
@@ -1484,7 +1578,7 @@ const plugin = definePluginEntry({
           const muted = store.getSetting(gId, 'muted', false);
           lines.push(`${muted ? '🔇' : '🔊'} ${name}\n   ID: ${gId}`);
         }
-        if (watchGroupIds.length === 0) lines.push('⚠️ Chưa có group nào. Gõ /rules groupid trong group để thêm.');
+        if (watchGroupIds.length === 0) lines.push('⚠️ Chưa có group nào. Gõ ${cmdPrefix}rules groupid trong group để thêm.');
         lines.push(`\n📊 Tổng: ${watchGroupIds.length} group(s)`);
         await sendDmMsg(ctx, senderId, lines.join('\n'));
         return { handled: true };
@@ -1518,11 +1612,11 @@ const plugin = definePluginEntry({
         return { handled: true };
       }
       if (sub === 'groupid-add' && !args[1]) {
-        await sendDmMsg(ctx, senderId, '⚠️ Cú pháp: /rules groupid-add <groupId>');
+        await sendDmMsg(ctx, senderId, '⚠️ Cú pháp: ${cmdPrefix}rules groupid-add <groupId>');
         return { handled: true };
       }
 
-      return null; // lệnh /rules không nhận ra → forward LLM
+      return null; // lệnh ${cmdPrefix}rules không nhận ra → forward LLM
     }
 
     // ── Event: before_dispatch (main hook) ───────────────────
@@ -1562,7 +1656,7 @@ const plugin = definePluginEntry({
       if (!isGroupMsg) {
         // /ownerid — intercept from ANY DM user (before owner gate)
         // Allows first user to claim ownership when ownerId is empty
-        const ownerIdMatch = content.match(/^\/ownerid$/i);
+        const ownerIdMatch = content.toLowerCase() === `${cmdPrefix}ownerid`;
         if (ownerIdMatch) {
           if (!ownerId) {
             // Chưa có owner → auto-claim sender
@@ -1586,7 +1680,7 @@ const plugin = definePluginEntry({
 
         // Owner DM → config commands hoặc forward LLM
         if (ownerId && senderId === ownerId) {
-          const ownerResult = await handleOwnerDm(content, senderId, ctx);
+          const ownerResult = await handleOwnerDm(content, senderId, ctx, cmdPrefix);
           if (ownerResult) return ownerResult;
           return; // forward to LLM
         }
@@ -1605,7 +1699,7 @@ const plugin = definePluginEntry({
       const isMuted = store.getSetting(groupId, 'muted', false);
       if (isMuted) {
         // Only allow /unmute from admin to pass through
-        const unmuteMatch = content.match(/^\/(unmute|bat-bot)$/i);
+        const unmuteMatch = content.match(new RegExp(`^\$\{cmdPrefix\}(unmute|bat-bot)$`, "i"));
         if (unmuteMatch && isAdmin(senderId, groupId)) {
           store.setSetting(groupId, 'muted', false);
           await store.saveSettings();
@@ -1636,12 +1730,12 @@ const plugin = definePluginEntry({
         }
 
         // /mute — admin only: tắt bot hoàn toàn trong group
-        if (command === '/mute' || command === '/tat-bot') {
+        if (command === '/mute' || command === '/tat-bot', cmdPrefix) {
           if (!isAdmin(senderId, groupId)) return { handled: true };
           store.setSetting(groupId, 'muted', true);
           await store.saveSettings();
           logger.info(`[zalo-mod] group ${groupId} MUTED by ${senderName}`);
-          await sendGroupMsg(ctx, groupId, '🔇 Bot đã tắt trong group này.\nGõ /unmute để bật lại.');
+          await sendGroupMsg(ctx, groupId, '🔇 Bot đã tắt trong group này.\nGõ ${cmdPrefix}unmute để bật lại.');
           return { handled: true };
         }
 
@@ -1659,17 +1753,17 @@ const plugin = definePluginEntry({
           let menu = buildMenu(botName);
           // Nếu sender là owner → hiện thêm owner commands
           if (ownerId && senderId === ownerId) {
-            menu += '\n\n👑 OWNER (DM riêng với bot):\n  /groupid-list\n  /groupid-add <groupId> [tên]\n  /rules — Panel cấu hình\n  /rules status — Tổng quan';
+            menu += '\n\n👑 OWNER (DM riêng với bot, cmdPrefix):\n  /groupid-list\n  /groupid-add <groupId> [tên]\n  ${cmdPrefix}rules — Panel cấu hình\n  ${cmdPrefix}rules status — Tổng quan';
           }
           await sendGroupMsg(ctx, groupId, menu);
           return { handled: true };
         }
         if (command === '/huong-dan') {
-          await sendGroupMsg(ctx, groupId, buildHuongDan(botName));
+          await sendGroupMsg(ctx, groupId, buildHuongDan(botName), cmdPrefix);
           return { handled: true };
         }
 
-        // /rules groupid — quét TẤT CẢ groups từ session, sync ZCA, auto-enable welcome/follow
+        // ${cmdPrefix}rules groupid — quét TẤT CẢ groups từ session, sync ZCA, auto-enable welcome/follow
         if (command === '/rules' && cmdArgs.toLowerCase().startsWith('groupid')) {
           try {
             await sendGroupMsg(ctx, groupId, '🔍 Đang quét tất cả groups từ session...');
@@ -1760,7 +1854,7 @@ const plugin = definePluginEntry({
             await sendGroupMsg(ctx, groupId, report);
 
           } catch (e) {
-            logger.warn(`[zalo-mod] /rules groupid failed: ${e.message}`);
+            logger.warn(`[zalo-mod] ${cmdPrefix}rules groupid failed: ${e.message}`);
             await sendGroupMsg(ctx, groupId, `🆔 Group ID: ${groupId}\n⚠️ Lỗi: ${e.message}`);
           }
           return { handled: true };
@@ -1814,13 +1908,13 @@ const plugin = definePluginEntry({
           return { handled: true };
         }
 
-        // /rules — owner-only control panel
+        // ${cmdPrefix}rules — owner-only control panel
         if (command === '/rules') {
           if (!ownerId || senderId !== ownerId) return { handled: true };
           const sub = args[0]?.toLowerCase();
           if (!sub) {
             await sendGroupMsg(ctx, groupId,
-              `⚙️ ADMIN COMMANDS — /rules\n━━━━━━━━━━━━━━━━━━\n\n🔇 Mute (tắt bot hoàn toàn):\n  /mute   — Tắt bot\n  /unmute — Bật lại\n\n🔕 Silent Mode:\n  /rules silent-on  — Bot chỉ reply khi @tag\n  /rules silent-off — Bot reply mọi tin\n\n🎉 Welcome:\n  /rules welcome-on  — Bật chào member mới\n  /rules welcome-off — Tắt chào\n\n📋 Tracking:\n  /rules tracking-on  — Bật ghi lịch sử chat\n  /rules tracking-off — Tắt ghi lịch sử\n\n📊 /rules status`
+              `⚙️ ADMIN COMMANDS — ${cmdPrefix}rules\n━━━━━━━━━━━━━━━━━━\n\n🔇 Mute (tắt bot hoàn toàn):\n  /mute   — Tắt bot\n  /unmute — Bật lại\n\n🔕 Silent Mode:\n  ${cmdPrefix}rules silent-on  — Bot chỉ reply khi @tag\n  ${cmdPrefix}rules silent-off — Bot reply mọi tin\n\n🎉 Welcome:\n  ${cmdPrefix}rules welcome-on  — Bật chào member mới\n  ${cmdPrefix}rules welcome-off — Tắt chào\n\n📋 Tracking:\n  ${cmdPrefix}rules tracking-on  — Bật ghi lịch sử chat\n  ${cmdPrefix}rules tracking-off — Tắt ghi lịch sử\n\n📊 ${cmdPrefix}rules status`
             );
             return { handled: true };
           }
@@ -1841,7 +1935,7 @@ const plugin = definePluginEntry({
             return { handled: true };
           }
           // Fallback: sub-command không nhận ra → báo lỗi thay vì nuốt im lặng
-          await sendGroupMsg(ctx, groupId, `⚠️ Lệnh /rules ${sub} không hợp lệ.\nGõ /rules để xem danh sách lệnh.`);
+          await sendGroupMsg(ctx, groupId, `⚠️ Lệnh ${cmdPrefix}rules ${sub} không hợp lệ.\nGõ ${cmdPrefix}rules để xem danh sách lệnh.`);
           return { handled: true };
         }
 
@@ -1943,7 +2037,7 @@ const plugin = definePluginEntry({
           if (admins.length > 0) {
             await sendGroupMsg(ctx, groupId, `👑 Admin group này:\n${admins.map(n => `• ${n}`).join('\n')}`);
           } else {
-            await sendGroupMsg(ctx, groupId, '👑 Chưa ghi nhận admin nào. Người tạo group gõ /rules groupid để đăng ký.');
+            await sendGroupMsg(ctx, groupId, '👑 Chưa ghi nhận admin nào. Người tạo group gõ ${cmdPrefix}rules groupid để đăng ký.');
           }
           return { handled: true };
         }

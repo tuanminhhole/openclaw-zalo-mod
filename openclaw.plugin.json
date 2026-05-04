@@ -2,7 +2,7 @@
   "id": "zalo-mod",
   "name": "Zalo Mod",
   "description": "Zero-token Zalo group moderation — slash commands, anti-spam, warn system, memory integration. Blocks LLM for non-mention messages.",
-  "version": "2.6.0",
+  "version": "2.4.0",
   "kind": "runtime",
   "enabledByDefault": false,
   "runtimeId": "zalo-mod",
@@ -22,13 +22,24 @@
         "description": "Map groupId → group info. Source of truth cho danh sách groups. Format: { \"groupId\": { \"name\": \"Tên\", \"admins\": [\"userId\"], \"creatorId\": \"userId\" } }. Backward-compat: string values cũng được chấp nhận.",
         "additionalProperties": {
           "oneOf": [
-            { "type": "string" },
+            {
+              "type": "string"
+            },
             {
               "type": "object",
               "properties": {
-                "name": { "type": "string" },
-                "admins": { "type": "array", "items": { "type": "string" } },
-                "creatorId": { "type": "string" }
+                "name": {
+                  "type": "string"
+                },
+                "admins": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "creatorId": {
+                  "type": "string"
+                }
               }
             }
           ]
@@ -40,7 +51,9 @@
       },
       "zaloDisplayNames": {
         "type": "array",
-        "items": { "type": "string" },
+        "items": {
+          "type": "string"
+        },
         "description": "Zalo display name aliases for @mention detection. e.g. ['Minh Tuan', 'William']"
       },
       "welcomeEnabled": {
@@ -69,7 +82,9 @@
       },
       "allowedDmUsers": {
         "type": "array",
-        "items": { "type": "string" },
+        "items": {
+          "type": "string"
+        },
         "description": "Danh sách Zalo user IDs được phép DM với bot. Nếu để trống, tất cả đều có thể DM. Owner luôn được phép."
       }
     },

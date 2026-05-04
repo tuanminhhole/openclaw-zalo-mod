@@ -16,7 +16,7 @@
  *   listZaloGroupMembers API, diff with previous snapshot.
  *
  * @author Kent x Williams
- * @version 1.2.0
+ * @version 2.4.3
  */
 
 import fs from 'node:fs/promises';
@@ -503,7 +503,7 @@ const plugin = definePluginEntry({
             '---',
             'name: Zalo Group Admin',
             'slug: zalo-group-admin',
-            'version: 1.0.0',
+            'version: 1.2.0',
             `description: Quy tắc reply và quản lý group Zalo — ưu tiên ngắn gọn, súc tích.`,
             '---',
             '',
@@ -554,6 +554,84 @@ const plugin = definePluginEntry({
             `~/skills/memory/zalo-groups/*/chat-highlights.md`,
             '```',
             'Format: `| YYYY-MM-DD HH:MM | {tên user} | {tóm tắt 1 dòng} |`',
+            '',
+            '---',
+            '',
+            '## 📋 DANH SÁCH SLASH COMMANDS ĐẦY ĐỦ',
+            '',
+            '> Tất cả commands xử lý bởi plugin `zalo-mod` — bot KHÔNG cần reply.',
+            `> Prefix lệnh: \`${cmdPrefix}\` (theo tên bot)`,
+            '',
+            '### 👤 Mọi người (trong group)',
+            '',
+            '| Command | Mô tả |',
+            '|---------|-------|',
+            `| \`${cmdPrefix}noi-quy\` | Xem nội quy nhóm |`,
+            `| \`${cmdPrefix}menu\` | Danh sách lệnh |`,
+            `| \`${cmdPrefix}huong-dan\` | Hướng dẫn sử dụng bot |`,
+            '',
+            '### 🔧 Admin (trong group)',
+            '',
+            '| Command | Mô tả |',
+            '|---------|-------|',
+            `| \`${cmdPrefix}mute\` | Tắt bot hoàn toàn |`,
+            `| \`${cmdPrefix}unmute\` / \`${cmdPrefix}bat-bot\` | Bật lại bot |`,
+            `| \`${cmdPrefix}warn @name [lý do]\` | Cảnh cáo member |`,
+            `| \`${cmdPrefix}note [text]\` | Ghi chú admin |`,
+            `| \`${cmdPrefix}report\` | Báo cáo vi phạm + warn |`,
+            `| \`${cmdPrefix}memory [note]\` | Lưu memory digest |`,
+            '',
+            '### 👑 Owner — trong group',
+            '',
+            '| Command | Mô tả |',
+            '|---------|-------|',
+            `| \`${cmdPrefix}rules\` | Xem panel sub-lệnh |`,
+            `| \`${cmdPrefix}rules status\` | Cấu hình group hiện tại |`,
+            `| \`${cmdPrefix}rules groupid\` | Thêm group này vào config |`,
+            `| \`${cmdPrefix}rules silent-on\` | Bật silent (chỉ reply khi @tag) |`,
+            `| \`${cmdPrefix}rules silent-off\` | Tắt silent mode |`,
+            `| \`${cmdPrefix}rules welcome-on\` | Bật chào member mới |`,
+            `| \`${cmdPrefix}rules welcome-off\` | Tắt chào member mới |`,
+            `| \`${cmdPrefix}rules tracking-on\` | Bật ghi lịch sử chat |`,
+            `| \`${cmdPrefix}rules tracking-off\` | Tắt ghi lịch sử chat |`,
+            '',
+            '### 🔐 Owner — qua DM',
+            '',
+            '| Command | Mô tả |',
+            '|---------|-------|',
+            `| \`${cmdPrefix}rules mute-list\` | Trạng thái mute tất cả groups |`,
+            `| \`${cmdPrefix}rules mute <groupId> on/off\` | Mute/unmute group cụ thể |`,
+            `| \`${cmdPrefix}rules mute all on/off\` | Mute/unmute tất cả |`,
+            `| \`${cmdPrefix}rules silent-list\` | Trạng thái silent tất cả groups |`,
+            `| \`${cmdPrefix}rules silent <groupId> on/off\` | Silent group cụ thể |`,
+            `| \`${cmdPrefix}rules silent all on/off\` | Silent tất cả |`,
+            `| \`${cmdPrefix}rules welcome-list\` | Trạng thái welcome tất cả |`,
+            `| \`${cmdPrefix}rules welcome <groupId> on/off\` | Welcome group cụ thể |`,
+            `| \`${cmdPrefix}rules welcome all on/off\` | Welcome tất cả |`,
+            `| \`${cmdPrefix}rules tracking-list\` | Trạng thái tracking tất cả |`,
+            `| \`${cmdPrefix}rules tracking <groupId> on/off\` | Tracking group cụ thể |`,
+            `| \`${cmdPrefix}rules tracking all on/off\` | Tracking tất cả |`,
+            `| \`${cmdPrefix}rules follow-list\` | Theo dõi memory per-group |`,
+            `| \`${cmdPrefix}rules follow <groupId> on/off\` | Follow group cụ thể |`,
+            `| \`${cmdPrefix}rules follow all on/off\` | Follow tất cả |`,
+            `| \`${cmdPrefix}rules dm-list\` | DM whitelist |`,
+            `| \`${cmdPrefix}rules dm-add <tên>\` | Thêm vào DM whitelist |`,
+            `| \`${cmdPrefix}rules dm-remove <tên>\` | Xóa khỏi DM whitelist |`,
+            `| \`${cmdPrefix}rules groupid-list\` | Danh sách tất cả groups |`,
+            `| \`${cmdPrefix}rules groupid-add <groupId>\` | Thêm group từ xa |`,
+            `| \`${cmdPrefix}ownerid\` | Xem/đặt owner ID |`,
+            '',
+            '---',
+            '',
+            '## 🔇 Mute vs Silent',
+            '',
+            '| | Mute | Silent |',
+            '|--|------|--------|',
+            '| Bot im lặng | Hoàn toàn | Chỉ không tự reply |',
+            '| Slash hoạt động | ❌ (chỉ /unmute) | ✅ |',
+            '| @mention | ❌ | ✅ |',
+            '| Welcome | ❌ | ✅ |',
+
             '',
           ].join('\n');
           await fs.writeFile(skillMdPath, skillContent, 'utf8');
@@ -1703,7 +1781,7 @@ const plugin = definePluginEntry({
       const isMuted = store.getSetting(groupId, 'muted', false);
       if (isMuted) {
         // Only allow /unmute from admin to pass through
-        const unmuteMatch = content.match(new RegExp(`^\$\{cmdPrefix\}(unmute|bat-bot)$`, "i"));
+        const unmuteMatch = content.match(new RegExp(`^${cmdPrefix}(unmute|bat-bot)$`, "i"));
         if (unmuteMatch && isAdmin(senderId, groupId)) {
           store.setSetting(groupId, 'muted', false);
           await store.saveSettings();
@@ -1781,7 +1859,7 @@ const plugin = definePluginEntry({
             // Merge group hiện tại nếu chưa có trong session
             const currentInSession = sessionGroups.some(g => g.groupId === groupId);
             if (!currentInSession) {
-              sessionGroups.push({ groupId, groupName: currentGroupName || senderName + "'s group" });
+              sessionGroups.push({ groupId, groupName: getGroupName(groupId) !== 'Nhóm' ? getGroupName(groupId) : `Group-${groupId.slice(-6)}` });
             }
 
             // 2. Build groupNames + gọi ZCA cho mỗi group

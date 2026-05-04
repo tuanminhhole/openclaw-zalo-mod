@@ -1809,17 +1809,17 @@ const plugin = definePluginEntry({
 
         // /noi-quy (nội quy)
         if (command === '/noi-quy') {
-          await sendGroupMsg(ctx, groupId, buildNoiQuy(getGroupName(groupId)));
+          await sendGroupMsg(ctx, groupId, buildNoiQuy(getGroupName(groupId), cmdPrefix));
           return { handled: true };
         }
 
         // /mute — admin only: tắt bot hoàn toàn trong group
-        if (command === '/mute' || command === '/tat-bot', cmdPrefix) {
+        if (command === '/mute' || command === '/tat-bot') {
           if (!isAdmin(senderId, groupId)) return { handled: true };
           store.setSetting(groupId, 'muted', true);
           await store.saveSettings();
           logger.info(`[zalo-mod] group ${groupId} MUTED by ${senderName}`);
-          await sendGroupMsg(ctx, groupId, '🔇 Bot đã tắt trong group này.\nGõ ${cmdPrefix}unmute để bật lại.');
+          await sendGroupMsg(ctx, groupId, `🔇 Bot đã tắt trong group này.\nGõ ${cmdPrefix}unmute để bật lại.`);
           return { handled: true };
         }
 
@@ -1834,16 +1834,16 @@ const plugin = definePluginEntry({
 
         // /menu | /huong-dan
         if (command === '/menu') {
-          let menu = buildMenu(botName);
+          let menu = buildMenu(botName, cmdPrefix);
           // Nếu sender là owner → hiện thêm owner commands
           if (ownerId && senderId === ownerId) {
-            menu += '\n\n👑 OWNER (DM riêng với bot, cmdPrefix):\n  /groupid-list\n  /groupid-add <groupId> [tên]\n  ${cmdPrefix}rules — Panel cấu hình\n  ${cmdPrefix}rules status — Tổng quan';
+            menu += `\n\n👑 OWNER (DM riêng với bot):\n  ${cmdPrefix}rules groupid-list\n  ${cmdPrefix}rules groupid-add <groupId> [tên]\n  ${cmdPrefix}rules — Panel cấu hình\n  ${cmdPrefix}rules status — Tổng quan`;
           }
           await sendGroupMsg(ctx, groupId, menu);
           return { handled: true };
         }
         if (command === '/huong-dan') {
-          await sendGroupMsg(ctx, groupId, buildHuongDan(botName), cmdPrefix);
+          await sendGroupMsg(ctx, groupId, buildHuongDan(botName, cmdPrefix));
           return { handled: true };
         }
 

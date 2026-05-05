@@ -159,8 +159,9 @@ async function _patchOpenclawConfig(openclawHome, patch, logger, force = false) 
 
     if (changed) {
       config.plugins.entries[PLUGIN_ID].config = existing;
-      await fs.writeFile(configPath, JSON.stringify(config, null, 2) + '\n', 'utf8');
-      if (logger) logger.info(`[openclaw-zalo-mod] auto-patched openclaw.json config`);
+      // Vô hiệu hóa việc tự write file để tránh ConfigMutationConflictError khi CLI install
+      // await fs.writeFile(configPath, JSON.stringify(config, null, 2) + '\n', 'utf8');
+      if (logger) logger.info(`[openclaw-zalo-mod] auto-patched openclaw.json config (memory only)`);
     }
     return changed;
   } catch (e) {

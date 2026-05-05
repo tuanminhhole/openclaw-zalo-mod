@@ -16,7 +16,7 @@
  *   listZaloGroupMembers API, diff with previous snapshot.
  *
  * @author tuanminhhole
- * @version 2.4.6
+ * @version 2.4.7
  */
 
 import fs from 'node:fs/promises';
@@ -29,7 +29,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // ── Auto-config helpers ──────────────────────────────────────
 // Resolve OPENCLAW_HOME from plugin install path:
-// plugin at {OPENCLAW_HOME}/extensions/zalo-mod/ → 2 levels up
+// plugin at {OPENCLAW_HOME}/extensions/openclaw-zalo-mod/ → 2 levels up
 const _openclawHome = path.resolve(__dirname, '..', '..');
 
 /**
@@ -83,7 +83,7 @@ async function _scanGroupsFromSessions(openclawHome, agentId) {
 }
 
 /**
- * Auto-patch openclaw.json — merge discovered config into plugins.entries.zalo-mod.config.
+ * Auto-patch openclaw.json — merge discovered config into plugins.entries.openclaw-zalo-mod.config.
  * Only sets values that are currently empty/default.
  * Returns true if file was modified.
  */
@@ -94,8 +94,8 @@ async function _patchOpenclawConfig(openclawHome, patch, logger, force = false) 
     const config = JSON.parse(raw);
     config.plugins = config.plugins || {};
     config.plugins.entries = config.plugins.entries || {};
-    config.plugins.entries['zalo-mod'] = config.plugins.entries['zalo-mod'] || { enabled: true };
-    const existing = config.plugins.entries['zalo-mod'].config || {};
+    config.plugins.entries[PLUGIN_ID] = config.plugins.entries[PLUGIN_ID] || { enabled: true };
+    const existing = config.plugins.entries[PLUGIN_ID].config || {};
 
     let changed = false;
     for (const [key, val] of Object.entries(patch)) {
@@ -113,13 +113,13 @@ async function _patchOpenclawConfig(openclawHome, patch, logger, force = false) 
     if (agentId && !Array.isArray(config.bindings)) {
       config.bindings = [{ agentId, match: { channel: 'zalouser' } }];
       changed = true;
-      if (logger) logger.info(`[zalo-mod] auto-added binding: zalouser → ${agentId}`);
+      if (logger) logger.info(`[openclaw-zalo-mod] auto-added binding: zalouser → ${agentId}`);
     } else if (agentId && Array.isArray(config.bindings)) {
       const hasZalo = config.bindings.some(b => b.match?.channel === 'zalouser');
       if (!hasZalo) {
         config.bindings.push({ agentId, match: { channel: 'zalouser' } });
         changed = true;
-        if (logger) logger.info(`[zalo-mod] auto-added binding: zalouser → ${agentId}`);
+        if (logger) logger.info(`[openclaw-zalo-mod] auto-added binding: zalouser → ${agentId}`);
       }
     }
 
@@ -127,23 +127,23 @@ async function _patchOpenclawConfig(openclawHome, patch, logger, force = false) 
     if (config.channels?.zalouser && !config.channels.zalouser.groups) {
       config.channels.zalouser.groups = { '*': { enabled: true, requireMention: false } };
       changed = true;
-      if (logger) logger.info(`[zalo-mod] auto-added groups config: all groups enabled`);
+      if (logger) logger.info(`[openclaw-zalo-mod] auto-added groups config: all groups enabled`);
     }
 
     if (changed) {
-      config.plugins.entries['zalo-mod'].config = existing;
+      config.plugins.entries[PLUGIN_ID].config = existing;
       await fs.writeFile(configPath, JSON.stringify(config, null, 2) + '\n', 'utf8');
-      if (logger) logger.info(`[zalo-mod] auto-patched openclaw.json config`);
+      if (logger) logger.info(`[openclaw-zalo-mod] auto-patched openclaw.json config`);
     }
     return changed;
   } catch (e) {
-    if (logger) logger.warn(`[zalo-mod] auto-patch config failed: ${e.message}`);
+    if (logger) logger.warn(`[openclaw-zalo-mod] auto-patch config failed: ${e.message}`);
     return false;
   }
 }
 
 // ── Constants ────────────────────────────────────────────────
-const PLUGIN_ID = 'zalo-mod';
+const PLUGIN_ID = 'openclaw-zalo-mod';
 
 const SPAM_LINK_RE = /bit\.ly\/|tinyurl\.com\/|t\.ly\/|rb\.gy\/|cutt\.ly\/|\?ref=|\?aff=|kiếm tiền|miễn phí|nhận quà|t\.me\/joinchat\//i;
 const EMOJI_FLOOD_RE = /^[\u{1F300}-\u{1FAFF}\s]{5,}$/u;
@@ -403,7 +403,7 @@ const plugin = definePluginEntry({
     const cfg = api.config;
 
     // Plugin config: read from api.pluginConfig (OpenClaw SDK) or fallback
-    const pluginCfg = api.pluginConfig || cfg?.plugins?.entries?.['zalo-mod'] || {};
+    const pluginCfg = api.pluginConfig || cfg?.plugins?.entries?.[PLUGIN_ID] || {};
     // ── groupNames: source of truth cho danh sách groups đang quản lý ──
     // Format mới: { groupId: { name, admins, creatorId } }
     // Backward-compat: nếu value là string (format cũ) → auto-convert sang object
@@ -559,7 +559,7 @@ const plugin = definePluginEntry({
             '',
             '## 📋 DANH SÁCH SLASH COMMANDS ĐẦY ĐỦ',
             '',
-            '> Tất cả commands xử lý bởi plugin `zalo-mod` — bot KHÔNG cần reply.',
+            '> Tất cả commands xử lý bởi plugin `openclaw-zalo-mod` — bot KHÔNG cần reply.',
             `> Prefix lệnh: \`${cmdPrefix}\` (theo tên bot)`,
             '',
             '### 👤 Mọi người (trong group)',
@@ -635,7 +635,7 @@ const plugin = definePluginEntry({
             '',
           ].join('\n');
           await fs.writeFile(skillMdPath, skillContent, 'utf8');
-          logger.info('[zalo-mod] auto-created skills/zalo-group-admin/SKILL.md');
+          logger.info('[openclaw-zalo-mod] auto-created skills/zalo-group-admin/SKILL.md');
         }
 
         // 2. Create memory INDEX.md cho mỗi group đang follow
@@ -651,7 +651,7 @@ const plugin = definePluginEntry({
             const indexContent = [
               `# ${getGroupName(gId)} — Memory`,
               '',
-              '> Auto-generated by zalo-mod plugin. Plugin sẽ tự cập nhật khi có events.',
+              '> Auto-generated by openclaw-zalo-mod plugin. Plugin sẽ tự cập nhật khi có events.',
               '',
               '## Files',
               '- `chat-highlights.md` — Log @mention và tương tác quan trọng',
@@ -662,7 +662,7 @@ const plugin = definePluginEntry({
               '',
             ].join('\n');
             await fs.writeFile(indexMdPath, indexContent, 'utf8');
-            logger.info(`[zalo-mod] auto-created memory dir for ${getGroupName(gId)} (${gId})`);
+            logger.info(`[openclaw-zalo-mod] auto-created memory dir for ${getGroupName(gId)} (${gId})`);
           }
         }
 
@@ -679,7 +679,7 @@ const plugin = definePluginEntry({
           if (detectedBotName) {
             patch.botName = detectedBotName;
             patch.zaloDisplayNames = [detectedBotName];
-            logger.info(`[zalo-mod] auto-detected botName="${detectedBotName}" from IDENTITY.md`);
+            logger.info(`[openclaw-zalo-mod] auto-detected botName="${detectedBotName}" from IDENTITY.md`);
           }
 
           // 4b. Scan session data for groups
@@ -697,9 +697,9 @@ const plugin = definePluginEntry({
               }
             }
             patch.groupNames = namesMap;
-            logger.info(`[zalo-mod] auto-detected ${groups.length} group(s) from sessions: ${groups.map(g => g.groupName).join(', ')}`);
+            logger.info(`[openclaw-zalo-mod] auto-detected ${groups.length} group(s) from sessions: ${groups.map(g => g.groupName).join(', ')}`);
           } else {
-            logger.info('[zalo-mod] no group sessions found yet — user should chat in a group then run /groupid');
+            logger.info('[openclaw-zalo-mod] no group sessions found yet — user should chat in a group then run /groupid');
           }
 
           if (Object.keys(patch).length > 0) {
@@ -707,7 +707,7 @@ const plugin = definePluginEntry({
           }
         }
       } catch (e) {
-        logger.warn(`[zalo-mod] bootstrap workspace files failed: ${e.message}`);
+        logger.warn(`[openclaw-zalo-mod] bootstrap workspace files failed: ${e.message}`);
       }
     }
 
@@ -726,7 +726,7 @@ const plugin = definePluginEntry({
         await fs.mkdir(mDir, { recursive: true });
         await fs.appendFile(filePath, line + '\n', 'utf8');
       } catch (e) {
-        logger.warn(`[zalo-mod] memory append failed (${filename}): ${e.message}`);
+        logger.warn(`[openclaw-zalo-mod] memory append failed (${filename}): ${e.message}`);
       }
     }
 
@@ -773,7 +773,7 @@ const plugin = definePluginEntry({
             const today = new Date().toISOString().slice(0, 10);
             const bakPath = path.join(mDir, `chat-log-${today}.md.bak`);
             await fs.rename(logPath, bakPath);
-            logger.info(`[zalo-mod] chat-log rotated → ${bakPath}`);
+            logger.info(`[openclaw-zalo-mod] chat-log rotated → ${bakPath}`);
           }
         } catch { /* file chưa tồn tại — OK */ }
 
@@ -801,7 +801,7 @@ const plugin = definePluginEntry({
 
         await fs.appendFile(logPath, prefix + line + '\n', 'utf8');
       } catch (e) {
-        logger.warn(`[zalo-mod] chat-log append failed: ${e.message}`);
+        logger.warn(`[openclaw-zalo-mod] chat-log append failed: ${e.message}`);
       }
     }
 
@@ -864,10 +864,10 @@ const plugin = definePluginEntry({
         if (!totalVio) vioLines.push('| — | — | — | — |');
         await fs.writeFile(path.join(getMemoryDir(gId), 'violations.md'), vioLines.join('\n') + '\n', 'utf8');
 
-        logger.info(`[zalo-mod] memory digest — warns=${totalWarns}, violations=${totalVio} for group=${gId}`);
+        logger.info(`[openclaw-zalo-mod] memory digest — warns=${totalWarns}, violations=${totalVio} for group=${gId}`);
         return { warnCount: totalWarns, vioCount: totalVio };
       } catch (e) {
-        logger.warn(`[zalo-mod] writeMemoryDigest failed: ${e.message}`);
+        logger.warn(`[openclaw-zalo-mod] writeMemoryDigest failed: ${e.message}`);
         return { warnCount: 0, vioCount: 0 };
       }
     }
@@ -899,10 +899,10 @@ const plugin = definePluginEntry({
           zpsid:   get('zpsid', 'zalo.me'),
           zpw_sek: get('zpw_sek', 'chat.zalo.me'),
         };
-        logger.info(`[zalo-mod] Zalo session loaded (imei=${_zaloImei.slice(0, 8)}...)`);
+        logger.info(`[openclaw-zalo-mod] Zalo session loaded (imei=${_zaloImei.slice(0, 8)}...)`);
         return _zaloCookies;
       } catch (e) {
-        logger.warn(`[zalo-mod] loadZaloSession failed: ${String(e)}`);
+        logger.warn(`[openclaw-zalo-mod] loadZaloSession failed: ${String(e)}`);
         return null;
       }
     }
@@ -911,7 +911,7 @@ const plugin = definePluginEntry({
     async function sendGroupMsg(ctx, groupId, text) {
       if (!groupId || !text) return;
       const profile = ctx?.accountId || 'default';
-      logger.info(`[zalo-mod] sendGroupMsg → threadId=${groupId}, profile=${profile}, textLen=${text.length}`);
+      logger.info(`[openclaw-zalo-mod] sendGroupMsg → threadId=${groupId}, profile=${profile}, textLen=${text.length}`);
       try {
         const { sendMessageZalouser } = await import('file:///usr/local/lib/node_modules/openclaw/dist/extensions/zalouser/test-api.js');
         const result = await sendMessageZalouser(String(groupId), String(text), { 
@@ -920,12 +920,12 @@ const plugin = definePluginEntry({
           textMode: 'markdown'
         });
         if (result && !result.ok) {
-           logger.error(`[zalo-mod] Native Zalo send failed: ${result.error}`);
+           logger.error(`[openclaw-zalo-mod] Native Zalo send failed: ${result.error}`);
         } else {
-           logger.info(`[zalo-mod] Native message delivered to group ${groupId}`);
+           logger.info(`[openclaw-zalo-mod] Native message delivered to group ${groupId}`);
         }
       } catch (err) {
-        logger.error(`[zalo-mod] Native Zalo send exception: ${err.message}`);
+        logger.error(`[openclaw-zalo-mod] Native Zalo send exception: ${err.message}`);
       }
     }
 
@@ -941,7 +941,7 @@ const plugin = definePluginEntry({
           textMode: 'markdown'
         });
       } catch (err) {
-        logger.error(`[zalo-mod] DM send failed to ${userId}: ${err.message}`);
+        logger.error(`[openclaw-zalo-mod] DM send failed to ${userId}: ${err.message}`);
       }
     }
 
@@ -972,7 +972,7 @@ const plugin = definePluginEntry({
         await fs.mkdir(dataDir, { recursive: true });
         await fs.writeFile(memberDirPath, JSON.stringify(_memberDir, null, 2), 'utf8');
       } catch (e) {
-        logger.warn(`[zalo-mod] save member-dir failed: ${e.message}`);
+        logger.warn(`[openclaw-zalo-mod] save member-dir failed: ${e.message}`);
       }
     }
 
@@ -1040,7 +1040,7 @@ const plugin = definePluginEntry({
         } catch { /* thử path tiếp theo */ }
       }
       // Tất cả path fail
-      logger.warn(`[zalo-mod] [WATCHER] zalouser API not available — member watcher disabled. Restart gateway nếu vừa cài xong OpenClaw.`);
+      logger.warn(`[openclaw-zalo-mod] [WATCHER] zalouser API not available — member watcher disabled. Restart gateway nếu vừa cài xong OpenClaw.`);
       _watcherApiUnavailable = true;
       return null;
     }
@@ -1064,7 +1064,7 @@ const plugin = definePluginEntry({
         _pollFailCounts[failKey] = (_pollFailCounts[failKey] || 0) + 1;
         // Chỉ log khi fail >= 3 lần liên tiếp (Zalo rate-limit tạm thời là bình thường)
         if (_pollFailCounts[failKey] >= 3 && (_pollFailCounts[failKey] === 3 || _pollFailCounts[failKey] % 10 === 0)) {
-          logger.warn(`[zalo-mod] [WATCHER] poll failed for group ${groupId} (x${_pollFailCounts[failKey]}): ${e.message}`);
+          logger.warn(`[openclaw-zalo-mod] [WATCHER] poll failed for group ${groupId} (x${_pollFailCounts[failKey]}): ${e.message}`);
         }
         return null;
       }
@@ -1094,10 +1094,10 @@ const plugin = definePluginEntry({
         const zalo = new Zalo({ checkUpdate: false, logging: false });
         _zcaApi = await zalo.login(creds);
         _zcaApiCreatedAt = Date.now();
-        logger.info('[zalo-mod] ZCA direct API initialized (TTL=30s)');
+        logger.info('[openclaw-zalo-mod] ZCA direct API initialized (TTL=30s)');
         return _zcaApi;
       } catch (e) {
-        logger.warn(`[zalo-mod] ZCA direct API init failed: ${e.message}`);
+        logger.warn(`[openclaw-zalo-mod] ZCA direct API init failed: ${e.message}`);
         return null;
       }
     }
@@ -1125,7 +1125,7 @@ const plugin = definePluginEntry({
           name: info.name || '',
         };
       } catch (e) {
-        logger.warn(`[zalo-mod] fetchGroupAdminsFromZCA failed for ${groupId}: ${e.message}`);
+        logger.warn(`[openclaw-zalo-mod] fetchGroupAdminsFromZCA failed for ${groupId}: ${e.message}`);
         return null;
       }
     }
@@ -1174,7 +1174,7 @@ const plugin = definePluginEntry({
       const mergedNames = { ...(pluginCfg.groupNames || {}) };
       mergedNames[groupId] = groupNames[groupId];
       await _patchOpenclawConfig(_openclawHome, { groupNames: mergedNames }, logger, true);
-      logger.info(`[zalo-mod] synced admins for group ${groupId}: creator=${zcaInfo.creatorId}, admins=${adminList.join(',')}, members=${zcaInfo.totalMember}`);
+      logger.info(`[openclaw-zalo-mod] synced admins for group ${groupId}: creator=${zcaInfo.creatorId}, admins=${adminList.join(',')}, members=${zcaInfo.totalMember}`);
       return zcaInfo;
     }
 
@@ -1196,7 +1196,7 @@ const plugin = definePluginEntry({
       if (!prevIds) {
         // First poll — just save snapshot, don't welcome everyone
         _G.memberSnapshots.set(groupId, currentIds);
-        logger.info(`[zalo-mod] [WATCHER] initial snapshot for group ${groupId}: ${currentIds.size} members (member-dir updated)`);
+        logger.info(`[openclaw-zalo-mod] [WATCHER] initial snapshot for group ${groupId}: ${currentIds.size} members (member-dir updated)`);
         return;
       }
 
@@ -1211,11 +1211,11 @@ const plugin = definePluginEntry({
       const dedupKey = (gId, mId) => `${gId}:${mId}`;
       const toWelcome = newMembers.filter(m => !_G.welcomedDedup.has(dedupKey(groupId, m.id)));
       if (toWelcome.length === 0) {
-        logger.info(`[zalo-mod] [WATCHER] ${newMembers.length} new member(s) detected but all already welcomed (dedup)`);
+        logger.info(`[openclaw-zalo-mod] [WATCHER] ${newMembers.length} new member(s) detected but all already welcomed (dedup)`);
         return;
       }
 
-      logger.info(`[zalo-mod] [WATCHER] ${toWelcome.length} new member(s) in group ${groupId}: ${toWelcome.map(m => m.name || m.id).join(', ')}`);
+      logger.info(`[openclaw-zalo-mod] [WATCHER] ${toWelcome.length} new member(s) in group ${groupId}: ${toWelcome.map(m => m.name || m.id).join(', ')}`);
 
 
       // Send welcome for new members (batch — don't spam if many join at once)
@@ -1228,9 +1228,9 @@ const plugin = definePluginEntry({
         try {
           await sendGroupMsg({ accountId: 'default' }, groupId, buildWelcome(memberName,  botName, cmdPrefix));
           await appendToMemoryFile(groupId, 'chat-highlights.md', `| ${nowShort()} | SYSTEM | Welcome: ${memberName} joined (detected by watcher) |`);
-          logger.info(`[zalo-mod] [WATCHER] welcome sent for ${memberName} in group ${groupId}`);
+          logger.info(`[openclaw-zalo-mod] [WATCHER] welcome sent for ${memberName} in group ${groupId}`);
         } catch (e) {
-          logger.error(`[zalo-mod] [WATCHER] welcome send failed for ${memberName}: ${e.message}`);
+          logger.error(`[openclaw-zalo-mod] [WATCHER] welcome send failed for ${memberName}: ${e.message}`);
         }
         // Small delay between messages to avoid rate limiting
         await new Promise(r => setTimeout(r, 2000));
@@ -1245,7 +1245,7 @@ const plugin = definePluginEntry({
     function startMemberWatcher() {
       if (!welcomeEnabled || watchGroupIds.length === 0) {
         if (watchGroupIds.length === 0) {
-          logger.info(`[zalo-mod] [WATCHER] no watchGroupIds configured — welcome watcher disabled`);
+          logger.info(`[openclaw-zalo-mod] [WATCHER] no watchGroupIds configured — welcome watcher disabled`);
         }
         return;
       }
@@ -1254,7 +1254,7 @@ const plugin = definePluginEntry({
       if (_G.watcherTimer) {
         clearInterval(_G.watcherTimer);
         _G.watcherTimer = null;
-        logger.info(`[zalo-mod] [WATCHER] cleared previous watcher timer (hot-reload detected)`);
+        logger.info(`[openclaw-zalo-mod] [WATCHER] cleared previous watcher timer (hot-reload detected)`);
       }
       if (_G.initTimer) {
         clearTimeout(_G.initTimer);
@@ -1271,9 +1271,9 @@ const plugin = definePluginEntry({
         // Filter: only poll groups where welcome is ON
         const activeGroups = watchGroupIds.filter(gId => store.getSetting(gId, 'welcome', true));
         const skippedGroups = watchGroupIds.filter(gId => !store.getSetting(gId, 'welcome', true));
-        logger.info(`[zalo-mod] [WATCHER] starting member watcher — polling ${activeGroups.length}/${watchGroupIds.length} group(s), poll every ${intervalMs/1000}s`);
-        if (activeGroups.length > 0) logger.info(`[zalo-mod] [WATCHER] active: ${activeGroups.map(g => getGroupName(g)).join(', ')}`);
-        if (skippedGroups.length > 0) logger.info(`[zalo-mod] [WATCHER] skipped (welcome off): ${skippedGroups.map(g => getGroupName(g)).join(', ')}`);
+        logger.info(`[openclaw-zalo-mod] [WATCHER] starting member watcher — polling ${activeGroups.length}/${watchGroupIds.length} group(s), poll every ${intervalMs/1000}s`);
+        if (activeGroups.length > 0) logger.info(`[openclaw-zalo-mod] [WATCHER] active: ${activeGroups.map(g => getGroupName(g)).join(', ')}`);
+        if (skippedGroups.length > 0) logger.info(`[openclaw-zalo-mod] [WATCHER] skipped (welcome off): ${skippedGroups.map(g => getGroupName(g)).join(', ')}`);
 
         for (const gId of activeGroups) {
           await checkForNewMembers(gId);
@@ -1286,7 +1286,7 @@ const plugin = definePluginEntry({
             try {
               await checkForNewMembers(gId);
             } catch (e) {
-              logger.warn(`[zalo-mod] [WATCHER] poll error for ${gId}: ${e.message}`);
+              logger.warn(`[openclaw-zalo-mod] [WATCHER] poll error for ${gId}: ${e.message}`);
             }
             // Delay 3s giữa mỗi group (only between actual polls)
             if (watchGroupIds.length > 1) await new Promise(r => setTimeout(r, 1000));
@@ -1618,7 +1618,7 @@ const plugin = definePluginEntry({
             try { await fs.access(idxPath); } catch {
               const indexContent = [
                 `# ${getGroupName(targetGid)} \u2014 Memory`, '',
-                '> Auto-generated by zalo-mod plugin.', '',
+                '> Auto-generated by openclaw-zalo-mod plugin.', '',
                 '## Files',
                 '- `chat-log.md` \u2014 L\u1ecbch s\u1eed chat nh\u00f3m',
                 '- `chat-highlights.md` \u2014 @mention quan tr\u1ecdng',
@@ -1751,7 +1751,7 @@ const plugin = definePluginEntry({
               );
             } else {
               await sendDmMsg(ctx, senderId,
-                `⚠️ Không thể ghi config. Thêm thủ công:\n"ownerId": "${senderId}"\nvào plugins.entries.zalo-mod.config`
+                `⚠️ Không thể ghi config. Thêm thủ công:\n"ownerId": "${senderId}"\nvào plugins.entries.${PLUGIN_ID}.config`
               );
             }
           } else {
@@ -1772,7 +1772,7 @@ const plugin = definePluginEntry({
         if (allowedDmUsers.size === 0 || allowedDmUsers.has(senderId)) return;
 
         // Không nằm trong whitelist → block im lặng
-        logger.info(`[zalo-mod] DM blocked from ${senderName} (${senderId}) — not in allowedDmUsers`);
+        logger.info(`[openclaw-zalo-mod] DM blocked from ${senderName} (${senderId}) — not in allowedDmUsers`);
         return { handled: true };
       }
 
@@ -1786,7 +1786,7 @@ const plugin = definePluginEntry({
         if (unmuteMatch && isAdmin(senderId, groupId)) {
           store.setSetting(groupId, 'muted', false);
           await store.saveSettings();
-          logger.info(`[zalo-mod] group ${groupId} UNMUTED by ${senderName}`);
+          logger.info(`[openclaw-zalo-mod] group ${groupId} UNMUTED by ${senderName}`);
           await sendGroupMsg(ctx, groupId, '🔊 Bot đã bật lại trong group này!');
           return { handled: true };
         }
@@ -1819,7 +1819,7 @@ const plugin = definePluginEntry({
           if (!isAdmin(senderId, groupId)) return { handled: true };
           store.setSetting(groupId, 'muted', true);
           await store.saveSettings();
-          logger.info(`[zalo-mod] group ${groupId} MUTED by ${senderName}`);
+          logger.info(`[openclaw-zalo-mod] group ${groupId} MUTED by ${senderName}`);
           await sendGroupMsg(ctx, groupId, `🔇 Bot đã tắt trong group này.\nGõ ${cmdPrefix}unmute để bật lại.`);
           return { handled: true };
         }
@@ -1939,7 +1939,7 @@ const plugin = definePluginEntry({
             await sendGroupMsg(ctx, groupId, report);
 
           } catch (e) {
-            logger.warn(`[zalo-mod] ${cmdPrefix}rules groupid failed: ${e.message}`);
+            logger.warn(`[openclaw-zalo-mod] ${cmdPrefix}rules groupid failed: ${e.message}`);
             await sendGroupMsg(ctx, groupId, `🆔 Group ID: ${groupId}\n⚠️ Lỗi: ${e.message}`);
           }
           return { handled: true };
@@ -2051,7 +2051,7 @@ const plugin = definePluginEntry({
       const isMention = isMessageMentioningBot(event, botNames);
       if (isMention) {
         // Log mention + sync to memory
-        logger.info(`[zalo-mod] @mention from ${senderName} in group ${groupId}: ${content.slice(0, 80)}`);
+        logger.info(`[openclaw-zalo-mod] @mention from ${senderName} in group ${groupId}: ${content.slice(0, 80)}`);
         await appendToMemoryFile(groupId, 'chat-highlights.md', `| ${nowShort()} | ${senderName} | ${content.slice(0, 80)} |`);
 
         // Tracking: ghi cả @mention vào chat-log
@@ -2068,7 +2068,7 @@ const plugin = definePluginEntry({
           const note = '\n[BOT SYSTEM NOTE: Đây là Group Zalo. File/ảnh đính kèm KHÔNG được forward tới bot trong group — zalouser channel chỉ truyền text. Nếu user đang đề cập tới file, hãy hỏi user: (1) copy+paste link tải về, hoặc (2) paste nội dung text trực tiếp vào chat. KHÔNG nói "gửi file vào đây" vì user đã gửi rồi mà bot không nhận được.]';
           if (event.body !== undefined) event.body = content + note;
           if (event.content !== undefined) event.content = content + note;
-          logger.info(`[zalo-mod] injected file-context note for @mention in group ${groupId}`);
+          logger.info(`[openclaw-zalo-mod] injected file-context note for @mention in group ${groupId}`);
         }
 
 
@@ -2128,7 +2128,7 @@ const plugin = definePluginEntry({
         }
 
         // For all other @mention questions → forward to LLM
-        logger.info(`[zalo-mod] forwarding to LLM: ${content.slice(0, 80)}`);
+        logger.info(`[openclaw-zalo-mod] forwarding to LLM: ${content.slice(0, 80)}`);
         return; // undefined = let LLM handle
       }
 
@@ -2142,7 +2142,7 @@ const plugin = definePluginEntry({
           await store.saveViolations();
           // Sync to memory
           await appendToMemoryFile(groupId, 'violations.md', `| ${nowShort()} | ${senderName} | ${spamType} | ${content.slice(0, 40)} |`);
-          logger.info(`[zalo-mod] spam detected: ${spamType} from ${senderName}`);
+          logger.info(`[openclaw-zalo-mod] spam detected: ${spamType} from ${senderName}`);
         }
         // Tracking: ghi lịch sử chat (kể cả silent mode)
         if (store.getSetting(groupId, 'tracking', false)) {
@@ -2158,7 +2158,7 @@ const plugin = definePluginEntry({
         await store.saveViolations();
         // Sync to memory
         await appendToMemoryFile(groupId, 'violations.md', `| ${nowShort()} | ${senderName} | ${spamType} | ${content.slice(0, 40)} |`);
-        logger.info(`[zalo-mod] ❌ BLOCKED by anti-spam: type=${spamType} sender=${senderName} msg="${content.slice(0, 60)}"`);
+        logger.info(`[openclaw-zalo-mod] ❌ BLOCKED by anti-spam: type=${spamType} sender=${senderName} msg="${content.slice(0, 60)}"`);
         return { handled: true }; // spam always silently blocked
       }
 
@@ -2174,7 +2174,7 @@ const plugin = definePluginEntry({
     // Start member watcher for welcome messages
     startMemberWatcher();
 
-    logger.info(`[zalo-mod] loaded — bot="${botName}" owner=${ownerId || 'none'} groups=${watchGroupIds.length} groupNames=${Object.keys(groupNames).length}`);
+    logger.info(`[openclaw-zalo-mod] loaded — bot="${botName}" owner=${ownerId || 'none'} groups=${watchGroupIds.length} groupNames=${Object.keys(groupNames).length}`);
   },
 });
 

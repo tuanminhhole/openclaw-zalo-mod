@@ -2,7 +2,7 @@
 /**
  * openclaw-zalo-mod — Minimal Setup Script (v2.0)
  * ─────────────────────────────────────────────────
- * Patches openclaw.json to register the zalo-mod plugin.
+ * Patches openclaw.json to register the openclaw-zalo-mod plugin.
  * NO interactive prompts — all config is handled at runtime:
  *   - Bot name & display name: read from IDENTITY.md
  *   - Owner ID: auto-set from first DM sender
@@ -21,8 +21,8 @@
  * What it does:
  *   1. Detects OPENCLAW_HOME
  *   2. Backs up openclaw.json
- *   3. Adds "zalo-mod" to plugins.allow (if not present)
- *   4. Adds plugins.entries.zalo-mod with minimal config
+ *   3. Adds "openclaw-zalo-mod" to plugins.allow (if not present)
+ *   4. Adds plugins.entries.openclaw-zalo-mod with minimal config
  *   5. Creates data/ directory
  *
  * @author Kent x Williams
@@ -67,7 +67,7 @@ function detectOpenclawHome() {
     return path.resolve(envStateDir);
   }
 
-  // From directory structure: extensions/zalo-mod/setup.js → ../../
+  // From directory structure: extensions/openclaw-zalo-mod/setup.js → ../../
   const parent = path.resolve(__dirname, '..', '..');
   if (fs.existsSync(path.join(parent, 'openclaw.json'))) return parent;
 
@@ -116,8 +116,8 @@ function detectBotName(openclawHome) {
 
 // ── Main ─────────────────────────────────────────────────────
 function main() {
-  header('🛡️ zalo-mod v2.0 — Setup');
-  log(`${C.dim}Register zalo-mod plugin in openclaw.json${C.reset}`);
+  header('🛡️ openclaw-zalo-mod v2.0 — Setup');
+  log(`${C.dim}Register openclaw-zalo-mod plugin in openclaw.json${C.reset}`);
   log(`${C.dim}Runtime self-config via /groupid + owner DM${C.reset}\n`);
 
   // 1. Detect OPENCLAW_HOME
@@ -152,8 +152,8 @@ function main() {
   }
 
   // Already configured?
-  if (config?.plugins?.entries?.['zalo-mod']?.enabled === true) {
-    ok('Plugin zalo-mod đã được cấu hình.');
+  if (config?.plugins?.entries?.['openclaw-zalo-mod']?.enabled === true) {
+    ok('Plugin openclaw-zalo-mod đã được cấu hình.');
     ok('Dùng /groupid trong group Zalo để quét groups.');
     ok('Dùng DM với bot để cấu hình (follow/welcome toggles).');
     process.exit(0);
@@ -172,18 +172,18 @@ function main() {
     warn(`Không backup được: ${e.message}`);
   }
 
-  // 5. Patch config — ONLY zalo-mod specific
+  // 5. Patch config — ONLY openclaw-zalo-mod specific
   config.plugins = config.plugins || {};
 
-  // 5a. plugins.allow — add only "zalo-mod"
+  // 5a. plugins.allow — add only "openclaw-zalo-mod"
   config.plugins.allow = config.plugins.allow || [];
-  if (!config.plugins.allow.includes('zalo-mod')) {
-    config.plugins.allow.push('zalo-mod');
+  if (!config.plugins.allow.includes('openclaw-zalo-mod')) {
+    config.plugins.allow.push('openclaw-zalo-mod');
   }
 
-  // 5b. plugins.entries.zalo-mod — minimal config, runtime handles the rest
+  // 5b. plugins.entries.openclaw-zalo-mod — minimal config, runtime handles the rest
   config.plugins.entries = config.plugins.entries || {};
-  config.plugins.entries['zalo-mod'] = {
+  config.plugins.entries['openclaw-zalo-mod'] = {
     enabled: true,
     config: {
       botName,

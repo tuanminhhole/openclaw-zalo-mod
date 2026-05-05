@@ -1,4 +1,4 @@
-# 🛡️ zalo-mod — Zero-Token Zalo Group Moderation
+# 🛡️ openclaw-zalo-mod — Zero-Token Zalo Group Moderation
 
 > OpenClaw runtime plugin for Zalo group administration. Handles moderation, slash commands, and anti-spam with **zero LLM token cost**. Only `@mention` queries are forwarded to the AI agent.
 
@@ -40,7 +40,7 @@ Incoming Zalo message
 ### From ClawHub (recommended)
 
 ```bash
-openclaw plugins install zalo-mod
+openclaw plugins install openclaw-zalo-mod
 ```
 
 ### Manual
@@ -49,10 +49,10 @@ openclaw plugins install zalo-mod
 
 ```bash
 # Windows
-xcopy /E /I openclaw-zalo-mod %OPENCLAW_HOME%\extensions\zalo-mod
+xcopy /E /I openclaw-zalo-mod %OPENCLAW_HOME%\extensions\openclaw-zalo-mod
 
 # Linux / macOS
-cp -r openclaw-zalo-mod ~/.openclaw/extensions/zalo-mod
+cp -r openclaw-zalo-mod ~/.openclaw/extensions/openclaw-zalo-mod
 ```
 
 2. Restart the gateway:
@@ -63,10 +63,10 @@ openclaw gateway restart
 
 ### Path resolution
 
-`zalo-mod` does not require a `.env` file in native installs. At runtime it resolves OpenClaw config in this order:
+`openclaw-zalo-mod` does not require a `.env` file in native installs. At runtime it resolves OpenClaw config in this order:
 
 1. `OPENCLAW_HOME` environment variable, used by Docker/openclaw-setup.
-2. The plugin install path, usually `{OPENCLAW_HOME}/extensions/zalo-mod`.
+2. The plugin install path, usually `{OPENCLAW_HOME}/extensions/openclaw-zalo-mod`.
 
 After the bot receives a group message, run `/groupid` in that group. The plugin scans saved Zalo sessions and writes both `watchGroupIds` and `groupNames` to `openclaw.json`.
 
@@ -82,7 +82,7 @@ Violations are logged to the store and synced to `violations.md`.
 
 ## 🤖 Smart Auto-Answer
 
-When someone `@mentions` the bot with common group management questions, zalo-mod answers directly from the local store — no LLM tokens used:
+When someone `@mentions` the bot with common group management questions, openclaw-zalo-mod answers directly from the local store — no LLM tokens used:
 
 | Question Pattern | Source |
 |-----------------|--------|

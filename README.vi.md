@@ -1,4 +1,4 @@
-# 🛡️ zalo-mod — Plugin Quản Lý Nhóm Zalo Không Tốn Token
+# 🛡️ openclaw-zalo-mod — Plugin Quản Lý Nhóm Zalo Không Tốn Token
 
 > Plugin runtime OpenClaw dành cho quản trị nhóm Zalo. Xử lý moderation, slash commands, anti-spam **hoàn toàn miễn phí token LLM**. Chỉ chuyển câu hỏi `@mention` lên AI agent.
 
@@ -40,7 +40,7 @@ Tin nhắn Zalo đến
 ### Từ ClawHub (khuyên dùng)
 
 ```bash
-openclaw plugins install zalo-mod
+openclaw plugins install openclaw-zalo-mod
 ```
 
 ### Thủ công
@@ -49,10 +49,10 @@ openclaw plugins install zalo-mod
 
 ```bash
 # Windows
-xcopy /E /I openclaw-zalo-mod %OPENCLAW_HOME%\extensions\zalo-mod
+xcopy /E /I openclaw-zalo-mod %OPENCLAW_HOME%\extensions\openclaw-zalo-mod
 
 # Linux / macOS
-cp -r openclaw-zalo-mod ~/.openclaw/extensions/zalo-mod
+cp -r openclaw-zalo-mod ~/.openclaw/extensions/openclaw-zalo-mod
 ```
 
 2. Khởi động lại gateway:
@@ -63,10 +63,10 @@ openclaw gateway restart
 
 ### Resolve đường dẫn
 
-`zalo-mod` không bắt buộc native install phải có file `.env`. Runtime sẽ tìm OpenClaw config theo thứ tự:
+`openclaw-zalo-mod` không bắt buộc native install phải có file `.env`. Runtime sẽ tìm OpenClaw config theo thứ tự:
 
 1. Biến môi trường `OPENCLAW_HOME`, thường dùng trong Docker/openclaw-setup.
-2. Đường dẫn cài plugin, thường là `{OPENCLAW_HOME}/extensions/zalo-mod`.
+2. Đường dẫn cài plugin, thường là `{OPENCLAW_HOME}/extensions/openclaw-zalo-mod`.
 
 Sau khi bot nhận được tin nhắn group, gõ `/groupid` trong group đó. Plugin sẽ scan Zalo sessions đã lưu và ghi cả `watchGroupIds` lẫn `groupNames` vào `openclaw.json`.
 
@@ -82,7 +82,7 @@ Vi phạm được log vào store và sync vào `violations.md`.
 
 ## 🤖 Auto Trả Lời Thông Minh
 
-Khi ai đó `@mention` bot với câu hỏi quản lý nhóm, zalo-mod trả lời trực tiếp từ store — không tốn token LLM:
+Khi ai đó `@mention` bot với câu hỏi quản lý nhóm, openclaw-zalo-mod trả lời trực tiếp từ store — không tốn token LLM:
 
 | Pattern câu hỏi | Nguồn dữ liệu |
 |-----------------|---------------|

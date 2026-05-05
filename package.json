@@ -8,7 +8,6 @@
   "sideEffects": false,
   "files": [
     "index.js",
-    "setup.js",
     "openclaw.plugin.json",
     "README.md",
     "README.vi.md",
@@ -58,8 +57,7 @@
     "openclaw": "*"
   },
   "scripts": {
-    "check": "node --check index.js",
-    "setup": "node setup.js"
+    "check": "node --check index.js"
   },
   "engines": {
     "node": ">=20"

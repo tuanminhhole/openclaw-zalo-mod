@@ -7,3 +7,4 @@ CHANGELOG.md
 bump-version.js
 *.tgz
 npm-debug.log*
+docs/

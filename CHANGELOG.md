@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [2.4.10] - 2026-05-05
+### Fixed
+- Them `.clawhubignore` de ClawHub package khong upload file/dev folder khong can thiet.
+
 ## [2.4.9] - 2026-05-05
 ### Fixed
 - Giu runtime ID `zalo-mod` theo rang buoc ClawHub, nhung package name van la `openclaw-zalo-mod`.

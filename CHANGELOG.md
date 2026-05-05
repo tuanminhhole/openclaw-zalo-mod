@@ -1,39 +1,55 @@
-﻿## [2.4.11] - 2026-05-06
-
-### Fixed
-- **OpenClaw v2026.5.x compatibility**: Removed deprecated kind: 'runtime' from definePluginEntry and openclaw.plugin.json (PluginKind only accepts memory|context-engine in v2026.5.x).
-- **Auto-fix 777 permissions**: Plugin now self-heals world-writable permissions caused by Windows bind-mount, using pure s.chmodSync (no child_process, ClawHub-safe).
-- **_openclawHome path resolution**: Improved to handle both extensions/ and legacy 
-pm/node_modules/ install paths.
-- **Fallback hooks**: Added efore_model_resolve + efore_agent_reply as backup interception path for "im admin" command in environments where efore_dispatch is unavailable.
+## [2.4.14] - 2026-05-06
 
 ### Changed
-- Plugin must be installed via openclaw plugins install CLI (not manual copy) to correctly link openclaw peerDependency.
+- Keep private architecture notes out of Git and ClawHub packages while retaining the runtime hook activation fix.
 
-# CHANGELOG
+## [2.4.13] - 2026-05-06
+
+### Fixed
+- Force `zalo-mod` into the OpenClaw gateway startup plugin plan with `activation.onStartup` and `activation.onCapabilities: ["hook"]`, so `before_dispatch` is registered before Zalo messages reach the model.
+- Fix permission self-healing to keep directories at `755` and files at `644`; the previous chmod pass could make `node_modules/` and `data/` non-traversable after plugin load.
+
+### Docs
+- Updated `docs/ARCHITECTURE.md` to match the verified OpenClaw v2026.5.4 behavior: successful startup now shows `4 plugins: browser, memory-core, zalo-mod, zalouser`.
+
+## [2.4.11] - 2026-05-06
+
+### Fixed
+- OpenClaw v2026.5.x compatibility: removed deprecated `kind: "runtime"` from `definePluginEntry` and `openclaw.plugin.json`.
+- Auto-fix world-writable permissions caused by Windows bind mounts with pure Node `fs.chmodSync`.
+- Improved `_openclawHome` path resolution for both `extensions/` and legacy `npm/node_modules/` install paths.
+- Added fallback hooks with `before_model_resolve` and `before_agent_reply` for the `im admin` command.
+
+### Changed
+- Plugin must be installed with `openclaw plugins install` inside Docker so the `openclaw` peer dependency symlink points at the container runtime.
 
 ## [2.4.10] - 2026-05-05
+
 ### Fixed
-- Them `.clawhubignore` de ClawHub package khong upload file/dev folder khong can thiet.
+- Added `.clawhubignore` so ClawHub packaging skips development-only files.
 
 ## [2.4.9] - 2026-05-05
+
 ### Fixed
-- Giu runtime ID `zalo-mod` theo rang buoc ClawHub, nhung package name van la `openclaw-zalo-mod`.
-- Setup script migrate config entry sai `openclaw-zalo-mod` sang runtime entry `zalo-mod`.
+- Kept runtime ID `zalo-mod` for ClawHub compatibility while package name remains `openclaw-zalo-mod`.
+- Setup script migrates wrong config entry `openclaw-zalo-mod` to runtime entry `zalo-mod`.
 
 ## [2.4.8] - 2026-05-05
+
 ### Fixed
-- Doi `package.json.name` ve `openclaw-zalo-mod` de ClawHub publish dung package ID.
+- Changed `package.json.name` back to `openclaw-zalo-mod` so ClawHub publishes under the correct package ID.
 
 ## [2.4.7] - 2026-05-05
+
 ### Fixed
-- Dong bo plugin ID thanh `openclaw-zalo-mod` trong runtime, setup script va docs.
+- Synchronized plugin ID across runtime, setup script, and docs.
 
 ## [2.4.6] - 2026-05-05
+
 ### Added
-- ThÃªm script `bump-version.js` tá»± Ä‘á»™ng cáº­p nháº­t version.
-- ThÃªm workflow `.agent/workflows/update.md` cho AI agent.
-- Há»— trá»£ cÃ¢u lá»‡nh "i'm admin" Ä‘á»ƒ xÃ¡c nháº­n ownerId.
+- Added `bump-version.js` to synchronize versions.
+- Added `.agent/workflows/update.md`.
+- Added `i'm admin` owner claim support.
 
 ### Removed
-- XÃ³a `PUBLISHING.md`.
+- Removed `PUBLISHING.md`.

@@ -16,11 +16,11 @@
  *   listZaloGroupMembers API, diff with previous snapshot.
  *
  * @author tuanminhhole
- * @version 2.4.11
+ * @version 2.4.14
  */
 
 import fs from 'node:fs/promises';
-import { chmodSync, readdirSync } from 'node:fs';
+import { chmodSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { definePluginEntry } from 'openclaw/plugin-sdk/plugin-entry';
@@ -437,7 +437,11 @@ const plugin = definePluginEntry({
     try {
       chmodSync(__dirname, 0o755);
       for (const f of readdirSync(__dirname)) {
-        try { chmodSync(path.join(__dirname, f), 0o644); } catch (_) {}
+        try {
+          const p = path.join(__dirname, f);
+          const st = statSync(p);
+          chmodSync(p, st.isDirectory() ? 0o755 : 0o644);
+        } catch (_) {}
       }
     } catch (_) { /* non-blocking — ok on non-Linux */ }
 

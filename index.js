@@ -15,8 +15,8 @@
  *   to plugins. Workaround: poll group member list via OpenClaw internal
  *   listZaloGroupMembers API, diff with previous snapshot.
  *
- * @author Kent x Williams
- * @version 2.4.3
+ * @author tuanminhhole
+ * @version 2.4.4
  */
 
 import fs from 'node:fs/promises';
@@ -1738,7 +1738,8 @@ const plugin = definePluginEntry({
       if (!isGroupMsg) {
         // /ownerid — intercept from ANY DM user (before owner gate)
         // Allows first user to claim ownership when ownerId is empty
-        const ownerIdMatch = content.toLowerCase() === `${cmdPrefix}ownerid`;
+        const lcContent = content.toLowerCase().trim();
+        const ownerIdMatch = lcContent === `${cmdPrefix}ownerid` || lcContent === "i'm admin" || lcContent === "im admin";
         if (ownerIdMatch) {
           if (!ownerId) {
             // Chưa có owner → auto-claim sender

@@ -1,11 +1,11 @@
 {
-  "id": "zalo-mod",
-  "name": "Zalo Mod",
+  "id": "openclaw-zalo-mod",
+  "name": "OpenClaw Zalo Mod",
   "description": "Zero-token Zalo group moderation — slash commands, anti-spam, warn system, memory integration. Blocks LLM for non-mention messages.",
   "version": "2.4.4",
   "kind": "runtime",
   "enabledByDefault": false,
-  "runtimeId": "zalo-mod",
+  "runtimeId": "openclaw-zalo-mod",
   "capabilityTags": [
     "zalo",
     "moderation",

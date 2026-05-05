@@ -222,9 +222,7 @@ function main() {
   log(`  3. ${C.cyan}Cấu hình qua DM với bot:${C.reset}`);
   log(`     /rules welcome <groupId> on/off`);
   log(`     /rules follow <groupId> on/off`);
-  log(`     /rules dm-add <tên>`);
-  log(`     ${C.dim}→ Owner = người đầu tiên DM bot${C.reset}\n`);
-  log(`${C.dim}Docs: https://github.com/tuanminhhole/openclaw-zalo-mod${C.reset}`);
+  log(`     ${C.dim}→ Nhắn "i'm admin" để xác nhận admin${C.reset}\n`);
 }
 
 main();

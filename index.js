@@ -16,7 +16,7 @@
  *   listZaloGroupMembers API, diff with previous snapshot.
  *
  * @author tuanminhhole
- * @version 2.4.8
+ * @version 2.4.9
  */
 
 import fs from 'node:fs/promises';
@@ -83,7 +83,7 @@ async function _scanGroupsFromSessions(openclawHome, agentId) {
 }
 
 /**
- * Auto-patch openclaw.json — merge discovered config into plugins.entries.openclaw-zalo-mod.config.
+ * Auto-patch openclaw.json — merge discovered config into plugins.entries.zalo-mod.config.
  * Only sets values that are currently empty/default.
  * Returns true if file was modified.
  */
@@ -94,10 +94,27 @@ async function _patchOpenclawConfig(openclawHome, patch, logger, force = false) 
     const config = JSON.parse(raw);
     config.plugins = config.plugins || {};
     config.plugins.entries = config.plugins.entries || {};
+    let changed = false;
+
+    const legacyEntry = config.plugins.entries[PACKAGE_ID];
+    if (legacyEntry) {
+      const currentEntry = config.plugins.entries[PLUGIN_ID] || { enabled: true };
+      currentEntry.enabled = currentEntry.enabled !== false;
+      currentEntry.config = { ...(legacyEntry.config || {}), ...(currentEntry.config || {}) };
+      config.plugins.entries[PLUGIN_ID] = currentEntry;
+      delete config.plugins.entries[PACKAGE_ID];
+      changed = true;
+    }
+
+    if (Array.isArray(config.plugins.allow) && config.plugins.allow.includes(PACKAGE_ID)) {
+      config.plugins.allow = config.plugins.allow.filter((id) => id !== PACKAGE_ID);
+      if (!config.plugins.allow.includes(PLUGIN_ID)) config.plugins.allow.push(PLUGIN_ID);
+      changed = true;
+    }
+
     config.plugins.entries[PLUGIN_ID] = config.plugins.entries[PLUGIN_ID] || { enabled: true };
     const existing = config.plugins.entries[PLUGIN_ID].config || {};
 
-    let changed = false;
     for (const [key, val] of Object.entries(patch)) {
       if (val == null) continue;
       const cur = existing[key];
@@ -143,7 +160,8 @@ async function _patchOpenclawConfig(openclawHome, patch, logger, force = false) 
 }
 
 // ── Constants ────────────────────────────────────────────────
-const PLUGIN_ID = 'openclaw-zalo-mod';
+const PLUGIN_ID = 'zalo-mod';
+const PACKAGE_ID = 'openclaw-zalo-mod';
 
 const SPAM_LINK_RE = /bit\.ly\/|tinyurl\.com\/|t\.ly\/|rb\.gy\/|cutt\.ly\/|\?ref=|\?aff=|kiếm tiền|miễn phí|nhận quà|t\.me\/joinchat\//i;
 const EMOJI_FLOOD_RE = /^[\u{1F300}-\u{1FAFF}\s]{5,}$/u;
@@ -403,7 +421,7 @@ const plugin = definePluginEntry({
     const cfg = api.config;
 
     // Plugin config: read from api.pluginConfig (OpenClaw SDK) or fallback
-    const pluginCfg = api.pluginConfig || cfg?.plugins?.entries?.[PLUGIN_ID] || {};
+    const pluginCfg = api.pluginConfig || cfg?.plugins?.entries?.[PLUGIN_ID]?.config || cfg?.plugins?.entries?.[PACKAGE_ID]?.config || {};
     // ── groupNames: source of truth cho danh sách groups đang quản lý ──
     // Format mới: { groupId: { name, admins, creatorId } }
     // Backward-compat: nếu value là string (format cũ) → auto-convert sang object

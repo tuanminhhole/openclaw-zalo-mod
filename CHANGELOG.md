@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## [2.4.9] - 2026-05-05
+### Fixed
+- Giu runtime ID `zalo-mod` theo rang buoc ClawHub, nhung package name van la `openclaw-zalo-mod`.
+- Setup script migrate config entry sai `openclaw-zalo-mod` sang runtime entry `zalo-mod`.
+
 ## [2.4.8] - 2026-05-05
 ### Fixed
 - Doi `package.json.name` ve `openclaw-zalo-mod` de ClawHub publish dung package ID.

@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [2.4.8] - 2026-05-05
+### Fixed
+- Doi `package.json.name` ve `openclaw-zalo-mod` de ClawHub publish dung package ID.
+
 ## [2.4.7] - 2026-05-05
 ### Fixed
 - Dong bo plugin ID thanh `openclaw-zalo-mod` trong runtime, setup script va docs.

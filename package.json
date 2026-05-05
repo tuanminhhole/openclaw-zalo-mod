@@ -1,6 +1,6 @@
 {
-  "name": "@tuanminhhole/openclaw-zalo-mod",
-  "version": "2.4.7",
+  "name": "openclaw-zalo-mod",
+  "version": "2.4.8",
   "description": "Zero-token Zalo group moderation plugin for OpenClaw — slash commands, anti-spam, warn system, and memory integration.",
   "type": "module",
   "main": "index.js",

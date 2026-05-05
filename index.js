@@ -16,7 +16,7 @@
  *   listZaloGroupMembers API, diff with previous snapshot.
  *
  * @author tuanminhhole
- * @version 2.4.4
+ * @version 2.4.6
  */
 
 import fs from 'node:fs/promises';

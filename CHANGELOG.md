@@ -1,3 +1,15 @@
+﻿## [2.4.11] - 2026-05-06
+
+### Fixed
+- **OpenClaw v2026.5.x compatibility**: Removed deprecated kind: 'runtime' from definePluginEntry and openclaw.plugin.json (PluginKind only accepts memory|context-engine in v2026.5.x).
+- **Auto-fix 777 permissions**: Plugin now self-heals world-writable permissions caused by Windows bind-mount, using pure s.chmodSync (no child_process, ClawHub-safe).
+- **_openclawHome path resolution**: Improved to handle both extensions/ and legacy 
+pm/node_modules/ install paths.
+- **Fallback hooks**: Added efore_model_resolve + efore_agent_reply as backup interception path for "im admin" command in environments where efore_dispatch is unavailable.
+
+### Changed
+- Plugin must be installed via openclaw plugins install CLI (not manual copy) to correctly link openclaw peerDependency.
+
 # CHANGELOG
 
 ## [2.4.10] - 2026-05-05
@@ -19,9 +31,9 @@
 
 ## [2.4.6] - 2026-05-05
 ### Added
-- Thêm script `bump-version.js` tự động cập nhật version.
-- Thêm workflow `.agent/workflows/update.md` cho AI agent.
-- Hỗ trợ câu lệnh "i'm admin" để xác nhận ownerId.
+- ThÃªm script `bump-version.js` tá»± Ä‘á»™ng cáº­p nháº­t version.
+- ThÃªm workflow `.agent/workflows/update.md` cho AI agent.
+- Há»— trá»£ cÃ¢u lá»‡nh "i'm admin" Ä‘á»ƒ xÃ¡c nháº­n ownerId.
 
 ### Removed
-- Xóa `PUBLISHING.md`.
+- XÃ³a `PUBLISHING.md`.

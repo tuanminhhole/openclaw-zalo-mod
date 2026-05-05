@@ -16,10 +16,11 @@
  *   listZaloGroupMembers API, diff with previous snapshot.
  *
  * @author tuanminhhole
- * @version 2.4.10
+ * @version 2.4.11
  */
 
 import fs from 'node:fs/promises';
+import { chmodSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { definePluginEntry } from 'openclaw/plugin-sdk/plugin-entry';
@@ -29,8 +30,17 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // ── Auto-config helpers ──────────────────────────────────────
 // Resolve OPENCLAW_HOME from plugin install path:
-// plugin at {OPENCLAW_HOME}/extensions/openclaw-zalo-mod/ → 2 levels up
-const _openclawHome = path.resolve(__dirname, '..', '..');
+//   ClawHub/CLI install: {HOME}/extensions/zalo-mod/       → 2 up → .openclaw/ ✅
+//   Legacy NPM:          {HOME}/npm/node_modules/.../      → 3 up → .openclaw/ ✅
+let _openclawHome = path.resolve(__dirname, '..', '..');
+const _homeBasename = path.basename(_openclawHome);
+if (_homeBasename === 'npm' || _homeBasename === 'node_modules') {
+  // Legacy: inside npm/node_modules — step up through npm/ too
+  _openclawHome = path.resolve(_openclawHome, '..');
+  if (path.basename(_openclawHome) === 'npm') {
+    _openclawHome = path.resolve(_openclawHome, '..');
+  }
+}
 
 /**
  * Read bot name from IDENTITY.md in workspace dir.
@@ -414,10 +424,22 @@ const plugin = definePluginEntry({
   id: PLUGIN_ID,
   name: 'Zalo Mod',
   description: 'Zero-token Zalo group moderation — slash commands, anti-spam, warn system, memory integration.',
-  kind: 'runtime',
+  // Note: do NOT set kind:'runtime' — it was deprecated in v2026.5.x
+  // (PluginKind only accepts 'memory'|'context-engine'). Plugin loads correctly without it.
 
   register(api) {
     const logger = api.logger;
+
+    // ── Auto-fix 777 permissions (Windows bind-mount issue) ─────────────────
+    // OpenClaw gateway blocks world-writable plugins (Windows bind-mount gives 0777).
+    // Fix proactively using pure Node.js fs — safe for ClawHub publish (no child_process).
+    try {
+      chmodSync(__dirname, 0o755);
+      for (const f of readdirSync(__dirname)) {
+        try { chmodSync(path.join(__dirname, f), 0o644); } catch (_) {}
+      }
+    } catch (_) { /* non-blocking — ok on non-Linux */ }
+
     const cfg = api.config;
 
     // Plugin config: read from api.pluginConfig (OpenClaw SDK) or fallback
@@ -925,22 +947,52 @@ const plugin = definePluginEntry({
       }
     }
 
+    // ── Zalouser send API — dynamic path resolution ──────────
+    // @openclaw/zalouser installed at: {OPENCLAW_HOME}/npm/node_modules/@openclaw/zalouser/
+    let _zalouserSendApi = null;
+    let _zalouserSendApiUnavailable = false;
+
+    async function _loadZalouserSendApi() {
+      if (_zalouserSendApi) return _zalouserSendApi;
+      if (_zalouserSendApiUnavailable) return null;
+      const candidates = [
+        // Preferred: co-located npm dir (standard OpenClaw Docker setup)
+        path.join(_openclawHome, 'npm/node_modules/@openclaw/zalouser/dist/test-api.js'),
+        // Fallback: system npm
+        '/usr/local/lib/node_modules/@openclaw/zalouser/dist/test-api.js',
+        // Legacy: old openclaw path
+        '/usr/local/lib/node_modules/openclaw/dist/extensions/zalouser/test-api.js',
+      ];
+      for (const p of candidates) {
+        try {
+          const url = p.startsWith('/') ? `file://${p}` : `file:///${p.replace(/\\/g, '/')}`;
+          _zalouserSendApi = await import(url);
+          logger.info(`[openclaw-zalo-mod] zalouser send API loaded: ${p}`);
+          return _zalouserSendApi;
+        } catch { /* try next */ }
+      }
+      logger.warn('[openclaw-zalo-mod] zalouser send API not found — DM/group messages disabled.');
+      _zalouserSendApiUnavailable = true;
+      return null;
+    }
+
     // Helper: send reply natively via OpenClaw Zalouser API
     async function sendGroupMsg(ctx, groupId, text) {
       if (!groupId || !text) return;
       const profile = ctx?.accountId || 'default';
       logger.info(`[openclaw-zalo-mod] sendGroupMsg → threadId=${groupId}, profile=${profile}, textLen=${text.length}`);
       try {
-        const { sendMessageZalouser } = await import('file:///usr/local/lib/node_modules/openclaw/dist/extensions/zalouser/test-api.js');
-        const result = await sendMessageZalouser(String(groupId), String(text), { 
-          isGroup: true, 
+        const api = await _loadZalouserSendApi();
+        if (!api?.sendMessageZalouser) { logger.warn('[openclaw-zalo-mod] sendGroupMsg skipped — API unavailable'); return; }
+        const result = await api.sendMessageZalouser(String(groupId), String(text), {
+          isGroup: true,
           profile,
           textMode: 'markdown'
         });
         if (result && !result.ok) {
-           logger.error(`[openclaw-zalo-mod] Native Zalo send failed: ${result.error}`);
+          logger.error(`[openclaw-zalo-mod] Native Zalo send failed: ${result.error}`);
         } else {
-           logger.info(`[openclaw-zalo-mod] Native message delivered to group ${groupId}`);
+          logger.info(`[openclaw-zalo-mod] Native message delivered to group ${groupId}`);
         }
       } catch (err) {
         logger.error(`[openclaw-zalo-mod] Native Zalo send exception: ${err.message}`);
@@ -952,8 +1004,9 @@ const plugin = definePluginEntry({
       if (!userId || !text) return;
       const profile = ctx?.accountId || 'default';
       try {
-        const { sendMessageZalouser } = await import('file:///usr/local/lib/node_modules/openclaw/dist/extensions/zalouser/test-api.js');
-        await sendMessageZalouser(String(userId), String(text), {
+        const api = await _loadZalouserSendApi();
+        if (!api?.sendMessageZalouser) { logger.warn('[openclaw-zalo-mod] sendDmMsg skipped — API unavailable'); return; }
+        await api.sendMessageZalouser(String(userId), String(text), {
           isGroup: false,
           profile,
           textMode: 'markdown'
@@ -1048,8 +1101,10 @@ const plugin = definePluginEntry({
 
       // Thử nhiều path — tùy phiên bản OpenClaw
       const paths = [
+        // Preferred: npm dir
+        `file://${path.join(_openclawHome, 'npm/node_modules/@openclaw/zalouser/dist/test-api.js').replace(/\\/g, '/')}`,
+        'file:///usr/local/lib/node_modules/@openclaw/zalouser/dist/test-api.js',
         'file:///usr/local/lib/node_modules/openclaw/dist/extensions/zalouser/test-api.js',
-        'openclaw/dist/extensions/zalouser/test-api.js',
       ];
       for (const p of paths) {
         try {
@@ -1722,7 +1777,7 @@ const plugin = definePluginEntry({
     // ── Event: before_dispatch (main hook) ───────────────────
     api.on('before_dispatch', async (event, ctx) => {
       // 1. Chỉ bắt event từ Zalo
-      if (ctx?.channelId !== 'zalouser') return;
+      console.log('[ZALO-MOD-DEBUG] ctx:', JSON.stringify(ctx||{})); console.log('[ZALO-MOD-DEBUG] body:', event?.body); if (ctx?.channelId !== 'zalouser' && ctx?.channel !== 'zalouser') { console.log('[ZALO-MOD-DEBUG] ignored! channelId:', ctx?.channelId); return; }
       
       // NOTE: Zalo strips @mention from event.content but keeps it in event.body
       const content = String(event?.body || event?.content || '').trim();
@@ -1757,7 +1812,7 @@ const plugin = definePluginEntry({
         // /ownerid — intercept from ANY DM user (before owner gate)
         // Allows first user to claim ownership when ownerId is empty
         const lcContent = content.toLowerCase().trim();
-        const ownerIdMatch = lcContent === `${cmdPrefix}ownerid` || lcContent === "i'm admin" || lcContent === "im admin";
+        const ownerIdMatch = lcContent === `${cmdPrefix}ownerid` || lcContent.replace(/['’]/g, '') === "im admin";
         if (ownerIdMatch) {
           if (!ownerId) {
             // Chưa có owner → auto-claim sender
@@ -2189,6 +2244,43 @@ const plugin = definePluginEntry({
       return;
     }, { priority: 300 }); // priority 300 = runs before relay plugin (200)
 
+    // ── Fallback: before_model_resolve + before_agent_reply ─────────────
+    // OpenClaw v2026.5.x: runtime plugins cannot register gateway-level hooks.
+    // before_dispatch is not fired for runtime plugins. Use agent-session hooks.
+    const _adminClaims = globalThis.__zaloModAdminClaims ?? new Map();
+    globalThis.__zaloModAdminClaims = _adminClaims;
+
+    api.on('before_model_resolve', async (event, ctx) => {
+      if (ctx?.channelId !== 'zalouser' && ctx?.channel !== 'zalouser') return;
+      const lc = String(event?.prompt || '').toLowerCase().replace(/['']/g, '').trim();
+      const ownerCmd = cmdPrefix + 'ownerid';
+      if (lc !== 'im admin' && lc !== ownerCmd) return;
+      const sKey = ctx?.sessionKey || 'default';
+      const sId = String(ctx?.senderId || '');
+      logger.info('[openclaw-zalo-mod] [ADMIN-FALLBACK] im admin from ' + sId + ' sKey=' + sKey);
+      _adminClaims.set(sKey, { senderId: sId, ts: Date.now() });
+    });
+
+    api.on('before_agent_reply', async (event, ctx) => {
+      if (ctx?.channelId !== 'zalouser' && ctx?.channel !== 'zalouser') return;
+      const sKey = ctx?.sessionKey || 'default';
+      const claim = _adminClaims.get(sKey);
+      if (!claim || Date.now() - claim.ts > 60000) { _adminClaims.delete(sKey); return; }
+      _adminClaims.delete(sKey);
+      const { senderId } = claim;
+      logger.info('[openclaw-zalo-mod] [ADMIN-FALLBACK] intercepting reply for ' + senderId);
+      try {
+        if (!ownerId) {
+          const patched = await _patchOpenclawConfig(_openclawHome, { ownerId: senderId }, logger, true);
+          await sendDmMsg(ctx, senderId, patched
+            ? 'Sếp đã được đăng ký làm Owner! Owner ID: ' + senderId
+            : 'Không thể ghi config. ownerId: ' + senderId);
+        } else {
+          await sendDmMsg(ctx, senderId, 'Owner ID của bot: ' + ownerId);
+        }
+      } catch (e) { logger.error('[openclaw-zalo-mod] [ADMIN-FALLBACK] error: ' + e.message); }
+      return { handled: true };
+    });
     // Start member watcher for welcome messages
     startMemberWatcher();
 

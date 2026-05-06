@@ -1,3 +1,9 @@
+## [2.4.19] - 2026-05-06
+
+### Fixed
+- Slash command với prefix không đúng (của bot khác) nay được chặn hoàn toàn { handled: true }, không để lọt lên LLM.
+- Sửa lỗi Williams không phản hồi do file bị quyền 777 sau khi copy từ Windows.
+
 ## [2.4.18] - 2026-05-06
 
 ### Fixed

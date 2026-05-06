@@ -1896,7 +1896,9 @@ const plugin = definePluginEntry({
       const slashMatch = content.match(/(?:^|\s)(\/[a-z][a-z0-9-]*)(.*)$/i);
       if (slashMatch) {
         const rawCommand = slashMatch[1].toLowerCase();
-        if (!rawCommand.startsWith(cmdPrefix)) return;
+        // Slash command thuộc bot khác (prefix không match) → chặn, không để LLM reply
+        // (tránh trường hợp 2 bot cùng group: /williams-noi-quy lọt vào Mkt và LLM của Mkt trả lời)
+        if (!rawCommand.startsWith(cmdPrefix)) return { handled: true };
         const command = '/' + rawCommand.slice(cmdPrefix.length);
         const cmdArgs = slashMatch[2].trim();
         const args    = cmdArgs ? cmdArgs.split(/\s+/) : [];

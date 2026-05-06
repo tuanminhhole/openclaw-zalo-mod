@@ -1,3 +1,8 @@
+## [2.4.15] - 2026-05-06
+
+### Fixed
+- Persist `ownerId` and other auto-detected config updates to `openclaw.json` instead of only mutating the in-memory copy.
+
 ## [2.4.14] - 2026-05-06
 
 ### Changed

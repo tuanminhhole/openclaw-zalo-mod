@@ -1,102 +1,209 @@
 # 🛡️ openclaw-zalo-mod — Zero-Token Zalo Group Moderation
 
-> OpenClaw runtime plugin for Zalo group administration. Handles moderation, slash commands, and anti-spam with **zero LLM token cost**. Only `@mention` queries are forwarded to the AI agent.
+> OpenClaw runtime plugin dành cho quản trị nhóm Zalo. Xử lý kiểm duyệt, slash commands, anti-spam với **0 token LLM**. Chỉ có tin nhắn `@mention` mới được chuyển lên AI agent.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![OpenClaw Plugin](https://img.shields.io/badge/OpenClaw-Plugin-blue.svg)](https://openclaw.ai)
+[![Version](https://img.shields.io/badge/version-2.4.17-green.svg)](./CHANGELOG.md)
 
-**[🇻🇳 Đọc bằng tiếng Việt](./README.vi.md)**
+**[🇺🇸 English](./README.md)**
 
 ---
 
-## ✨ Features
+## ✨ Tính năng
 
-| Feature | Token Cost | Description |
-|---------|-----------|-------------|
+| Tính năng | Token | Mô tả |
+|-----------|-------|-------|
 | **Slash Commands** | 0 | `/noi-quy`, `/menu`, `/huong-dan`, `/groupid`, `/ownerid`, `/report`, `/rules` |
-| **Warn System** | 0 | `/warn @name [reason]` — track warnings per member |
-| **Anti-Spam** | 0 | Auto-detect repeated messages, link spam, emoji flood |
-| **Admin Notes** | 0 | `/note [text]` — admin-only notes |
-| **Memory Sync** | 0 | `/memory` — save full digest to `skills/memory/` |
-| **Smart Q&A** | 0 | Auto-answer "who's warned?" "violations?" from local data |
-| **Sticker Detection** | 0 | Transform raw sticker JSON to `[Sticker]` for agent |
-| **@Mention** | ✅ uses tokens | Forward to LLM only for real questions |
+| **Warn System** | 0 | `/warn @name [lý do]` — theo dõi vi phạm theo member |
+| **Anti-Spam** | 0 | Tự phát hiện tin nhắn lặp, spam link, emoji flood |
+| **Admin Notes** | 0 | `/note [text]` — ghi chú admin |
+| **Memory Sync** | 0 | `/memory` — lưu digest vào `skills/memory/` |
+| **Smart Q&A** | 0 | Tự trả lời "ai bị warn?", "vi phạm?" từ dữ liệu local |
+| **ZCA Admin Sync** | 0 | Tự động lấy `creatorId` + `adminIds` từ Zalo API |
+| **Owner DM** | 0 | Nhận lệnh quản trị qua DM riêng với bot |
 
-## 🏗️ Architecture
+---
+
+## 🏗️ Kiến trúc
 
 ```
-Incoming Zalo message
+Tin nhắn Zalo đến
     │
-    ├─ /slash command     → Plugin handles locally (0 tokens)
-    ├─ Spam detected      → Log + block silently (0 tokens)
-    ├─ Sticker/media      → Transform to [Sticker] (0 tokens)
-    ├─ "Who's warned?"    → Plugin answers from store (0 tokens)
+    ├─ /slash command     → Plugin xử lý local (0 token)
+    ├─ Spam phát hiện     → Log + block im lặng (0 token)
+    ├─ Sticker/media      → Chuyển thành [Sticker] (0 token)
+    ├─ "Ai bị warn?"      → Plugin trả lời từ store (0 token)
     │
-    └─ @BotName question  → Forward to LLM agent (uses tokens)
+    └─ @BotName câu hỏi  → Chuyển lên LLM agent (dùng token)
 ```
 
-## 📦 Installation
+---
 
-### From ClawHub (recommended)
+## 📦 Cài đặt
+
+### 1. Docker (khuyến nghị — dùng với openclaw-setup)
+
+```powershell
+# Chạy bên trong container
+docker exec openclaw-bot openclaw plugins install clawhub:openclaw-zalo-mod --force
+docker restart openclaw-bot
+```
+
+### 2. Native (không Docker)
 
 ```bash
 openclaw plugins install openclaw-zalo-mod
-```
-
-### Manual
-
-1. Copy the plugin to your `extensions/` directory:
-
-```bash
-# Windows
-xcopy /E /I openclaw-zalo-mod %OPENCLAW_HOME%\extensions\openclaw-zalo-mod
-
-# Linux / macOS
-cp -r openclaw-zalo-mod ~/.openclaw/extensions/openclaw-zalo-mod
-```
-
-2. Restart the gateway:
-
-```bash
 openclaw gateway restart
 ```
 
-### Path resolution
+### 3. Cài thủ công từ source
 
-`openclaw-zalo-mod` does not require a `.env` file in native installs. At runtime it resolves OpenClaw config in this order:
+```powershell
+# Copy source vào thư mục extensions
+xcopy /E /I openclaw-zalo-mod "%OPENCLAW_HOME%\extensions\zalo-mod"
 
-1. `OPENCLAW_HOME` environment variable, used by Docker/openclaw-setup.
-2. The plugin install path, usually `{OPENCLAW_HOME}/extensions/openclaw-zalo-mod`.
+# Hoặc trên Linux
+cp -r openclaw-zalo-mod ~/.openclaw/extensions/zalo-mod
 
-After the bot receives a group message, run `/groupid` in that group. The plugin scans saved Zalo sessions and writes both `watchGroupIds` and `groupNames` to `openclaw.json`.
+# Restart gateway
+openclaw gateway restart
+```
 
-## 🛑 Anti-Spam Detection
+### 4. Patch nhanh khi phát triển (Docker)
 
-| Type | Detection |
+```powershell
+# Copy file đã sửa vào container
+Copy-Item -Path "D:\openclaw-zalo-mod\index.js" -Destination "E:\final\.openclaw\extensions\zalo-mod\index.js" -Force
+
+# Fix quyền (Windows bind mount tạo quyền 777)
+docker exec openclaw-bot chmod 644 /root/project/.openclaw/extensions/zalo-mod/index.js
+
+# Restart
+docker restart openclaw-bot
+```
+
+> ⚠️ **Lưu ý quyền file:** Windows bind mounts tạo file với quyền `0777`. OpenClaw sẽ từ chối load plugin có quyền world-writable. Luôn chạy `chmod 644` sau khi copy.
+
+---
+
+## ⚙️ Cấu hình ban đầu
+
+### Bước 1: Xác nhận bot đã load plugin
+
+Kiểm tra log sau khi restart:
+```
+[gateway] http server listening (5 plugins: browser, memory-core, openclaw-n8n-facebook-poster, zalo-mod, zalouser; ...)
+```
+
+Plugin phải xuất hiện trong danh sách. Nếu thiếu, kiểm tra quyền file.
+
+### Bước 2: Nhận quyền Owner
+
+Gửi tin nhắn DM riêng cho bot:
+```
+i'm admin
+```
+Bot sẽ tự động ghi `ownerId` vào config và xác nhận.
+
+### Bước 3: Đăng ký Group
+
+Vào group cần quản lý, gửi lệnh:
+```
+/bot-rules groupid
+```
+Bot sẽ quét session, lấy `creatorId` + `adminIds` từ Zalo API, rồi tự ghi vào config.
+
+---
+
+## 📋 Danh sách lệnh đầy đủ
+
+### 👤 Mọi người (trong group)
+
+| Lệnh | Mô tả |
+|------|-------|
+| `/{botname}-noi-quy` | Xem nội quy nhóm |
+| `/{botname}-menu` | Danh sách lệnh |
+| `/{botname}-huong-dan` | Hướng dẫn sử dụng bot |
+| `/{botname}-report` | Báo cáo vi phạm |
+
+### 🔧 Admin (trong group)
+
+| Lệnh | Mô tả |
+|------|-------|
+| `/{botname}-mute` | Tắt bot hoàn toàn |
+| `/{botname}-unmute` | Bật lại bot |
+| `/{botname}-warn @name [lý do]` | Cảnh cáo member |
+| `/{botname}-note [text]` | Ghi chú admin |
+| `/{botname}-memory [note]` | Lưu memory digest |
+
+### 👑 Owner — trong group
+
+| Lệnh | Mô tả |
+|------|-------|
+| `/bot-rules` | Xem panel sub-lệnh |
+| `/bot-rules status` | Cấu hình group hiện tại |
+| `/bot-rules groupid` | Thêm group + lấy adminIds/creatorId từ ZCA |
+| `/bot-rules silent-on/off` | Bật/tắt silent mode |
+| `/bot-rules welcome-on/off` | Bật/tắt chào member mới |
+| `/bot-rules tracking-on/off` | Bật/tắt ghi lịch sử |
+
+### 🔐 Owner — qua DM riêng
+
+| Lệnh | Mô tả |
+|------|-------|
+| `/bot-rules mute <groupId> on/off` | Mute/unmute group cụ thể |
+| `/bot-rules mute all on/off` | Mute/unmute tất cả |
+| `/bot-rules silent <groupId> on/off` | Silent group cụ thể |
+| `/bot-rules welcome <groupId> on/off` | Welcome group cụ thể |
+| `/bot-rules tracking <groupId> on/off` | Tracking group cụ thể |
+| `/bot-rules dm-add <userId>` | Thêm vào DM whitelist |
+| `/bot-rules groupid-list` | Danh sách tất cả groups |
+| `/bot-ownerid` | Xem owner ID hiện tại |
+
+---
+
+## 🛑 Anti-Spam
+
+| Loại | Phát hiện |
 |------|-----------|
-| **Repeat Spam** | Same message sent N times within the time window |
-| **Link Spam** | Messages containing suspicious URLs (bit.ly, tinyurl, affiliate links) |
-| **Emoji Flood** | Messages with 5+ consecutive emojis |
+| **Repeat Spam** | Cùng tin nhắn gửi N lần trong khoảng thời gian |
+| **Link Spam** | URL rút gọn hoặc link affiliate đáng ngờ |
+| **Emoji Flood** | 5+ emoji liên tiếp |
 
-Violations are logged to the store and synced to `violations.md`.
+Cấu hình trong `openclaw.json`:
+```json
+"spamRepeatN": 3,
+"spamWindowSeconds": 300
+```
 
-## 🤖 Smart Auto-Answer
+---
 
-When someone `@mentions` the bot with common group management questions, openclaw-zalo-mod answers directly from the local store — no LLM tokens used:
-
-| Question Pattern | Source |
-|-----------------|--------|
-| "Who's warned?" / "Ai bị warn?" | `store.getWarned()` |
-| "Violations?" / "Vi phạm?" | `store.getViolations()` |
-| "Who's admin?" / "Admin là ai?" | Config response |
-
-All other `@mention` questions are forwarded to the LLM agent.
-
-## 🔧 Requirements
+## 🔧 Yêu cầu
 
 - OpenClaw `>= 2026.3.24`
-- `zalouser` channel configured and authenticated
+- Channel `zalouser` đã được cấu hình và xác thực
 - Node.js `>= 20`
+
+---
+
+## 🔄 Release Workflow
+
+```powershell
+# 1. Sửa code trong D:\openclaw-zalo-mod\index.js
+# 2. Cập nhật CHANGELOG.md
+# 3. Bump version
+node bump-version.js
+# 4. Kiểm tra syntax
+node --check index.js
+# 5. Commit & push
+git add . && git commit -m "chore: release vX.X.X" && git push
+# 6. Publish ClawHub
+$commit = git rev-parse HEAD
+npx clawhub package publish . --source-repo "https://github.com/tuanminhhole/openclaw-zalo-mod" --source-commit $commit
+```
+
+---
 
 ## 📄 License
 

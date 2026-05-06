@@ -1,3 +1,14 @@
+## [2.4.17] - 2026-05-06
+
+### Fixed
+- Fix `fs.existsSync` error in ZCA initialization by using `require('fs').existsSync`.
+- Prevent Zalo websocket conflict by explicitly stopping listener after REST API initialization.
+
+## [2.4.16] - 2026-05-06
+
+### Fixed
+- Fix 'ZCA unavailable' error by dynamically resolving zca-js module path relative to _openclawHome instead of using a hardcoded Linux container path.
+
 ## [2.4.15] - 2026-05-06
 
 ### Fixed

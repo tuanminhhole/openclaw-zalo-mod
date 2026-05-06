@@ -16,7 +16,7 @@
  *   listZaloGroupMembers API, diff with previous snapshot.
  *
  * @author tuanminhhole
- * @version 2.4.15
+ * @version 2.4.17
  */
 
 import fs from 'node:fs/promises';
@@ -1164,14 +1164,34 @@ const plugin = definePluginEntry({
       // Invalidate cũ
       _zcaApi = null;
       try {
-        const zcaPath = path.resolve('/usr/local/lib/node_modules/openclaw/node_modules/zca-js');
+        const possibleZcaPaths = [
+          path.join(_openclawHome, 'npm', 'node_modules', 'zca-js'),
+          path.join(_openclawHome, 'node_modules', 'zca-js'),
+          path.resolve('/root/project/.openclaw/npm/node_modules/zca-js'),
+          path.resolve('/usr/local/lib/node_modules/openclaw/node_modules/zca-js')
+        ];
+        let zcaPath = null;
+        for (const p of possibleZcaPaths) {
+          if (require('fs').existsSync(p)) {
+            zcaPath = p;
+            break;
+          }
+        }
+        if (!zcaPath) {
+          try {
+            zcaPath = require.resolve('zca-js');
+          } catch (err) {
+            throw new Error('Cannot find zca-js in known paths');
+          }
+        }
         const { Zalo } = require(zcaPath);
         const credsPath = path.join(_openclawHome, 'credentials', 'zalouser', 'credentials.json');
         const creds = JSON.parse(await fs.readFile(credsPath, 'utf8'));
         const zalo = new Zalo({ checkUpdate: false, logging: false });
         _zcaApi = await zalo.login(creds);
         _zcaApiCreatedAt = Date.now();
-        logger.info('[openclaw-zalo-mod] ZCA direct API initialized (TTL=30s)');
+        if (_zcaApi.listener && typeof _zcaApi.listener.stop === "function") { _zcaApi.listener.stop(); }
+        logger.info('[openclaw-zalo-mod] ZCA direct API initialized (TTL=30s) and WebSocket listener stopped to prevent decryption errors');
         return _zcaApi;
       } catch (e) {
         logger.warn(`[openclaw-zalo-mod] ZCA direct API init failed: ${e.message}`);

@@ -1,3 +1,8 @@
+## [2.4.18] - 2026-05-06
+
+### Fixed
+- Template builders (uildNoiQuy, uildWelcome) now use dynamic otName and cmdPrefix instead of hardcoded values.
+
 ## [2.4.17] - 2026-05-06
 
 ### Fixed

@@ -290,7 +290,7 @@ function createSpamTracker(repeatN, windowMs) {
 }
 
 // ── Template Builders ────────────────────────────────────────
-function buildNoiQuy(groupName, cmdPrefix) {
+function buildNoiQuy(groupName, botName, cmdPrefix) {
   return `📋 NỘI QUY — ${groupName}
 ━━━━━━━━━━━━━━━━━━
 
@@ -305,7 +305,7 @@ function buildNoiQuy(groupName, cmdPrefix) {
 • Lần 2: Warn
 • Lần 3: Kick
 
-📌 Hỏi thêm: @Williams [câu hỏi]`;
+📌 Hỏi thêm: @${botName} [câu hỏi]`;
 }
 
 function buildMenu(botName, cmdPrefix) {
@@ -394,8 +394,8 @@ function buildReport(groupId, allViolations, allWarned) {
 
 function buildWelcome(memberName,  botName, cmdPrefix) {
   return `👋 Chào mừng ${memberName} vào nhóm!
-📋 /noi-quy để xem nội quy
-📖 /menu để xem lệnh
+📋 ${cmdPrefix}noi-quy để xem nội quy
+📖 ${cmdPrefix}menu để xem lệnh
 💬 @${botName} nếu cần hỏi bot`;
 }
 
@@ -1907,7 +1907,7 @@ const plugin = definePluginEntry({
 
         // /noi-quy (nội quy)
         if (command === '/noi-quy') {
-          await sendGroupMsg(ctx, groupId, buildNoiQuy(getGroupName(groupId), cmdPrefix));
+          await sendGroupMsg(ctx, groupId, buildNoiQuy(getGroupName(groupId), botName, cmdPrefix));
           return { handled: true };
         }
 

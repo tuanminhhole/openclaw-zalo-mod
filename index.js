@@ -16,7 +16,7 @@
  *   listZaloGroupMembers API, diff with previous snapshot.
  *
  * @author tuanminhhole
- * @version 2.4.20
+ * @version 2.5.0
  */
 
 import fs from 'node:fs/promises';
@@ -675,38 +675,11 @@ const plugin = definePluginEntry({
             '| Slash hoạt động | ❌ (chỉ /unmute) | ✅ |',
             '| @mention | ❌ | ✅ |',
             '| Welcome | ❌ | ✅ |',
+
             '',
           ].join('\n');
           await fs.writeFile(skillMdPath, skillContent, 'utf8');
           logger.info('[openclaw-zalo-mod] auto-created skills/zalo-group-admin/SKILL.md');
-
-          try {
-            const toolsMdPath = path.join(workspaceDir, 'TOOLS.md');
-            let toolsContent = '';
-            try { toolsContent = await fs.readFile(toolsMdPath, 'utf8'); } catch (e) {}
-            if (!toolsContent.includes('ZALO REACTION')) {
-              const reactionInstruction = [
-                '',
-                '## ZALO REACTION',
-                '',
-                'Khi user yêu cầu thả tym/like/cảm xúc vào tin nhắn hiện tại, dùng tool `message` thật gọn:',
-                '',
-                '`{"action":"react","emoji":"heart"}`',
-                '',
-                'Nếu cần react vào một tin cũ có id dạng đầy đủ `msgId:cliMsgId`, truyền thêm:',
-                '',
-                '`{"action":"react","messageId":"<msgId>","cliMsgId":"<cliMsgId>","emoji":"heart"}`',
-                '',
-                'Emoji hợp lệ: `heart`, `like`, `haha`, `wow`, `cry`, `angry`.',
-                'Không gửi reaction bằng tool `zalouser send`; đó là gửi tin nhắn mới, không phải reaction.',
-                ''
-              ].join('\n');
-              await fs.appendFile(toolsMdPath, reactionInstruction, 'utf8');
-              logger.info('[openclaw-zalo-mod] auto-appended ZALO REACTION to TOOLS.md');
-            }
-          } catch (e) {
-            logger.warn(`[openclaw-zalo-mod] failed to append to TOOLS.md: ${e.message}`);
-          }
         }
 
         // 2. Create memory INDEX.md cho mỗi group đang follow

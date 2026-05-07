@@ -1,3 +1,9 @@
+## [2.5.0] - 2026-05-07
+
+### Removed
+- Removed all Zalo reaction logic (`reactToCurrentMessage`, `autoReactBeforeHandling`, and related hooks) to improve event-loop performance and prevent watchdog crashes on resource-constrained VPS instances.
+- Removed `## ZALO REACTION` documentation from `SKILL.md` auto-generation.
+
 ## [2.4.20] - 2026-05-07
 
 ### Added

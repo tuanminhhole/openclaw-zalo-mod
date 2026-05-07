@@ -142,25 +142,41 @@ Bot sẽ quét session, lấy `creatorId` + `adminIds` từ Zalo API, rồi tự
 
 | Lệnh | Mô tả |
 |------|-------|
-| `/bot-rules` | Xem panel sub-lệnh |
-| `/bot-rules status` | Cấu hình group hiện tại |
-| `/bot-rules groupid` | Thêm group + lấy adminIds/creatorId từ ZCA |
-| `/bot-rules silent-on/off` | Bật/tắt silent mode |
-| `/bot-rules welcome-on/off` | Bật/tắt chào member mới |
-| `/bot-rules tracking-on/off` | Bật/tắt ghi lịch sử |
+| `/{botname}-rules` | Xem panel sub-lệnh |
+| `/{botname}-rules status` | Cấu hình group hiện tại |
+| `/{botname}-rules groupid` | Thêm group + lấy adminIds/creatorId từ ZCA |
+| `/{botname}-rules silent-on` | Bật silent (chỉ reply khi @tag) |
+| `/{botname}-rules silent-off` | Tắt silent mode |
+| `/{botname}-rules welcome-on` | Bật chào member mới |
+| `/{botname}-rules welcome-off` | Tắt chào member mới |
+| `/{botname}-rules tracking-on` | Bật ghi lịch sử chat |
+| `/{botname}-rules tracking-off` | Tắt ghi lịch sử chat |
 
 ### 🔐 Owner — qua DM riêng
 
 | Lệnh | Mô tả |
 |------|-------|
-| `/bot-rules mute <groupId> on/off` | Mute/unmute group cụ thể |
-| `/bot-rules mute all on/off` | Mute/unmute tất cả |
-| `/bot-rules silent <groupId> on/off` | Silent group cụ thể |
-| `/bot-rules welcome <groupId> on/off` | Welcome group cụ thể |
-| `/bot-rules tracking <groupId> on/off` | Tracking group cụ thể |
-| `/bot-rules dm-add <userId>` | Thêm vào DM whitelist |
-| `/bot-rules groupid-list` | Danh sách tất cả groups |
-| `/bot-ownerid` | Xem owner ID hiện tại |
+| `/{botname}-rules mute-list` | Trạng thái mute tất cả groups |
+| `/{botname}-rules mute <groupId> on/off` | Mute/unmute group cụ thể |
+| `/{botname}-rules mute all on/off` | Mute/unmute tất cả |
+| `/{botname}-rules silent-list` | Trạng thái silent tất cả groups |
+| `/{botname}-rules silent <groupId> on/off` | Silent group cụ thể |
+| `/{botname}-rules silent all on/off` | Silent tất cả |
+| `/{botname}-rules welcome-list` | Trạng thái welcome tất cả |
+| `/{botname}-rules welcome <groupId> on/off` | Welcome group cụ thể |
+| `/{botname}-rules welcome all on/off` | Welcome tất cả |
+| `/{botname}-rules tracking-list` | Trạng thái tracking tất cả |
+| `/{botname}-rules tracking <groupId> on/off` | Tracking group cụ thể |
+| `/{botname}-rules tracking all on/off` | Tracking tất cả |
+| `/{botname}-rules follow-list` | Theo dõi memory per-group |
+| `/{botname}-rules follow <groupId> on/off` | Follow group cụ thể |
+| `/{botname}-rules follow all on/off` | Follow tất cả |
+| `/{botname}-rules dm-list` | DM whitelist |
+| `/{botname}-rules dm-add <tên>` | Thêm vào DM whitelist |
+| `/{botname}-rules dm-remove <tên>` | Xóa khỏi DM whitelist |
+| `/{botname}-rules groupid-list` | Danh sách tất cả groups |
+| `/{botname}-rules groupid-add <groupId>` | Thêm group từ xa |
+| `/{botname}-ownerid` | Xem/đặt owner ID |
 
 ---
 

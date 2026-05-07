@@ -1,3 +1,8 @@
+## [2.4.20] - 2026-05-07
+
+### Added
+- Auto-append ZALO REACTION instructions to TOOLS.md when generating workspace bot configs, enabling proper use of the `message` tool for native emoji reactions.
+
 ## [2.4.19] - 2026-05-06
 
 ### Fixed

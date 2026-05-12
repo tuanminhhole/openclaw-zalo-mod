@@ -1,3 +1,10 @@
+## [2.5.2] - 2026-05-12
+
+### Fixed
+- Fixed `fs` module imports and usage (`existsSync`, `readFileSync`, `writeFileSync`, `mkdirSync`) avoiding `fs/promises` mismatch during config loading.
+- Redesigned `getSafeZaloApi()` to directly use `zca-js` with `zalouser` credentials, completely removing the failing dependency on `@openclaw/zalouser/test-api.js` in Docker.
+- Prevented WebSocket conflicts by explicitly stopping the `zca-js` listener in the `withZaloApiShim` wrapper.
+
 ## [2.5.0] - 2026-05-07
 
 ### Removed

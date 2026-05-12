@@ -16,11 +16,11 @@
  *   listZaloGroupMembers API, diff with previous snapshot.
  *
  * @author tuanminhhole
- * @version 2.5.0
+ * @version 2.5.2
  */
 
 import fs from 'node:fs/promises';
-import { chmodSync, readdirSync, statSync } from 'node:fs';
+import { chmodSync, readdirSync, statSync, existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { definePluginEntry } from 'openclaw/plugin-sdk/plugin-entry';
@@ -451,17 +451,17 @@ const plugin = definePluginEntry({
 
     // Data dir — store JSON data outside the extensions folder to avoid hot-reloads
     const dataDir = path.join(_openclawHome, 'plugins-data', PLUGIN_ID);
-    try { if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true }); } catch (e) {}
+    try { if (!existsSync(dataDir)) mkdirSync(dataDir, { recursive: true }); } catch (e) {}
 
     const groupNamesFile = path.join(dataDir, 'group-names.json');
     let _rawGroupNames = {};
     try {
-      if (fs.existsSync(groupNamesFile)) {
-        _rawGroupNames = JSON.parse(fs.readFileSync(groupNamesFile, 'utf8'));
+      if (existsSync(groupNamesFile)) {
+        _rawGroupNames = JSON.parse(readFileSync(groupNamesFile, 'utf8'));
       } else {
         // Migration from openclaw.json to separate group-names.json
         _rawGroupNames = pluginCfg.groupNames || {};
-        fs.writeFileSync(groupNamesFile, JSON.stringify(_rawGroupNames, null, 2), 'utf8');
+        writeFileSync(groupNamesFile, JSON.stringify(_rawGroupNames, null, 2), 'utf8');
       }
     } catch (e) {
       _rawGroupNames = pluginCfg.groupNames || {};
@@ -469,7 +469,7 @@ const plugin = definePluginEntry({
 
     async function saveGroupNames(namesObj) {
       try {
-        await fs.promises.writeFile(groupNamesFile, JSON.stringify(namesObj, null, 2) + '\n', 'utf8');
+        await fs.writeFile(groupNamesFile, JSON.stringify(namesObj, null, 2) + '\n', 'utf8');
         _rawGroupNames = namesObj; // update in-memory reference
       } catch (e) {}
     }
@@ -1174,16 +1174,51 @@ const plugin = definePluginEntry({
     // Solution: use withZaloApi from zalouser to safely access the active API instance without breaking cipher keys.
     
     async function getSafeZaloApi() {
-      const testApiPath = [
-        path.join(_openclawHome, 'npm', 'node_modules', '@openclaw', 'zalouser', 'dist', 'test-api.js'),
-        path.resolve('/root/project/.openclaw/npm/node_modules/@openclaw/zalouser/dist/test-api.js')
-      ].find(p => require('fs').existsSync(p));
+      // Dùng zca-js trực tiếp với credentials của zalouser — không phụ thuộc openclaw package
+      const zcaJsPaths = [
+        path.join(_openclawHome, 'npm', 'node_modules', 'zca-js', 'dist', 'index.js'),
+        path.resolve('/usr/local/lib/node_modules/zca-js/dist/index.js'),
+      ];
+      const zcaJsPath = zcaJsPaths.find(p => existsSync(p));
+      if (!zcaJsPath) {
+        logger.warn('[openclaw-zalo-mod] zca-js not found in known paths');
+        return null;
+      }
 
-      if (!testApiPath) return null;
+      // Đọc credentials từ file của zalouser
+      const credFile = path.join(_openclawHome, 'credentials', 'zalouser', 'credentials.json');
+      if (!existsSync(credFile)) {
+        logger.warn('[openclaw-zalo-mod] zalouser credentials not found');
+        return null;
+      }
+
       try {
-        const mod = await import(require('url').pathToFileURL(testApiPath).href);
-        return mod.withZaloApi;
+        const cred = JSON.parse(readFileSync(credFile, 'utf8'));
+        if (!cred.imei || !cred.cookie || !cred.userAgent) {
+          logger.warn('[openclaw-zalo-mod] invalid credentials format');
+          return null;
+        }
+
+        const { Zalo } = await import(new URL('file://' + zcaJsPath).href);
+        const zalo = new Zalo({ logging: false, selfListen: false });
+        const api = await zalo.login({
+          imei: cred.imei,
+          cookie: cred.cookie,
+          userAgent: cred.userAgent,
+          language: cred.language,
+        });
+
+        // Trả về hàm wrapper có chung interface với withZaloApi cũ
+        return async function withZaloApiShim(profile, operation) {
+          try {
+            return await operation(api);
+          } finally {
+            // Cực kỳ quan trọng: Dừng listener sau khi fetch để giải phóng WebSocket, tránh đụng độ với channel chính
+            try { api.listener?.stop(); } catch (_) {}
+          }
+        };
       } catch (e) {
+        logger.warn(`[openclaw-zalo-mod] getSafeZaloApi error: ${e.message}`);
         return null;
       }
     }

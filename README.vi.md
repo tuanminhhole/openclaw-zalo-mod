@@ -4,7 +4,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![OpenClaw Plugin](https://img.shields.io/badge/OpenClaw-Plugin-blue.svg)](https://openclaw.ai)
-[![Version](https://img.shields.io/badge/version-2.4.18-green.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.6.0-green.svg)](./CHANGELOG.md)
 
 **[🇺🇸 English](./README.md)**
 
@@ -12,18 +12,39 @@
 
 ## ✨ Tính năng
 
-| Tính năng          | Token | Mô tả                                                                 |
-| ------------------ | ----- | --------------------------------------------------------------------- |
-| **Slash Commands** | 0     | `/[botname]-noi-quy`, `/[botname]-menu`, `/[botname]-huong-dan`, v.v. |
-| **Warn System**    | 0     | `/[botname]-warn @name [lý do]` — theo dõi vi phạm theo member        |
-| **Anti-Spam**      | 0     | Tự phát hiện tin nhắn lặp, spam link, emoji flood                     |
-| **Admin Notes**    | 0     | `/[botname]-note [text]` — ghi chú admin                              |
-| **Memory Sync**    | 0     | `/[botname]-memory` — lưu digest vào `skills/memory/`                 |
-| **Smart Q&A**      | 0     | Tự trả lời "ai bị warn?", "vi phạm?" từ dữ liệu local                 |
-| **ZCA Admin Sync** | 0     | Tự động lấy `creatorId` + `adminIds` từ Zalo API                      |
-| **Owner DM**       | 0     | Nhận lệnh quản trị qua DM riêng với bot                               |
+| **Zalo Owner Dashboard** | 0 | UI Dashboard đồ họa tuyệt đẹp (Premium Glassmorphism), quản lý group, duyệt member, soạn gửi tin nhắn trực tiếp qua ZCA API! |
+| **Slash Commands** | 0 | `/[botname]-noi-quy`, `/[botname]-menu`, `/[botname]-huong-dan`, v.v. |
+| **Warn System** | 0 | `/[botname]-warn @name [lý do]` — theo dõi vi phạm theo member |
+| **Anti-Spam** | 0 | Tự phát hiện tin nhắn lặp, spam link, emoji flood |
+| **Admin Notes** | 0 | `/[botname]-note [text]` — ghi chú admin |
+| **Memory Sync** | 0 | `/[botname]-memory` — lưu digest vào `skills/memory/` |
+| **Smart Q&A** | 0 | Tự trả lời "ai bị warn?", "vi phạm?" từ dữ liệu local |
+| **ZCA Admin Sync** | 0 | Tự động lấy `creatorId` + `adminIds` từ Zalo API |
+| **Owner DM** | 0 | Nhận lệnh quản trị qua DM riêng với bot |
 
 > **Lưu ý về prefix lệnh:** Tất cả lệnh dùng prefix `/{tên-bot}-`. Ví dụ nếu bot tên `Williams` thì lệnh là `/williams-menu`, `/williams-noi-quy`, v.v.
+
+---
+
+## 🖥️ Zalo Owner Dashboard (UI)
+
+Plugin tích hợp sẵn giao diện quản trị đồ họa **Zalo Owner Dashboard** được thiết kế theo chuẩn **Premium Glassmorphism & High-Density Studio v1.5** siêu sang trọng.
+
+- **Cách truy cập:** `http://127.0.0.1:19790` (mặc định) hoặc IP máy chủ của bạn trên cổng `19790`.
+- **Cấu hình trong `openclaw.json`:**
+  ```json
+  "dashboardEnabled": true,
+  "dashboardHost": "127.0.0.1",
+  "dashboardPort": 19790
+  ```
+
+### Các phân hệ chính trên Dashboard:
+
+1. **📊 Tổng quan vận hành**: Xem nhanh số lượng nhóm, member chờ duyệt, logs hoạt động theo thời gian thực.
+2. **👥 Quản lý Nhóm**: Cấu hình chế độ Silent Mode, Welcome message, xem link mời nhóm, xem danh sách Admin từng nhóm.
+3. **⏳ Thành viên & Duyệt**: Duyệt nhanh thành viên xin vào nhóm, theo dõi member vi phạm/cảnh cáo.
+4. **✍️ Gửi tin nhắn (Composer)**: Soạn thảo tin nhắn và gửi trực tiếp đến các nhóm nhanh chóng, hỗ trợ preview hình ảnh trước khi gửi.
+5. **🔌 Danh mục API**: Tra cứu toàn bộ các ZCA API khả dụng và các ví dụ thực tế.
 
 ---
 
@@ -55,7 +76,7 @@ docker restart openclaw-bot
 ### 2. Native (không Docker)
 
 ```bash
-openclaw plugins install clawhub:openclaw-zalo-mod
+openclaw plugins install openclaw-zalo-mod
 openclaw gateway restart
 ```
 
@@ -145,43 +166,27 @@ Bot sẽ quét session, lấy `creatorId` + `adminIds` từ Zalo API, rồi tự
 
 ### 👑 Owner — trong group
 
-| Lệnh                            | Mô tả                                      |
-| ------------------------------- | ------------------------------------------ |
-| `/{botname}-rules`              | Xem panel sub-lệnh                         |
-| `/{botname}-rules status`       | Cấu hình group hiện tại                    |
-| `/{botname}-rules groupid`      | Thêm group + lấy adminIds/creatorId từ ZCA |
-| `/{botname}-rules silent-on`    | Bật silent (chỉ reply khi @tag)            |
-| `/{botname}-rules silent-off`   | Tắt silent mode                            |
-| `/{botname}-rules welcome-on`   | Bật chào member mới                        |
-| `/{botname}-rules welcome-off`  | Tắt chào member mới                        |
-| `/{botname}-rules tracking-on`  | Bật ghi lịch sử chat                       |
-| `/{botname}-rules tracking-off` | Tắt ghi lịch sử chat                       |
+| Lệnh                         | Mô tả                                      |
+| ---------------------------- | ------------------------------------------ |
+| `/bot-rules`                 | Xem panel sub-lệnh                         |
+| `/bot-rules status`          | Cấu hình group hiện tại                    |
+| `/bot-rules groupid`         | Thêm group + lấy adminIds/creatorId từ ZCA |
+| `/bot-rules silent-on/off`   | Bật/tắt silent mode                        |
+| `/bot-rules welcome-on/off`  | Bật/tắt chào member mới                    |
+| `/bot-rules tracking-on/off` | Bật/tắt ghi lịch sử                        |
 
 ### 🔐 Owner — qua DM riêng
 
-| Lệnh                                         | Mô tả                           |
-| -------------------------------------------- | ------------------------------- |
-| `/{botname}-rules mute-list`                 | Trạng thái mute tất cả groups   |
-| `/{botname}-rules mute <groupId> on/off`     | Mute/unmute group cụ thể        |
-| `/{botname}-rules mute all on/off`           | Mute/unmute tất cả              |
-| `/{botname}-rules silent-list`               | Trạng thái silent tất cả groups |
-| `/{botname}-rules silent <groupId> on/off`   | Silent group cụ thể             |
-| `/{botname}-rules silent all on/off`         | Silent tất cả                   |
-| `/{botname}-rules welcome-list`              | Trạng thái welcome tất cả       |
-| `/{botname}-rules welcome <groupId> on/off`  | Welcome group cụ thể            |
-| `/{botname}-rules welcome all on/off`        | Welcome tất cả                  |
-| `/{botname}-rules tracking-list`             | Trạng thái tracking tất cả      |
-| `/{botname}-rules tracking <groupId> on/off` | Tracking group cụ thể           |
-| `/{botname}-rules tracking all on/off`       | Tracking tất cả                 |
-| `/{botname}-rules follow-list`               | Theo dõi memory per-group       |
-| `/{botname}-rules follow <groupId> on/off`   | Follow group cụ thể             |
-| `/{botname}-rules follow all on/off`         | Follow tất cả                   |
-| `/{botname}-rules dm-list`                   | DM whitelist                    |
-| `/{botname}-rules dm-add <tên>`              | Thêm vào DM whitelist           |
-| `/{botname}-rules dm-remove <tên>`           | Xóa khỏi DM whitelist           |
-| `/{botname}-rules groupid-list`              | Danh sách tất cả groups         |
-| `/{botname}-rules groupid-add <groupId>`     | Thêm group từ xa                |
-| `/{botname}-ownerid`                         | Xem/đặt owner ID                |
+| Lệnh                                   | Mô tả                    |
+| -------------------------------------- | ------------------------ |
+| `/bot-rules mute <groupId> on/off`     | Mute/unmute group cụ thể |
+| `/bot-rules mute all on/off`           | Mute/unmute tất cả       |
+| `/bot-rules silent <groupId> on/off`   | Silent group cụ thể      |
+| `/bot-rules welcome <groupId> on/off`  | Welcome group cụ thể     |
+| `/bot-rules tracking <groupId> on/off` | Tracking group cụ thể    |
+| `/bot-rules dm-add <userId>`           | Thêm vào DM whitelist    |
+| `/bot-rules groupid-list`              | Danh sách tất cả groups  |
+| `/bot-ownerid`                         | Xem owner ID hiện tại    |
 
 ---
 
@@ -218,6 +223,25 @@ Cấu hình trong `openclaw.json`:
 - OpenClaw `>= 2026.3.24`
 - Channel `zalouser` đã được cấu hình và xác thực
 - Node.js `>= 20`
+
+---
+
+## 🔄 Release Workflow (Tự động xáo trộn bảo mật & Publish)
+
+Để bảo vệ các tính năng Pro, mã nguồn Javascript phân phối trên ClawHub sẽ tự động được xáo trộn (obfuscate) bằng quy trình build chuyên nghiệp:
+
+```powershell
+# 1. Phát triển, sửa code trong D:\openclaw-zalo-mod\index.js
+# 2. Cập nhật CHANGELOG.md với các tính năng mới
+# 3. Chạy bump-version để cập nhật phiên bản (ví dụ: 2.5.4)
+node bump-version.js
+# 4. Commit sạch lên Git (Thư mục docs/ và code nhạy cảm bị ignore tự động)
+git add .
+git commit -m "chore: release vX.X.X"
+git push
+# 5. Chạy script Premium Build & Publish tự động xáo trộn và đẩy lên ClawHub
+node build-and-publish.js
+```
 
 ---
 

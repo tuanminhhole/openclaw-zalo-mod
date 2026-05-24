@@ -16,14 +16,17 @@
  *   listZaloGroupMembers API, diff with previous snapshot.
  *
  * @author tuanminhhole
- * @version 2.5.2
+ * @version 2.6.0
  */
 
 import fs from 'node:fs/promises';
 import { chmodSync, readdirSync, statSync, existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { definePluginEntry } from 'openclaw/plugin-sdk/plugin-entry';
+import crypto from 'node:crypto';
+import os from 'node:os';
 
 // ── Plugin directory (for data storage) ──────────────────────
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -123,7 +126,10 @@ async function _patchOpenclawConfig(openclawHome, patch, logger, force = false) 
     }
 
     config.plugins.entries[PLUGIN_ID] = config.plugins.entries[PLUGIN_ID] || { enabled: true };
-    const existing = config.plugins.entries[PLUGIN_ID].config || {};
+    const entry = config.plugins.entries[PLUGIN_ID];
+    entry.hooks = { ...(entry.hooks || {}), allowConversationAccess: true };
+    const existing = entry.config || {};
+    changed = true;
 
     for (const [key, val] of Object.entries(patch)) {
       if (val == null) continue;
@@ -430,6 +436,33 @@ const plugin = definePluginEntry({
   register(api) {
     const logger = api.logger;
 
+    // ── Auto-patch @openclaw/zalouser to safely share active Zalo API sessions ──
+    // Giúp loại bỏ triệt để xung đột dual-login và ZaloApiError (Invalid data length or missing cipher key)
+    try {
+      const zalouserDistDir = path.resolve(_openclawHome, 'npm', 'node_modules', '@openclaw', 'zalouser', 'dist');
+      if (existsSync(zalouserDistDir)) {
+        const files = readdirSync(zalouserDistDir);
+        const zaloJsFile = files.find(f => f.startsWith('zalo-js-') && f.endsWith('.js'));
+        if (zaloJsFile) {
+          const zaloJsPath = path.join(zalouserDistDir, zaloJsFile);
+          let content = readFileSync(zaloJsPath, 'utf8');
+          if (!content.includes('globalThis.__zcaApiByProfile = apiByProfile;')) {
+            logger.info(`[openclaw-zalo-mod] 🪄 Auto-patching ${zaloJsFile} to enable ZCA API sharing...`);
+            const targetStr = 'const apiByProfile = /* @__PURE__ */ new Map();';
+            if (content.includes(targetStr)) {
+              content = content.replace(targetStr, `${targetStr}\nglobalThis.__zcaApiByProfile = apiByProfile;`);
+              writeFileSync(zaloJsPath, content, 'utf8');
+              logger.info(`[openclaw-zalo-mod] ✅ Auto-patched ${zaloJsFile} successfully!`);
+            } else {
+              logger.warn(`[openclaw-zalo-mod] ⚠️ Could not find target map inside ${zaloJsFile} for auto-patching`);
+            }
+          }
+        }
+      }
+    } catch (e) {
+      logger.warn(`[openclaw-zalo-mod] ⚠️ Auto-patch zalouser failed: ${e.message}`);
+    }
+
     // ── Auto-fix 777 permissions (Windows bind-mount issue) ─────────────────
     // OpenClaw gateway blocks world-writable plugins (Windows bind-mount gives 0777).
     // Fix proactively using pure Node.js fs — safe for ClawHub publish (no child_process).
@@ -537,6 +570,280 @@ const plugin = definePluginEntry({
 
     const store       = createStore(dataDir);
     const spamTracker = createSpamTracker(spamRepeatN, spamWindowMs);
+
+    // ── MonkeyPay Multi-step Payment Integration Helpers ─────────
+    const statesFile = path.join(dataDir, 'customer-states.json');
+    async function getCustomerState(userId) {
+      try {
+        if (existsSync(statesFile)) {
+          const raw = await fs.readFile(statesFile, 'utf8');
+          const data = JSON.parse(raw);
+          return data[userId] || null;
+        }
+      } catch (e) {}
+      return null;
+    }
+
+    async function saveCustomerState(userId, state) {
+      try {
+        let data = {};
+        if (existsSync(statesFile)) {
+          const raw = await fs.readFile(statesFile, 'utf8');
+          data = JSON.parse(raw);
+        }
+        if (state === null) {
+          delete data[userId];
+        } else {
+          data[userId] = { ...state, updatedAt: new Date().toISOString() };
+        }
+        await fs.writeFile(statesFile, JSON.stringify(data, null, 2), 'utf8');
+      } catch (e) {
+        logger.error(`[openclaw-zalo-mod] saveCustomerState error: ${e.message}`);
+      }
+    }
+
+    function startPaymentPolling() {
+      logger.info('[openclaw-zalo-mod] 💳 Starting MonkeyPay transaction polling loop (8s interval)...');
+      setInterval(async () => {
+        try {
+          if (!existsSync(statesFile)) return;
+          const raw = await fs.readFile(statesFile, 'utf8');
+          const data = JSON.parse(raw);
+          const activeUsers = Object.entries(data).filter(([_, s]) => s.step === 'payment_pending');
+          
+          for (const [userId, state] of activeUsers) {
+            try {
+              const res = await fetch(`https://monkeypay-server-262289343328.asia-southeast1.run.app/api/transactions/${state.txId}`, {
+                headers: {
+                  'X-Api-Key': 'mpk_a3cc9cde9ac23ab01c997a99f3e322ee68e976072f8f7321'
+                }
+              });
+              if (res.ok) {
+                const tx = await res.json();
+                if (tx.status === 'completed') {
+                  // 1. Calculate Expiry based on state.duration
+                  let expiryDate = new Date();
+                  if (state.duration === 'month') {
+                    expiryDate.setMonth(expiryDate.getMonth() + 1);
+                  } else if (state.duration === 'year') {
+                    expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+                  } else {
+                    // lifetime
+                    expiryDate = new Date('2099-12-31');
+                  }
+                  const expiryStr = expiryDate.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+                  const displayExpiry = state.plan === 'lifetime' ? 'Vĩnh viễn (Trọn đời)' : `${state.duration === 'month' ? '1 tháng' : '1 năm'} (Đến ngày ${expiryStr.split('-').reverse().join('/')})`;
+
+                  // 1.1 Generate Key (Try RSA Asymmetric signing first, fallback to legacy MD5 hash)
+                  const deviceId = state.deviceId;
+                  let key = '';
+                  let hasRsaSigned = false;
+                  
+                  try {
+                    const privateKeyPath = path.join(dataDir, 'private-key.pem');
+                    if (existsSync(privateKeyPath)) {
+                      const privateKeyPem = await fs.readFile(privateKeyPath, 'utf8');
+                      if (privateKeyPem && privateKeyPem.trim()) {
+                        const dataToSign = `${deviceId}:${state.plan}:${expiryStr}`;
+                        const signer = crypto.createSign('sha256');
+                        signer.update(dataToSign);
+                        const signature = signer.sign(privateKeyPem, 'base64');
+                        key = `ZALOMKT-${state.plan.toUpperCase()}-${expiryStr.replace(/-/g, '')}-${signature}`;
+                        hasRsaSigned = true;
+                      }
+                    }
+                  } catch (err) {
+                    logger.warn(`[openclaw-zalo-mod] RSA signature generation failed: ${err.message}. Falling back to legacy MD5.`);
+                  }
+
+                  if (!hasRsaSigned) {
+                    const hash = crypto.createHash('md5').update(deviceId + 'ZaloMktSecretSalt').digest('hex').slice(0, 10).toUpperCase();
+                    key = `ZALOMKT-${state.plan.toUpperCase()}-${hash}`;
+                  }
+                  
+                  // 2. Save Key to generated-licenses.json
+                  const licFile = path.join(dataDir, 'generated-licenses.json');
+                  let lics = {};
+                  try {
+                    if (existsSync(licFile)) {
+                      lics = JSON.parse(await fs.readFile(licFile, 'utf8'));
+                    }
+                  } catch (_) {}
+                  
+                  lics[deviceId] = {
+                    key,
+                    plan: state.plan,
+                    duration: state.duration,
+                    senderId: userId,
+                    senderName: state.senderName,
+                    generatedAt: new Date().toISOString(),
+                    expiry: expiryStr
+                  };
+                  await fs.writeFile(licFile, JSON.stringify(lics, null, 2), 'utf8');
+                  
+                  // 3. Clear customer state
+                  delete data[userId];
+                  await fs.writeFile(statesFile, JSON.stringify(data, null, 2), 'utf8');
+                  
+                  // 4. Send Success Message
+                  const successMsg = [
+                    `🔑 [ZALO MKT LICENSE SYSTEM]`,
+                    `Chúc mừng! Giao dịch thanh toán của bạn đã hoàn tất thành công! 🎉`,
+                    `• Thiết bị: ${deviceId}`,
+                    `• Gói bản quyền: ${state.label.toUpperCase()}`,
+                    `• Thời hạn: ${displayExpiry}`,
+                    ``,
+                    `Dưới đây là Key kích hoạt bản quyền của bạn:`,
+                    `👉 ${key}`,
+                    ``,
+                    `Hãy copy Key trên, dán vào ô Xác thực trên Dashboard của bạn và bấm nút "Xác thực" để kích hoạt toàn bộ tính năng PRO ngay lập tức! 🎉`
+                  ].join('\n');
+                  
+                  await sendDmMsg(null, userId, successMsg);
+                  logger.info(`[openclaw-zalo-mod] License generated successfully: ${key} for deviceId: ${deviceId} (Expiry: ${expiryStr})`);
+                } else {
+                  // Check if expired
+                  const expiresAt = new Date(tx.expires_at);
+                  if (new Date() > expiresAt) {
+                    // Clear state
+                    delete data[userId];
+                    await fs.writeFile(statesFile, JSON.stringify(data, null, 2), 'utf8');
+                    
+                    const expireMsg = `⏰ Giao dịch thanh toán cho Thiết bị ${state.deviceId} đã hết hạn. Vui lòng gửi lại Device ID để tạo giao dịch mới!`;
+                    await sendDmMsg(null, userId, expireMsg);
+                  }
+                }
+              }
+            } catch (err) {
+              logger.error(`[openclaw-zalo-mod] Polling error for ${userId}: ${err.message}`);
+            }
+          }
+        } catch (e) {
+          // Polling loop errors
+        }
+      }, 8000);
+    }
+
+
+    function getDeviceId() {
+      const platform = os.platform();
+      const hostname = os.hostname();
+      const cpus = os.cpus().map(c => c.model).join(',');
+      const hash = crypto.createHash('md5').update(`${platform}-${hostname}-${cpus}`).digest('hex');
+      return hash.slice(0, 16).toUpperCase();
+    }
+
+    function getLicenseStatus() {
+      if (!store) return { isPro: false, plan: 'free', expiry: null, deviceId: getDeviceId() };
+      const license = store.getSetting('global', 'license') || {};
+      
+      // Expiry check
+      if (license.valid && license.expiry) {
+        const expDate = new Date(license.expiry);
+        const now = new Date();
+        if (now > expDate) {
+          license.valid = false;
+          store.setSetting('global', 'license', license);
+          store.saveSettings().catch(() => {});
+        }
+      }
+
+      if (license.valid) {
+        return { 
+          isPro: true, 
+          plan: license.plan || 'personal', 
+          expiry: license.expiry, 
+          deviceId: license.deviceId || getDeviceId(),
+          key: license.key
+        };
+      }
+      return { isPro: false, plan: 'free', expiry: null, deviceId: getDeviceId() };
+    }
+
+    const MKT_PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA6HwQYBdTBe+3qxakm9Kx
+JJ97AwdtuffI9IwvYUV/Bh+98F4G7i59R77QcHosPPuKhKWANMvyixt372W7srUO
+mu0IFtsABmZYmQuLkiikKQe4uytNvM3UQU3Mf0rDflPWwqiefJBa7Os0XcsAHni6
+StVJ5uUDTnury+4wi0Qhz+230eoST68RIN9j7o3a9AiqMhNE/VDLkacBlhUarUwv
+STWGdi7mvsItSVUa1z5+ExEIj5X2jgQGYUJhuEuNVcbdfaN5GzZHCUxMTuLrIl52
+Wg7ZOUU1mGXUBFzvY43Yblx2YjwXQOmB3yrbNMphSsYOQGuaCq5cTIeh2bV6Vhki
+PQIDAQAB
+-----END PUBLIC KEY-----`;
+
+    async function verifyLicenseKey(key) {
+      if (!key) return { valid: false, error: 'Key is empty' };
+      
+      const deviceId = getDeviceId();
+      
+      // 1. Local Dev Keys for Testing
+      if (key.startsWith('DEV-OP-') && key.length > 12) {
+        return { valid: true, plan: 'personal', expiry: '2099-12-31', deviceId };
+      }
+      if (key.startsWith('DEV-TEAM-') && key.length > 12) {
+        return { valid: true, plan: 'team', expiry: '2099-12-31', deviceId };
+      }
+      if (key.startsWith('DEV-LIFETIME-') && key.length > 12) {
+        return { valid: true, plan: 'lifetime', expiry: '2099-12-31', deviceId };
+      }
+
+      // 2. RSA Asymmetric Offline Verification
+      // Format: ZALOMKT-[PLAN]-[EXPIRY_YYYYMMDD]-[RSA_SIGNATURE_BASE64]
+      if (key.startsWith('ZALOMKT-')) {
+        try {
+          const parts = key.split('-');
+          if (parts.length >= 4) {
+            const plan = parts[1].toLowerCase();
+            const rawExpiry = parts[2]; // YYYYMMDD
+            const expiry = `${rawExpiry.slice(0, 4)}-${rawExpiry.slice(4, 6)}-${rawExpiry.slice(6, 8)}`;
+            
+            // Signature Base64 may contain '-' symbols (url-safe base64), join the rest
+            const signature = parts.slice(3).join('-');
+            
+            const dataToVerify = `${deviceId}:${plan}:${expiry}`;
+            
+            const verifier = crypto.createVerify('sha256');
+            verifier.update(dataToVerify);
+            const isValid = verifier.verify(MKT_PUBLIC_KEY, signature, 'base64');
+            
+            if (isValid) {
+              return { valid: true, plan, expiry, deviceId };
+            }
+          }
+        } catch (err) {
+          // RSA validation failed or threw, fallback to Online API
+        }
+      }
+
+      // 3. Fallback Online API Verification (compatibility with old bot keys)
+      const urls = [
+        `http://mkt-ai:20789/api/license/verify`,
+        `http://127.0.0.1:20789/api/license/verify`
+      ];
+
+      for (const url of urls) {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 3000);
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ key, deviceId }),
+            signal: controller.signal
+          });
+          clearTimeout(timeoutId);
+          if (res.ok) {
+            const data = await res.json().catch(() => ({}));
+            if (data && data.valid) {
+              return { valid: true, plan: data.plan || 'personal', expiry: data.expiry, deviceId };
+            }
+          }
+        } catch (e) {
+          // continue
+        }
+      }
+
+      return { valid: false, error: 'Key kích hoạt không hợp lệ cho thiết bị này!' };
+    }
 
     let storeLoaded = false;
     async function ensureStore() {
@@ -1026,17 +1333,21 @@ const plugin = definePluginEntry({
     }
 
     // Helper: send DM (non-group) via Zalouser API
-    async function sendDmMsg(ctx, userId, text) {
-      if (!userId || !text) return;
+    async function sendDmMsg(ctx, userId, text, imageUrl = null) {
+      if (!userId || (!text && !imageUrl)) return;
       const profile = ctx?.accountId || 'default';
       try {
         const api = await _loadZalouserSendApi();
         if (!api?.sendMessageZalouser) { logger.warn('[openclaw-zalo-mod] sendDmMsg skipped — API unavailable'); return; }
-        await api.sendMessageZalouser(String(userId), String(text), {
+        const opts = {
           isGroup: false,
           profile,
           textMode: 'markdown'
-        });
+        };
+        if (imageUrl) {
+          opts.mediaUrl = imageUrl;
+        }
+        await api.sendMessageZalouser(String(userId), String(text || ''), opts);
       } catch (err) {
         logger.error(`[openclaw-zalo-mod] DM send failed to ${userId}: ${err.message}`);
       }
@@ -1174,21 +1485,23 @@ const plugin = definePluginEntry({
     // Solution: use withZaloApi from zalouser to safely access the active API instance without breaking cipher keys.
     
     async function getSafeZaloApi() {
-      // Dùng zca-js trực tiếp với credentials của zalouser — không phụ thuộc openclaw package
-      const zcaJsPaths = [
-        path.join(_openclawHome, 'npm', 'node_modules', 'zca-js', 'dist', 'index.js'),
-        path.resolve('/usr/local/lib/node_modules/zca-js/dist/index.js'),
-      ];
-      const zcaJsPath = zcaJsPaths.find(p => existsSync(p));
-      if (!zcaJsPath) {
-        logger.warn('[openclaw-zalo-mod] zca-js not found in known paths');
-        return null;
+      // 1. Ưu tiên: Tái sử dụng Zalo API instance đang chạy từ `@openclaw/zalouser` để tránh dual-login (nếu có)
+      const activeApi = globalThis.__zcaApiByProfile?.get('default');
+      if (activeApi) {
+        logger.info('[openclaw-zalo-mod] ⚡ Reusing active Zalo API instance from @openclaw/zalouser');
+        return async function withZaloApiShim(profile, operation) {
+          return await operation(activeApi);
+        };
       }
 
-      // Đọc credentials từ file của zalouser
-      const credFile = path.join(_openclawHome, 'credentials', 'zalouser', 'credentials.json');
-      if (!existsSync(credFile)) {
-        logger.warn('[openclaw-zalo-mod] zalouser credentials not found');
+      // 2. Fallback: Dùng zca-js trực tiếp với credentials của zalouser từ credentials.json
+      const credFiles = [
+        path.join(_openclawHome, 'credentials', 'zalouser', 'credentials.json'),
+        path.resolve('/root/.openclaw/credentials/zalouser/credentials.json'),
+      ];
+      const credFile = credFiles.find(p => existsSync(p));
+      if (!credFile) {
+        logger.warn('[openclaw-zalo-mod] zalouser credentials not found in standard paths: ' + JSON.stringify(credFiles));
         return null;
       }
 
@@ -1199,7 +1512,21 @@ const plugin = definePluginEntry({
           return null;
         }
 
-        const { Zalo } = await import(new URL('file://' + zcaJsPath).href);
+        // Tìm kiếm chính xác module zca-js trên cả máy thật lẫn môi trường Docker
+        const zcaJsPaths = [
+          path.join(_openclawHome, 'npm', 'node_modules', 'zca-js', 'dist', 'index.js'),
+          path.join(_openclawHome, 'npm', 'node_modules', '@openclaw', 'zalouser', 'node_modules', 'zca-js', 'dist', 'index.js'),
+          path.resolve('/root/.openclaw/npm/node_modules/zca-js/dist/index.js'),
+          path.resolve('/usr/local/lib/node_modules/zca-js/dist/index.js'),
+        ];
+        const zcaJsPath = zcaJsPaths.find(p => existsSync(p));
+        if (!zcaJsPath) {
+          logger.warn('[openclaw-zalo-mod] zca-js module not found in standard paths: ' + JSON.stringify(zcaJsPaths));
+          return null;
+        }
+
+        // Import zca-js bằng file URL tuyệt đối để bảo đảm Node.js luôn phân giải và nạp module thành công
+        const { Zalo } = await import(new URL('file://' + zcaJsPath.replace(/\\/g, '/')).href);
         const zalo = new Zalo({ logging: false, selfListen: false });
         const api = await zalo.login({
           imei: cred.imei,
@@ -1213,7 +1540,7 @@ const plugin = definePluginEntry({
           try {
             return await operation(api);
           } finally {
-            // Cực kỳ quan trọng: Dừng listener sau khi fetch để giải phóng WebSocket, tránh đụng độ với channel chính
+            // Dừng listener sau khi fetch để giải phóng WebSocket, tránh đụng độ với channel chính
             try { api.listener?.stop(); } catch (_) {}
           }
         };
@@ -1242,7 +1569,7 @@ const plugin = definePluginEntry({
           return {
             creatorId: info.creatorId || null,
             adminIds: Array.isArray(info.adminIds) ? info.adminIds : [],
-            totalMember: info.totalMember || 0,
+            totalMember: extractGroupMemberCount(info, 0),
             name: info.name || '',
           };
         });
@@ -1428,17 +1755,101 @@ const plugin = definePluginEntry({
         if (!withZaloApi) throw new Error('Không thể khởi tạo ZCA API');
 
         const { groupIds, infoMap } = await withZaloApi('default', async (api) => {
-          // Lấy tất cả group ID từ ZCA
-          const allGroups = await api.getAllGroups();
-          const gids = Object.keys(allGroups?.gridVerMap || {});
+          const gidsSet = new Set();
+          
+          function extractIds(res) {
+            if (!res) return [];
+            const ids = new Set();
+            function traverse(obj) {
+              if (!obj) return;
+              if (typeof obj === 'string') {
+                const clean = obj.replace(/^group:/, '').trim();
+                if (/^\d+$/.test(clean)) ids.add(clean);
+              } else if (typeof obj === 'number') {
+                ids.add(String(obj));
+              } else if (Array.isArray(obj)) {
+                for (const item of obj) traverse(item);
+              } else if (typeof obj === 'object') {
+                if (obj.gridVerMap) traverse(Object.keys(obj.gridVerMap));
+                if (obj.gridInfoMap) traverse(Object.keys(obj.gridInfoMap));
+                if (obj.listLocalId) traverse(obj.listLocalId);
+                if (obj.listId) traverse(obj.listId);
+                for (const [key, val] of Object.entries(obj)) {
+                  const cleanKey = key.replace(/^group:/, '').trim();
+                  if (/^\d+$/.test(cleanKey)) ids.add(cleanKey);
+                  traverse(val);
+                }
+              }
+            }
+            traverse(res);
+            return [...ids];
+          }
+
+          // 1. Quét danh sách nhóm đang hoạt động (active list)
+          try {
+            const allGroups = await api.getAllGroups();
+            extractIds(allGroups).forEach(id => gidsSet.add(id));
+          } catch (e) {
+            logger.warn(`[openclaw-zalo-mod] getAllGroups failed: ${e.message}`);
+          }
+
+          // 2. Quét các nhóm được Ghim lên đầu trang (Pinned)
+          try {
+            if (typeof api.getPinConversations === 'function') {
+              const pins = await api.getPinConversations();
+              extractIds(pins).forEach(id => gidsSet.add(id));
+            }
+          } catch (e) {
+            logger.warn(`[openclaw-zalo-mod] getPinConversations failed: ${e.message}`);
+          }
+
+          // 3. Quét các nhóm bị Ẩn bằng mã PIN (Hidden)
+          try {
+            if (typeof api.getHiddenConversations === 'function') {
+              const hiddens = await api.getHiddenConversations();
+              extractIds(hiddens).forEach(id => gidsSet.add(id));
+            }
+          } catch (e) {
+            logger.warn(`[openclaw-zalo-mod] getHiddenConversations failed: ${e.message}`);
+          }
+
+          // 4. Quét các nhóm cũ trong Kho lưu trữ (Archived)
+          try {
+            if (typeof api.getArchivedChatList === 'function') {
+              const archived = await api.getArchivedChatList();
+              extractIds(archived).forEach(id => gidsSet.add(id));
+            }
+          } catch (e) {
+            logger.warn(`[openclaw-zalo-mod] getArchivedChatList failed: ${e.message}`);
+          }
+
+          // 5. Quét toàn bộ nhóm trong các Danh mục Phân loại (Labels)
+          try {
+            if (typeof api.getLabels === 'function') {
+              const labels = await api.getLabels();
+              extractIds(labels).forEach(id => gidsSet.add(id));
+            }
+          } catch (e) {
+            logger.warn(`[openclaw-zalo-mod] getLabels failed: ${e.message}`);
+          }
+
+          const gids = [...gidsSet];
 
           if (currentGroupId && !gids.includes(currentGroupId)) {
             gids.push(currentGroupId);
           }
 
           // Lấy thông tin hàng loạt (tối ưu hóa API)
-          const infoResult = await api.getGroupInfo(gids);
-          return { groupIds: gids, infoMap: infoResult?.gridInfoMap || {} };
+          let infoMapMerged = {};
+          if (gids.length > 0) {
+            try {
+              const infoResult = await api.getGroupInfo(gids);
+              infoMapMerged = infoResult?.gridInfoMap || {};
+            } catch (e) {
+              logger.warn(`[openclaw-zalo-mod] getGroupInfo failed: ${e.message}`);
+            }
+          }
+          return { groupIds: gids, infoMap: infoMapMerged };
         });
 
         const mergedNames = { ..._rawGroupNames };
@@ -1929,6 +2340,711 @@ const plugin = definePluginEntry({
       return null; // lệnh ${cmdPrefix}rules không nhận ra → forward LLM
     }
 
+    function _legacyDataFile(name) {
+      return path.join(__dirname, 'data', name);
+    }
+
+    async function readPluginDataJson(name) {
+      return (await safeReadJson(path.join(dataDir, name))) || (await safeReadJson(_legacyDataFile(name))) || {};
+    }
+
+    async function appendDashboardAudit(entry) {
+      const file = path.join(dataDir, 'dashboard-audit.json');
+      const list = Array.isArray(await safeReadJson(file)) ? await safeReadJson(file) : [];
+      list.unshift({ ts: nowIso(), ...entry });
+      await safeWriteJson(file, list.slice(0, 300));
+    }
+
+    function normalizeMembersInput(value) {
+      if (Array.isArray(value)) return value.map(String).filter(Boolean);
+      return String(value || '').split(/[,\s]+/).map(s => s.trim()).filter(Boolean);
+    }
+
+    function normalizeModeSlug(value) {
+      return String(value || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 40);
+    }
+
+    function getGroupCustomModes(groupId) {
+      const list = store.getSetting(groupId, 'customModes', []);
+      if (!Array.isArray(list)) return [];
+      return list.map(item => {
+        const slug = normalizeModeSlug(item?.slug || item?.label);
+        if (!slug) return null;
+        return {
+          slug,
+          label: String(item?.label || slug),
+          skill: String(item?.skill || '').trim(),
+          description: String(item?.description || '').trim(),
+          enabled: item?.enabled !== false,
+        };
+      }).filter(Boolean);
+    }
+
+    function setGroupCustomModes(groupId, modes) {
+      store.setSetting(groupId, 'customModes', modes);
+    }
+
+    function upsertGroupCustomMode(groupId, payload = {}) {
+      const slug = normalizeModeSlug(payload.slug || payload.label);
+      const label = String(payload.label || slug).trim();
+      const skill = String(payload.skill || '').trim();
+      const description = String(payload.description || '').trim();
+      if (!groupId || !slug || !label) throw new Error('groupId, slug, and label are required');
+      if (!skill) throw new Error('skill is required');
+      const modes = getGroupCustomModes(groupId);
+      const next = { slug, label, skill, description, enabled: payload.enabled !== false };
+      const index = modes.findIndex(item => item.slug === slug);
+      if (index >= 0) modes[index] = next;
+      else modes.push(next);
+      setGroupCustomModes(groupId, modes);
+      return next;
+    }
+
+    function toggleGroupCustomMode(groupId, slug, enabled) {
+      const normalized = normalizeModeSlug(slug);
+      const modes = getGroupCustomModes(groupId);
+      const index = modes.findIndex(item => item.slug === normalized);
+      if (index < 0) throw new Error(`Custom mode "${slug}" not found`);
+      modes[index].enabled = !!enabled;
+      setGroupCustomModes(groupId, modes);
+      return modes[index];
+    }
+
+    function deleteGroupCustomMode(groupId, slug) {
+      const normalized = normalizeModeSlug(slug);
+      const modes = getGroupCustomModes(groupId);
+      const next = modes.filter(item => item.slug !== normalized);
+      if (next.length === modes.length) throw new Error(`Custom mode "${slug}" not found`);
+      setGroupCustomModes(groupId, next);
+      return { slug: normalized, removed: true };
+    }
+
+    function buildActiveModePrompt(groupId) {
+      const activeModes = getGroupCustomModes(groupId).filter(item => item.enabled);
+      if (!activeModes.length) return '';
+      const lines = activeModes.map(item => `- ${item.label} (/bot-${item.slug}-on|off) -> skill: ${item.skill}${item.description ? ` -> ${item.description}` : ''}`);
+      return `[GROUP MODE CONTEXT]\nActive custom modes for this group:\n${lines.join('\n')}\nUse these modes as operating instructions when they are relevant.`;
+    }
+
+    const excludedDashboardGroups = new Set([
+      '4406658694794071399',
+      '4765340670657180769',
+    ]);
+
+    function groupDedupeKey(name) {
+      return String(name || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, ' ')
+        .trim();
+    }
+
+    function groupQualityScore(group) {
+      return (Number(group.memberCount || 0) * 10)
+        + (Array.isArray(group.admins) ? group.admins.length * 3 : 0)
+        + (group.creatorId ? 2 : 0);
+    }
+
+
+    function extractGroupMemberCount(info, cached = 0) {
+      const direct = [info?.totalMember, info?.memberCount, info?.totalMembers, info?.userCount, info?.memCount, info?.currentMems]
+        .map(Number)
+        .find(value => Number.isFinite(value) && value > 0);
+      if (direct) return direct;
+      const maps = [info?.memVerMap, info?.membersMap, info?.memberMap, info?.participantsMap];
+      for (const map of maps) if (map && typeof map === 'object') {
+        const count = Object.keys(map).length;
+        if (count > 0) return count;
+      }
+      const arrays = [info?.memVerList, info?.members, info?.memberIds, info?.userIds, info?.participants];
+      for (const list of arrays) if (Array.isArray(list) && list.length) return list.length;
+      return Number(cached || 0) || 0;
+    }
+
+    function pendingListFromResult(pending) {
+      const direct = Array.isArray(pending?.members) ? pending.members
+        : Array.isArray(pending?.pendingMembers) ? pending.pendingMembers
+        : Array.isArray(pending?.data) ? pending.data
+        : Array.isArray(pending?.list) ? pending.list
+        : Array.isArray(pending) ? pending
+        : null;
+      if (direct) return direct;
+      const seen = new Set();
+      const out = [];
+      const stack = [pending];
+      while (stack.length) {
+        const cur = stack.pop();
+        if (!cur || typeof cur !== 'object') continue;
+        if (Array.isArray(cur)) {
+          for (const item of cur) stack.push(item);
+          continue;
+        }
+        const uid = cur.userId || cur.uid || cur.id;
+        if (uid != null) {
+          const key = String(uid);
+          if (!seen.has(key)) {
+            seen.add(key);
+            out.push(cur);
+          }
+        }
+        for (const value of Object.values(cur)) stack.push(value);
+      }
+      return out;
+    }
+
+    function collectProfileNames(payload, seed = {}) {
+      const out = { ...seed };
+      const seen = new Set();
+      const stack = [payload];
+      while (stack.length) {
+        const cur = stack.pop();
+        if (!cur) continue;
+        if (Array.isArray(cur)) {
+          for (const item of cur) stack.push(item);
+          continue;
+        }
+        if (typeof cur !== 'object') continue;
+        if (seen.has(cur)) continue;
+        seen.add(cur);
+        const id = cur.userId || cur.uid || cur.id || cur.user_id;
+        const name = cur.name || cur.displayName || cur.userName || cur.fullName || cur.dName || cur.zaloName;
+        if (id != null && name) out[String(id).replace(/_0$/, '')] = String(name);
+        for (const [key, value] of Object.entries(cur)) {
+          if (value && typeof value === 'object') {
+            if (!Array.isArray(value) && /^\d+$/.test(String(key))) {
+              const nestedName = value.name || value.displayName || value.userName || value.fullName || value.dName || value.zaloName;
+              if (nestedName) out[String(key).replace(/_0$/, '')] = String(nestedName);
+            }
+            stack.push(value);
+          }
+        }
+      }
+      return out;
+    }
+
+    function chunkArray(list, size = 200) {
+      const out = [];
+      for (let i = 0; i < list.length; i += size) out.push(list.slice(i, i + size));
+      return out;
+    }
+
+    function extractMemberIdsFromGroupInfo(info) {
+      const ids = new Set();
+      const add = (value) => {
+        if (value == null) return;
+        const s = String(value).replace(/_0$/, '');
+        if (/^\d+$/.test(s)) ids.add(s);
+      };
+      const arrays = [info?.memVerList, info?.memberIds, info?.userIds, info?.participants];
+      for (const list of arrays) if (Array.isArray(list)) for (const item of list) add(item?.id || item?.userId || item?.uid || item);
+      const maps = [info?.memVerMap, info?.membersMap, info?.memberMap, info?.participantsMap];
+      for (const map of maps) if (map && typeof map === 'object') for (const key of Object.keys(map)) add(key);
+      return [...ids];
+    }
+
+    async function scanGroupMembers(groupId, zaloApi) {
+      const rawInfo = await zaloApi.getGroupInfo(groupId);
+      const info = rawInfo?.gridInfoMap?.[String(groupId)] || rawInfo?.gridInfoMap?.[groupId] || rawInfo || {};
+      const ids = extractMemberIdsFromGroupInfo(info);
+      const names = {};
+      if (ids.length) {
+        for (const batch of chunkArray(ids, 200)) {
+          try {
+            const detail = await zaloApi.getGroupMembersInfo(batch);
+            Object.assign(names, collectProfileNames(detail, names));
+          } catch (_) {}
+          const missing = batch.filter(id => !names[id]);
+          if (missing.length) {
+            try {
+              const profiles = await zaloApi.getUserInfo(missing);
+              Object.assign(names, collectProfileNames(profiles, names));
+            } catch (_) {}
+          }
+        }
+      }
+      const members = ids.map(id => ({ id, name: names[id] || _memberDir[groupId]?.[id] || id }));
+      updateMemberDir(groupId, members);
+      await saveMemberDir();
+      store.setSetting(groupId, 'memberCount', members.length || extractGroupMemberCount(info, store.getSetting(groupId, 'memberCount', 0)));
+      await store.saveSettings();
+      return { count: members.length, groupId, members };
+    }
+
+    async function enrichPendingResult(groupId, pendingRaw) {
+      const list = pendingListFromResult(pendingRaw);
+      if (!list.length) return { raw: pendingRaw, list: [] };
+      const memberCache = _memberDir[groupId] || {};
+      const ids = [...new Set(list.map(item => String(item?.userId || item?.uid || item?.id || item || '')).filter(Boolean))];
+      let names = { ...memberCache };
+      try {
+        const withZaloApi = await getSafeZaloApi();
+        if (withZaloApi) {
+          await withZaloApi('default', async (zaloApi) => {
+            try {
+              const details = await zaloApi.getGroupMembersInfo(ids);
+              names = collectProfileNames(details, names);
+            } catch (_) {}
+            const missing = ids.filter(id => !names[id]);
+            if (missing.length) {
+              try {
+                const profiles = await zaloApi.getUserInfo(missing);
+                names = collectProfileNames(profiles, names);
+              } catch (_) {}
+            }
+          });
+        }
+      } catch (_) {}
+      return {
+        raw: pendingRaw,
+        list: list.map(item => {
+          const id = String(item?.userId || item?.uid || item?.id || item || '');
+          return {
+            ...item,
+            id,
+            name: names[id] || item?.name || item?.displayName || item?.userName || id,
+          };
+        }),
+      };
+    }
+
+    async function buildDashboardState() {
+      await reloadStore();
+      const memberDir = await readPluginDataJson('group-members.json');
+      const settingsRaw = await readPluginDataJson('settings.json');
+      const warnedRaw = await readPluginDataJson('warned.json');
+      const violationsRaw = await readPluginDataJson('violations.json');
+      const audit = Array.isArray(await safeReadJson(path.join(dataDir, 'dashboard-audit.json')))
+        ? await safeReadJson(path.join(dataDir, 'dashboard-audit.json'))
+        : [];
+
+      const rawGroups = Object.entries(groupNames).filter(([groupId]) => !excludedDashboardGroups.has(String(groupId))).map(([groupId, info]) => {
+        const settings = settingsRaw[groupId] || {};
+        const membersObj = memberDir[groupId] || {};
+        const cachedMemberCount = Number(settings.memberCount || settings.totalMember || 0);
+        const warnedCount = Object.values(warnedRaw[groupId] || {}).reduce((sum, list) => sum + (Array.isArray(list) ? list.length : 0), 0);
+        const violationCount = Object.values(violationsRaw[groupId] || {}).reduce((sum, list) => sum + (Array.isArray(list) ? list.length : 0), 0);
+        const memberCount = Object.keys(membersObj).length || cachedMemberCount;
+        return {
+          groupId,
+          name: info?.name || settings.name || `Group ${groupId.slice(-6)}`,
+          admins: settings.groupAdmins || info?.admins || [],
+          creatorId: settings.creatorId || info?.creatorId || '',
+          inviteLink: settings.inviteLink || info?.inviteLink || info?.link || '',
+          pendingCount: Number(settings.pendingCount || 0),
+          memberCount,
+          isMemberCountCached: Object.keys(membersObj).length === 0 && cachedMemberCount > 0,
+          warnedCount,
+          violationCount,
+          settings: {
+            muted: !!settings.muted,
+            silent: settings.silent !== false,
+            welcome: settings.welcome !== false,
+            tracking: !!settings.tracking,
+            follow: settings.follow !== false,
+            pendingAuto: !!settings.pendingAuto,
+          },
+          customModes: getGroupCustomModes(groupId),
+        };
+      });
+      const byName = new Map();
+      for (const group of rawGroups) {
+        const key = groupDedupeKey(group.name);
+        if (!key) {
+          byName.set(`id:${group.groupId}`, group);
+          continue;
+        }
+        const existing = byName.get(key);
+        if (!existing || groupQualityScore(group) > groupQualityScore(existing)) byName.set(key, group);
+      }
+      const groups = [...byName.values()];
+
+      return {
+        ok: true,
+        license: getLicenseStatus(),
+        bot: {
+          name: botName,
+          cmdPrefix,
+          ownerId,
+          ownerName: (() => {
+            for (const members of Object.values(memberDir)) {
+              if (members?.[ownerId]) return members[ownerId];
+            }
+            return ownerId || 'Owner';
+          })(),
+          groups: groups.length,
+          dashboardPort: Number(pluginCfg.dashboardPort || 19790),
+        },
+        groups,
+        members: memberDir,
+        settings: settingsRaw,
+        audit: audit.slice(0, 50),
+        totals: {
+          groups: groups.length,
+          members: groups.reduce((sum, g) => sum + g.memberCount, 0),
+          warnings: groups.reduce((sum, g) => sum + g.warnedCount, 0),
+          violations: groups.reduce((sum, g) => sum + g.violationCount, 0),
+        },
+      };
+    }
+
+    async function runDashboardZcaAction(action, payload) {
+      const withZaloApi = await getSafeZaloApi();
+      if (!withZaloApi) throw new Error('ZCA API unavailable. Check zalouser credentials and zca-js install.');
+
+      return await withZaloApi('default', async (zaloApi) => {
+        const groupId = String(payload.groupId || '').trim();
+        const userId = String(payload.userId || '').trim();
+        const members = normalizeMembersInput(payload.members || payload.userIds || userId);
+
+        if (action === 'sync-groups') {
+          const allGroups = await zaloApi.getAllGroups();
+          const ids = Object.keys(allGroups?.gridVerMap || {});
+          const infoResult = ids.length ? await zaloApi.getGroupInfo(ids) : null;
+          const infoMap = infoResult?.gridInfoMap || {};
+          const merged = { ..._rawGroupNames };
+          for (const gId of ids) {
+            if (excludedDashboardGroups.has(String(gId))) continue;
+            const z = infoMap[gId] || {};
+            merged[gId] = {
+              name: z.name || groupNames[gId]?.name || `Group ${gId.slice(-6)}`,
+              admins: Array.isArray(z.adminIds) ? z.adminIds.map(String) : (groupNames[gId]?.admins || []),
+              creatorId: z.creatorId ? String(z.creatorId) : (groupNames[gId]?.creatorId || ''),
+              inviteLink: z.inviteLink || z.link || z.groupLink || z.url || groupNames[gId]?.inviteLink || '',
+            };
+            groupNames[gId] = merged[gId];
+            if (!watchGroupIds.includes(gId)) watchGroupIds.push(gId);
+            if (merged[gId].admins?.length) store.setSetting(gId, 'groupAdmins', merged[gId].admins);
+            if (merged[gId].creatorId) store.setSetting(gId, 'creatorId', merged[gId].creatorId);
+            if (merged[gId].inviteLink) store.setSetting(gId, 'inviteLink', merged[gId].inviteLink);
+            store.setSetting(gId, 'memberCount', extractGroupMemberCount(z, store.getSetting(gId, 'memberCount', 0)));
+            if (z.pendingCount != null) store.setSetting(gId, 'pendingCount', Number(z.pendingCount) || 0);
+            if (!store.getSetting(gId, 'memberCount', 0)) {
+              try {
+                const fresh = await fetchGroupAdminsFromZCA(gId);
+                if (fresh?.totalMember) store.setSetting(gId, 'memberCount', Number(fresh.totalMember) || 0);
+                if (fresh?.creatorId) store.setSetting(gId, 'creatorId', String(fresh.creatorId));
+                if (Array.isArray(fresh?.adminIds) && fresh.adminIds.length) store.setSetting(gId, 'groupAdmins', fresh.adminIds.map(String));
+              } catch (_) {}
+            }
+          }
+          for (const gId of ids.slice(0, 30)) {
+            try {
+              const pending = await zaloApi.getPendingGroupMembers(gId);
+              const list = pendingListFromResult(pending);
+              store.setSetting(gId, 'pendingCount', list.length);
+            } catch (_) {}
+          }
+          await saveGroupNames(merged);
+          await store.saveSettings();
+          return { imported: ids.length };
+        }
+
+        if (!groupId && ['get-group-info', 'get-pending', 'get-blocked', 'review-pending', 'remove-user', 'block-member', 'unblock-member'].includes(action)) {
+          throw new Error('groupId is required');
+        }
+
+        if (action === 'get-group-info') return await zaloApi.getGroupInfo(groupId);
+        if (action === 'scan-members') return await scanGroupMembers(groupId, zaloApi);
+        if (action === 'leave-group') return await zaloApi.leaveGroup(groupId, !!payload.silent);
+        if (action === 'get-pending') return await zaloApi.getPendingGroupMembers(groupId);
+        if (action === 'get-blocked') return await zaloApi.getGroupBlockedMember(groupId);
+        if (action === 'review-pending') {
+          return await zaloApi.reviewPendingMemberRequest({ members, isApprove: payload.approve !== false }, groupId);
+        }
+        if (action === 'remove-user') return await zaloApi.removeUserFromGroup(groupId, members.length > 1 ? members : members[0]);
+        if (action === 'block-member') return await zaloApi.addGroupBlockedMember(members.length > 1 ? members : members[0], groupId);
+        if (action === 'unblock-member') return await zaloApi.removeGroupBlockedMember(members.length > 1 ? members : members[0], groupId);
+        if (action === 'accept-friend') return await zaloApi.acceptFriendRequest(userId);
+        if (action === 'reject-friend') return await zaloApi.rejectFriendRequest(userId);
+        if (action === 'send-friend-request') return await zaloApi.sendFriendRequest(userId, payload.message ? { message: String(payload.message) } : undefined);
+        if (action === 'get-friends') return await zaloApi.getAllFriends();
+        if (action === 'get-user-info') return await zaloApi.getUserInfo(userId);
+
+        throw new Error(`Unsupported ZCA action: ${action}`);
+      });
+    }
+
+    async function runDashboardAction(action, payload = {}) {
+      if (action === 'activate-license') {
+        const key = String(payload.key || '').trim();
+        const result = await verifyLicenseKey(key);
+        if (result.valid) {
+          store.setSetting('global', 'license', {
+            valid: true,
+            plan: result.plan,
+            expiry: result.expiry,
+            deviceId: result.deviceId,
+            key
+          });
+          await store.saveSettings();
+        }
+        return result;
+      }
+
+      // Check if Pro/Premium license is required for this action
+      const proActions = [
+        'bulk-toggle-setting',
+        'upsert-custom-mode',
+        'toggle-custom-mode',
+        'delete-custom-mode',
+        
+        // ZCA actions
+        'sync-groups',
+        'enrich-pending',
+        'approve-pending',
+        'reject-pending',
+        'kick-member',
+        'block-member',
+        'unblock-member',
+        'invite-member',
+        'get-group-info',
+        'get-user-info'
+      ];
+      
+      if (proActions.includes(action)) {
+        const lic = getLicenseStatus();
+        if (!lic.isPro) {
+          throw new Error('Chức năng này chỉ dành cho tài khoản PRO. Vui lòng nâng cấp!');
+        }
+      }
+
+      if (action === 'toggle-setting') {
+        const groupId = String(payload.groupId || '').trim();
+        const key = String(payload.key || '').trim();
+        if (!groupId || !['muted', 'silent', 'welcome', 'tracking', 'follow', 'pendingAuto'].includes(key)) {
+          throw new Error('Invalid setting payload');
+        }
+        store.setSetting(groupId, key, !!payload.value);
+        await store.saveSettings();
+        return { groupId, key, value: !!payload.value };
+      }
+
+      if (action === 'bulk-toggle-setting') {
+        const groupIds = Array.isArray(payload.groupIds) ? payload.groupIds.map(String).filter(Boolean) : [];
+        const key = String(payload.key || '').trim();
+        if (!groupIds.length || !['muted', 'silent', 'welcome', 'tracking', 'follow', 'pendingAuto'].includes(key)) {
+          throw new Error('Invalid bulk setting payload');
+        }
+        for (const groupId of groupIds) store.setSetting(groupId, key, !!payload.value);
+        await store.saveSettings();
+        return { key, value: !!payload.value, count: groupIds.length };
+      }
+
+      if (action === 'upsert-custom-mode') {
+        const groupId = String(payload.groupId || '').trim();
+        const mode = upsertGroupCustomMode(groupId, payload);
+        await store.saveSettings();
+        return { groupId, mode };
+      }
+
+      if (action === 'toggle-custom-mode') {
+        const groupId = String(payload.groupId || '').trim();
+        const slug = String(payload.slug || '').trim();
+        const mode = toggleGroupCustomMode(groupId, slug, payload.enabled !== false);
+        await store.saveSettings();
+        return { groupId, mode };
+      }
+
+      if (action === 'delete-custom-mode') {
+        const groupId = String(payload.groupId || '').trim();
+        const slug = String(payload.slug || '').trim();
+        const result = deleteGroupCustomMode(groupId, slug);
+        await store.saveSettings();
+        return { groupId, ...result };
+      }
+
+      if (action === 'group-detail') {
+        const groupId = String(payload.groupId || '').trim();
+        if (!groupId) throw new Error('groupId is required');
+        const settingsRaw = await readPluginDataJson('settings.json');
+        const memberDir = await readPluginDataJson('group-members.json');
+        const settings = settingsRaw[groupId] || {};
+        let zcaInfo = null;
+        let pending = null;
+        try { zcaInfo = await runDashboardZcaAction('get-group-info', { groupId }); } catch (_) {}
+        try {
+          const pendingRaw = await runDashboardZcaAction('get-pending', { groupId });
+          pending = await enrichPendingResult(groupId, pendingRaw);
+          store.setSetting(groupId, 'pendingCount', pending.list.length);
+          await store.saveSettings();
+        } catch (_) {}
+        return {
+          groupId,
+          name: groupNames[groupId]?.name || settings.name || `Group ${groupId.slice(-6)}`,
+          memberCount: Object.keys(memberDir[groupId] || {}).length || Number(settings.memberCount || settings.totalMember || 0),
+          pendingCount: Number(settings.pendingCount || 0),
+          admins: settings.groupAdmins || groupNames[groupId]?.admins || [],
+          creatorId: settings.creatorId || groupNames[groupId]?.creatorId || '',
+          inviteLink: settings.inviteLink || groupNames[groupId]?.inviteLink || '',
+          settings: {
+            muted: !!settings.muted,
+            silent: settings.silent !== false,
+            welcome: settings.welcome !== false,
+            tracking: !!settings.tracking,
+            follow: settings.follow !== false,
+            pendingAuto: !!settings.pendingAuto,
+          },
+          customModes: getGroupCustomModes(groupId),
+          zcaInfo,
+          pending,
+        };
+      }
+
+      if (action === 'get-pending') {
+        const groupId = String(payload.groupId || '').trim();
+        const result = await runDashboardZcaAction(action, payload);
+        const enriched = await enrichPendingResult(groupId, result);
+        const list = enriched.list;
+        if (groupId) {
+          store.setSetting(groupId, 'pendingCount', list.length);
+          await store.saveSettings();
+        }
+        return enriched;
+      }
+
+      if (action === 'send-message') {
+        const targetId = String(payload.targetId || payload.groupId || payload.userId || '').trim();
+        const text = String(payload.text || '').trim();
+        if (!targetId || !text) throw new Error('targetId and text are required');
+        if (payload.targetType === 'user') await sendDmMsg({ accountId: 'default' }, targetId, text);
+        else await sendGroupMsg({ accountId: 'default' }, targetId, text);
+        return { sent: true, targetId };
+      }
+
+      return await runDashboardZcaAction(action, payload);
+    }
+
+    function parseDashboardBody(req) {
+      return new Promise((resolve, reject) => {
+        let raw = '';
+        req.on('data', chunk => {
+          raw += chunk;
+          if (raw.length > 1024 * 1024) reject(new Error('Request body too large'));
+        });
+        req.on('end', () => {
+          try { resolve(raw ? JSON.parse(raw) : {}); } catch (e) { reject(e); }
+        });
+        req.on('error', reject);
+      });
+    }
+
+    function sendDashboardJson(res, status, data) {
+      const body = JSON.stringify(data, null, 2);
+      res.writeHead(status, {
+        'content-type': 'application/json; charset=utf-8',
+        'cache-control': 'no-store',
+      });
+      res.end(body, 'utf8');
+    }
+
+    function startDashboardServer() {
+      if (pluginCfg.dashboardEnabled === false) return;
+      const host = String(pluginCfg.dashboardHost || '0.0.0.0');
+      const port = Number(pluginCfg.dashboardPort || 19790);
+      const token = String(pluginCfg.dashboardToken || cfg?.gateway?.auth?.token || ownerId || 'openclaw-zalo-mod');
+      const key = '__openclawZaloModDashboard';
+      const existing = globalThis[key];
+      if (existing?.server) {
+        try { existing.server.close(); } catch (_) {}
+      }
+
+      const dashboardFile = path.join(__dirname, 'ZALO_OWNER_DASHBOARD.html');
+      const donateQrFile = path.join(__dirname, 'bvbank.jpg');
+      const logoFile = path.join(__dirname, 'logo.png');
+      const server = http.createServer(async (req, res) => {
+        try {
+          res.setHeader('Access-Control-Allow-Origin', '*');
+          res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+          res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Zalo-Dashboard-Token');
+          if (req.method === 'OPTIONS') {
+            res.writeHead(204);
+            res.end();
+            return;
+          }
+          const url = new URL(req.url || '/', `http://${host}:${port}`);
+          if (req.method === 'GET' && (url.pathname === '/' || url.pathname === '/dashboard')) {
+            let html = existsSync(dashboardFile)
+              ? readFileSync(dashboardFile, 'utf8')
+              : '<!doctype html><meta charset="utf-8"><title>Zalo Dashboard</title><h1>Zalo Dashboard file missing</h1>';
+            html = html.replace('</head>', `<script>window.ZALO_DASHBOARD_TOKEN=${JSON.stringify(token)};</script></head>`);
+            res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' });
+            res.end(html, 'utf8');
+            return;
+          }
+
+          if (req.method === 'GET' && (url.pathname === '/assets/bvbank.jpg' || url.pathname === '/bvbank.jpg')) {
+            if (!existsSync(donateQrFile)) {
+              sendDashboardJson(res, 404, { ok: false, error: 'Donate QR not found' });
+              return;
+            }
+            res.writeHead(200, {
+              'content-type': 'image/jpeg',
+              'cache-control': 'public, max-age=3600',
+            });
+            res.end(readFileSync(donateQrFile));
+            return;
+          }
+
+          if (req.method === 'GET' && (url.pathname === '/assets/logo.png' || url.pathname === '/logo.png' || url.pathname === '/favicon.ico')) {
+            if (!existsSync(logoFile)) {
+              sendDashboardJson(res, 404, { ok: false, error: 'Logo not found' });
+              return;
+            }
+            res.writeHead(200, {
+              'content-type': 'image/png',
+              'cache-control': 'public, max-age=3600',
+            });
+            res.end(readFileSync(logoFile));
+            return;
+          }
+
+          if (url.pathname.startsWith('/api/')) {
+            const auth = req.headers.authorization || '';
+            const headerToken = auth.startsWith('Bearer ') ? auth.slice(7) : req.headers['x-zalo-dashboard-token'];
+            if (String(headerToken || '') !== token) {
+              sendDashboardJson(res, 401, { ok: false, error: 'Unauthorized dashboard token' });
+              return;
+            }
+          }
+
+          if (req.method === 'GET' && url.pathname === '/api/state') {
+            sendDashboardJson(res, 200, await buildDashboardState());
+            return;
+          }
+
+          if (req.method === 'POST' && url.pathname === '/api/action') {
+            const body = await parseDashboardBody(req);
+            const action = String(body.action || '').trim();
+            if (!action) throw new Error('action is required');
+            const result = await runDashboardAction(action, body.payload || {});
+            await appendDashboardAudit({ action, payload: body.payload || {}, ok: true });
+            sendDashboardJson(res, 200, { ok: true, result, state: await buildDashboardState() });
+            return;
+          }
+
+          sendDashboardJson(res, 404, { ok: false, error: 'Not found' });
+        } catch (e) {
+          logger.warn(`[openclaw-zalo-mod] dashboard error: ${e.message}`);
+          try { await appendDashboardAudit({ action: 'error', ok: false, error: e.message }); } catch (_) {}
+          sendDashboardJson(res, 500, { ok: false, error: e.message });
+        }
+      });
+
+      server.listen(port, host, () => {
+        logger.info(`[openclaw-zalo-mod] dashboard listening at http://${host}:${port}/dashboard`);
+      });
+      globalThis[key] = { server, port, host };
+    }
+
+    startDashboardServer();
+
     // ── Event: before_dispatch (main hook) ───────────────────
     api.on('before_dispatch', async (event, ctx) => {
       // 1. Chỉ bắt event từ Zalo
@@ -1961,6 +3077,168 @@ const plugin = definePluginEntry({
       const isGroupMsg = rawConvId.startsWith('group:');
       const senderId  = String(ctx.senderId || event.senderId || '');
       const senderName = String(event.senderName || senderId);
+
+      // ── DM Flow — MonkeyPay Multi-step Payment Flow ──────────
+      if (!isGroupMsg) {
+        const cleanContent = content.trim().toUpperCase();
+        const userState = await getCustomerState(senderId);
+
+        // Intercept cancel/huy command
+        if (cleanContent === 'HUY' || cleanContent === 'CANCEL' || cleanContent === '/HUY') {
+          if (userState) {
+            await saveCustomerState(senderId, null);
+            await sendDmMsg(ctx, senderId, '❌ Giao dịch hiện tại đã được hủy thành công. Vui lòng gửi lại Device ID để bắt đầu tạo giao dịch mới!');
+            return { handled: true };
+          }
+        }
+
+        // 1. User has no active state and sends a valid Device ID
+        const deviceIdRegex = /^[A-Z0-9]{16}$/;
+        if (!userState && deviceIdRegex.test(cleanContent)) {
+          const deviceId = cleanContent;
+          await saveCustomerState(senderId, {
+            deviceId,
+            step: 'plan_select',
+            senderName
+          });
+
+          const planMsg = [
+            `👋 Xin chào ${senderName}!`,
+            `Williams Bot đã nhận được Device ID của bạn:`,
+            `👉 ${deviceId}`,
+            ``,
+            `Vui lòng chọn Gói bản quyền bạn muốn mua bằng cách trả lời bằng số tương ứng (1, 2, 3, 4 hoặc 5):`,
+            ``,
+            `1️⃣ [Cá nhân Pro - 1 tháng]: 99.000đ`,
+            `2️⃣ [Cá nhân Pro - 12 tháng]: 990.000đ (Tặng 2 tháng! 🎁)`,
+            `3️⃣ [Team Pro - 1 tháng]: 299.000đ`,
+            `4️⃣ [Team Pro - 12 tháng]: 2.990.000đ (Tặng 2 tháng! 🎁)`,
+            `5️⃣ [Lifetime Premium - Vĩnh viễn]: 5.000.000đ (Trọn đời)`,
+            ``,
+            `👉 Nhắn tin số 1, 2, 3, 4 hoặc 5 để nhận mã QR thanh toán chuyển khoản tự động!`
+          ].join('\n');
+
+          await sendDmMsg(ctx, senderId, planMsg);
+          return { handled: true };
+        }
+
+        // 2. User is in 'plan_select' step
+        if (userState && userState.step === 'plan_select') {
+          const choices = {
+            '1': { plan: 'personal', duration: 'month', amount: 99000, label: 'Cá nhân Pro (1 tháng)' },
+            '2': { plan: 'personal', duration: 'year', amount: 990000, label: 'Cá nhân Pro (1 năm)' },
+            '3': { plan: 'team', duration: 'month', amount: 299000, label: 'Team Pro (1 tháng)' },
+            '4': { plan: 'team', duration: 'year', amount: 2990000, label: 'Team Pro (1 năm)' },
+            '5': { plan: 'lifetime', duration: 'lifetime', amount: 5000000, label: 'Lifetime Premium (Vĩnh viễn)' }
+          };
+
+          const choice = choices[cleanContent];
+          if (choice) {
+            try {
+              // Create transaction on MonkeyPay server
+              const mpRes = await fetch('https://monkeypay-server-262289343328.asia-southeast1.run.app/api/transactions', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'X-Api-Key': 'mpk_a3cc9cde9ac23ab01c997a99f3e322ee68e976072f8f7321'
+                },
+                body: JSON.stringify({
+                  amount: choice.amount,
+                  description: `Zalo Mod ${choice.label} Device ${userState.deviceId}`,
+                  mode: 'auto'
+                })
+              });
+
+              if (mpRes.ok) {
+                const txData = await mpRes.json();
+                
+                await saveCustomerState(senderId, {
+                  deviceId: userState.deviceId,
+                  step: 'payment_pending',
+                  txId: txData.tx_id,
+                  paymentNote: txData.payment_note,
+                  amount: choice.amount,
+                  plan: choice.plan,
+                  duration: choice.duration,
+                  label: choice.label,
+                  senderName
+                });
+
+                const paymentMsg = [
+                  `💸 [ZALO MKT PAYMENT GATEWAY]`,
+                  `Bạn đã chọn gói: ${choice.label}`,
+                  `💵 Giá thanh toán: ${choice.amount.toLocaleString('vi-VN')} VND`,
+                  ``,
+                  `Vui lòng chuyển khoản theo thông tin sau:`,
+                  `🏦 Ngân hàng: MB Bank`,
+                  `💳 Số tài khoản: 0962794917`,
+                  `👤 Chủ tài khoản: HO LE MINH TUAN`,
+                  `💵 Số tiền: ${choice.amount.toLocaleString('vi-VN')} VND`,
+                  `✏️ Nội dung chuyển khoản: ${txData.payment_note}`,
+                  ``,
+                  `🔄 Hệ thống đang tự động kiểm tra biến động số dư. Sau khi chuyển khoản thành công, Key bản quyền sẽ tự động được tạo và gửi ngay lập tức tại đây! 🎉`,
+                  ``,
+                  `(Nhắn "huy" nếu bạn muốn hủy giao dịch hiện tại để chọn gói khác)`
+                ].join('\n');
+
+                // Gửi ảnh QR thanh toán trước
+                await sendDmMsg(ctx, senderId, `Mã QR thanh toán VietQR cho gói ${choice.label}:`, txData.qr_url);
+                // Sau đó gửi thông tin chuyển khoản chi tiết bằng text
+                await sendDmMsg(ctx, senderId, paymentMsg);
+              } else {
+                const errorData = await mpRes.json().catch(() => ({}));
+                await sendDmMsg(ctx, senderId, `⚠️ Không thể khởi tạo giao dịch thanh toán: ${errorData.error || 'Lỗi kết nối MonkeyPay'}. Vui lòng thử lại sau!`);
+              }
+            } catch (err) {
+              logger.error(`[openclaw-zalo-mod] MonkeyPay create tx failed: ${err.message}`);
+              await sendDmMsg(ctx, senderId, `⚠️ Hệ thống thanh toán đang bận. Vui lòng liên hệ Admin hoặc thử lại sau!`);
+            }
+          } else {
+            await sendDmMsg(ctx, senderId, `⚠️ Lựa chọn không hợp lệ. Vui lòng gửi số tương ứng từ 1 đến 5 để chọn Gói bản quyền hoặc nhắn "huy" để hủy!`);
+          }
+          return { handled: true };
+        }
+
+        // 3. User is in 'payment_pending' step
+        if (userState && userState.step === 'payment_pending') {
+          const reminderMsg = [
+            `⏳ Giao dịch của bạn đang chờ thanh toán!`,
+            `• Thiết bị: ${userState.deviceId}`,
+            `• Gói: ${userState.label}`,
+            `• Số tiền: ${userState.amount.toLocaleString('vi-VN')} VND`,
+            `• Nội dung CK: ${userState.paymentNote}`,
+            ``,
+            `Sau khi chuyển khoản thành công, Key bản quyền sẽ được gửi tự động tại đây.`,
+            `Nhắn "huy" nếu bạn muốn hủy giao dịch hiện tại để chọn gói khác.`
+          ].join('\n');
+
+          await sendDmMsg(ctx, senderId, reminderMsg);
+          return { handled: true };
+        }
+      }
+
+      // Packaging Gating: Skip automated moderation / anti-spam / commands for Free users
+      // LOẠI TRỪ: Cho phép chủ nhân bot (owner) chạy các lệnh cấu hình hoặc kích hoạt bản quyền kể cả khi đang ở gói Free
+      const lic = getLicenseStatus();
+      if (!lic.isPro) {
+        const bodyContent = String(event?.body || event?.content || '').trim();
+        const lcBody = bodyContent.toLowerCase();
+        
+        const isActivationCmd = lcBody.startsWith(`${cmdPrefix}active-key`) || lcBody.startsWith(`${cmdPrefix}kich-hoat`);
+        const isClaimOwnerCmd = lcBody.startsWith(`${cmdPrefix}ownerid`) || lcBody === 'im admin';
+        const isOwnerRulesCmd = ownerId && senderId === ownerId && (lcBody.startsWith(`${cmdPrefix}rules`) || lcBody.startsWith(`${cmdPrefix}mute`) || lcBody.startsWith(`${cmdPrefix}unmute`));
+        
+        const isExempted = isActivationCmd || isClaimOwnerCmd || isOwnerRulesCmd;
+
+        if (bodyContent.startsWith('/') && bodyContent.length > 1 && !isExempted) {
+          await sendGroupMsg(ctx, isGroupMsg ? rawConvId : senderId, '⚠️ Chức năng này chỉ dành cho tài khoản PRO. Vui lòng nâng cấp!');
+          return { handled: true };
+        }
+        
+        if (!isExempted) {
+          return; // continue to LLM agent normally without running anti-spam or silent mode
+        }
+      }
 
       // ── DM Flow — Owner config + whitelist gating ──────────
       if (!isGroupMsg) {
@@ -2078,6 +3356,20 @@ const plugin = definePluginEntry({
           return { handled: true };
         }
 
+        const customModeMatch = command.match(/^\/bot-([a-z0-9-]+)-(on|off)$/i);
+        if (customModeMatch) {
+          if (!isAdmin(senderId, groupId)) return { handled: true };
+          const [, slug, state] = customModeMatch;
+          try {
+            const mode = toggleGroupCustomMode(groupId, slug, state === 'on');
+            await store.saveSettings();
+            await sendGroupMsg(ctx, groupId, `✅ ${mode.label}: ${state === 'on' ? 'BẬT' : 'TẮT'}\n🧠 Skill: ${mode.skill}`);
+          } catch (e) {
+            await sendGroupMsg(ctx, groupId, `⚠️ ${e.message}`);
+          }
+          return { handled: true };
+        }
+
 
         // /report — admin only
         if (command === '/report') {
@@ -2124,6 +3416,35 @@ const plugin = definePluginEntry({
           // Sync to memory
           await appendToMemoryFile(groupId, 'admin-notes.md', `| ${nowShort()} | ${senderName} | ${noteText} |`);
           await sendGroupMsg(ctx, groupId, `📝 Ghi nhận: ${noteText}`);
+          return { handled: true };
+        }
+
+        // /active-key [key] / /kich-hoat [key] — owner only: kích hoạt key qua chat
+        if (command === '/active-key' || command === '/kich-hoat') {
+          if (!ownerId || senderId !== ownerId) return { handled: true };
+          const key = args[0]?.trim();
+          if (!key) {
+            await sendGroupMsg(ctx, isGroupMsg ? rawConvId : senderId, `⚠️ Vui lòng nhập key. Cú pháp: ${command} [key]`);
+            return { handled: true };
+          }
+          await sendGroupMsg(ctx, isGroupMsg ? rawConvId : senderId, `🔍 Đang xác thực key...`);
+          const result = await verifyLicenseKey(key);
+          if (result.valid) {
+            store.setSetting('global', 'license', {
+              valid: true,
+              plan: result.plan,
+              expiry: result.expiry,
+              deviceId: result.deviceId,
+              key
+            });
+            await store.saveSettings();
+            await sendGroupMsg(ctx, isGroupMsg ? rawConvId : senderId, `✅ Kích hoạt thành công!
+Plan: ${result.plan.toUpperCase()}
+Hạn: ${result.expiry}
+Device ID: ${result.deviceId}`);
+          } else {
+            await sendGroupMsg(ctx, isGroupMsg ? rawConvId : senderId, `❌ Kích hoạt thất bại: ${result.error}`);
+          }
           return { handled: true };
         }
 
@@ -2314,17 +3635,24 @@ const plugin = definePluginEntry({
         return; // undefined = let LLM handle
       }
 
+      // ── Admin check for violation logging ──────────────────
+      const gAdmins = groupNames[groupId]?.admins || getGroupAdmins(groupId) || [];
+      const creatorId = groupNames[groupId]?.creatorId;
+      const isBotOrOwnerAdmin = ownerId && (gAdmins.map(String).includes(ownerId) || String(creatorId || '') === ownerId);
+
       // ── Silent mode check ─────────────────────────────────
       const silentMode = store.getSetting(groupId, 'silent', false);
       if (silentMode) {
-        // Anti-spam detect silently even in silent mode
-        const spamType = spamTracker.check(senderId, content);
-        if (spamType) {
-          store.addViolation(groupId, senderId, senderName, spamType, content);
-          await store.saveViolations();
-          // Sync to memory
-          await appendToMemoryFile(groupId, 'violations.md', `| ${nowShort()} | ${senderName} | ${spamType} | ${content.slice(0, 40)} |`);
-          logger.info(`[openclaw-zalo-mod] spam detected: ${spamType} from ${senderName}`);
+        // Anti-spam detect silently even in silent mode (only for managed groups where bot/owner is admin)
+        if (isBotOrOwnerAdmin) {
+          const spamType = spamTracker.check(senderId, content);
+          if (spamType) {
+            store.addViolation(groupId, senderId, senderName, spamType, content);
+            await store.saveViolations();
+            // Sync to memory
+            await appendToMemoryFile(groupId, 'violations.md', `| ${nowShort()} | ${senderName} | ${spamType} | ${content.slice(0, 40)} |`);
+            logger.info(`[openclaw-zalo-mod] spam detected: ${spamType} from ${senderName}`);
+          }
         }
         // Tracking: ghi lịch sử chat (kể cả silent mode)
         if (store.getSetting(groupId, 'tracking', false)) {
@@ -2333,15 +3661,17 @@ const plugin = definePluginEntry({
         return { handled: true }; // silent — don't forward to LLM
       }
 
-      // Non-silent mode: still anti-spam detect
-      const spamType = spamTracker.check(senderId, content);
-      if (spamType) {
-        store.addViolation(groupId, senderId, senderName, spamType, content);
-        await store.saveViolations();
-        // Sync to memory
-        await appendToMemoryFile(groupId, 'violations.md', `| ${nowShort()} | ${senderName} | ${spamType} | ${content.slice(0, 40)} |`);
-        logger.info(`[openclaw-zalo-mod] ❌ BLOCKED by anti-spam: type=${spamType} sender=${senderName} msg="${content.slice(0, 60)}"`);
-        return { handled: true }; // spam always silently blocked
+      // Non-silent mode: still anti-spam detect (only for managed groups where bot/owner is admin)
+      if (isBotOrOwnerAdmin) {
+        const spamType = spamTracker.check(senderId, content);
+        if (spamType) {
+          store.addViolation(groupId, senderId, senderName, spamType, content);
+          await store.saveViolations();
+          // Sync to memory
+          await appendToMemoryFile(groupId, 'violations.md', `| ${nowShort()} | ${senderName} | ${spamType} | ${content.slice(0, 40)} |`);
+          logger.info(`[openclaw-zalo-mod] ❌ BLOCKED by anti-spam: type=${spamType} sender=${senderName} msg="${content.slice(0, 60)}"`);
+          return { handled: true }; // spam always silently blocked
+        }
       }
 
       // Tracking: ghi lịch sử chat (non-silent, non-mention)
@@ -2361,7 +3691,15 @@ const plugin = definePluginEntry({
 
     api.on('before_model_resolve', async (event, ctx) => {
       if (ctx?.channelId !== 'zalouser' && ctx?.channel !== 'zalouser') return;
-      const lc = String(event?.prompt || '').toLowerCase().replace(/['']/g, '').trim();
+      const conversationId = String(ctx?.conversationId || '');
+      const groupId = conversationId.startsWith('group:') ? conversationId.replace(/^group:/, '') : '';
+      if (groupId && typeof event?.prompt === 'string') {
+        const modePrompt = buildActiveModePrompt(groupId);
+        if (modePrompt && !event.prompt.includes('[GROUP MODE CONTEXT]')) {
+          event.prompt = `${modePrompt}\n\n${event.prompt}`;
+        }
+      }
+      const lc = String(event?.prompt || '').toLowerCase().replace(/['’]/g, '').trim();
       const ownerCmd = cmdPrefix + 'ownerid';
       if (lc !== 'im admin' && lc !== ownerCmd) return;
       const sKey = ctx?.sessionKey || 'default';
@@ -2392,9 +3730,12 @@ const plugin = definePluginEntry({
     });
     // Start member watcher for welcome messages
     startMemberWatcher();
+    // Start MonkeyPay transaction polling
+    startPaymentPolling();
 
     logger.info(`[openclaw-zalo-mod] loaded — bot="${botName}" owner=${ownerId || 'none'} groups=${watchGroupIds.length} groupNames=${Object.keys(groupNames).length}`);
   },
 });
 
 export default plugin;
+

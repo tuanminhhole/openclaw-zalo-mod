@@ -2,7 +2,7 @@
   "id": "zalo-mod",
   "name": "OpenClaw Zalo Mod",
   "description": "Zero-token Zalo group moderation — slash commands, anti-spam, warn system, memory integration. Blocks LLM for non-mention messages.",
-  "version": "2.5.2",
+  "version": "2.6.0",
   "enabledByDefault": false,
   "activation": {
     "onStartup": true,
@@ -90,6 +90,22 @@
           "type": "string"
         },
         "description": "Danh sách Zalo user IDs được phép DM với bot. Nếu để trống, tất cả đều có thể DM. Owner luôn được phép."
+      },
+      "dashboardEnabled": {
+        "type": "boolean",
+        "description": "Enable local owner dashboard. Default: true"
+      },
+      "dashboardHost": {
+        "type": "string",
+        "description": "Dashboard bind host. Default: 127.0.0.1"
+      },
+      "dashboardPort": {
+        "type": "number",
+        "description": "Dashboard port. Default: 19790"
+      },
+      "dashboardToken": {
+        "type": "string",
+        "description": "Optional dashboard bearer token. Defaults to gateway auth token, ownerId, or a local fallback."
       }
     },
     "additionalProperties": false

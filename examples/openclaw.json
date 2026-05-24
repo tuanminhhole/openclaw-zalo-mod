@@ -3,6 +3,9 @@
     "entries": {
       "zalo-mod": {
         "enabled": true,
+        "hooks": {
+          "allowConversationAccess": true
+        },
         "config": {
           "groupName": "My Awesome Group",
           "botName": "GuardBot",

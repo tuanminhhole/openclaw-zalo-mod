@@ -16,7 +16,7 @@
  *   listZaloGroupMembers API, diff with previous snapshot.
  *
  * @author tuanminhhole
- * @version 2.7.0
+ * @version 2.6.0
  */
 
 import fs from 'node:fs/promises';
@@ -1080,12 +1080,11 @@ PQIDAQAB
         if (configNeedsPatch) {
           const patch = {};
 
-          // 4a. Read bot name from IDENTITY.md
-          const detectedBotName = await _readBotNameFromIdentity(workspaceDir);
-          if (detectedBotName) {
-            patch.botName = detectedBotName;
-            patch.zaloDisplayNames = [detectedBotName];
-            logger.info(`[openclaw-zalo-mod] auto-detected botName="${detectedBotName}" from IDENTITY.md`);
+          // 4a. Write detected botName to config so it is saved
+          if (botName && botName !== 'Bot') {
+            patch.botName = botName;
+            patch.zaloDisplayNames = [botName];
+            logger.info(`[openclaw-zalo-mod] auto-saving botName="${botName}" to config`);
           }
 
           // 4b. Scan session data for groups
@@ -3261,7 +3260,8 @@ PQIDAQAB
         const lcBody = bodyContent.toLowerCase();
         
         const isActivationCmd = lcBody.startsWith(`${cmdPrefix}active-key`) || lcBody.startsWith(`${cmdPrefix}kich-hoat`);
-        const isClaimOwnerCmd = lcBody.startsWith(`${cmdPrefix}ownerid`) || lcBody.replace(/['']/g, '') === 'im admin';
+        const cleanLc = lcBody.replace(/['’]/g, '');
+        const isClaimOwnerCmd = lcBody.startsWith(`${cmdPrefix}ownerid`) || cleanLc === 'im admin' || cleanLc === 'iam admin' || cleanLc === 'i am admin';
         const isOwnerRulesCmd = ownerId && senderId === ownerId && (lcBody.startsWith(`${cmdPrefix}rules`) || lcBody.startsWith(`${cmdPrefix}mute`) || lcBody.startsWith(`${cmdPrefix}unmute`));
         
         const isExempted = isActivationCmd || isClaimOwnerCmd || isOwnerRulesCmd;
@@ -3281,7 +3281,8 @@ PQIDAQAB
         // /ownerid — intercept from ANY DM user (before owner gate)
         // Allows first user to claim ownership when ownerId is empty
         const lcContent = content.toLowerCase().trim();
-        const ownerIdMatch = lcContent === `${cmdPrefix}ownerid` || lcContent.replace(/['’]/g, '') === "im admin";
+        const cleanLc = lcContent.replace(/['’]/g, '');
+        const ownerIdMatch = lcContent === `${cmdPrefix}ownerid` || cleanLc === "im admin" || cleanLc === "iam admin" || cleanLc === "i am admin";
         if (ownerIdMatch) {
           if (!ownerId) {
             // Chưa có owner → auto-claim sender

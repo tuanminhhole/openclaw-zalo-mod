@@ -16,7 +16,7 @@
  *   listZaloGroupMembers API, diff with previous snapshot.
  *
  * @author tuanminhhole
- * @version 2.6.0
+ * @version 2.7.0
  */
 
 import fs from 'node:fs/promises';
@@ -520,7 +520,40 @@ const plugin = definePluginEntry({
     // watchGroupIds được derive từ groupNames keys — không cần config riêng
     const watchGroupIds = Object.keys(groupNames).filter(Boolean);
 
-    const botName       = String(pluginCfg.botName || 'Bot');
+    // ── Synchronous botName detection (first-load fix) ──────────
+    // When installed via ClawHub, pluginCfg.botName is empty on first load.
+    // Detect from multiple sources before falling back to 'Bot':
+    let _detectedBotName = pluginCfg.botName || '';
+    if (!_detectedBotName) {
+      // Source 1: IDENTITY.md in workspace
+      try {
+        const _wsDir = cfg?.agents?.list?.[0]?.workspace
+          ? path.resolve(_openclawHome, '..', cfg.agents.list[0].workspace)
+          : cfg?.agents?.defaults?.workspace || path.join(_openclawHome, 'workspace');
+        const _idPath = path.join(String(_wsDir), 'IDENTITY.md');
+        if (existsSync(_idPath)) {
+          const _idContent = readFileSync(_idPath, 'utf8');
+          const _idMatch = _idContent.match(/\*\*Tên:\*\*\s*(.+)/);
+          if (_idMatch) _detectedBotName = _idMatch[1].trim();
+        }
+      } catch { /* ok */ }
+    }
+    if (!_detectedBotName) {
+      // Source 2: Agent name from config
+      _detectedBotName = cfg?.agents?.list?.[0]?.name || '';
+    }
+    if (!_detectedBotName) {
+      // Source 3: Zalo credential display name
+      try {
+        const _credPath = path.join(_openclawHome, 'credentials', 'zalouser', 'credentials.json');
+        if (existsSync(_credPath)) {
+          const _cred = JSON.parse(readFileSync(_credPath, 'utf8'));
+          if (_cred.displayName) _detectedBotName = _cred.displayName;
+        }
+      } catch { /* ok */ }
+    }
+
+    const botName       = String(_detectedBotName || 'Bot');
     const zaloNames     = (pluginCfg.zaloDisplayNames || []).map(String);
     const botNames      = [botName, ...zaloNames].filter(Boolean);
     const pfx = String(pluginCfg.slashPrefix || botName).toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -2789,6 +2822,10 @@ PQIDAQAB
       }
 
       // Check if Pro/Premium license is required for this action
+      const freeActions = [
+        'sync-groups',       // Sync Account — essential setup action
+        'toggle-setting',    // Already free (handled separately below)
+      ];
       const proActions = [
         'bulk-toggle-setting',
         'upsert-custom-mode',
@@ -2796,7 +2833,6 @@ PQIDAQAB
         'delete-custom-mode',
         
         // ZCA actions
-        'sync-groups',
         'enrich-pending',
         'approve-pending',
         'reject-pending',
@@ -2808,7 +2844,7 @@ PQIDAQAB
         'get-user-info'
       ];
       
-      if (proActions.includes(action)) {
+      if (proActions.includes(action) && !freeActions.includes(action)) {
         const lic = getLicenseStatus();
         if (!lic.isPro) {
           throw new Error('Chức năng này chỉ dành cho tài khoản PRO. Vui lòng nâng cấp!');
@@ -3225,7 +3261,7 @@ PQIDAQAB
         const lcBody = bodyContent.toLowerCase();
         
         const isActivationCmd = lcBody.startsWith(`${cmdPrefix}active-key`) || lcBody.startsWith(`${cmdPrefix}kich-hoat`);
-        const isClaimOwnerCmd = lcBody.startsWith(`${cmdPrefix}ownerid`) || lcBody === 'im admin';
+        const isClaimOwnerCmd = lcBody.startsWith(`${cmdPrefix}ownerid`) || lcBody.replace(/['']/g, '') === 'im admin';
         const isOwnerRulesCmd = ownerId && senderId === ownerId && (lcBody.startsWith(`${cmdPrefix}rules`) || lcBody.startsWith(`${cmdPrefix}mute`) || lcBody.startsWith(`${cmdPrefix}unmute`));
         
         const isExempted = isActivationCmd || isClaimOwnerCmd || isOwnerRulesCmd;
@@ -3699,9 +3735,26 @@ Device ID: ${result.deviceId}`);
           event.prompt = `${modePrompt}\n\n${event.prompt}`;
         }
       }
-      const lc = String(event?.prompt || '').toLowerCase().replace(/['’]/g, '').trim();
+      let userMsg = '';
+      if (event && Array.isArray(event.messages) && event.messages.length > 0) {
+        const lastMsg = event.messages[event.messages.length - 1];
+        if (lastMsg && lastMsg.role === 'user') {
+          userMsg = String(lastMsg.content || '');
+        }
+      }
+      let lc = userMsg.toLowerCase().replace(/['’]/g, '').trim();
       const ownerCmd = cmdPrefix + 'ownerid';
-      if (lc !== 'im admin' && lc !== ownerCmd) return;
+      
+      let matched = (lc === 'im admin' || lc === ownerCmd);
+      if (!matched && event && typeof event.prompt === 'string') {
+        const promptLc = event.prompt.toLowerCase().replace(/['’]/g, '').trim();
+        const re = new RegExp(`(?:im admin|${ownerCmd.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')})\\s*$`, 'i');
+        if (re.test(promptLc)) {
+          matched = true;
+        }
+      }
+      
+      if (!matched) return;
       const sKey = ctx?.sessionKey || 'default';
       const sId = String(ctx?.senderId || '');
       logger.info('[openclaw-zalo-mod] [ADMIN-FALLBACK] im admin from ' + sId + ' sKey=' + sKey);
@@ -3733,7 +3786,7 @@ Device ID: ${result.deviceId}`);
     // Start MonkeyPay transaction polling
     startPaymentPolling();
 
-    logger.info(`[openclaw-zalo-mod] loaded — bot="${botName}" owner=${ownerId || 'none'} groups=${watchGroupIds.length} groupNames=${Object.keys(groupNames).length}`);
+    logger.info(`[openclaw-zalo-mod] loaded — bot="${botName}" prefix="${cmdPrefix}" owner=${ownerId || 'none'} groups=${watchGroupIds.length} groupNames=${Object.keys(groupNames).length}`);
   },
 });
 

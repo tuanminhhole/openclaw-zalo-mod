@@ -1,3 +1,10 @@
+## [2.7.8] - 2026-05-27
+
+### Fixed
+
+- Fix silent mode bypass for Free users: license gate was returning early before reaching the silent mode check, causing bot to respond to all messages even when silent badge was enabled on dashboard.
+- Free users now correctly go through @mention detection and silent mode check. Only slash commands are gated behind Pro.
+
 ## [2.7.7] - 2026-05-27
 
 ### Fixed

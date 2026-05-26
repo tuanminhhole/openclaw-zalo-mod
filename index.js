@@ -16,7 +16,7 @@
  *   listZaloGroupMembers API, diff with previous snapshot.
  *
  * @author tuanminhhole
- * @version 2.7.6
+ * @version 2.7.8
  */
 
 import fs from 'node:fs/promises';
@@ -2973,10 +2973,8 @@ PQIDAQAB
           await sendGroupMsg(ctx, isGroupMsg ? rawConvId : senderId, '⚠️ Chức năng này chỉ dành cho tài khoản PRO. Vui lòng nâng cấp!');
           return { handled: true };
         }
-        
-        if (!isExempted) {
-          return; // continue to LLM agent normally without running anti-spam or silent mode
-        }
+        // NOTE: Do NOT return early here for non-command messages.
+        // Free users still need @mention detection and silent mode check below.
       }
 
       // ── DM Flow — Owner config + whitelist gating ──────────

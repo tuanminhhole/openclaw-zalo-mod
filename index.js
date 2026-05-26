@@ -436,13 +436,34 @@ const plugin = definePluginEntry({
   register(api) {
     const logger = api.logger;
 
-    // Never mutate @openclaw/zalouser on disk here.
-    // Plugin install/load state belongs to OpenClaw's registry lifecycle, not this plugin.
-    // If zalouser exposes a shared API instance itself, we'll reuse it later; otherwise we fallback safely.
+    // Auto-patch zalouser on disk to expose shared API instance
+    try {
+      const zalouserDist = path.join(_openclawHome, 'npm', 'node_modules', '@openclaw', 'zalouser', 'dist');
+      if (existsSync(zalouserDist)) {
+        for (const file of readdirSync(zalouserDist)) {
+          if (file.startsWith('zalo-js-') && file.endsWith('.js')) {
+            const p = path.join(zalouserDist, file);
+            let content = readFileSync(p, 'utf8');
+            if (content.includes('const apiByProfile = /* @__PURE__ */ new Map();') && 
+                !content.includes('globalThis.__zcaApiByProfile = apiByProfile;')) {
+              content = content.replace(
+                'const apiByProfile = /* @__PURE__ */ new Map();', 
+                'const apiByProfile = /* @__PURE__ */ new Map();\nglobalThis.__zcaApiByProfile = apiByProfile;'
+              );
+              writeFileSync(p, content, 'utf8');
+              logger.info(`[openclaw-zalo-mod] auto-patched zalouser export in ${file}`);
+            }
+          }
+        }
+      }
+    } catch (e) {
+      logger.warn(`[openclaw-zalo-mod] failed to auto-patch zalouser export: ${e.message}`);
+    }
+
     if (globalThis.__zcaApiByProfile) {
       logger.info('[openclaw-zalo-mod] detected shared ZCA API map from zalouser runtime');
     } else {
-      logger.info('[openclaw-zalo-mod] shared ZCA API map not exposed by zalouser; using non-invasive fallback');
+      logger.info('[openclaw-zalo-mod] shared ZCA API map not exposed by zalouser yet');
     }
 
     // ── Auto-fix 777 permissions (Windows bind-mount issue) ─────────────────

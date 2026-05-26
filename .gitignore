@@ -5,3 +5,4 @@ node_modules/
 .agent/
 data/
 docs/
+build-and-publish.js

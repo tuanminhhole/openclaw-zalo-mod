@@ -8,3 +8,4 @@ bump-version.js
 *.tgz
 npm-debug.log*
 docs/
+build-and-publish.js

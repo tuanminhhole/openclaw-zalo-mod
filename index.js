@@ -16,7 +16,7 @@
  *   listZaloGroupMembers API, diff with previous snapshot.
  *
  * @author tuanminhhole
- * @version 2.7.5
+ * @version 2.7.6
  */
 
 import fs from 'node:fs/promises';
@@ -1356,60 +1356,35 @@ PQIDAQAB
         };
       }
 
-      // 2. Fallback: Dùng zca-js trực tiếp với credentials của zalouser từ credentials.json
-      const credFiles = [
-        path.join(_openclawHome, 'credentials', 'zalouser', 'credentials.json'),
-        path.resolve('/root/.openclaw/credentials/zalouser/credentials.json'),
-      ];
-      const credFile = credFiles.find(p => existsSync(p));
-      if (!credFile) {
-        logger.warn('[openclaw-zalo-mod] zalouser credentials not found in standard paths: ' + JSON.stringify(credFiles));
-        return null;
-      }
-
+      // 2. Fallback: Trigger zalouser ensureApi() via checkZaloAuthenticated
+      //    Populate the SAME apiByProfile Map. NO separate zalo.login()
+      //    to avoid dual-login breaking cipher keys.
       try {
-        const cred = JSON.parse(readFileSync(credFile, 'utf8'));
-        if (!cred.imei || !cred.cookie || !cred.userAgent) {
-          logger.warn('[openclaw-zalo-mod] invalid credentials format');
-          return null;
-        }
-
-        // Tìm kiếm chính xác module zca-js trên cả máy thật lẫn môi trường Docker
-        const zcaJsPaths = [
-          path.join(_openclawHome, 'npm', 'node_modules', 'zca-js', 'dist', 'index.js'),
-          path.join(_openclawHome, 'npm', 'node_modules', '@openclaw', 'zalouser', 'node_modules', 'zca-js', 'dist', 'index.js'),
-          path.resolve('/root/.openclaw/npm/node_modules/zca-js/dist/index.js'),
-          path.resolve('/usr/local/lib/node_modules/zca-js/dist/index.js'),
-        ];
-        const zcaJsPath = zcaJsPaths.find(p => existsSync(p));
-        if (!zcaJsPath) {
-          logger.warn('[openclaw-zalo-mod] zca-js module not found in standard paths: ' + JSON.stringify(zcaJsPaths));
-          return null;
-        }
-
-        // Import zca-js bằng file URL tuyệt đối để bảo đảm Node.js luôn phân giải và nạp module thành công
-        const { Zalo } = await import(new URL('file://' + zcaJsPath.replace(/\\/g, '/')).href);
-        const zalo = new Zalo({ logging: false, selfListen: false });
-        const api = await zalo.login({
-          imei: cred.imei,
-          cookie: cred.cookie,
-          userAgent: cred.userAgent,
-          language: cred.language,
-        });
-
-        // Trả về hàm wrapper có chung interface với withZaloApi cũ
-        return async function withZaloApiShim(profile, operation) {
-          try {
-            return await operation(api);
-          } finally {
-            // Dừng listener sau khi fetch để giải phóng WebSocket, tránh đụng độ với channel chính
-            try { api.listener?.stop(); } catch (_) {}
+        const testApi = await _loadZalouserSendApi();
+        if (testApi?.checkZaloAuthenticated) {
+          logger.info('[openclaw-zalo-mod] triggering zalouser ensureApi via checkZaloAuthenticated...');
+          const isAuth = await testApi.checkZaloAuthenticated('default');
+          if (isAuth) {
+            // ensureApi populated apiByProfile -> get from globalThis
+            const freshApi = globalThis.__zcaApiByProfile?.get('default');
+            if (freshApi) {
+              logger.info('[openclaw-zalo-mod] Zalo API restored via ensureApi, reusing shared session');
+              return async function withZaloApiShim(profile, operation) {
+                return await operation(freshApi);
+              };
+            }
           }
-        };
+          logger.warn('[openclaw-zalo-mod] checkZaloAuthenticated returned false or API not populated');
+        } else {
+          logger.warn('[openclaw-zalo-mod] test-api.js missing checkZaloAuthenticated');
+        }
       } catch (e) {
-        logger.warn(`[openclaw-zalo-mod] getSafeZaloApi error: ${e.message}`);
-        return null;
+        logger.warn(`[openclaw-zalo-mod] fallback ensureApi failed: ${e.message}`);
       }
+
+      // 3. No API available
+      logger.warn('[openclaw-zalo-mod] ZCA API unavailable. Zalouser login required. Admin features disabled.');
+      return null;
     }
 
     function _invalidateZcaApi() {

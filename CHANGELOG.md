@@ -1,3 +1,11 @@
+## [2.7.5] - 2026-05-26
+
+### Fixed
+
+- Removed invasive runtime self-patching of `@openclaw/zalouser/dist/zalo-js-*.js` from `zalo-mod`.
+- Stopped mutating another plugin's installed package on disk, reducing risk of registry/load-state drift and UI login inconsistencies.
+- Kept `zalo-mod` non-invasive: it now only reuses a shared ZCA API map if `zalouser` exposes one itself, otherwise it falls back safely.
+
 ## [2.6.0] - 2026-05-25
 
 ### Added

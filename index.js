@@ -16,7 +16,7 @@
  *   listZaloGroupMembers API, diff with previous snapshot.
  *
  * @author tuanminhhole
- * @version 2.6.0
+ * @version 2.7.5
  */
 
 import fs from 'node:fs/promises';
@@ -436,31 +436,13 @@ const plugin = definePluginEntry({
   register(api) {
     const logger = api.logger;
 
-    // ── Auto-patch @openclaw/zalouser to safely share active Zalo API sessions ──
-    // Giúp loại bỏ triệt để xung đột dual-login và ZaloApiError (Invalid data length or missing cipher key)
-    try {
-      const zalouserDistDir = path.resolve(_openclawHome, 'npm', 'node_modules', '@openclaw', 'zalouser', 'dist');
-      if (existsSync(zalouserDistDir)) {
-        const files = readdirSync(zalouserDistDir);
-        const zaloJsFile = files.find(f => f.startsWith('zalo-js-') && f.endsWith('.js'));
-        if (zaloJsFile) {
-          const zaloJsPath = path.join(zalouserDistDir, zaloJsFile);
-          let content = readFileSync(zaloJsPath, 'utf8');
-          if (!content.includes('globalThis.__zcaApiByProfile = apiByProfile;')) {
-            logger.info(`[openclaw-zalo-mod] 🪄 Auto-patching ${zaloJsFile} to enable ZCA API sharing...`);
-            const targetStr = 'const apiByProfile = /* @__PURE__ */ new Map();';
-            if (content.includes(targetStr)) {
-              content = content.replace(targetStr, `${targetStr}\nglobalThis.__zcaApiByProfile = apiByProfile;`);
-              writeFileSync(zaloJsPath, content, 'utf8');
-              logger.info(`[openclaw-zalo-mod] ✅ Auto-patched ${zaloJsFile} successfully!`);
-            } else {
-              logger.warn(`[openclaw-zalo-mod] ⚠️ Could not find target map inside ${zaloJsFile} for auto-patching`);
-            }
-          }
-        }
-      }
-    } catch (e) {
-      logger.warn(`[openclaw-zalo-mod] ⚠️ Auto-patch zalouser failed: ${e.message}`);
+    // Never mutate @openclaw/zalouser on disk here.
+    // Plugin install/load state belongs to OpenClaw's registry lifecycle, not this plugin.
+    // If zalouser exposes a shared API instance itself, we'll reuse it later; otherwise we fallback safely.
+    if (globalThis.__zcaApiByProfile) {
+      logger.info('[openclaw-zalo-mod] detected shared ZCA API map from zalouser runtime');
+    } else {
+      logger.info('[openclaw-zalo-mod] shared ZCA API map not exposed by zalouser; using non-invasive fallback');
     }
 
     // ── Auto-fix 777 permissions (Windows bind-mount issue) ─────────────────
@@ -558,7 +540,7 @@ const plugin = definePluginEntry({
     const botNames      = [botName, ...zaloNames].filter(Boolean);
     const pfx = String(pluginCfg.slashPrefix || botName).toLowerCase().replace(/[^a-z0-9]/g, '');
     const cmdPrefix = '/' + (pfx || 'bot') + '-';
-    const ownerId       = String(pluginCfg.ownerId || '');  // Zalo ID chủ nhân bot
+    let ownerId       = String(pluginCfg.ownerId || '');  // Zalo ID chủ nhân bot
     // adminIds: derive từ ownerId — không cần config riêng
     // (per-group admins lưu trong groupNames[gId].admins và settings.json)
     const adminIds = new Set(ownerId ? [ownerId] : []);
@@ -603,6 +585,7 @@ const plugin = definePluginEntry({
 
     const store       = createStore(dataDir);
     const spamTracker = createSpamTracker(spamRepeatN, spamWindowMs);
+
 
 
     function getDeviceId() {
@@ -2622,6 +2605,20 @@ PQIDAQAB
           }
           await saveGroupNames(merged);
           await store.saveSettings();
+
+          // Also sync botName if missing
+          const patch = {};
+          if (!pluginCfg.botName || pluginCfg.botName === 'Bot') {
+            const detectedName = await _readBotNameFromIdentity(workspaceDir);
+            if (detectedName) {
+              patch.botName = detectedName;
+              patch.zaloDisplayNames = [detectedName];
+            }
+          }
+          if (Object.keys(patch).length > 0) {
+            await _patchOpenclawConfig(_openclawHome, patch, logger, true);
+          }
+
           return { imported: ids.length };
         }
 
@@ -2959,6 +2956,7 @@ PQIDAQAB
       const isGroupMsg = rawConvId.startsWith('group:');
       const senderId  = String(ctx.senderId || event.senderId || '');
       const senderName = String(event.senderName || senderId);
+
 
 
       // Packaging Gating: Skip automated moderation / anti-spam / commands for Free users
@@ -3387,7 +3385,7 @@ Device ID: ${result.deviceId}`);
       const isBotOrOwnerAdmin = ownerId && (gAdmins.map(String).includes(ownerId) || String(creatorId || '') === ownerId);
 
       // ── Silent mode check ─────────────────────────────────
-      const silentMode = store.getSetting(groupId, 'silent', false);
+      const silentMode = store.getSetting(groupId, 'silent', true);
       if (silentMode) {
         // Anti-spam detect silently even in silent mode (only for managed groups where bot/owner is admin)
         if (isBotOrOwnerAdmin) {
@@ -3482,6 +3480,10 @@ Device ID: ${result.deviceId}`);
       try {
         if (!ownerId) {
           const patched = await _patchOpenclawConfig(_openclawHome, { ownerId: senderId }, logger, true);
+          if (patched) {
+            ownerId = senderId;
+            adminIds.add(senderId);
+          }
           await sendDmMsg(ctx, senderId, patched
             ? 'Sếp đã được đăng ký làm Owner! Owner ID: ' + senderId
             : 'Không thể ghi config. ownerId: ' + senderId);
@@ -3493,6 +3495,7 @@ Device ID: ${result.deviceId}`);
     });
     // Start member watcher for welcome messages
     startMemberWatcher();
+
     logger.info(`[openclaw-zalo-mod] loaded — bot="${botName}" prefix="${cmdPrefix}" owner=${ownerId || 'none'} groups=${watchGroupIds.length} groupNames=${Object.keys(groupNames).length}`);
   },
 });

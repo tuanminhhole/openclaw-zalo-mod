@@ -1,3 +1,11 @@
+## [2.7.7] - 2026-05-27
+
+### Fixed
+
+- Auto-patch `@openclaw/zalouser` dist file on load to expose `globalThis.__zcaApiByProfile` — enables shared ZCA API Map between `zalouser` channel and `zalo-mod` plugin without requiring a new `zalouser` release.
+- Dynamically detects `zalo-js-*.js` filename (hash varies per release) so the patch works across all `zalouser` versions.
+- Idempotent: skips patching if `globalThis.__zcaApiByProfile` is already present.
+
 ## [2.7.5] - 2026-05-26
 
 ### Fixed

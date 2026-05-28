@@ -16,7 +16,7 @@
  *   listZaloGroupMembers API, diff with previous snapshot.
  *
  * @author tuanminhhole
- * @version 2.7.9
+ * @version 2.8.0
  */
 
 import fs from 'node:fs/promises';
@@ -2988,10 +2988,15 @@ PQIDAQAB
         
         const isExempted = isActivationCmd || isClaimOwnerCmd || isOwnerRulesCmd;
 
+        // [LOẠI BỎ CHẶN LỆNH THỦ CÔNG CHO PLAN FREE]
+        // Cho phép chạy slash commands thủ công trên Zalo chat ở gói Free.
+        // Chỉ giới hạn các chức năng tương ứng trên giao diện Zalo-Mod Web UI.
+        /*
         if (bodyContent.startsWith('/') && bodyContent.length > 1 && !isExempted) {
           await sendGroupMsg(ctx, isGroupMsg ? rawConvId : senderId, '⚠️ Chức năng này chỉ dành cho tài khoản PRO. Vui lòng nâng cấp!');
           return { handled: true };
         }
+        */
         // NOTE: Do NOT return early here for non-command messages.
         // Free users still need @mention detection and silent mode check below.
       }

@@ -16,7 +16,7 @@
  *   listZaloGroupMembers API, diff with previous snapshot.
  *
  * @author tuanminhhole
- * @version 2.7.8
+ * @version 2.7.9
  */
 
 import fs from 'node:fs/promises';
@@ -528,32 +528,14 @@ const plugin = definePluginEntry({
     // Detect from multiple sources before falling back to 'Bot':
     let _detectedBotName = pluginCfg.botName || '';
     if (!_detectedBotName) {
-      // Source 1: IDENTITY.md in workspace
-      try {
-        const _wsDir = cfg?.agents?.list?.[0]?.workspace
-          ? path.resolve(_openclawHome, '..', cfg.agents.list[0].workspace)
-          : cfg?.agents?.defaults?.workspace || path.join(_openclawHome, 'workspace');
-        const _idPath = path.join(String(_wsDir), 'IDENTITY.md');
-        if (existsSync(_idPath)) {
-          const _idContent = readFileSync(_idPath, 'utf8');
-          const _idMatch = _idContent.match(/\*\*Tên:\*\*\s*(.+)/);
-          if (_idMatch) _detectedBotName = _idMatch[1].trim();
-        }
-      } catch { /* ok */ }
-    }
-    if (!_detectedBotName) {
-      // Source 2: Agent name from config
-      _detectedBotName = cfg?.agents?.list?.[0]?.name || '';
-    }
-    if (!_detectedBotName) {
-      // Source 3: Zalo credential display name
+      // Source 1: Zalo credential display name (most accurate - real Zalo profile name)
       try {
         const _credPath = path.join(_openclawHome, 'credentials', 'zalouser', 'credentials.json');
-        if (existsSync(_credPath)) {
-          const _cred = JSON.parse(readFileSync(_credPath, 'utf8'));
+        if (fs.existsSync(_credPath)) {
+          const _cred = JSON.parse(fs.readFileSync(_credPath, 'utf8'));
           if (_cred.displayName) _detectedBotName = _cred.displayName;
         }
-      } catch { /* ok */ }
+      } catch (e) { /* ok */ }
     }
 
     const botName       = String(_detectedBotName || 'Bot');
@@ -2602,13 +2584,50 @@ PQIDAQAB
           await saveGroupNames(merged);
           await store.saveSettings();
 
-          // Also sync botName if missing
+          // Also sync botName if missing or default (case-insensitive check for default values like 'bot', 'Bot', 'OpenClaw Bot')
           const patch = {};
-          if (!pluginCfg.botName || pluginCfg.botName === 'Bot') {
-            const detectedName = await _readBotNameFromIdentity(workspaceDir);
+          const currentBotName = String(pluginCfg.botName || '').trim();
+          const isDefaultBotName = !currentBotName || 
+            ['bot', 'botname', 'openclaw bot', 'openclaw-bot'].includes(currentBotName.toLowerCase()) ||
+            currentBotName.includes('**Mkt**'); // Also override if it contains the corrupted markdown name
+
+          if (isDefaultBotName) {
+            let detectedName = null;
+            try {
+              if (typeof zaloApi.fetchAccountInfo === 'function') {
+                const acc = await zaloApi.fetchAccountInfo();
+                const profileObj = acc?.profile || acc;
+                if (profileObj && profileObj.displayName) {
+                  detectedName = profileObj.displayName;
+                } else if (profileObj && profileObj.zaloName) {
+                  detectedName = profileObj.zaloName;
+                } else if (profileObj && profileObj.name) {
+                  detectedName = profileObj.name;
+                }
+              }
+              
+              if (!detectedName && typeof zaloApi.getOwnId === 'function') {
+                const ownId = await zaloApi.getOwnId();
+                if (ownId) {
+                  const uinfo = await zaloApi.getUserInfo(ownId);
+                  const profileObj = uinfo?.changed_profiles?.[ownId] || uinfo?.[ownId] || uinfo;
+                  if (profileObj && profileObj.displayName) {
+                    detectedName = profileObj.displayName;
+                  } else if (profileObj && profileObj.zaloName) {
+                    detectedName = profileObj.zaloName;
+                  } else if (profileObj && profileObj.name) {
+                    detectedName = profileObj.name;
+                  }
+                }
+              }
+            } catch (err) {
+              logger.warn('[openclaw-zalo-mod] failed to fetch Zalo profile name via API: ' + err.message);
+            }
+
             if (detectedName) {
               patch.botName = detectedName;
               patch.zaloDisplayNames = [detectedName];
+              logger.info('[openclaw-zalo-mod] Synced bot name via Zalo API: "' + detectedName + '"');
             }
           }
           if (Object.keys(patch).length > 0) {

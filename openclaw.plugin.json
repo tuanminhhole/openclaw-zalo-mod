@@ -2,7 +2,7 @@
   "id": "zalo-mod",
   "name": "OpenClaw Zalo Mod",
   "description": "Zero-token Zalo group moderation — slash commands, anti-spam, warn system, memory integration. Blocks LLM for non-mention messages.",
-  "version": "2.7.8",
+  "version": "2.7.9",
   "enabledByDefault": false,
   "activation": {
     "onStartup": true,

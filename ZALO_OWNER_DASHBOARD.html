@@ -2609,7 +2609,7 @@
                 <span data-i18n-feature="personal-3">Dùng cho 1 owner account</span>
               </li>
             </ul>
-            <a class="plan-cta plan-cta--solid" data-i18n-btn="personal" href="javascript:handlePricingUpgrade()">Nâng cấp Cá nhân</a>
+            <a class="plan-cta plan-cta--solid" data-i18n-btn="personal" href="javascript:handlePricingUpgrade('personal')">Nâng cấp Cá nhân</a>
           </article>
 
           <article class="plan-card">
@@ -2633,7 +2633,7 @@
                 <span data-i18n-feature="team-3">Phù hợp team growth/ops</span>
               </li>
             </ul>
-            <a class="plan-cta plan-cta--outline" data-i18n-btn="team" href="javascript:handlePricingUpgrade()">Đăng ký Team</a>
+            <a class="plan-cta plan-cta--outline" data-i18n-btn="team" href="javascript:handlePricingUpgrade('team')">Đăng ký Team</a>
           </article>
 
           <article class="plan-card">
@@ -2657,7 +2657,7 @@
                 <span data-i18n-feature="lifetime-3">Phù hợp sử dụng lâu dài ổn định</span>
               </li>
             </ul>
-            <a class="plan-cta plan-cta--outline" data-i18n-btn="lifetime" href="javascript:handlePricingUpgrade()">Mua Lifetime</a>
+            <a class="plan-cta plan-cta--outline" data-i18n-btn="lifetime" href="javascript:handlePricingUpgrade('lifetime')">Mua Lifetime</a>
           </article>
         </div>
       </section>
@@ -3168,6 +3168,7 @@
             <div style="display: flex; justify-content: space-between; gap: 12px;"><span style="color: var(--text-muted);">${t('Ngân hàng:', 'Bank:')}</span><strong style="color: var(--text);">MB Bank (Quân Đội)</strong></div>
             <div style="display: flex; justify-content: space-between; gap: 12px;"><span style="color: var(--text-muted);">${t('Số tài khoản:', 'Account:')}</span><strong style="color: var(--text); font-family: monospace; font-size: 14px;">0962794917</strong></div>
             <div style="display: flex; justify-content: space-between; gap: 12px;"><span style="color: var(--text-muted);">${t('Chủ tài khoản:', 'Name:')}</span><strong style="color: var(--text);">HO LE MINH TUAN</strong></div>
+            </div>
           </div>
         </div>
       `;
@@ -3438,13 +3439,235 @@
         setButtonLoading(button, false);
       }
     }
-    function handlePricingUpgrade() {
-      const deviceId = document.getElementById('deviceIdVal')?.textContent || '----';
-      navigator.clipboard.writeText(deviceId);
-      showToast(t('Đã tự động copy Device ID! Đang mở Zalo Bot MKT...', 'Device ID copied! Opening Zalo Bot MKT...'), 'success');
-      setTimeout(() => {
-        window.open('https://zalo.me/0559548168', '_blank');
-      }, 800);
+    let paymentPollInterval = null;
+
+    async function handlePricingUpgrade(planGroup) {
+      if (!planGroup || planGroup === 'free') {
+        showToast(t('Bạn đang sử dụng gói Free!', 'You are currently on the Free plan!'), 'info');
+        return;
+      }
+
+      if (paymentPollInterval) {
+        clearInterval(paymentPollInterval);
+        paymentPollInterval = null;
+      }
+
+      let title = '';
+      let desc = '';
+      let defaultPlanId = '';
+
+      if (planGroup === 'personal') {
+        title = t('Nâng cấp gói Cá nhân', 'Upgrade Personal Plan');
+        desc = t('Mở khóa điều khiển nâng cao, dùng cho 1 owner account.', 'Unlock advanced controls, for 1 owner account.');
+        defaultPlanId = 'personal-monthly';
+      } else if (planGroup === 'team') {
+        title = t('Nâng cấp gói Team', 'Upgrade Team Plan');
+        desc = t('Dành cho nhiều thành viên, ưu tiên hỗ trợ nhanh hơn.', 'For multiple team operators, priority faster support.');
+        defaultPlanId = 'team-monthly';
+      } else if (planGroup === 'lifetime') {
+        title = t('Mua gói Lifetime', 'Buy Lifetime Plan');
+        desc = t('Sử dụng vĩnh viễn trọn đời, phù hợp sử dụng lâu dài.', 'Lifetime perpetual usage, best for long-term stable use.');
+        defaultPlanId = 'lifetime';
+      }
+
+      let currentOrderId = '';
+      let paymentSucceeded = false;
+
+      const selectCycleHtml = planGroup === 'lifetime' ? '' : `
+        <div style="margin-bottom: 20px; display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%;">
+          <label style="font-size: 13px; font-weight: 600; color: var(--text); text-align: center; width: 100%;">${t('Chọn chu kỳ thanh toán:', 'Select Billing Cycle:')}</label>
+          <div style="display: flex; gap: 10px; background: var(--surface-2); padding: 4px; border-radius: 8px; border: 1px solid var(--border); justify-content: center; max-width: 380px; width: 100%; margin: 0 auto;">
+            <button id="btnCycleMonthly" class="btn" style="flex: 1; padding: 8px; font-size: 13px; font-weight: 600; border-radius: 6px; background: var(--primary); color: white;" onclick="changePaymentPlan('${planGroup}-monthly')">${t('1 Tháng', '1 Month')}</button>
+            <button id="btnCycleYearly" class="btn" style="flex: 1; padding: 8px; font-size: 13px; font-weight: 600; border-radius: 6px; background: transparent; color: var(--text-muted);" onclick="changePaymentPlan('${planGroup}-yearly')">${t('12 Tháng (Tiết kiệm 20%)', '12 Months (Save 20%)')}</button>
+          </div>
+        </div>
+      `;
+
+      const bodyHtml = `
+        <div class="payment-modal-container" style="display: flex; flex-direction: column; gap: 16px; min-width: 320px; max-width: 420px; margin: 0 auto; text-align: left;">
+          ${selectCycleHtml}
+
+          <div id="paymentLoadingArea" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 0; gap: 16px;">
+            <div class="spinner" style="width: 32px; height: 32px; border: 3px solid var(--primary-soft); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+            <p style="margin: 0; font-size: 13px; color: var(--text-muted);">${t('Đang khởi tạo mã QR thanh toán...', 'Generating payment QR code...')}</p>
+          </div>
+
+          <div id="paymentDetailArea" style="display: none; flex-direction: column; align-items: center; gap: 16px;">
+            <div style="background: white; padding: 12px; border-radius: 16px; border: 1.5px solid var(--border); display: inline-block; box-shadow: 0 10px 25px rgba(0,0,0,0.05); position: relative; overflow: hidden;" id="qrImageWrapper">
+              <img id="paymentQrImg" src="" alt="Payment QR" style="width: 240px; height: 240px; object-fit: contain; border-radius: 8px; display: block;"/>
+              <div id="qrSuccessOverlay" style="display: none; position: absolute; inset: 0; background: rgba(16, 185, 129, 0.95); flex-direction: column; align-items: center; justify-content: center; color: white; text-align: center; padding: 20px;">
+                <div style="width: 60px; height: 60px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.15);">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="4" style="width: 32px; height: 32px;"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+                <h4 style="margin: 0 0 6px 0; font-size: 16px; font-weight: 800;">${t('Thành công!', 'Success!')}</h4>
+                <p style="margin: 0; font-size: 12px; opacity: 0.9;">${t('Hệ thống đã nhận được thanh toán của bạn!', 'We have received your payment!')}</p>
+              </div>
+            </div>
+
+            <div style="font-size: 13px; color: var(--text); display: flex; flex-direction: column; gap: 6px; background: var(--surface-2); padding: 12px 20px; border-radius: 12px; border: 1px solid var(--border); width: 100%;">
+              <div style="display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px dashed var(--border); padding-bottom: 6px;"><span style="color: var(--text-muted);">${t('Gói dịch vụ:', 'Plan:')}</span><strong id="payPlanName" style="color: var(--text); text-align: right;">---</strong></div>
+              <div style="display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px dashed var(--border); padding-bottom: 6px;"><span style="color: var(--text-muted);">${t('Số tiền:', 'Amount:')}</span><strong id="payAmount" style="color: var(--primary); font-size: 14px;">---</strong></div>
+              <div style="display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px dashed var(--border); padding-bottom: 6px;"><span style="color: var(--text-muted);">${t('Ngân hàng:', 'Bank:')}</span><strong id="payBank" style="color: var(--text);">---</strong></div>
+              <div style="display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px dashed var(--border); padding-bottom: 6px;"><span style="color: var(--text-muted);">${t('Số tài khoản:', 'Account:')}</span><div style="display: flex; align-items: center; gap: 6px;"><strong id="payAccountVal" style="color: var(--text); font-family: monospace;">---</strong><button class="btn-copy" onclick="copyPaymentField('payAccountVal', '${t('Đã copy số tài khoản!', 'Account number copied!')}')" style="background: none; border: none; cursor: pointer; color: var(--text-muted);">Copy</button></div></div>
+              <div style="display: flex; justify-content: space-between; gap: 12px;"><span style="color: var(--text-muted);">${t('Nội dung:', 'Memo:')}</span><div style="display: flex; align-items: center; gap: 6px;"><strong id="payMemoVal" style="color: #ea580c; font-family: monospace; font-size: 12px; text-align: right;">---</strong><button class="btn-copy" onclick="copyPaymentField('payMemoVal', '${t('Đã copy nội dung chuyển khoản!', 'Memo copied!')}')" style="background: none; border: none; cursor: pointer; color: var(--text-muted);">Copy</button></div></div>
+            </div>
+
+            <div style="display: flex; gap: 10px; width: 100%; align-items: center;">
+              <div style="display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12px; color: var(--text-muted); background: var(--surface-2); padding: 8px 16px; border-radius: 8px; flex: 1; border: 1px solid var(--border);" id="paymentStatusBox">
+                <div class="spinner-small" style="width: 14px; height: 14px; border: 2px solid var(--primary-soft); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                <span id="paymentStatusText">${t('Đang chờ thanh toán tự động...', 'Waiting for automatic payment...')}</span>
+              </div>
+              <button class="btn" id="btnCancelPayment" type="button" style="white-space: nowrap;">${t('Hủy thanh toán', 'Cancel payment')}</button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      if (!document.getElementById('spinAnimation')) {
+        const style = document.createElement('style');
+        style.id = 'spinAnimation';
+        style.textContent = '@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }';
+        document.head.appendChild(style);
+      }
+
+      const oldCancelDisplay = modalCancel.style.display;
+      const oldConfirmText = modalConfirm.textContent;
+      modalConfirm.textContent = t('Hủy thanh toán', 'Cancel payment');
+      modalConfirm.classList.remove('primary');
+      modalConfirm.classList.add('btn-outline');
+      modalCancel.style.display = 'none';
+
+      async function cancelPaymentNow(reason = 'user') {
+        if (!currentOrderId || paymentSucceeded) return false;
+        const orderId = currentOrderId;
+        currentOrderId = '';
+        const btn = document.getElementById('btnCancelPayment');
+        if (btn) {
+          btn.disabled = true;
+          btn.textContent = t('Đang hủy...', 'Canceling...');
+        }
+        if (paymentPollInterval) {
+          clearInterval(paymentPollInterval);
+          paymentPollInterval = null;
+        }
+        try {
+          await api('/api/action', { method: 'POST', body: JSON.stringify({ action: 'cancel-payment', payload: { orderId, reason } }) });
+          showToast(t('Đã hủy giao dịch thanh toán.', 'Payment order canceled.'), 'info');
+          return true;
+        } catch (e) {
+          console.warn('cancel-payment failed', e);
+          showToast(t('Không thể hủy giao dịch, đơn sẽ tự hết hạn sau ít phút.', 'Could not cancel the order; it will expire automatically.'), 'warning');
+          return false;
+        } finally {
+          if (btn) {
+            btn.disabled = false;
+            btn.textContent = t('Hủy thanh toán', 'Cancel payment');
+          }
+        }
+      }
+
+      window.copyPaymentField = function(elementId, toastMsg) {
+        const txt = document.getElementById(elementId)?.textContent || '';
+        navigator.clipboard.writeText(txt);
+        showToast(toastMsg, 'success');
+      };
+
+      window.changePaymentPlan = async function(planId) {
+        await cancelPaymentNow('change-plan');
+        currentOrderId = '';
+        const isMonthly = planId.endsWith('-monthly');
+        const btnM = document.getElementById('btnCycleMonthly');
+        const btnY = document.getElementById('btnCycleYearly');
+        if (btnM && btnY) {
+          btnM.style.background = isMonthly ? 'var(--primary)' : 'transparent';
+          btnM.style.color = isMonthly ? 'white' : 'var(--text-muted)';
+          btnY.style.background = isMonthly ? 'transparent' : 'var(--primary)';
+          btnY.style.color = isMonthly ? 'var(--text-muted)' : 'white';
+        }
+        await loadPaymentQR(planId);
+      };
+
+      async function loadPaymentQR(planId) {
+        if (paymentPollInterval) {
+          clearInterval(paymentPollInterval);
+          paymentPollInterval = null;
+        }
+        paymentSucceeded = false;
+
+        const loadArea = document.getElementById('paymentLoadingArea');
+        const detailArea = document.getElementById('paymentDetailArea');
+        if (loadArea && detailArea) {
+          loadArea.style.display = 'flex';
+          detailArea.style.display = 'none';
+        }
+
+        try {
+          const res = await api('/api/action', { method: 'POST', body: JSON.stringify({ action: 'create-payment', payload: { planId } }) });
+          if (!(res.ok && res.result && res.result.ok)) {
+            showToast(res.error || t('Không thể khởi tạo đơn thanh toán!', 'Failed to generate payment order!'), 'error');
+            return;
+          }
+
+          const order = res.result.order;
+          currentOrderId = order.orderId;
+          document.getElementById('paymentQrImg').src = order.qrUrl || `https://img.vietqr.io/image/970422-0962794917-compact2.png?amount=${order.amount}&addInfo=${encodeURIComponent(order.memo || '')}&accountName=${encodeURIComponent(order.accountName || 'HO LE MINH TUAN')}`;
+          document.getElementById('payPlanName').textContent = order.planName || '---';
+          document.getElementById('payAmount').textContent = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.amount || 0);
+          document.getElementById('payBank').textContent = order.bankName || 'MB Bank';
+          document.getElementById('payAccountVal').textContent = order.accountNo || '0962794917';
+          document.getElementById('payMemoVal').textContent = order.memo || '';
+
+          if (loadArea && detailArea) {
+            loadArea.style.display = 'none';
+            detailArea.style.display = 'flex';
+          }
+
+          const btnCancelPayment = document.getElementById('btnCancelPayment');
+          if (btnCancelPayment) btnCancelPayment.onclick = async () => { await cancelPaymentNow('button'); closeModal(false); };
+
+          paymentPollInterval = setInterval(async () => {
+            try {
+              const checkRes = await api('/api/action', { method: 'POST', body: JSON.stringify({ action: 'check-payment-status', payload: { orderId: currentOrderId } }) });
+              if (checkRes.ok && checkRes.result && checkRes.result.paid) {
+                paymentSucceeded = true;
+                clearInterval(paymentPollInterval);
+                paymentPollInterval = null;
+                const successOverlay = document.getElementById('qrSuccessOverlay');
+                if (successOverlay) successOverlay.style.display = 'flex';
+                const statusBox = document.getElementById('paymentStatusBox');
+                if (statusBox) {
+                  statusBox.style.background = 'rgba(16, 185, 129, 0.1)';
+                  statusBox.style.borderColor = 'rgba(16, 185, 129, 0.2)';
+                  statusBox.style.color = '#10b981';
+                  statusBox.innerHTML = `<strong>${t('Đã kích hoạt bản quyền PRO!', 'PRO License Activated!')}</strong>`;
+                }
+                showToast(t('Kích hoạt bản quyền PRO thành công!', 'PRO license activated successfully!'), 'success');
+                setTimeout(() => closeModal(true), 2500);
+              }
+            } catch (e) {
+              console.error('Error polling payment status:', e);
+            }
+          }, 3000);
+        } catch (e) {
+          showToast(e.message || t('Lỗi kết nối server!', 'Server connection error!'), 'error');
+        }
+      }
+
+      setTimeout(() => loadPaymentQR(defaultPlanId), 100);
+      const modalResult = await openModal({ title, desc, body: bodyHtml });
+
+      if (paymentPollInterval) {
+        clearInterval(paymentPollInterval);
+        paymentPollInterval = null;
+      }
+      if (modalResult === false) await cancelPaymentNow('close');
+
+      modalConfirm.textContent = oldConfirmText;
+      modalConfirm.classList.remove('btn-outline');
+      modalConfirm.classList.add('primary');
+      modalCancel.style.display = oldCancelDisplay;
+
+      if (modalResult === true) await loadState();
     }
     async function runAction(action, payload = {}, label = 'Action completed') {
       const button = activeActionButton;
@@ -3540,7 +3763,7 @@
       return `<button class="feature-toggle ${on ? 'on' : 'off'}" type="button" data-toggle="${esc(group.groupId)}:${key}:${!on}">${label}</button>`;
     }
     function hiddenGroupIds() {
-      return new Set(['4406658694794071399', '4765340670657180769']);
+      return new Set(); // Không hardcode — hiển thị tất cả groups từ ZCA
     }
     function groupPeople(group) {
       const memberMap = state.members?.[group.groupId] || {};
@@ -4144,6 +4367,7 @@
                   <button class="btn pending-approve" type="button" data-approve-one="${esc(detail.groupId)}:${esc(member.id)}">${uiText('Duyệt', 'Approve')}</button>
                 </div>
               `).join('')}</div>` : `<div class="item-sub">${pendingCount ? uiText(`Có ${pendingCount} member đang chờ nhưng ZCA chưa trả danh sách chi tiết.`, `${pendingCount} members are pending but ZCA did not return the detailed list.`) : uiText('Không có pending member hoặc ZCA chưa trả dữ liệu.', 'No pending members or ZCA did not return data.')}</div>`}
+            </div>
             </div>
           </div>
         </div>

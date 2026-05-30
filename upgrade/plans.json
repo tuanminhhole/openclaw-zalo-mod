@@ -1,0 +1,84 @@
+{
+  "plans": [
+    {
+      "id": "personal-monthly",
+      "planGroup": "personal",
+      "name": "Gói Cá nhân — Tháng",
+      "nameShort": "Cá nhân (Tháng)",
+      "totalPrice": 99000,
+      "priceLabel": "99.000đ/tháng",
+      "durationMonths": 1,
+      "emoji": "1️⃣"
+    },
+    {
+      "id": "personal-yearly",
+      "planGroup": "personal",
+      "name": "Gói Cá nhân — Năm",
+      "nameShort": "Cá nhân (Năm)",
+      "totalPrice": 990000,
+      "priceLabel": "990.000đ/12 tháng",
+      "priceNote": "tiết kiệm 198.000đ",
+      "durationMonths": 12,
+      "emoji": "2️⃣"
+    },
+    {
+      "id": "team-monthly",
+      "planGroup": "team",
+      "name": "Gói Team — Tháng",
+      "nameShort": "Team (Tháng)",
+      "totalPrice": 299000,
+      "priceLabel": "299.000đ/tháng",
+      "durationMonths": 1,
+      "emoji": "3️⃣"
+    },
+    {
+      "id": "team-yearly",
+      "planGroup": "team",
+      "name": "Gói Team — Năm",
+      "nameShort": "Team (Năm)",
+      "totalPrice": 2990000,
+      "priceLabel": "2.990.000đ/12 tháng",
+      "priceNote": "tiết kiệm 598.000đ",
+      "durationMonths": 12,
+      "emoji": "4️⃣"
+    },
+    {
+      "id": "lifetime",
+      "planGroup": "lifetime",
+      "name": "Gói Lifetime",
+      "nameShort": "Lifetime",
+      "totalPrice": 5000000,
+      "priceLabel": "5.000.000đ (trọn đời)",
+      "durationMonths": -1,
+      "emoji": "5️⃣"
+    }
+  ],
+  "planFeatures": {
+    "personal": [
+      "Mở khoá điều khiển nâng cao",
+      "Xem dữ liệu group/member/log",
+      "Ưu tiên cập nhật tính năng mới",
+      "Dùng cho 1 owner account"
+    ],
+    "team": [
+      "Dành cho nhiều thành viên",
+      "Ưu tiên hỗ trợ nhanh hơn",
+      "Phù hợp team growth/ops"
+    ],
+    "lifetime": [
+      "Sử dụng vĩnh viễn trọn đời",
+      "Kích hoạt theo chính sách plugin",
+      "Phù hợp sử dụng lâu dài ổn định"
+    ]
+  },
+  "monkeypay": {
+    "serverUrl": "https://monkeypay-server-262289343328.asia-southeast1.run.app",
+    "apiKey": "mpk_a3cc9cde9ac23ab01c997a99f3e322ee68e976072f8f7321",
+    "notePrefix": "ZALOMOD"
+  },
+  "bankInfo": {
+    "bankName": "MB Bank",
+    "accountNumber": "0962794917",
+    "accountName": "HO LE MINH TUAN"
+  }
+}

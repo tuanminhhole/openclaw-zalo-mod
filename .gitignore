@@ -6,3 +6,9 @@ node_modules/
 data/
 docs/
 build-and-publish.js
+
+# Never ship server-side signing material/state
+upgrade/private-key.pem
+upgrade/orders.json
+upgrade/history.json
+

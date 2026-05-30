@@ -2224,7 +2224,7 @@
         </div>
         <div>
           <h1>Zalo Owner</h1>
-          <p>OpenClaw control center</p>
+          <p>Quản trị Bot Zalo</p>
         </div>
       </div>
       <nav class="nav" data-nav>
@@ -2243,7 +2243,7 @@
           <span>Dashboard gọi API thật khi ZCA khả dụng. Action rủi ro cao luôn cần xác nhận và được ghi audit log.</span>
         </div>
         <div class="plugin-meta">
-          <strong>zalo-mod <span id="pluginVersion">v2.5.2</span></strong>
+          <strong>zalo-mod <span id="pluginVersion">v2.8.4</span></strong>
           <span>Được làm ❤️ bởi tuanminhole</span>
           <div class="socials" aria-label="Author links">
             <a href="https://www.facebook.com/holeminhtuan.it/" target="_blank" rel="noreferrer" aria-label="Facebook"><svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 22v-8h2.7l.4-3.1h-3.1V8.9c0-.9.3-1.5 1.6-1.5h1.7V4.6c-.3 0-1.3-.1-2.5-.1-2.5 0-4.2 1.5-4.2 4.3v2.1H7.3V14h2.8v8h3.4Z"/></svg></a>
@@ -2738,7 +2738,7 @@
     const modalCancel = document.getElementById('modalCancel');
     const modalConfirm = document.getElementById('modalConfirm');
     const token = window.ZALO_DASHBOARD_TOKEN || '';
-    const pluginVersion = '2.5.2';
+    const pluginVersion = '2.8.4';
     let state = null;
     let activeGroupId = '';
     let lang = localStorage.getItem('zaloDashboardLang') || 'vi';
@@ -2969,7 +2969,7 @@
       setText('[data-theme-choice="light"]', 'Light', 'Light');
       setText('[data-theme-choice="dark"]', 'Dark', 'Dark');
       setText('.brand h1', 'Zalo Owner', 'Zalo Owner');
-      setText('.brand p', 'Trung tâm điều khiển OpenClaw', 'OpenClaw control center');
+      setText('.brand p', 'Quản trị Bot Zalo', 'Zalo Bot Management');
       setAllText('[data-nav] button > span.nav-label', [
         ['Tổng quan', 'Overview'],
         ['Nhóm', 'Groups'],
@@ -3517,7 +3517,6 @@
                 <div class="spinner-small" style="width: 14px; height: 14px; border: 2px solid var(--primary-soft); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite;"></div>
                 <span id="paymentStatusText">${t('Đang chờ thanh toán tự động...', 'Waiting for automatic payment...')}</span>
               </div>
-              <button class="btn" id="btnCancelPayment" type="button" style="white-space: nowrap;">${t('Hủy thanh toán', 'Cancel payment')}</button>
             </div>
           </div>
         </div>
@@ -3531,17 +3530,18 @@
       }
 
       const oldCancelDisplay = modalCancel.style.display;
-      const oldConfirmText = modalConfirm.textContent;
-      modalConfirm.textContent = t('Hủy thanh toán', 'Cancel payment');
-      modalConfirm.classList.remove('primary');
-      modalConfirm.classList.add('btn-outline');
-      modalCancel.style.display = 'none';
+      const oldCancelText = modalCancel.textContent;
+      const oldCancelClass = modalCancel.className;
+
+      modalCancel.style.display = 'inline-flex';
+      modalCancel.textContent = t('Hủy thanh toán', 'Cancel payment');
+      modalCancel.className = 'btn danger';
 
       async function cancelPaymentNow(reason = 'user') {
         if (!currentOrderId || paymentSucceeded) return false;
         const orderId = currentOrderId;
         currentOrderId = '';
-        const btn = document.getElementById('btnCancelPayment');
+        const btn = modalCancel || document.getElementById('btnCancelPayment');
         if (btn) {
           btn.disabled = true;
           btn.textContent = t('Đang hủy...', 'Canceling...');
@@ -3622,8 +3622,7 @@
             detailArea.style.display = 'flex';
           }
 
-          const btnCancelPayment = document.getElementById('btnCancelPayment');
-          if (btnCancelPayment) btnCancelPayment.onclick = async () => { await cancelPaymentNow('button'); closeModal(false); };
+          // Moved cancel button to modal footer, handled automatically on modal resolve
 
           paymentPollInterval = setInterval(async () => {
             try {
@@ -3666,6 +3665,8 @@
       modalConfirm.classList.remove('btn-outline');
       modalConfirm.classList.add('primary');
       modalCancel.style.display = oldCancelDisplay;
+      modalCancel.textContent = oldCancelText;
+      modalCancel.className = oldCancelClass;
 
       if (modalResult === true) await loadState();
     }
@@ -3694,7 +3695,8 @@
       applyI18n();
       document.getElementById('ownerName').textContent = repairText(state.bot.ownerName || 'Owner');
       document.getElementById('ownerRole').textContent = t('Owner', 'Owner');
-      document.getElementById('pluginVersion').textContent = `v${pluginVersion}`;
+      const currentVersion = state.pluginVersion || pluginVersion;
+      document.getElementById('pluginVersion').textContent = `v${currentVersion}`;
       document.querySelector('.avatar').textContent = repairText(state.bot.ownerName || 'K').slice(0, 1).toUpperCase();
       syncChromeState();
       const metrics = document.querySelectorAll('.metric strong');

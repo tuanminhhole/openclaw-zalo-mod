@@ -216,25 +216,6 @@ Cấu hình trong `openclaw.json`:
 
 ---
 
-## 🔄 Release Workflow (Automated Obfuscation & Publishing)
-
-To protect commercial PRO features, the Javascript source code distributed via ClawHub is automatically obfuscated using an enterprise-grade build workflow:
-
-```powershell
-# 1. Develop/modify code inside D:\openclaw-zalo-mod\index.js
-# 2. Update CHANGELOG.md with new changes
-# 3. Synchronize package and config versions (e.g. 2.5.4)
-node bump-version.js
-# 4. Stage & Commit cleanly (docs/ folder and sensitive configs are ignored automatically)
-git add .
-git commit -m "chore: release vX.X.X"
-git push
-# 5. Run the Premium Build & Publish script to obfuscate and publish to ClawHub
-node build-and-publish.js
-```
-
----
-
 ## 📄 License
 
 MIT — see [LICENSE](./LICENSE)

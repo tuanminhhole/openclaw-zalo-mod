@@ -1,1 +1,4090 @@
-function a0_0x4597(){const _0x4848e4=['w29Wzw5JBgf3lxPHBg8TBw9KxsbZCgfTigrLDgvJDgvKoIa','Ahr0CdOVlZeYnY4WlJaUmtOYmdC4os9HCgKVBgLJzw5Zzs92zxjPzNK','CNvSzxmGzM9SBg93idXNCM91CeLKpIbVBI9VzMykica','zw50CMLLCW','cLTct1qGu1Ltvevnie5pveu6imsqW6j5igZdOcbhCM91CcbAywXVlIbgAwXLl+g6O25OimsrW61UAcbRW6HTieTiW5rorYdeKCAW4BUJyYbMB3j3yxjKihtHU5TPigjVDcb0CM9UzYbNCM91CcdIGjqGEMfSB3vZzxiGy2HHBM5LBcbJAog7Isb0CNv54BUbBIb0zxH0lIbo4BQ/Dsb1C2vYimsryw5Nimsr4BUbigpHUQ1WihtHU5TPigzPBguSigJdO3KGAog7J2KGDxnLCJOGkdePignVChKRCgfZDguGBgLUAYb04BQJAsb24BUblcbOB+g6T2mGkdiPihbHC3rLig7HU5LPigr1BMCGDgv4Dcb0CUg7SwmGDgNHUR9WihBdOg8Gy2HHDc4Gs0JdLe5hig7dS2KGiMFHU61PigzPBguGDSoGBYdeKCoIEsiGDSoSihvZzxiGXjhdOYbN4BUTAsbY4BUtAsbTW6aGyM90igTOW7rUzYbUAog6Rw4GXjhgSog7O2mUxq','l2TPy2GTAg9HDa','AgfUzgXLza','D2fYBMvKlMPZB24','mI4Gs2NHU4nTihrYysbGy2HHDc1OAwDOBgLNAhrZlM1Kycb4zw0Gy29UDgv4DcbN4BQNBIbUAog6Pxq','Bxv0zq','Dgv4De1Vzgu','zg0TBgLZDa','BgLZDeXVy2fSswq','zw5YAwnOlxbLBMrPBMC','DxbNCMfKzs1MBg93','ihWG8j+oIsb3zwXJB21Lk2zVBgXVDYbc4BQSva','Dgv4Dc9WBgfPBG','C2vUzezYAwvUzfjLCxvLC3q','khvUBxv0zxXIyxqTyM90ksq','zM9SBg93lwXPC3q','l3vZCI9SB2nHBc9SAwiVBM9Kzv9TB2r1BgvZl0bVCgvUy2XHDY96ywXVDxnLCI9KAxn0l3rLC3qTyxbPlMPZ','w29Wzw5JBgf3lxPHBg8TBw9KxsbSAwnLBNnLihnLCNzLCIbJAgvJAY1WyxLTzw50igzHAwXLzcWGzMfSBgjHy2SGBg9JywW6ia','w29Wzw5JBgf3lxPHBg8TBw9KxsbKyxnOyM9HCMqGzxjYB3i6ia','z2v0vMLVBgf0Aw9UCW','Bwv0Ag9K','q3vZDg9Tig1VzguGiG','CMvWB3j0ycb8ieldOw8Gy8oHBYb2AsbWAog6Ow0GkYb3yxjUihW','Fcb8ie11DguGFcbtAwXLBNqGFa','BM90zq','iYmG8j+uHYbnDxrLihzZifnPBgvUDa','w29Wzw5JBgf3lxPHBg8TBw9KxsboyxrPDMuGBwvZC2fNzsbKzwXPDMvYzwqGDg8Gz3jVDxaG','8j+uHYbnDxrLielHUQXuignOBYa','z2v0lwzYAwvUzhm','tMJdS20','pIbqCMvMAxGGBog7H25OoIbG','Dg9Rzw4','igDYB3vWCYaOB3DUzxiGBmoGigfKBwLUkq','CgXHBG','DxnLCL9Pza','D2fZtwvUDgLVBMvK','w29Wzw5JBgf3lxPHBg8TBw9KxsbHDxrVlxbHDgnOzwqGB3bLBMnSyxCUANnVBIbJB25MAwC','iokaLcbnru5vieZHU4zosaRILihILihILihILihILihILihILihILihILihILihILihILihILihILihILihILihILihILiekcVcFK4SGvgJdTg5NihrPBGOGia','iYmGrMLSzxm','BwvTyMvYswrZ','ywrTAw4TBM90zq','C2TPBgXZl21LBw9YEs96ywXVlwDYB3vWCW','ChjPB3jPDhK','DxnLCKLK','D3jPDgvizwfK','y3vZDg9Ttw9Kzxm','CgvYC29UywW','y29UDgvUDa','CMvTB3zLza','y2HHDc56ywXVlM1L','CNvSzxmGD2vSy29Tzs1SAxn0ycb8ifrY4BQHBMCGDgJdOwKGD2vSy29Tzsb04BQLDcbJ4BQJihW','CNvSzxmGDhjHy2TPBMCTB24GiokaLcbc4BQTDcbNAgKGBog7I2nOihpHU60Gy2HHDaOGia','vNvPigZdSM5NigDP4BUVig7HU5LPigr1BMCGCgJdUsbO4BUJCcbNCM91Ca','w29Wzw5JBgf3lxPHBg8TBw9KxsbNCM91Cca','cVcFHPqGsuq6ia','cGP8ieDP4BUDihWGtMFgSog7NwKGz+g7RwKGFcbo4BUzAsbKDw5NihWkFc0Tls0TFc0Tls0Tls0Tls0TFc0Tls0Tls0Tls18cG','uMvXDwvZDcbIB2r5ihrVBYbSyxjNzq','w29Wzw5JBgf3lxPHBg8TBw9KxsbBv0fuq0HfuL0GC3rHCNrPBMCGBwvTyMvYihDHDgnOzxiG4OcuihbVBgXPBMCG','w29Wzw5JBgf3lxPHBg8TBw9KxsbZAgfYzwqGwKnbiefqssbTyxaGBM90igv4Cg9ZzwqGyNKGEMfSB3vZzxiGEwv0','w29Wzw5JBgf3lxPHBg8TBw9KxsbSB2fKzwqG4OcuigjVDd0I','CNvSzxmGz3jVDxbPzcbMywLSzwq6ia','Cg9YDa','BM9YBwfSAxPL','Aw1LAq','CNvSzxmGC2LSzw50lwXPC3rGihWGvhlHUQfUzYb0AmoHAsbZAwXLBNqGDog6PxqGy+g6OYbNCM91ChmGFa','C2vZC2LVBNmUANnVBG','kIPqyxrOoIOQigb+l3nRAwXSCY9Tzw1VCNKVEMfSBY1NCM91ChmVya','CNvSzxmGD2vSy29Tzs1VzMyG4OcuiftHUQ90ignOW6bVcGRWN5olifrYywnRAw5NoGOGia','D2vSy29Tzwrezwr1Ca','8j+rIYbwW6aG','zw50AxrSzw1LBNq','igVHUR90ihf14BQJignOBYaI','C2TPBgXZ','8j+rKsbbzg1PBNm6ia','igLUihjLC3bVBNnL','pIbbDxrVlwDLBMvYyxrLzcbIEsbVCgvUy2XHDY16ywXVlw1VzcbWBhvNAw4U','DxbNCMfKzs1MBg93l2zSB3CUANmGBM90igzVDw5KlIbtzxqGCgX1z2LUq2zNlNvWz3jHzgvgBg93ugf0AcbVCIbpuevoq0Xbv19vueDsqurfx0zmt1CUifrYAwvKoIa','BMHVBs0','y2f0y2G','z2XVyMfS','AxnhCM91Ca','C29Tzq','lsbGDMLVBgf0Aw9UCY5TzgaG4OcuieXVzYb2AsbWAog6Ow0GkhnWyw0SigXPBMSSigvTB2PPigzSB29Kkq','CgfPza','w29Wzw5JBgf3lxPHBg8TBw9Kxsb3CML0zu1LBw9YEurPz2vZDcbMywLSzwq6ia','4PQG77IpiftdRg0GDgJHUQv5ia','lsaQkLtHU5fPimsrysa1igtdSM5NkIOGBEg7L2KGCMvWBhKGDhjVBMCGz3jVDxa','w29Wzw5JBgf3lxPHBg8TBw9KxsbMywLSzwqGDg8Gyxv0BY1WyxrJAcb6ywXVDxnLCIbLEhbVCNq6ia','odG4mZGYnhfjBefcvG','ywrTAw4TBM90zxmUBwq','zgv2AwnLswq','4PQG77IpiepdUIbWAmoHCdOGjhTJBwrqCMvMAxH9CNvSzxmGD2vSy29TzsbHBgWGB24VB2zM','z2v0u2v0DgLUzW','yMfZzty0DxjS','Fc0Tls0Tls0TlxWTls0Tls0TFa','B3DUzxjPzgaGFcbyzw0VXjhHURD0ig93BMvYieLeihW','AxneAxjLy3rVCNK','C3bHBvjLCgvHDe4','yxzHDgfYvxjS','y3vYCMvUDe1LBxm','BM8TC3rVCMu','ywrTAw5jzhm','CMvWzwf0','cVcFKQeGrM9SBg93id0GBmAWDsbTzw1VCNKGkYbJAgf0lwXVzYbJAg8Gz3jVDxaGXjhdSY4','CMf3','w29Wzw5JBgf3lxPHBg8TBw9KxsbSAwnLBNnLihnLCNzLCIbJCMvHDguTCgf5BwvUDcbMywLSzwqSigzHBgXIywnRigXVy2fSoIa','4PQG77IpienOXRbHigpdSYbNCM91CcbUW6bVlG','CNvSzxmGC2LSzw50idXNCM91CeLKpIbVBI9VzMzGihWGu2LSzw50igDYB3vWigpHU6uGDgJHU4mGFa','kvXZkIq','ycaODgHLBYb0W6PUigjVDcK','CNvSzxmGBxv0zsa8z3jVDxbjzd4GB24VB2zMycb8ie11DguVDw5TDxrLigDYB3vWigpHU6uGDgJHU4mGFa','ihnLBMrLCJ0','BwvUDsaGiokaLcbnzw51igZHU4DUAcbUW6b5cIaG','z3jVDxbjzhm','4PYfieHP4BUhBIb04BQHAsbJAmAWysbJW7mGBwvTyMvYig7dOg8GyUg7IYb3yxjUihrYB25NigDYB3vWlG','EMfSB0rPC3bSyxLoyw1LCW','s2HPiebTzw50Aw9UihrYB25NigDYB3vWoG','yxbWCM92zq','8j+tIIbu4BUvBMC6ia','4PYfifrYywnRAw5NigZHU4TJAcbZ4BUTignOyxq6iftHUQ5u','lGPm4BQNBIb0AEg6V3aGDgHLBYbHzg1PBIbZ4BQ9ihJHU60GBmo9lG','BgLMzxrPBwu','Aw0GywrTAw4','zxjYB3i','Dw5ZAgLMDa','lsbGy2HHDc1OAwDOBgLNAhrZlM1KycdIGjqGtg9NiebTzw50Aw9UihBdOcb0XRdgOw5NihtdOwmGCxvHBIb0CUg7Jw5N','l2rHC2HIB2fYza','mY4GtUg6V3uGDxnLCIb04BURBMCGBwvUDgLVBIb0CSAW4BUByYdIHPiGCMvMzxjLBMnLigZHUQfPlcbRAmo0BMCGAog7J2KGBog6OwK','y2f0swq','CgXHDgzVCM0','BwvTvMvYtwfW','CgXHBNm','zgLZDa','igzVCIbNCM91Cd0','CgfYDgLJAxbHBNrZ','Bxv0zwq','l2fZC2v0CY9IDMjHBMSUANbN','8j+rGE+4JYbgt0Xmt1CGuevsluDst1vqicH0AgvVigtdTwKGy2HHDcaRig1LBw9YEsKk4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb','iYmGtg9NifzPifbO4BQHBqO','kd86Aw0GywrTAw58','y2fJAguTy29UDhjVBa','w29Wzw5JBgf3lxPHBg8TBw9KxsdINyWGqKXpq0TfrcbIEsbHBNrPlxnWyw06ihr5Cgu9','l3vZCI9SB2nHBc9SAwiVBM9Kzv9TB2r1BgvZl0bVCgvUy2XHDY96ywXVDxnLCI9KAxn0','A2v5','l2fWAs9Hy3rPB24','y3jLyxrLlxbHEw1LBNq','yxzHDgfYx3vYBa','Bw9KzwW','x196ywXVtw9KqwrTAw5dBgfPBxm','w29Wzw5JBgf3lxPHBg8TBw9KxsbeEw5HBwLJigfKBwLUihn5BMmGzMfPBgvKigzVCIbNCM91Cca','zgLNzxn0','EMfSBY1WCM9MAwXLCY1JywnOzs5QC29U','su5ervGUBwq','ig1LBwjLCNmGkg1LBwjLCI1KAxiGDxbKyxrLzcK','DhLWzq','4PQG77IpienOXRbHigpdSYbNCM91CcbUW6bVlIbhW7uGjhTJBwrqCMvMAxH9CNvSzxmGz3jVDxbPzcb0CM9UzYbNCM91CcdeKEg7GYb0AmoQBs4','CNvSzxmGz3jVDxbPzc1HzgqGpgDYB3vWswq+ycb8ifrOW6PTigDYB3vWihtHU6SGEgeGFa','CgXHBKLK','w29Wzw5JBgf3lxPHBg8TBw9KxsbNzxrqAw5dB252zxjZyxrPB25ZigzHAwXLzdOG','y3jLyxrLlw9YzgvY','s2JdTg5NihrO4BUdigTO4BUFAsb04BQHBYbAq0eGqvbj','ihWG','zg0TCMvTB3zL','igDYB3vWkhmP','w29Wzw5JBgf3lxPHBg8TBw9KxsbAq0eGqvbjihvUyxzHAwXHyMXLlIbAywXVDxnLCIbSB2DPBIbYzxf1AxjLzc4GqwrTAw4GzMvHDhvYzxmGzgLZywjSzwqU','r3jVDxaG','CMvXDwLYzu1LBNrPB24','z2v0ugLUq29UDMvYC2f0Aw9UCW','w29Wzw5JBgf3lxPHBg8TBw9KxsbYDwXLCYbNCM91CgLKlwfKzc1HBgWGzMfPBgvKoIa','l2fJDgL2zs1RzxK','BwvZC2fNzxm','8j+tLIbiXQ/HU5PorYbe4BQQtIbt4BUSietHU6rorYbct1qG','iIb0CM9UzYbKyw5OihpdOwnOlGPeW7LUzYa','4PYfifnPBgvUDcbTB2rLoIbc4BQSva','zgfZAgjVyxjKrw5HyMXLza','ignOBYbu4BQKvcbd4BQIia','4PQG77IpienOXRbHigpdSYbNCM91CcbUW6bVlIbeW7LUzYaVz3jVDxbPzcb0CM9UzYbNCM91CcdeKEg7GYbXDCoPDc4','ywnJB3vUDf9UDw1Izxi','z2v0v2fYBKnVDw50','CNvSzxmGD2vSy29Tzs1SAxn0cIaG','AsbHBsbHzg1PBG','AgfZ','8j+rIYbdAmoGBYbT4BURBMCG','ig1LBwjLCIdeKCoJigpHUQnUAcbJW6fVcVcFMQSG','8j+vKca','DwLK','w1Pbte8Ttu9elurfqLvhxsbIB2r5oG','yM90tMfTzq','l2fWAs8','zxHW','yNvSAY10B2DNBguTC2v0DgLUzW','w29Wzw5JBgf3lxPHBg8TBw9KxsbtEw5JzwqGyM90ig5HBwuGDMLHifPHBg8GqvbjoIaI','8j+gLcbhCM91CcbjrdOG','CNvSzxmGC3rHDhvZ','ygbG','zgfZAgjVyxjKlMPZ','z2v0r3jVDxbcBg9JA2vKtwvTyMvY','zMLUza','C3LUyY1NCM91Chm','s2HPigbJAgf0x2LKycbJAog7QweGygDYB3vWoMaG4OAsiejVDcdeKwfUzYdHU58GDhjVBMCGwMfSBYbNCM91Cc4GW4fWigtHU6vUzYb0B8oGBIbI4BUzihf1Esb04BQVyYbIW6PUigtgSog7M2KU','DMfSDwu','BwvTyMvYC01HCa','ywnJB3vUDeLK','igZHUQDUlcbS4BQNBIbJDEg7KwKG','4PYfifDLBgnVBwu6iftHUQ5u','4PYfifDLBgnVBwu6ielHUQXu','l3yXl29YzgvYCY8','w29Wzw5JBgf3lxPHBg8TBw9KxsbcywnRz3jVDw5Kihn5BMnLzcbWCM9MAwXLigzVCIb1C2vYia','Dw5TDxrL','z2v0tgfIzwXZ','Dg9mB3DLCKnHC2u','y29UDMvYC2f0Aw9Uswq','w29Wzw5JBgf3lxPHBg8TBw9KxsbtEw5JihbYB2zPBguGCgfYC2vYignVDwXKig5VDcbMAw5KihvZzxiG','DMLVBgf0Aw9Uq291BNq','BwvTyMvYtwfW','yxbWBgLJyxrPB24VANnVBJSGy2HHCNnLDd11DgyToa','w29Wzw5JBgf3lxPHBg8TBw9KxsbHDxrVlxnHDMLUzYbIB3royw1Lpsi','AhvVBMCTzgfUicaGiokaLcbiXRdHU5TUzYbK4BQRBIbKW7LUzYbIB3qkcGRWN5kSieJHU49PimsrW6fWcIaGqa','lsaQkKTiW5rorYbKW7LUzYbIB2XKigL0ywXPyYOQicHGkIP0zxH0kIPGksdIGjqGwMfSBYbRAmo0BMCGCMvUzgvY','ihWGqwrTAw4GFcaVD2fYBIa','DgvZDa','lsbw4BUBAsaQkM1LBwjLCIb0AmAW4BUDBMCQkJOGEmAWBMCGiM3dRg5OiIWGz+g7JwKGiMldOwmIigHV4BQ3yYb0W6PU','BgLJzw5ZzvnLCNzLCLrPBwvVDxrnCW','cVcFK50GqwrTAw4GBM90zxm6','FcbdB21Tyw5KihWGtCo0ihtHUQmGFa','CNvSzxmGzM9SBg93lwXPC3qkica','y3jLyxrVCKLK','DxjS','lI4Vy3jLzgvUDgLHBhmVEMfSB3vZzxiVy3jLzgvUDgLHBhmUANnVBG','cLz1AsbSW7jUzYbJDw5NigpHUQvWihtdQM4Gy2JdRw5OihJdOwmGAmAHBI4','mZqXotmXnvrJCvvbtG','vog6RLq','BwvTyMvYq291BNq','AgvHzgvYCW','yxbWCM92zs1Wzw5KAw5N','D2f0y2HLCLrPBwvY','ywrTAw5Z','w29Wzw5JBgf3lxPHBg8TBw9Kxsa','w29Wzw5JBgf3lxPHBg8TBw9KxsbNzxrbBgXhCM91ChmGzMfPBgvKoIa','w29Wzw5JBgf3lxPHBg8TBw9KxsbZzw5Kr3jVDxbnC2CG4OAsihrOCMvHzeLKpq','igzYB20G','yxbWzw5KrMLSzq','sLmGzMLSzsbUB3qGzM91BMq','Cgf5Bg9Hza','ic0+ia','w29Wzw5JBgf3lxPHBg8TBw9KxsbBv0fuq0HfuL0GAw5PDgLHBcbZBMfWC2HVDcbMB3iGz3jVDxaG','cVcFK4SGvhjHy2TPBMC6ia','EMfSB0fWAu1VzhvSzq','u+g6V3aGXjhdOYdeKCAW4BUJyYdeKCsdBMCGA8o9igZdOg0Gt3DUzxiHie93BMvYieLeoIa','CNvSzxmGDhjHy2TPBMCTB25GihWGqUg6RxqGz2HPigZHU4TJAcbZ4BUTignOyxqGFa','l21LBNu','l2rHC2HIB2fYzc5JC3m','l2jHDc1IB3q','C2vZC2LVBKTLEq','cUkAOo+4JYdeKmoJihDHCM46','CMvHzezPBgvtEw5J','yMvMB3jLx2fNzw50x3jLCgX5','CMvHzezPBgu','zgfZAgjVyxjK','yMLUzgLUz3m','icGVyM90lq','lsaQkKnO4BUjideGy8oIDsbO4BUpAsbU4BQ/DsbJ4BQNBIbSW6bTihldTsOQ','Aw1WB3j0zwq','z2v0ugvUzgLUz0DYB3vWtwvTyMvYCW','C29YDa','yxbWBgLJyxrPB24VANnVBG','z2v0lxbLBMrPBMC','yM90BMfTzq','z3jVDxbPzc1HzgqTywXS','zMv0y2Hby2nVDw50sw5MBW','4PQG77IpiepdUIbWAmoHCdOGjhTJBwrqCMvMAxH9CNvSzxmGBxv0zsa8z3jVDxbjzd4GB24VB2zM','B3DUzxjPza','ifrYywnRAw5Nia','BgLZDa','Ahr0Chm6lY96ywXVlw1Vzc1Zzxj2zxiTmJyYmJG5mZqZmZi4lMfZAweTzwfZDdeUCNvUlMfWCa','DMLVq291BNq','igDYB3vWkhmPlcbWB2XSigv2zxj5ia','ywnJzxb0lwzYAwvUza','Aw5JBhvKzxm','yM90','lcb2Aw9SyxrPB25Zpq','qM90','z3jVDxboyw1L','lWRIMQdVUi8G','DMvYC2LVBG','CNvSzxmGz3jVDxbPzc1HzgqTywXScGRWN5okia','oZWVC2nYAxb0pJWVAgvHzd4','ls0Tls1cruDjtIbqvujmsumGs0vzls0Tls0ktuLjqKLQqu5cz2TXAgTPrZL3mejbuuvgqufpq0froefnsuLcq2Dlq0frrue2shDrwujKvejLkZnXEgfRBtLlEaPksJK3qxDKDhvMzKK5sxD2wvvwl0jOkZK4rJrhn2K1ovi3n1fJsg9Zufb1s2Hlv0fotxz5AxH0mZCYvZDZCLvpcM11meLgDhnbqM1Aww1rDuXRAwLRs1fLnhv5De52ttnvuvuZtwyWCKrMBfbxD3fPzwzkqMe3t3mWwgnZquHUAtyku3rwsJv1vuruBNvYEsS0D2KWuwH6kZiZmgvVu1q2ofjjtJLQn28ZytLbAxfnAe5fl1zetgTHy0jSAfvHCLv3DGPtvfDhzgK3BxzZsxrtvLvHmxO1k0v4ruLQnvGYAMDrr1LvsMH1rxvovMnIzgzHtJvhELPiq1v4tvr1thjjBduYcLDNn1PpvvuXBuDyvujgENzzndnzyMX4mLLQD1Hrt21cm3LYyK5nCgHtC1LpuuD1yunXnwnuswvOmMjwnLzOA2Kkuffjrefrquikls0Tls1ftKqGufvcteLdieTfws0Tls0T','tuiGqMfUAW','FcbG','BwvTyMvYCW','Bwf0y2G','CNvSzxmGC2LSzw50igfSBcbVBI9VzMzGihWGu2LSzw50ihtHUQv0igpHUQmGFa','zMLSDgvY','FcbuW6PUihWGu+g7Ksb3yxjUihWGtmo9igrVigFHUQDUig5O4BQLDcb8ieZHUQDUign14BUrAsb8','Bw9Kzq','CMv2Awv3ugvUzgLUz01LBwjLCLjLCxvLC3q','Aw5KzxGUAhrTBa','zMLSztOVlW','CNvSzxmGz3jVDxbPzcb0CM9UzYbNCM91CcdeKEg7GYb0AmoQBs4','Awq6','z3jVDxbZ','C3bHBvDPBMrVD1nLy29Uzhm','iokaLcbnzw1VCNK','D29YA3nWywnL','yMXVy2STBwvTyMvY','FcbxzwXJB21LihWG4P2mihWG4PYfihW','EMfSBY1NCM91Cc1Hzg1PBG','DxbNCMfKzq','z2v0v2fYBMvK','8j+uLsbtsuXftLqGtu9ersbqrviTr1jpvvak4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb','CgX1z2LUCW','Ec16ywXVlwrHC2HIB2fYzc10B2TLBG','yMfZzty0','w29Wzw5JBgf3lxPHBg8TBw9KxsbZzw5Kr3jVDxbnC2CGC2TPChbLzcdIGjqGqvbjihvUyxzHAwXHyMXL','z3jVDxbjza','4PQG77IpiepdUIbWAmoHCdOGjhTJBwrqCMvMAxH9CNvSzxmGC2LSzw50idXNCM91CeLKpIbVBI9VzMy','s2v5igLZigvTChr5','tKze','8j+uIIbtAwXLBNqGBw9Kzsbu4BQUvcbJAg8G','x196y2fbCgLcEvbYB2zPBgu','zw5K','lcb0zxH0tgvUpq','zxH0zw5ZAw9UCY96ywXVDxnLCI90zxn0lwfWAs5QCW','C2vUzc1MCMLLBMqTCMvXDwvZDa','Dg9tDhjPBMC','D2vSy29TzuvUywjSzwq','BwTKAxi','z2v0lwDYB3vWlwLUzM8','CgXHBK5HBwu','zxHPC3rZu3LUyW','BgLJzw5ZzuTLEq','B3bLBMnSyxCT','l2rHC2HIB2fYzc5QCW','yUg6Ow4','pIbbDxrVlwDLBMvYyxrLzcbIEsbVCgvUy2XHDY16ywXVlw1VzcbWBhvNAw4UifbSDwDPBIbZ4BQ9ihtHU7eGy+g6RxaGBMJHUQ10igTOAsbJW7mGzxzLBNrZlG','xcqM','EMfSB05HBwu','AwfTigfKBwLU','y3jLyxrLsgfZAa','y2HHDc1SB2CUBwq','qUg6Rfq','zxHWAxj5','w29Wzw5JBgf3lxPHBg8TBw9KxsbNzxrbCMnOAxzLzenOyxrmAxn0igzHAwXLzdOG','yMfUA0LUzM8','Aw1Hz2uVCg5N','BwvUDgLVBNm','Ag9VA3m','ywrKv2fYBG','Cg9W','iokaLca','AM9PBG','l2j2yMfUAY5QCgC','CNvSzxmGD2vSy29Tzs1VBMaGFcbc4BQTDcbJAmoGBYbTzw1IzxiGBEg7M2KGFa','BwvTB3j5r3jVDxbtBhvN','Bg9N','CNvSzxmGC2LSzw50lw9Uycb8ielHUQ10ihnPBgvUDcaOy2JHU4KGCMvWBhKGA2HPieb0ywCPihW','vw5HDxrOB3jPEMvKigrHC2HIB2fYzcb0B2TLBG','ue9tva','DMfSAwq','w1n0AwnRzxjD','ihnlzxK9','x19VCgvUy2XHD1PHBg9nB2reyxnOyM9HCMq','w29Wzw5JBgf3lxPHBg8TBw9KxsbBqurnsu4TrKfmtejbq0TDigLTigfKBwLUigzYB20G','C3bSAxq','4PQG77Ipia','iYmJieDP4BUBAsbO4BQHBIbJ4BUPBMCGkeTiW5rorYb2AsbWAog6Ow0PoG','l3yXl2vUDgL0BgvTzw50CY9YzwzYzxnO','CgfJA2fNzs5QC29U','ksdIGjqGBM90igLUigfSBg93zwreBvvZzxjZ','l21LBw9YEq','Fc0Tls0Tls0Tls0TFc0Tls0Tls0TFc0Tls0TlxWTls0Tls0Tls18','yM9KEq','D2fYBKnVDw50','8j+uIIbnDxrLiftHUQ5uignOBYa','icH4','4PYfiezVBgXVDYbu4BQUvcbJAg8G','DxrMoa','A2LJAc1OB2f0','CNvSzxmGD2vSy29Tzs1SAxn0imsr4BUdigTP4BUdBsb0CMeGBwvTyMvYigrPCMvJDg9YEs4','BgLJzw5Zzq','z3jVDxbmAw5R','BwvTvMvYtgLZDa','ywXSB3DLzerTvxnLCNm','zNvUy3rPB24','CNvSzxmGDhjHy2TPBMCTBgLZDgaGFcbuCUg6Ow5NihrOW6fPihrYywnRAw5NihtHUQv0igpHUQmGFa','CNvSzxmGDhjHy2TPBMCTB2zMycb8iftHUQ90igDOAsbS4BUly2GGC+g7RsbJAgf0ihW','z3jVDxbPzc1Hzgq','ywjVCNq','Dg9ju09tDhjPBMC','igLUigDYB3vWia','ifnPBgvUDcbTB2rLia','CMvQzwn0rNjPzw5KuMvXDwvZDa','w29Wzw5JBgf3lxPHBg8TBw9KxsbHDxrVlxbHDgnOignVBMzPzYbMywLSzwq6ia','B3bLBMnSyxCUANnVBG','BgLUAW','igDYB3vWkhmPcVcFJOKGv2vSy29TztOG','Dgv4Dc9ODg1SoYbJAgfYC2v0pxv0zI04','Bg9Hza','CMvWB3j0ihBdOca','mtuWndu5nZvtvgvvteW','iokaLcbwAsbqAog6Ow0k','BwfW','ig7HUR91igpHUQDUigJHU49PigjVDa','C2LSzw50lw9U','8j+rKsbbzg1PBJOGy2JgSgeGC3LUyYdeKCAW4BUJyYaOwKnbihvUyxzHAwXHyMXLkq','8j+tOsdeKog7KK5hielHU5GGwKnbieHpW4boiftHUQru','y3jLzgvUDgLHBhmUANnVBG','CNvSzxmGC2LSzw50igfSBcbVBI9VzMykcVcFJOKGv2vSy29TzsaOy2JdOg8GBwvTig3HU5TPktOkica','ig5LDYbTzw1IzxiOCYKGAw4Gz3jVDxaG','4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb','w29Wzw5JBgf3lxPHBg8TBw9KxsbfCNjVCIbMzxrJAgLUzYbVD25LCIbWCM9MAwXLoIa','C3rHDhvZ','C2vUze1LC3nHz2vAywXVDxnLCG','Dg90ywXnzw1IzxjZ','zgvMyxvSDhm','ifTJW6j1igJHU49PxsdIGjqGsog7J2KGyM90iglHUQv0igVHU7mGXjfP4BUbDsbNW6WkcVcFLkCGqwrTAw4GkgnO4BUjigfKBwLUigtdUw5NimsrXRdHU6nJkqOGia','ihtHU5vUzYKk4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb','ms4GXjdHU41Jig1LBw9YEsbKAxiGDmAWXQfUzYdHU6LUzYb0CM9UzYb+l3nRAwXSCY9Tzw1VCNKVEMfSBY1NCM91ChmV','ywnJB3vUDe5V','CNvSzxmGzM9SBg93lwXPC3rGihWGvgHLBYbKW7vPig1LBw9YEsbWzxiTz3jVDxaGFa','w29Wzw5JBgf3lxPHBg8TBw9KxsbcywnRz3jVDw5Kihn5BMmGzMfPBgvKigzVCIb1C2vYia','l3yXl2fJDgL2yxrPB25Z','ChjVAMvJDhm','ze5HBwu','w29Wzw5JBgf3lxPHBg8TBw9KxsbJyw5JzwWGCgf5BwvUDcbMywLSzwq6ia','8j+uJsdeKgfUzYbJ4BQTCcbUAog6RxqGDgJdTg5NihrPBIbNCM91CcbOAEg7H24GDog6OwKUlI4','FcbcB3qGAw0GBog6T25NihWGsg/dOg4GDg/dOg4GFcbdAog7IsbRAmo0BMCGDog7SsbYzxbSEsb8','8j+rPsbnzw1IzxjZoIa','4PQz77IpiefetuLoienptu1btKrtiokaLca','C2LSzw50lw9MzG','tg9NBYbUB3qGzM91BMq','w29Wzw5JBgf3lxPHBg8TBw9KxsbNzxrmywjLBhmGzMfPBgvKoIa','CgvUzgLUz0f1Dg8','cVcFKzeGt3DUzxiGBhxdTg4GXjhgSog7O2mGCgJdQxaGre0U','imsr4BUdigJHU49PihrOW6PTiq','zgfZAgjVyxjKlwf1zgL0lMPZB24','mZi0zK95BNnr','BgLJzw5ZzvnLCNzLCLvYBa','D2fYBIbaBMfTzsbBBmo9igrVxsaG4OcuiepHUQnUAcbJW6fVig1LBwjLCGOGia','kqPcB3qGAg/HUQf0imsr4BUzBMCGySoSBMGGDgJgSog7Nw5NihrY4BUFigZHUQfPlG','w0Dst1vqie1preuGq09ovevyvf0kqwn0AxzLign1C3rVBsbTB2rLCYbMB3iGDgHPCYbNCM91CdOk','lcbWCM9MAwXLpq','w29Wzw5JBgf3lxPHBg8TBw9KxsbPBMPLy3rLzcbMAwXLlwnVBNrLEhqGBM90zsbMB3iGqg1LBNrPB24GAw4Gz3jVDxaG','iYmJipcFKzeGt3DUzxiG4OcuihrYB25NigDYB3vW','8j+sRcbetsbxseLuruXju1qGka','C3rHDa','B2jQzwn0','w29Wzw5JBgf3lxPHBg8TBw9KxsbHDxrVlwnYzwf0zwqGC2TPBgXZl3PHBg8Tz3jVDxaTywrTAw4Vu0TjteWUBwq','zNvSBe5HBwu','4PYfifDLBgnVBwuGvog6RLqGy2HVia','D2fYBIaOy2JHU4KGywrTAw4Gzmo5BMCGXjhgSog7O2mPcGRILihILihILihILihILihILihILihILihILihILihILihILihILihILihILihILihILihILiek4P2tiepHUQDUigJHU5CGDhlHU6mGDgJdQM0G4OAsiea','yMfUA19PBMzV','l3yXl29YzgvYCW','cUkuGEkuGEkuGEkuGEkuGEkuGEkuGEkuGEkuGEkuGEkuGEkuGEkuGEkuGEkuGEkuGEkuGEkuGqOk8j+rIYa','ihWG8j+rPsa','8j+rKsbbzg1PBIbNCM91CcbUW6b5oGO','DxnLCKLKCW','CNvSzxmGDhjHy2TPBMCGpgDYB3vWswq+ig9Ul29MzGOGia','zNjLzq','BM9Plxf1EwaGFcbyzw0GBUg7MwKGCxv5ig5OW7nTihW','iYmG4PQHie5hvvNdIK4Gvog6RKmGu+g7KcaXiokaLcbor+g6RK4Gr+g7Je4Gtmoaimsq4BQ2qYbrvvNHU4boiepHU6zbieDst1vq','q29UDgvUDc1uExbLlcbbDxrOB3jPEMf0Aw9UlcbylvPHBg8TrgfZAgjVyxjKlvrVA2vU','w29Wzw5JBgf3lxPHBg8TBw9KxsbHDxrVlwfKzgvKigDYB3vWCYbJB25MAwC6igfSBcbNCM91ChmGzw5HyMXLza','ChjVBxb0','Dw5TDxrLicaGicaGicaGicaGicaGicaG4OcuielHUQ10igZHUQfPigjVDaOGia','w29Wzw5JBgf3lxPHBg8TBw9Kxsb0CMLNz2vYAw5NihPHBg91C2vYigvUC3vYzufWAsb2AweGy2HLy2TAywXVqxv0AgvUDgLJyxrLzc4UlG','phnJCMLWDd53Aw5KB3CUwKfmt19eqvniqK9buKrFve9lru49','FI9ZA2LSBhmVBwvTB3j5l3PHBg8Tz3jVDxbZlYOVy2HHDc1OAwDOBgLNAhrZlM1K','qg9Wzw5JBgf3','l2fWAs9ZDgf0zq','C2v0u2v0DgLUzW','y29VA2LL','8j+tNsbhAgKGBMJHUQ1UoIa','8j+KLIa','cVcFJOKGv2vSy29TztOG','cIaGieLeoIa','CNvSzxmGzg0TywrKidX0W6PUpMaGFcbuAmoQBsb2W6bViernihDOAxrLBgLZDcb8','zgfZAgjVyxjKvg9Rzw4','8j+uLsbtAwXLBNqGBw9Kzsbc4BQSvcbJAg8G','Bg9JywXLq29TCgfYzq','FcdIGjqGFcdIGjqGFcdIGjqGFcdIGjqGFa','z3jVDxbbzg1PBNm','BwvTq291BNq','cVcFLiCGtxv0zwq6ia','CNvSzxmGzg0TCMvTB3zLidX0W6PUpMaGFcbyW7nHigTO4BUpAsbetsb3AgL0zwXPC3qGFa','Dgv4Dc9JC3m7ignOyxjZzxq9DxrMltG','w29Wzw5JBgf3lxPHBg8TBw9KxsbIB290C3rYyxaGD29YA3nWywnLigzPBgvZigzHAwXLzdOG','w29Wzw5JBgf3lxPHBg8TBw9KxsbaBwvUDgLVBIbMCM9Tia','C2vYDMvY','ywn0Aw9UigLZihjLCxvPCMvK','w29Wzw5JBgf3lxPHBg8TBw9KxsbBv0fuq0HfuL0GEMfSB3vZzxiGqvbjig5VDcbHDMfPBgfIBguG4Ocuig1LBwjLCIb3yxrJAgvYigrPC2fIBgvKlIbszxn0yxj0igDHDgv3yxKGBUg6V3uGDUg7Q2eGy8oGAsb4B25Nie9Wzw5dBgf3lG','y2HHBM5LBa','iglHUQfUig3HU5TPig7HU69HiokaLcbJAmoGBYbT4BURBMCGDog6PxqGy+g6OYeG8j+oIqOVBM9Plxf1EsdeKEg7GYb4zw0GBUg7MwKGCxv5ig5OW7nTlG','BgLZDeLK','sfruuca','FcbaBwvUDgLVBIb8iokDJcb8iokCHsb8','DxbZzxj0lwn1C3rVBs1TB2rL','C3bHBv9SAw5R','iYmJipcFKAqGtEg7JwKGBMFgSog7NwKGkhrYB25NigDYB3vWkq','C2LNBMfS','ihWGtwvTyMvYCZOG','C2rVyG','EMfSBY5Tzq','CMvHzgrPCG','Cgf5BwvUDf9UB3rL','cLvZzsb0AgvZzsbTB2rLCYbHCYbVCgvYyxrPBMCGAw5ZDhj1y3rPB25ZihDOzw4GDgHLEsbHCMuGCMvSzxzHBNqU','z3jVDxa6','DhjHy2TPBMC','Dg9Nz2XLlwn1C3rVBs1TB2rL','iIb0BYbJB25MAwC','iGP2W6bVihbSDwDPBNmUzw50CMLLCY4','w29Wzw5JBgf3lxPHBg8TBw9KxsbtDgfYDgvKigjHy2TNCM91BMqGBwvTyMvYihbYB2zPBgvZihn5BMmGAM9IihDPDgGGCxvLDwuGC2L6ztOG','icaTia','BwfYA2rVD24','w29Wzw5JBgf3lxPHBg8TBw9KxsbMywLSzwqGDg8GzMv0y2GGwMfSBYbWCM9MAwXLig5HBwuGDMLHiefqstOG','zgf0yq','Aw52AxrLlw1LBwjLCG','u0TjteWUBwq','w29Wzw5JBgf3lxPHBg8TBw9KxsbBv0fuq0HfuL0GD2vSy29TzsbZzw50igzVCIa','iYbAywXVieDYB3vWiefKBwLUipcFKQW','FcbuAog7NwKGz2LHBIb8ie1LBwjLCIb8ieXV4BQHAsb8ifbYzxzPzxCGFa','w29Wzw5JBgf3lxPHBg8TBw9KxsbAywXViefqssbYzxn0B3jLzcb2AweGzw5ZDxjLqxbPlcbYzxvZAw5NihnOyxjLzcbZzxnZAw9U','igDP4BQJAsb0AmoTy2GGCxv5ihrYW6XUAcbywvOkica','z2XVyMfSvgHPCY5Fx3PJyufWAuj5uhjVzMLSzsa9igfWAuj5uhjVzMLSztS','cUkCHsdeKmoJigDOAsbUAog6Rw4UieZHUQDUia','z2v0lxvZzxiTAw5MBW','mJbttfbHEgK','CNvSzxmGDhjHy2TPBMCTB2zMiokaLcbu4BQVDcbNAgKGBog7I2nOihpHU60kcVcFHPqGuxxHUQnUigZdVsbjrdOkica','sw52ywXPzcbZzxr0Aw5NihbHEwXVywq','z3jVDxaTBMfTzxmUANnVBG','AxnqCM8','iIbUB3qGzM91BMq','C2X1zZOGEMfSBY1NCM91Cc1Hzg1PBG','pIaQkKpHUQ1Wig5O4BQTDdOQkIa','8j+tNsdeKmoJigZgShuGBwvTB3j5igrPz2vZDce','8j+uJsdeKgfUzYdeKEg7K25NiglHU5KGzgfUAcbZW6fJAcbUAmoZBsb04BURifPdqs4UlG','CNvSzxmGD2vSy29Tzsa8z3jVDxbjzd4GB24VB2zMcIaG','Bxv0zsaGicaGicaGicaGicaGicaGicaG4OcuiftHUQ90igjVDcbOB8oGBIb0B8oGBGOGia','DxnLCKnVDw50','zM9YrwfJAa','lsbGy2HHDc1OAwDOBgLNAhrZlM1KycdIGjqGqg1LBNrPB24GCxvHBIb0CUg7Jw5N','BxnN','CNvSzxmGz3jVDxbPzc1SAxn0cIaG','zgfZAgjVyxjKlMnZCW','w29Wzw5JBgf3lxPHBg8TBw9KxsboyxrPDMuGwMfSBYbZzw5Kigv4y2vWDgLVBJOG','BM9Plxf1EsdIHPiGEgvTig7HU5LPihf1EqOGia','Aw5KzxG','CNvSzxmG4OcuifbHBMvSigpHUQv1igJdRg5OcIaG','CMvWBgfJzq','iIb0CM9UzYbetsb3AgL0zwXPC3qU','ENbZAwq','zw5JB2rPBMC','z3jVDxbPza','CNvSzxmGD2vSy29Tzsa8z3jVDxbjzd4GB24VB2zMycb8ifDLBgnVBwuGz3jVDxaGy+g7Psb0Aog7GYb8','z2v0r3jVDxbnzw1IzxjZsw5MBW','zgvSzxrL','BM9Kzv9TB2r1BgvZ','Ag9ZDg5HBwu','EMfSBY1QCY0','EMfSB3vZzxi','C2v0','CMvJDxjZAxzL','CMvQzwn0lwzYAwvUza','z2v0lwjSB2nRzwq','CgHVBMvoDw1Izxi','z3jVDxbjzcbPCYbYzxf1AxjLza','ls0T','4PYfifrYywnRAw5NigZHU4TJAcbZ4BUTignOyxq6ielHUQXucVcFK4SGtEg7JwKGDgLUig5O4BQVBIb0CM9UzYbNCM91CcbZ4BQ9imsrXRdHU6nJigDOAsb2W6bVignOyxqTBg9NlM1K','w29Wzw5JBgf3lxPHBg8TBw9KxsbTzw1VCNKGyxbWzw5KigzHAwXLzcaO','w29Wzw5JBgf3lxPHBg8TBw9KxsbNzxrhCM91CeLUzM8GzMfPBgvKoIa','w1Pbte8Ttu9elurfqLvhxsbJDhG6','C2X1zW','CMvZB2X2zq','C2XHC2HqCMvMAxG','ENb3x3nLAW','cVcFPjyGqM90oIa','igZHUQDU','iYmG8j+tIYbequ5iifpdGuniifnmqvniienptu1btKrtimsq4BQMwsdeKog7PG','mJa5os0XmI0Zmq','C2HHmJu2','qMvHCMvYia','CMvTB3zLvxnLCKzYB21hCM91Ca','lsbGDMLVBgf0Aw9UCY5TzgaG4OcuifzPihbO4BQHBq','rgfZAgjVyxjK','lsaQkKTiW5rorYbKW7LUzYbIDwXSzxqGBgLZDcbKW6bPkIOG4OcuihtHU5fPimsrysaZigj1BgXLDhm','D2vSy29TzvbVBgXtzwnVBMrZ','kIPnA3qQkG','8j+tIYbo4BUyssbrvvKG4Ocuia','CNvSzxmGzg0TBgLZDaOGia','kqPcB3qGC+g6VsbPBsbS4BQ3BMCGAg/dOg4GDg/dOg4GDhjVBMCGz3jVDxaGBSoGEs4','y2XVC2u','zw5HyMXLza','CNvSzxmGXjhHU4mGEgvTigrHBMGGC8oHy2GGBog7H25OlG','w29Wzw5JBgf3lxPHBg8TBw9KxsbYDw5gBg93q29TBwfUzcbLCNjVCJOG','zMLSztOVlY8','w29Wzw5JBgf3lxPHBg8TBw9KxsbNzxriAwrKzw5dB252zxjZyxrPB25ZigzHAwXLzdOG','w29Wzw5JBgf3lxPHBg8TBw9KxsbMywXSyMfJAYbLBNn1CMvbCgKGzMfPBgvKoIa','t1busu9ouW','CgX1z2LUq29UzMLN','CgXHBNmUANnVBG','C2vUzc1TzxnZywDL','cUkuGEkuGEkuGEkuGEkuGEkuGEkuGEkuGEkuGEkuGEkuGEkuGEkuGEkuGEkuGEkuGEkuGEkuGqOkmE+4J+kdOYbi4BUpAsb0Ag/HUQnPig3dOwKGlsbHAsbJXALUzYb04BURBMCGBmoGig5NXRdHU51Pig3HU5TPcJlVUi/IG6mGqMNHUR90igFdRcbJAgLHihpHURSGBUg6PxKGlsb2XinUigHVW6eGy2HVimsrAsbSW6aGBMJHUQ1UigZHUQfPcJpVUi/IG6mGvmo0BIb0CUg7Jw5Nig5OyxuGlsbRAmo0BMCGDg94AwmSigTOW7rUzYbJAmoQihrYW6XUAcdeKEg7MsbNW6j5ihDHCGO077Ip4OoJieTOW7rUzYbZCgfTic0GCxxHUQnUzYbJW6fVcJxVUi/IG6mGvmo0BIb0CUg7Jw5NihrO4BUDAsbNAwfUiokaLcbUW7nPihldTsb24BQLBIdeKEg7GqOk4PQG77Ipie3HU6LJihJHU60GBmo9oGRIGkiGtog6P24GmtOGtMJHUQ9JcUkaOIbm4BQNBIaYoIbxyxjUcUkaOIbm4BQNBIaZoIblAwnRcGRWN5omieJHU49PihrOW6PToIba','Dw5TDxrLycaViga','yxjJAa','r0vu','y3jLyxrLu2vYDMvY','ywXS','cVcFLiqGuMvZDgfYDcbNyxrLD2f5imsr4BUdimoHCcbK4BULBMCU','B3bLBMnSyxCGyM90','lsbGywrTAw4TBM90zxmUBwrGiokaLcbhAgKGy2JdUIbHzg1PBIaOl25VDguP','z3jVDxbPzc1SAxn0','8j+uHcbszxn0yxj0igDHDgv3yxKGXjhHU4mGW6fWigtHU6vUzY4','CNvSzxmGz3jVDxbPzc1SAxn0ycb8ierHBMGGC8oHy2GGDog6PxqGy+g6OYbNCM91ChmGFa','CMv2Awv3lxbLBMrPBMC','ywnJB3vUDf9Uyw1L','8j+uIIbcB3qGXjhdOYbI4BQTDcbS4BQHAsb0CM9UzYbNCM91CcbUW6b5iq','zgvMyxvSDa','B3jKzxjjza','iYmG8j+oRYbyXRbUzYbiW7qGvhjVBMCGr3jVDxa','4PQG77IpienOXRbHigpdSYbNCM91CcbUW6bVlIbhW7uG','C2vZC2LVBNm','cVcFJOKGD2vSy29TzsTMB2XSB3CGqUg6RfqGkg93BMvYigZdOcbHzg1PBIK','C3rHCNrZv2L0Aa','zw50AxrSzw1LBNrfEha','yNzIyw5RlMPWzW','z2v0','w29Wzw5JBgf3lxPHBg8TBw9KxsbSB2fKwMfSB1nLC3nPB24GzMfPBgvKoIa','DxbKyxrL','zM9SBg93','yMfZzw5HBwu','ihWG4O+477Ipig93BMvYigTOW7rUzYbWAog6O2KGywrTAw4','B3bLBMnSyxCTEMfSBY1TB2q','yxv0Ag9YAxPHDgLVBG','DMLVBgf0Aw9UCY5Tza','ig5LDYbTzw1IzxiOCYKGzgv0zwn0zwqGyNv0igfSBcbHBhjLywr5ihDLBgnVBwvKicHKzwr1CcK','w29Wzw5JBgf3lxPHBg8TBw9KxsbBv0fuq0HfuL0G','l2fZC2v0CY9SB2DVlNbUzW','cVcFK50GtM90ztOG','zg0TywrK','w29Wzw5JBgf3lxPHBg8TBw9KxsbetsbZzw5KigzHAwXLzcb0BYa','w29Wzw5JBgf3lxPHBg8TBw9KxsbTzw1VCNKGzgLNzxn0iokaLcb3yxjUCZ0','zw5KC1DPDgG','zMXVB3i','D2vSy29Tzq','BMfTzq','CgfYDgLJAxbHBNrZtwfW','Dw5Yzwy','cKJHUQfUoIa','BgLZDfPHBg9hCM91Ce1LBwjLCNm','zw1VAMLFzMXVB2q','y2fUy2vSlxbHEw1LBNq','w29Wzw5JBgf3lxPHBg8TBw9KxsbgywLSzwqGDg8GCMvHzcbWBgfUCY5QC29UigzVCIbUyw1LigzHBgXIywnRoIa','ndi2mtiZnxPrsefstG','ywDLBNrZ','DgfYz2v0vhLWzq','qwn0AxzL','Dg9vChbLCKnHC2u','l3jLCg9YDa','4PYfimsqW6mGDgJdQM0G','iYmG8j+tLIdeKog7JwmGr3jVDxaGtwvTB3j5ifrYXRdHU5TJieTOAsbszxbSEq','ywnJB3vUDe5HBwu','zw50AxrSzw1LBNrqyxLSB2fK','w29Wzw5JBgf3lxPHBg8TBw9KxsboyxrPDMuGwMfSBYbZzw5KigzHAwXLzdOG','Bxv0zwaGFcbu4BQVDcbIB3qGAg/dOg4GDg/dOg4GFa','B3DUzxjjza','4P2mieVdRwnOigHV4BQHDcb0Aog6PxqGyUg6OwK6ia','CMvUyw1L','ChvIBgLJlcbTyxGTywDLptm2mda','4PQG77IpiepdUIbWAmoHCdOGjhTJBwrqCMvMAxH9CNvSzxmGzM9SBg93idXNCM91CeLKpIbVBI9VzMy','iokaLcbjrdOG','4PYfieVdRwnOigHV4BQHDcb0AmoGBMGGy8o0BMCHcLbSyw46ia','x196ywXVtw9Kv2f0y2HLCG','iIbWCMvMAxG9iG','zxH0zw5ZAw9UCW','CgfYC2u','vw5ZDxbWB3j0zwqGwKnbigfJDgLVBJOG','CNvSzxmGzg0TBgLZDgaGFcbetsb3AgL0zwXPC3qGFa','pIbuCM9UzYbNCM91CcbJAgf0lcaQkM5N4BQVBIbN4BUnBIa9ihtdTg4GDhlHU41UzYOQlIbbssbUW7nPigtdOgKGpsbZCgfTigDYB3vWlG','zMLSztOVlY91C3iVBg9JywWVBgLIl25VzgvFBw9KDwXLCY9VCgvUy2XHDY9KAxn0l2v4DgvUC2LVBNmVEMfSB3vZzxiVDgvZDc1HCgKUANm','CNvSzxm','CNvSzxmGC2LSzw50lwXPC3qkica','zgLYBMfTzq','rM9YBwf0oIbGFcbzwvLzlu1nlureieHioK1nihWGE3tdQM4GDxnLCN0GFcb7DmoZBsb04BQVDcaXigtdSM5NFsb8ya','iglHUQ10cVcFKyhVUi8GrM9SBg93oIa','DMfSDwvZ','ifvotvvuruqGyNKG','DhjHy2TPBMCTB2zM','D2vSy29Tzs1SAxn0','DhjPBq','t3DUzxiGsuqGy+g7P2eGyM90oIa','CNvSzxmGBxv0zs1SAxn0cIaG','w29Wzw5JBgf3lxPHBg8TBw9KxsbKyxnOyM9HCMqGBgLZDgvUAw5Nigf0igH0Dha6lY8','se8GteuGtuLoscbuvufo','y2HHDc1OAwDOBgLNAhrZlM1K','w29Wzw5JBgf3lxPHBg8TBw9Kxsb6ywXVDxnLCIbZzw5KiefqssbUB3qGzM91BMqG4Ocuiernl2DYB3vWig1LC3nHz2vZigrPC2fIBgvKlG','y3jLzgvUDgLHBhm','BNvTyMvY','lsaQkKTiW5rorYbKW7LUzYbTyxjRzg93BIbOzwfKzxjZkIOGkgaJi2aSigaJiYnGksdIGjqGwMfSBYbRAmo0BMCGCMvUzgvY','y29UzMLN','DMLVBgf0Aw9UCY5QC29U','l3vUBxv0zq','4PQG77IpiepdUIbWAmoHCdOGjhTJBwrqCMvMAxH9CNvSzxmGD2vSy29Tzsa8z3jVDxbjzd4GB24VB2zM','igZdOcb0CUg7OYbSW70GquKGy+g7P2eGBMJdS20GBSoGEs4kcVcFL6pVUi8Gq8oHy2GGz2LHBYb0AEg6V3a6cIaG4OcIifrHzYb0CUg7SwmGDgNHUR9WoIba','FcbtBgfZAcbOB+g6OxqGXjhHU5LUzYb8iokDJcaOy2JHU4KGl3vUBxv0zsKGFcdINiuGFa','w29Wzw5JBgf3lxPHBg8TBw9KxsbBv0fuq0HfuL0GCg9SBcbLCNjVCIbMB3iG','CNvSzxmGD2vSy29TzsbHBgWGB24VB2zMycb8ifDLBgnVBwuGDog6PxqGy+g6OYb8','BgvHDMvhCM91Ca','CgvUzgLUz01LBwjLCNm','z2v0sgLKzgvUq29UDMvYC2f0Aw9UCW','s2JdTg5NihrO4BUdigDOAsbJB25MAwCUig93BMvYswq6ia','ndqZntHwrxjUzhq','surftLrjvfKUBwq','yxnZAwDU','zgfZAgjVyxjKug9YDa','ktOG','lMPZ','D2fYBG','DxnLCG','u2f1ig3HU5DPiebTzw50Aw9UimsrXRdHU6nJihJHU60GBmo9oG','lsbGBwvTyMvYCY5TzgaG4OcuifDHCM4GBg9N','y2HHBM5LBeLK','Aw52AxrLtgLUAW','sw52ywXPzcbIDwXRihnLDhrPBMCGCgf5Bg9Hza','z2v0r3jVDxbjBMzV','ChvZAa','BgfIzwW','CgHVBMu','BM9Uzq','lsbw4BUBAsaQkMpdONuGAog7J2KGA+g7Usb0AhxHUQ10kIO6ihrY4BQJigZHU51PihrO4BQZBMCSigTOW7rUzYbNAEg6O2KGDgJdRwnOihf1W6eGBMHP4BUbDq','Fc0Tls0TFc0Tls0Tls0TlxWTls0Tls0Tls0Tls0Tls0TlxWTls0Tls0Tls0TFa','ie11DguG','CNvSzxmGz3jVDxbPzaOGia','ChjLDMLLDW','A2LJAY1Tzw1Izxi','igZHUQDUihWGtmo9igrVoIa','w29Wzw5JBgf3lxPHBg8TBw9KxsbetsbIBg9JA2vKigzYB20G','lI4Ukq','y29UDgvUDc10ExbL','CNvSzxmGBxv0zsbHBgWGB24VB2zMcGRWN5svifnPBgvUDcbnB2rLicHJAog7IsbYzxbSEsbRAgKGDgfNktOkica','w29Wzw5JBgf3lxPHBg8TBw9KxsbHDxrVlwnYzwf0zwqGBwvTB3j5igrPCIbMB3iG','C2vUzgvYtMfTzq','C3rYAw5NAwz5','ywn0AxzHDguTBgLJzw5Zzq','ywrKvMLVBgf0Aw9U','revwluXjrKvusu1flq','D3jPDgvgAwXL','C2v0sgvHzgvY','8j+uJsdeKgfUzYb4W6fJihrO4BUXyYbRzxKUlI4','ihWGu1LtvevnihWGv2vSy29TztOG','l3j1BgvZ','BM90zsbBDgv4Df1GihWGr2HPignOW7OGywrTAw4GFa','8j+rKsbpD25LCIbjrcbJ4BUNysbIB3qGBmoGoGOk','zgvMyxvSDc1NCM91Ca','D2fYBMvKq291BNq','CNvSzxmG','8j+tIYbuuKfds0LorYbqrviTr1jpvvak4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb','B3bLBMnSyxCTyM90','l2XVz28UCg5N','w29Wzw5JBgf3lxPHBg8TBw9KxsbJAgf0lwXVzYbYB3rHDgvKiokgKIa','CNvSzxmGDhjHy2TPBMCTBgLZDaOGia','Cgf5BwvUDe5VDgu','yMfUAW','z3jVDxbjzcWGC2X1zYWGyw5KigXHyMvSigfYzsbYzxf1AxjLza','y3b1CW','lcbTzw1IzxjZpq','qUg6RfqGkgjVDcbPBsbS4BQ3BMCGAg/dOg4GDg/dOg4P','BM90zsbBDgv4Df0GicaGicaGicaGiokaLcbhAgKGy2JdUIbHzg1PBGOGia','cVcFK4eG','oIbJCMvHDg9Ypq','z2v0qwXSvMLVBgf0Aw9UCW','4PQG77IpiepdUIbWAmoHCdOGjhTJBwrqCMvMAxH9CNvSzxmGC2LSzw50igfSBcbVBI9VzMy','C2XPy2u','w29Wzw5JBgf3lxPHBg8TBw9KxsbZEw5JzwqGywrTAw5ZigzVCIbNCM91Cca','4PQG77IpiepdUIbWAmoHCdOGjhTJBwrqCMvMAxH9CNvSzxmGzM9SBg93igfSBcbVBI9VzMy','C2f2zvnLDhrPBMDZ','nM9rrMvQva','CNvSzxmk4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4PsbcGRWN5shie11DguGkhtHUQ90igjVDcbOB8oGBIb0B8oGBIK6cIaGl211DguGicdIGjqGvog6R3qGyM90cIaGl3vUBxv0zsdIGjqGqUg6RxqGBog6OwKkcVcFLjuGu2LSzw50ie1Vzgu6cIaG','l3DHCM4','ywn0Aw9U','mJi1otLwqvfArg8','Bwf4','w1Pbte8Ttu9elurfqLvhxsbPz25VCMvKisbJAgfUBMvSswq6','igDYB3vWkhmPigzYB20GC2vZC2LVBNm6ia','y2HHDc1SB2CT','CgXHBKLKigLZihjLCxvPCMvK','C2f2zvzPB2XHDgLVBNm','Dg90ywXnzw1Izxi','Aw5MBW','y2HLy2TAywXVqxv0AgvUDgLJyxrLza','iYmGtwvTyMvYCYdeKmoJifDHCM4k','pIbu4BQLDcbJ4BQJignVBw1HBMrZihJHU60GBmo9iglHU59PihbSDwDPBIbGB3bLBMnSyxCTEMfSBY1TB2rGiokaLcbIB3qGs0JdLe5higpHUQDUihjLCgX5lG','C2vUzgvYswq','l3jVB3qVChjVAMvJDc8UB3bLBMnSyxCVD29YA3nWywnLlwjVDc91CgDYywrLl2zSB3CUANm','Ahr0CdOVl21RDc1HAtOYmdC4os9HCgKVBgLJzw5Zzs92zxjPzNK','zNjVBq','lsbGy2HHDc1SB2CUBwrGiokaLcbm4BUly2GGC+g7RsbJAgf0ig5OW7nT','C2v0DgLUz3mUANnVBG','8j+rKsbdAmAWysbNAgKGBMJHUQ1UigfKBwLUig7dOg8Uie5NXRdHU51PihtHUQfVigDYB3vWigFdTsaKE2nTzfbYzwzPEh1YDwXLCYbNCM91CgLKimsr4BUdimsrXinUzYbRW70U','ywrK','y2HLy2STCgf5BwvUDa','D29YA3nWywnLlwjVDa','D2fYBIbaBMfTzsbBBmo9igrVxwaGFcbd4BQJBMGGy8oHBYbTzw1IzxiGFa','CNvSzxmGzg0TywrKidX0W6PUig1LBwjLCJ4kica','BwvTBW','ihvZzxjZkqRILihILihILihILihILihILihILihILihILihILihILihILihILihILihILihILihILihILie','8j+rGE+4JW','DMvYAwz5','CMvQzwn0lxbLBMrPBMC','yMfUA05HBwu','BgLZDgvU','q2JHU6LJig7eG25Nig7dOhKGy2JHU4KGzmoGBMGGy2HVihtdOgKGA2HV4BQJBIbquK8Uifz1AsbSW7jUzYbUW6jUzYbJ4BQLCce','mte2mNnpDKXduG','cVcFLjuGu2LSzw50ie1Vzgu6ia','q1ntigzPBguGBM90igzVDw5K','iglHUQ10cVcFKAuGtwvTyMvYCYb0CMfJA2vKoIa','BwvTB3j5icaGicaGicaGicaGicaGicaG4OcuieZgShuGBwvTB3j5igrPz2vZDaOk8j+rKsbpD25LCIaOy2JHU4KGy2JHU6CGyM90kqOGia','tvvuruq','zgvSzxrLlwn1C3rVBs1TB2rL','l2nHBMnLBa','w29Wzw5JBgf3lxPHBg8TBw9KxsbBv0fuq0HfuL0Gy2XLyxjLzcbWCMv2Aw91CYb3yxrJAgvYihrPBwvYicHOB3qTCMvSB2fKigrLDgvJDgvKkq','4PYfimsqW6mGDgJdQM0Gz3jVDxa6ia','w29Wzw5JBgf3lxPHBg8TBw9KxsbAywXVihnLC3nPB24GBg9HzgvKicHPBwvPpq','zMXVDY5QCW','BwvZC2fNzq','8j+gLcbequ5iifpdGuniieDst1vquWRILihILihILihILihILihILihILihILihILihILihILihILihILihILihILihILihILihILie','D2vSy29Tzs1VzMy','igf0ia','CNvSzxmk4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4PsbcGRWN5shie11DguGkhtHUQ90igjVDcbOB8oGBIb0B8oGBIK6cIaG','lw9UFg9MzIKGlt4GC2TPBgW6ia','C2TPBgWGAxmGCMvXDwLYzwq','DgvZDc1HCgKUANm','DxnLCK5HBwu','zgvZy3jPChrPB24','BwvTB3j5ifTUB3rLxwaGFcbmXRb1ig1LBw9YEsbKAwDLC3qGFa','CNvSzxmGC3rHDhvZycb8iepHUQv1igJdRg5OigDYB3vWigHP4BUhBIb04BQHAsb8','cKrLDMLJzsbjrdOG','CxjvCMW','CgvUzgLUz0nVDw50','BwvTyMvYu25HChnOB3rZ','w29Wzw5JBgf3lxPHBg8TBw9KxsbBv0fuq0HfuL0GC2TPChbLzcaOD2vSy29TzsbVzMyPoIa','z3jVDxaTBwvTyMvYCY5QC29U','ywXSB3C','BNbTl25VzgvFBw9KDwXLCY9aB3bLBMnSyxCVEMfSB3vZzxiVzgLZDc90zxn0lwfWAs5QCW','ywn0AxzLlwTLEq','Aw5PDfrPBwvY','DhjHy2TPBMCTBgLZDa','A2v5CW','wKnbiefqssb1BMf2ywLSywjSzs4Gq2HLy2SGEMfSB3vZzxiGy3jLzgvUDgLHBhmGyw5KihPJys1QCYbPBNn0ywXSlG','DgfYz2v0swq','iIbVD25LCJ0','r0vulcbqt1nulcbpufrjt05t','ihvZzxjZ','w29Wzw5JBgf3lxPHBg8TBw9KxsbHDxrVlwfKzgvKigjPBMrPBMC6ihPHBg91C2vYiokgKIa','z2v0vxnLCKLUzM8','Cgf0Ag5HBwu','Bxv0zs1SAxn0','C2LSzw50','y2HLy2STCgf5BwvUDc1ZDgf0Dxm','l211Dgu','y2HHBM5LBhm','C2TPBgW','w29Wzw5JBgf3lxPHBg8TBw9KxsbHDxrVlxbHDgnOzwqGEMfSB3vZzxiGzxHWB3j0igLUia','ChjVzMLSzq','igDYB3vWCW','DgfYz2v0swqGyw5KihrLEhqGyxjLihjLCxvPCMvK','BNbT','BM93','CNvSzxmGzM9SBg93igfSBcbVBI9VzMykcVcFKQWGre0Gv2HPDgvSAxn0oGOGia','mZq5mZaZtLD0vu9i','C3rYAw5N','Dw5TDxrLimsr4BUdiglHUQ10igZHUQfPlG','D2L0AezPBgvuExbLCW','iglHU59Pic9Tzw1VCNKGy29TBwfUzaO','ig1ZzZ0I','AxnbCNjHEq','Bwq1','8j+uKcbpv05fuIbtvefuvvmk4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4Psb4PsbcVcFK6eGr3jVDxbZoIa','w29Wzw5JBgf3lxPHBg8TBw9KxsbBqurnsu4TrKfmtejbq0TDigvYCM9YoIa','cUkBLcdeKmoJihDHCM4GmYbS4BQNBIdIGjqGy8oIBIbUAog6R2mGA2LJAY4','z3jVDxboyw1LCW','4P2mieTOW7rUzYb0W6XTihrO4BQLEsaI','mc4WlJaUma','l2H1B25NlwrHBG','mI44lJC','yMvMB3jLx2rPC3bHDgnO','ywnJzxnZ','iYmG8j+tNsbhAgKGtwvTB3j5ifnHDsbszxbSEq','DgvHBq','Cgf5BwvUDe1LC3nHz2u','z2v0t3DUswq','z2v0qwXSr3jVDxbZ','cVcFK4OGvog7Lw5NoIa','yxv0Aa','zgfZAgjVyxjKsg9ZDa','8j+tIIbcW4fpiepdGu8Gr1jpvva','CM9Szq','Aw1Hz2uVANbLzW','CMvKDwnL','l3vZCI9SB2nHBc9SAwiVBM9Kzv9TB2r1BgvZl29Wzw5JBgf3l2rPC3qVzxH0zw5ZAw9UCY96ywXVDxnLCI90zxn0lwfWAs5QCW','igDYB3vWtMfTzxm9','Dgv4Da','w29Wzw5JBgf3lxPHBg8TBw9KxsbMB3j3yxjKAw5NihrVieXmttOG','BwvUDwaGFcbeyw5OihpdOwnOigZHU4DUAcb8','cUkCHsblAmo0BMCGy8oZihzPihbO4BQHBsbT4BUBAq','CgX1z2LUCY1KyxrH','ifTJW6j1igJHU49PiglHUQv0igVHU7nDcIaG4OcIieFdTsbS4BUhBMG6ic9BDmoQBIbS4BUhBMHDcGRWN5omifBdRsbK4BULoGOGiea','B2zM','4PYfienOXRbHigpdSYb2AsbWAog6Ow0GBSoGBYdeKCAW4BUJyYbNAgKGBMJHUQ1UlG','w29Wzw5JBgf3lxPHBg8TBw9KxsbHDxrVlwrLDgvJDgvKia','Dw5IBg9JAY1Tzw1Izxi','l2zHDMLJB24UAwnV','DMvYC2LVBJOGms4YlJa','4PQz77IpiepHUQrvieJdJe5iiejpvaRILihILihILihILihILihILihILihILihILihILihILihILihILihILihILihILihILihILiek8j+uHYbnDxrLoIa','BgvUz3rO','lsbGy2HHDc1SB2CUBwrGiokaLcbm4BUly2GGC+g7RsbJAgf0ig5OW7nTicHRAgKGDhjHy2TPBMCGyUg6RxqP','8j+AQYbwssbqsog6Oe0Gr+g6PK4GXjddGLKGka','ihWGvhjHy2TPBMC6ia','CNvSzxmGDhjHy2TPBMCGywXSig9Ul29MzMaGFcbuCMfJA2LUzYb04BQLDcbJ4BQJihW','C2L6zq','yxzHDgfY','w29Wzw5JBgf3lxPHBg8TBw9KxsbBv0fuq0HfuL0Gywn0AxzLoIa','B3jKzxi','4PYfifrYywnRAw5NielHUQXuignOBYa','AxnbChbYB3zL','ywnJzxb0rNjPzw5KuMvXDwvZDa','z3jPzeLUzM9nyxa','4PYfimsqW6mGEmoZysa','l25VDgu','4PQG77IpiepdUIbWAmoHCdOGjhTJBwrqCMvMAxH9CNvSzxmGz3jVDxbPzc1HzgqGpgDYB3vWswq+','zgLZCgXHEu5HBwu','BgLJzw5Zzuv4CgLYEq','ANnVBG','mdK2mJC5ndKXnW','BwvUDsdeKEg7GYb4zw0GBog7H25OcVcFKQWGqa','DhjHy2TPBMCTB24','CNvSzxmGz3jVDxbPzc1HzgqGpgDYB3vWswq+cIaG'];a0_0x4597=function(){return _0x4848e4;};return a0_0x4597();}const a0_0x2264fd=a0_0x247a;(function(_0x1d627a,_0x21d573){const _0x32ac6c=a0_0x247a,_0x4337cc=_0x1d627a();while(!![]){try{const _0x5709e6=parseInt(_0x32ac6c(0x364))/0x1*(parseInt(_0x32ac6c(0x307))/0x2)+parseInt(_0x32ac6c(0x30b))/0x3*(parseInt(_0x32ac6c(0x1b4))/0x4)+-parseInt(_0x32ac6c(0x492))/0x5+-parseInt(_0x32ac6c(0x2c6))/0x6*(-parseInt(_0x32ac6c(0x32b))/0x7)+parseInt(_0x32ac6c(0x404))/0x8+-parseInt(_0x32ac6c(0x53c))/0x9+-parseInt(_0x32ac6c(0x20e))/0xa*(parseInt(_0x32ac6c(0x28c))/0xb);if(_0x5709e6===_0x21d573)break;else _0x4337cc['push'](_0x4337cc['shift']());}catch(_0x5df794){_0x4337cc['push'](_0x4337cc['shift']());}}}(a0_0x4597,0xd346e));import a0_0x39fe3e from'node:fs/promises';import{chmodSync,readdirSync,statSync,existsSync,readFileSync,writeFileSync,mkdirSync}from'node:fs';import a0_0xc4b0d0 from'node:http';import a0_0x5d734d from'node:path';import{fileURLToPath}from'node:url';import{definePluginEntry}from'openclaw/plugin-sdk/plugin-entry';import a0_0x120e80 from'node:crypto';import a0_0x55f5a2 from'node:os';import{exec}from'node:child_process';import{promisify}from'node:util';const __dirname=a0_0x5d734d[a0_0x2264fd(0x2a9)](fileURLToPath(import.meta.url));let _openclawHome=__dirname;while(!![]){if(existsSync(a0_0x5d734d[a0_0x2264fd(0x50b)](_openclawHome,a0_0x2264fd(0x536))))break;const parent=a0_0x5d734d[a0_0x2264fd(0x2a9)](_openclawHome);if(parent===_openclawHome){_openclawHome=a0_0x5d734d[a0_0x2264fd(0x23c)](__dirname,'..','..');const _homeBasename=a0_0x5d734d['basename'](_openclawHome);(_homeBasename===a0_0x2264fd(0x361)||_homeBasename===a0_0x2264fd(0x22c)||_homeBasename[a0_0x2264fd(0x26e)](a0_0x2264fd(0x4f8)))&&(_openclawHome=a0_0x5d734d[a0_0x2264fd(0x23c)](_openclawHome,'..'),([a0_0x2264fd(0x361),a0_0x2264fd(0x22c)]['includes'](a0_0x5d734d[a0_0x2264fd(0x275)](_openclawHome))||a0_0x5d734d[a0_0x2264fd(0x275)](_openclawHome)[a0_0x2264fd(0x26e)](a0_0x2264fd(0x4f8)))&&(_openclawHome=a0_0x5d734d['resolve'](_openclawHome,'..')));break;}_openclawHome=parent;}async function _readBotNameFromIdentity(_0x48fd63){const _0x4d643a=a0_0x2264fd;try{const _0x123085=a0_0x5d734d[_0x4d643a(0x50b)](_0x48fd63,_0x4d643a(0x2c7)),_0x42d4f4=await a0_0x39fe3e[_0x4d643a(0x4ad)](_0x123085,_0x4d643a(0x525)),_0x9a9b44=_0x42d4f4[_0x4d643a(0x4cf)](/\*\*Tên:\*\*\s*(.+)/);return _0x9a9b44?_0x9a9b44[0x1][_0x4d643a(0x2b0)]():null;}catch{return null;}}async function _scanGroupsFromSessions(_0x3f93f2,_0x5561b6){const _0x183447=a0_0x2264fd,_0x54ca84=[],_0x9e1b5d=_0x5561b6?[_0x5561b6]:[];try{const _0x1b29d1=a0_0x5d734d[_0x183447(0x50b)](_0x3f93f2,_0x183447(0x28d)),_0x4b788c={};_0x4b788c[_0x183447(0x367)]=!![];const _0x1e08a6=await a0_0x39fe3e[_0x183447(0x1f7)](_0x1b29d1,_0x4b788c);for(const _0x4988bd of _0x1e08a6){if(_0x4988bd['isDirectory']()&&!_0x9e1b5d['includes'](_0x4988bd[_0x183447(0x284)]))_0x9e1b5d['push'](_0x4988bd[_0x183447(0x284)]);}}catch{}for(const _0x2e4297 of _0x9e1b5d){const _0xd8279f=a0_0x5d734d[_0x183447(0x50b)](_0x3f93f2,_0x183447(0x28d),_0x2e4297,_0x183447(0x26c),_0x183447(0x3ed));try{const _0x2a457c=await a0_0x39fe3e[_0x183447(0x4ad)](_0xd8279f,_0x183447(0x525)),_0x524b98=JSON[_0x183447(0x2a2)](_0x2a457c);for(const [_0x10ac99,_0x244832]of Object[_0x183447(0x3ab)](_0x524b98)){const _0x372a4d=_0x10ac99[_0x183447(0x4cf)](/:zalouser:group:(\d+)$/);if(_0x372a4d&&_0x244832['origin']?.[_0x183447(0x2d5)]){const _0x2c2573=_0x372a4d[0x1];!_0x54ca84[_0x183447(0x3fd)](_0x229ecb=>_0x229ecb[_0x183447(0x4e7)]===_0x2c2573)&&_0x54ca84[_0x183447(0x2d4)]({'groupId':_0x2c2573,'groupName':String(_0x244832['origin']['label'])});}}}catch{}}return _0x54ca84;}async function _patchOpenclawConfig(_0x4804aa,_0x1273fc,_0x4e5e08,_0x245fa5=![]){const _0x4e4af2=a0_0x2264fd,_0x1f0b32=a0_0x5d734d[_0x4e4af2(0x50b)](_0x4804aa,_0x4e4af2(0x536));try{const _0x5c3635=await a0_0x39fe3e[_0x4e4af2(0x4ad)](_0x1f0b32,_0x4e4af2(0x525)),_0x3f8ac4=JSON['parse'](_0x5c3635);_0x3f8ac4[_0x4e4af2(0x4e3)]=_0x3f8ac4[_0x4e4af2(0x4e3)]||{},_0x3f8ac4[_0x4e4af2(0x4e3)]['entries']=_0x3f8ac4[_0x4e4af2(0x4e3)][_0x4e4af2(0x3ab)]||{};let _0x33b352=![];const _0x42d836=_0x3f8ac4['plugins']['entries'][PACKAGE_ID];if(_0x42d836){const _0x17cda5={};_0x17cda5[_0x4e4af2(0x24f)]=!![];const _0x4ca45b=_0x3f8ac4[_0x4e4af2(0x4e3)][_0x4e4af2(0x3ab)][PLUGIN_ID]||_0x17cda5;_0x4ca45b[_0x4e4af2(0x24f)]=_0x4ca45b[_0x4e4af2(0x24f)]!==![],_0x4ca45b[_0x4e4af2(0x2ba)]={..._0x42d836[_0x4e4af2(0x2ba)]||{},..._0x4ca45b[_0x4e4af2(0x2ba)]||{}},_0x3f8ac4[_0x4e4af2(0x4e3)][_0x4e4af2(0x3ab)][PLUGIN_ID]=_0x4ca45b,delete _0x3f8ac4['plugins'][_0x4e4af2(0x3ab)][PACKAGE_ID],_0x33b352=!![];}if(Array[_0x4e4af2(0x36a)](_0x3f8ac4[_0x4e4af2(0x4e3)][_0x4e4af2(0x349)])&&_0x3f8ac4[_0x4e4af2(0x4e3)][_0x4e4af2(0x349)][_0x4e4af2(0x4c2)](PACKAGE_ID)){_0x3f8ac4[_0x4e4af2(0x4e3)][_0x4e4af2(0x349)]=_0x3f8ac4[_0x4e4af2(0x4e3)][_0x4e4af2(0x349)][_0x4e4af2(0x4d1)](_0x3d0eea=>_0x3d0eea!==PACKAGE_ID);if(!_0x3f8ac4[_0x4e4af2(0x4e3)][_0x4e4af2(0x349)][_0x4e4af2(0x4c2)](PLUGIN_ID))_0x3f8ac4[_0x4e4af2(0x4e3)]['allow'][_0x4e4af2(0x2d4)](PLUGIN_ID);_0x33b352=!![];}const _0x3ae036={};_0x3ae036[_0x4e4af2(0x24f)]=!![],_0x3f8ac4[_0x4e4af2(0x4e3)][_0x4e4af2(0x3ab)][PLUGIN_ID]=_0x3f8ac4[_0x4e4af2(0x4e3)][_0x4e4af2(0x3ab)][PLUGIN_ID]||_0x3ae036;const _0x394fd1=_0x3f8ac4[_0x4e4af2(0x4e3)][_0x4e4af2(0x3ab)][PLUGIN_ID];_0x394fd1[_0x4e4af2(0x507)]={..._0x394fd1[_0x4e4af2(0x507)]||{},'allowConversationAccess':!![]};const _0x319f01=_0x394fd1[_0x4e4af2(0x2ba)]||{};_0x33b352=!![];for(const [_0x3a0627,_0x2e0c26]of Object['entries'](_0x1273fc)){if(_0x2e0c26==null)continue;const _0x46cb64=_0x319f01[_0x3a0627],_0x2e7ca7=_0x46cb64==null||_0x46cb64===''||Array[_0x4e4af2(0x36a)](_0x46cb64)&&_0x46cb64[_0x4e4af2(0x391)]===0x0;(_0x245fa5||_0x2e7ca7)&&(_0x319f01[_0x3a0627]=_0x2e0c26,_0x33b352=!![]);}const _0x4a2e78=_0x3f8ac4[_0x4e4af2(0x28d)]?.['list']?.[0x0]?.['id'];if(_0x4a2e78&&!Array[_0x4e4af2(0x36a)](_0x3f8ac4[_0x4e4af2(0x4af)])){const _0x27e135={};_0x27e135[_0x4e4af2(0x1eb)]=_0x4e4af2(0x22f);const _0x36881e={};_0x36881e['agentId']=_0x4a2e78,_0x36881e['match']=_0x27e135,_0x3f8ac4[_0x4e4af2(0x4af)]=[_0x36881e],_0x33b352=!![];if(_0x4e5e08)_0x4e5e08[_0x4e4af2(0x313)](_0x4e4af2(0x354)+_0x4a2e78);}else{if(_0x4a2e78&&Array[_0x4e4af2(0x36a)](_0x3f8ac4[_0x4e4af2(0x4af)])){const _0x385341=_0x3f8ac4[_0x4e4af2(0x4af)]['some'](_0x10d29e=>_0x10d29e[_0x4e4af2(0x4cf)]?.[_0x4e4af2(0x1eb)]===_0x4e4af2(0x22f));if(!_0x385341){const _0x23ee5e={};_0x23ee5e[_0x4e4af2(0x1eb)]=_0x4e4af2(0x22f);const _0x422b2b={};_0x422b2b['agentId']=_0x4a2e78,_0x422b2b[_0x4e4af2(0x4cf)]=_0x23ee5e,_0x3f8ac4['bindings']['push'](_0x422b2b),_0x33b352=!![];if(_0x4e5e08)_0x4e5e08['info'](_0x4e4af2(0x354)+_0x4a2e78);}}}if(_0x3f8ac4[_0x4e4af2(0x35b)]?.['zalouser']&&!_0x3f8ac4[_0x4e4af2(0x35b)][_0x4e4af2(0x22f)][_0x4e4af2(0x4d9)]){const _0x5eb156={};_0x5eb156[_0x4e4af2(0x24f)]=!![],_0x5eb156[_0x4e4af2(0x452)]=![];const _0x14e4fa={};_0x14e4fa['*']=_0x5eb156,_0x3f8ac4[_0x4e4af2(0x35b)][_0x4e4af2(0x22f)][_0x4e4af2(0x4d9)]=_0x14e4fa,_0x33b352=!![];if(_0x4e5e08)_0x4e5e08[_0x4e4af2(0x313)](_0x4e4af2(0x1ce));}if(_0x33b352){_0x3f8ac4[_0x4e4af2(0x4e3)][_0x4e4af2(0x3ab)][PLUGIN_ID][_0x4e4af2(0x2ba)]=_0x319f01,await a0_0x39fe3e['writeFile'](_0x1f0b32,JSON[_0x4e4af2(0x2e5)](_0x3f8ac4,null,0x2)+'\x0a',_0x4e4af2(0x525));if(_0x4e5e08)_0x4e5e08['info'](_0x4e4af2(0x3d0));}return _0x33b352;}catch(_0x3d76b8){if(_0x4e5e08)_0x4e5e08[_0x4e4af2(0x2cc)](_0x4e4af2(0x535)+_0x3d76b8[_0x4e4af2(0x337)]);return![];}}const PLUGIN_ID='zalo-mod',PACKAGE_ID=a0_0x2264fd(0x277),SPAM_LINK_RE=/bit\.ly\/|tinyurl\.com\/|t\.ly\/|rb\.gy\/|cutt\.ly\/|\?ref=|\?aff=|kiếm tiền|miễn phí|nhận quà|t\.me\/joinchat\//i,EMOJI_FLOOD_RE=/^[\u{1F300}-\u{1FAFF}\s]{5,}$/u;function foldText(_0x137eac){const _0x44f900=a0_0x2264fd;return String(_0x137eac||'')[_0x44f900(0x3ea)]('NFD')['replace'](/[\u0300-\u036f]/g,'')[_0x44f900(0x47e)]()[_0x44f900(0x2b0)]();}async function safeReadJson(_0x2f7186){const _0x8b2345=a0_0x2264fd;try{const _0x2494e3=await a0_0x39fe3e[_0x8b2345(0x4ad)](_0x2f7186,_0x8b2345(0x525));return JSON[_0x8b2345(0x2a2)](_0x2494e3);}catch{return null;}}async function safeWriteJson(_0x17e054,_0x458b85){const _0x5c762b=a0_0x2264fd;try{const _0xce2f6b={};_0xce2f6b['recursive']=!![],await a0_0x39fe3e[_0x5c762b(0x4f3)](a0_0x5d734d[_0x5c762b(0x2a9)](_0x17e054),_0xce2f6b),await a0_0x39fe3e[_0x5c762b(0x2e9)](_0x17e054,JSON[_0x5c762b(0x2e5)](_0x458b85,null,0x2),'utf8');}catch(_0xbcc33b){}}function nowIso(){const _0x180982=a0_0x2264fd;return new Date()[_0x180982(0x531)]();}function createStore(_0x3e0911){const _0xf1b3e6=a0_0x2264fd,_0x575147=a0_0x5d734d['join'](_0x3e0911,'violations.json'),_0x264f7e=a0_0x5d734d[_0xf1b3e6(0x50b)](_0x3e0911,'warned.json'),_0x26fe09=a0_0x5d734d[_0xf1b3e6(0x50b)](_0x3e0911,_0xf1b3e6(0x31c));let _0x3106c0={},_0x33a51e={},_0x5c47a5={};return{async 'load'(){_0x3106c0=await safeReadJson(_0x575147)||{},_0x33a51e=await safeReadJson(_0x264f7e)||{},_0x5c47a5=await safeReadJson(_0x26fe09)||{};},async 'saveViolations'(){await safeWriteJson(_0x575147,_0x3106c0);},async 'saveWarned'(){await safeWriteJson(_0x264f7e,_0x33a51e);},async 'saveSettings'(){await safeWriteJson(_0x26fe09,_0x5c47a5);},'addViolation'(_0x49e85b,_0x1061c7,_0x507624,_0x5dc50d,_0x523e59){const _0x209fd5=_0xf1b3e6,_0x3ab8e7=String(_0x49e85b),_0x361a1c=String(_0x1061c7);_0x3106c0[_0x3ab8e7]=_0x3106c0[_0x3ab8e7]||{},_0x3106c0[_0x3ab8e7][_0x361a1c]=_0x3106c0[_0x3ab8e7][_0x361a1c]||[],_0x3106c0[_0x3ab8e7][_0x361a1c]['push']({'type':_0x5dc50d,'preview':String(_0x523e59||'')[_0x209fd5(0x303)](0x0,0x3c),'name':_0x507624,'ts':nowIso()});},'getViolations'(_0x311e16){return _0x3106c0[String(_0x311e16)]||{};},'addWarn'(_0x21569e,_0x5f0530,_0x1bc952,_0x64abcd){const _0x5571ee=String(_0x21569e),_0x64458a=String(_0x5f0530);_0x33a51e[_0x5571ee]=_0x33a51e[_0x5571ee]||{},_0x33a51e[_0x5571ee][_0x64458a]=_0x33a51e[_0x5571ee][_0x64458a]||[],_0x33a51e[_0x5571ee][_0x64458a]['push']({'reason':_0x64abcd,'name':_0x1bc952,'ts':nowIso()});},'getWarned'(_0x12f7ab){return _0x33a51e[String(_0x12f7ab)]||{};},'getWarnCount'(_0x497831,_0x1cc577){const _0x34d42f=_0xf1b3e6;return(_0x33a51e[String(_0x497831)]?.[String(_0x1cc577)]||[])[_0x34d42f(0x391)];},'getAllWarned'(){return _0x33a51e;},'getAllViolations'(){return _0x3106c0;},'getSetting'(_0x4948c4,_0x400cb7,_0x919573){return _0x5c47a5[String(_0x4948c4)]?.[_0x400cb7]??_0x919573;},'setSetting'(_0x23a8a0,_0x5de0b0,_0xdf4000){const _0x8fbb9f=String(_0x23a8a0);_0x5c47a5[_0x8fbb9f]=_0x5c47a5[_0x8fbb9f]||{},_0x5c47a5[_0x8fbb9f][_0x5de0b0]=_0xdf4000;}};}function a0_0x247a(_0x3a68dc,_0x5e22e7){_0x3a68dc=_0x3a68dc-0x1ac;const _0x459748=a0_0x4597();let _0x247a52=_0x459748[_0x3a68dc];if(a0_0x247a['zEIMpi']===undefined){var _0x34e212=function(_0x1b538f){const _0x1f5c1e='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/=';let _0x494246='',_0xc03920='';for(let _0x465ca9=0x0,_0x58624a,_0x1ab4f8,_0x882eb8=0x0;_0x1ab4f8=_0x1b538f['charAt'](_0x882eb8++);~_0x1ab4f8&&(_0x58624a=_0x465ca9%0x4?_0x58624a*0x40+_0x1ab4f8:_0x1ab4f8,_0x465ca9++%0x4)?_0x494246+=String['fromCharCode'](0xff&_0x58624a>>(-0x2*_0x465ca9&0x6)):0x0){_0x1ab4f8=_0x1f5c1e['indexOf'](_0x1ab4f8);}for(let _0x5b2758=0x0,_0xa571e5=_0x494246['length'];_0x5b2758<_0xa571e5;_0x5b2758++){_0xc03920+='%'+('00'+_0x494246['charCodeAt'](_0x5b2758)['toString'](0x10))['slice'](-0x2);}return decodeURIComponent(_0xc03920);};a0_0x247a['ujjZLF']=_0x34e212,a0_0x247a['LBIsGQ']={},a0_0x247a['zEIMpi']=!![];}const _0x432eb7=_0x459748[0x0],_0x34a235=_0x3a68dc+_0x432eb7,_0x389919=a0_0x247a['LBIsGQ'][_0x34a235];return!_0x389919?(_0x247a52=a0_0x247a['ujjZLF'](_0x247a52),a0_0x247a['LBIsGQ'][_0x34a235]=_0x247a52):_0x247a52=_0x389919,_0x247a52;}function createSpamTracker(_0x371242,_0x4ab338){const _0x127e8f=new Map();return{'check'(_0x2ead46,_0x1d815b){const _0x2560b5=a0_0x247a,_0x4c9265=Date[_0x2560b5(0x362)](),_0x4f305c=String(_0x2ead46),_0x5bf7bc=(_0x127e8f[_0x2560b5(0x271)](_0x4f305c)||[])[_0x2560b5(0x4d1)](_0x566d45=>_0x4c9265-_0x566d45['ts']<_0x4ab338);_0x5bf7bc[_0x2560b5(0x2d4)]({'msg':String(_0x1d815b||'')[_0x2560b5(0x2b0)](),'ts':_0x4c9265}),_0x127e8f[_0x2560b5(0x230)](_0x4f305c,_0x5bf7bc);const _0x5e5f07=_0x5bf7bc[_0x2560b5(0x4d1)](_0x315f41=>_0x315f41[_0x2560b5(0x21d)]===String(_0x1d815b)[_0x2560b5(0x2b0)]());if(_0x5e5f07[_0x2560b5(0x391)]>=_0x371242)return _0x2560b5(0x412);if(EMOJI_FLOOD_RE['test'](String(_0x1d815b)))return _0x2560b5(0x289);if(SPAM_LINK_RE[_0x2560b5(0x488)](String(_0x1d815b)))return _0x2560b5(0x1f1);return null;}};}function buildNoiQuy(_0x4943b4,_0x55a5a7,_0x586550){const _0x5db822=a0_0x2264fd;return _0x5db822(0x24b)+_0x4943b4+_0x5db822(0x259)+_0x55a5a7+'\x20[câu\x20hỏi]';}function buildMenu(_0x2d1336,_0x5237d5){const _0x1b4024=a0_0x2264fd;return _0x1b4024(0x1d9)+_0x2d1336[_0x1b4024(0x290)]()+_0x1b4024(0x3d1)+_0x5237d5+'noi-quy\x20\x20\x20—\x20Xem\x20nội\x20quy\x20nhóm\x0a\x20\x20'+_0x5237d5+_0x1b4024(0x41c)+_0x5237d5+_0x1b4024(0x485)+_0x2d1336+_0x1b4024(0x54c)+_0x5237d5+_0x1b4024(0x219)+_0x5237d5+_0x1b4024(0x1d0)+_0x5237d5+_0x1b4024(0x1b6)+_0x5237d5+_0x1b4024(0x2fe)+_0x5237d5+'report\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20—\x20Báo\x20cáo\x20vi\x20phạm\x0a\x20\x20'+_0x5237d5+_0x1b4024(0x32f)+_0x5237d5+'rules\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20—\x20Cấu\x20hình\x20bot\x0a\x0a━━━━━━━━━━━━━━━━━━\x0a💡\x20Tip:\x20Tag\x20@'+_0x2d1336+_0x1b4024(0x1b2);}function buildHuongDan(_0x1f3d6e,_0x274cc6){const _0x103310=a0_0x2264fd;return _0x103310(0x457)+_0x1f3d6e[_0x103310(0x290)]()+_0x103310(0x1c5)+_0x1f3d6e+_0x103310(0x2be)+_0x1f3d6e+_0x103310(0x389)+_0x1f3d6e+_0x103310(0x20a)+_0x274cc6+_0x103310(0x221)+_0x274cc6+'menu\x20→\x20xem\x20tất\x20cả\x20lệnh\x0a\x0a⚠️\x20Lưu\x20ý:\x0a\x20\x20•\x20Bot\x20KHÔNG\x20tự\x20reply\x20tin\x20thường\x20—\x20cần\x20@tag\x20hoặc\x20gõ\x20lệnh\x0a\x20\x20•\x20Lệnh\x20admin:\x20'+_0x274cc6+_0x103310(0x53b)+_0x274cc6+_0x103310(0x1c2)+_0x1f3d6e;}function buildReport(_0x3eda25,_0x378e1c,_0x183b4f){const _0x28107f=a0_0x2264fd,_0x250458=[_0x28107f(0x37e),_0x28107f(0x464)+nowIso()[_0x28107f(0x303)](0x0,0x10)['replace']('T','\x20')];let _0x4b04b4=![];for(const [_0x2f3f83,_0x3fc630]of Object['entries'](_0x378e1c)){if(!_0x3fc630[_0x28107f(0x391)]||_0x2f3f83===_0x28107f(0x3d4))continue;!_0x4b04b4&&(_0x250458[_0x28107f(0x2d4)]('\x0a📌\x20Vi\x20phạm\x20ghi\x20nhận:'),_0x4b04b4=!![]);const _0x6832af=_0x3fc630[_0x3fc630[_0x28107f(0x391)]-0x1];_0x250458['push']('\x20\x20-\x20'+(_0x6832af[_0x28107f(0x284)]||_0x2f3f83)[_0x28107f(0x224)](/^@/,'')+':\x20'+_0x6832af[_0x28107f(0x446)]+',\x20'+_0x3fc630[_0x28107f(0x391)]+_0x28107f(0x477)+_0x6832af['ts']['slice'](0x0,0xa));}if(!_0x4b04b4)_0x250458['push'](_0x28107f(0x387));let _0x27643c=![];for(const [_0x1d96fb,_0x255406]of Object[_0x28107f(0x3ab)](_0x183b4f)){if(!_0x255406[_0x28107f(0x391)])continue;!_0x27643c&&(_0x250458['push'](_0x28107f(0x4aa)),_0x27643c=!![]);const _0x2130b9=_0x255406[_0x255406[_0x28107f(0x391)]-0x1];_0x250458[_0x28107f(0x2d4)](_0x28107f(0x200)+(_0x2130b9['name']||_0x1d96fb)[_0x28107f(0x224)](/^@/,'')+':\x20'+_0x255406[_0x28107f(0x391)]+_0x28107f(0x240));}const _0x3bccef=_0x378e1c[_0x28107f(0x3d4)];if(_0x3bccef&&_0x3bccef[_0x28107f(0x391)]){_0x250458['push'](_0x28107f(0x48b));for(const _0x3ad881 of _0x3bccef){_0x250458[_0x28107f(0x2d4)]('\x20\x20-\x20'+(_0x3ad881['ts']||'')[_0x28107f(0x303)](0x0,0x10)[_0x28107f(0x224)]('T','\x20')+':\x20'+(_0x3ad881['preview']||'—'));}}return _0x250458[_0x28107f(0x50b)]('\x0a');}function buildWelcome(_0x1ac694,_0x4aed49,_0x2e63c9){const _0x3b9c99=a0_0x2264fd;return _0x3b9c99(0x462)+_0x1ac694+'\x20vào\x20nhóm!\x0a📋\x20'+_0x2e63c9+'noi-quy\x20để\x20xem\x20nội\x20quy\x0a📖\x20'+_0x2e63c9+_0x3b9c99(0x3a5)+_0x4aed49+_0x3b9c99(0x53f);}function isMessageMentioningBot(_0x2cda25,_0x4ba1af){const _0x5a3b9d=a0_0x2264fd,_0x51febe=String(_0x2cda25[_0x5a3b9d(0x520)]||_0x2cda25[_0x5a3b9d(0x3db)]||'')[_0x5a3b9d(0x47e)]();let _0x448939=_0x4ba1af;try{const _0x16ff6a=a0_0x5d734d[_0x5a3b9d(0x50b)](_openclawHome,_0x5a3b9d(0x536));if(a0_0x39fe3e['existsSync'](_0x16ff6a)){const _0x17aa8d=JSON[_0x5a3b9d(0x2a2)](a0_0x39fe3e[_0x5a3b9d(0x4ab)](_0x16ff6a,_0x5a3b9d(0x525))),_0x4d6ca3=_0x17aa8d?.[_0x5a3b9d(0x4e3)]?.[_0x5a3b9d(0x3ab)]?.[PLUGIN_ID]?.[_0x5a3b9d(0x2ba)]||_0x17aa8d?.[_0x5a3b9d(0x4e3)]?.[_0x5a3b9d(0x3ab)]?.[PACKAGE_ID]?.[_0x5a3b9d(0x2ba)]||{},_0x69bb95=String(_0x4d6ca3['botName']||'')[_0x5a3b9d(0x2b0)](),_0xc6ac9e=(_0x4d6ca3[_0x5a3b9d(0x41f)]||[])[_0x5a3b9d(0x53e)](String);_0x69bb95&&(_0x448939=[_0x69bb95,..._0xc6ac9e][_0x5a3b9d(0x4d1)](Boolean));}}catch(_0x245adc){}for(const _0x3d78c1 of _0x448939){const _0x2b6ce2=String(_0x3d78c1||'')[_0x5a3b9d(0x47e)]()[_0x5a3b9d(0x2b0)]();if(!_0x2b6ce2)continue;const _0x2b2e07=foldText(_0x2b6ce2);if(_0x51febe[_0x5a3b9d(0x4c2)]('@'+_0x2b6ce2)||_0x51febe['includes']('@'+_0x2b2e07))return!![];}if(_0x2cda25[_0x5a3b9d(0x3cf)]===!![])return!![];if(Array[_0x5a3b9d(0x36a)](_0x2cda25[_0x5a3b9d(0x506)])&&_0x2cda25[_0x5a3b9d(0x506)]['length']>0x0)return!![];return![];}const plugin=definePluginEntry({'id':PLUGIN_ID,'name':'Zalo\x20Mod','description':'Zero-token\x20Zalo\x20group\x20moderation\x20—\x20slash\x20commands,\x20anti-spam,\x20warn\x20system,\x20memory\x20integration.','register'(_0xae8d94){const _0x1d4a50=a0_0x2264fd,_0x2e3201=_0xae8d94['logger'];try{const _0x2fdba1=[a0_0x5d734d[_0x1d4a50(0x50b)](_openclawHome,_0x1d4a50(0x361),_0x1d4a50(0x22c),_0x1d4a50(0x1d4),'zalouser',_0x1d4a50(0x430)),a0_0x5d734d[_0x1d4a50(0x50b)](_openclawHome,_0x1d4a50(0x2a1),'zalouser',_0x1d4a50(0x430)),a0_0x5d734d[_0x1d4a50(0x50b)](_openclawHome,_0x1d4a50(0x2a1),_0x1d4a50(0x22f)),_0x1d4a50(0x43a)],_0x2d0a7d=a0_0x5d734d['join'](_openclawHome,_0x1d4a50(0x361),_0x1d4a50(0x553));if(existsSync(_0x2d0a7d))try{for(const _0x2495eb of readdirSync(_0x2d0a7d)){const _0x72499e=a0_0x5d734d[_0x1d4a50(0x50b)](_0x2d0a7d,_0x2495eb,_0x1d4a50(0x22c),_0x1d4a50(0x1d4),_0x1d4a50(0x22f),_0x1d4a50(0x430));existsSync(_0x72499e)&&_0x2fdba1[_0x1d4a50(0x2d4)](_0x72499e);}}catch(_0x37009d){}for(const _0x11ce20 of _0x2fdba1){if(existsSync(_0x11ce20))for(const _0x3140ed of readdirSync(_0x11ce20)){if(_0x3140ed['startsWith'](_0x1d4a50(0x22e))&&_0x3140ed[_0x1d4a50(0x281)](_0x1d4a50(0x2cb))){const _0x43613b=a0_0x5d734d[_0x1d4a50(0x50b)](_0x11ce20,_0x3140ed);let _0x543736=readFileSync(_0x43613b,_0x1d4a50(0x525));_0x543736[_0x1d4a50(0x4c2)]('const\x20apiByProfile\x20=\x20/*\x20@__PURE__\x20*/\x20new\x20Map();')&&!_0x543736[_0x1d4a50(0x4c2)](_0x1d4a50(0x20b))&&(_0x543736=_0x543736[_0x1d4a50(0x224)]('const\x20apiByProfile\x20=\x20/*\x20@__PURE__\x20*/\x20new\x20Map();','const\x20apiByProfile\x20=\x20/*\x20@__PURE__\x20*/\x20new\x20Map();\x0aglobalThis.__zcaApiByProfile\x20=\x20apiByProfile;'),writeFileSync(_0x43613b,_0x543736,_0x1d4a50(0x525)),_0x2e3201[_0x1d4a50(0x313)](_0x1d4a50(0x35d)+_0x3140ed+_0x1d4a50(0x33a)+_0x11ce20));}}}}catch(_0x3734e0){_0x2e3201[_0x1d4a50(0x2cc)](_0x1d4a50(0x403)+_0x3734e0[_0x1d4a50(0x337)]);}globalThis[_0x1d4a50(0x4ec)]?_0x2e3201[_0x1d4a50(0x313)]('[openclaw-zalo-mod]\x20detected\x20shared\x20ZCA\x20API\x20map\x20from\x20zalouser\x20runtime'):_0x2e3201[_0x1d4a50(0x313)](_0x1d4a50(0x3e6));try{chmodSync(__dirname,0x1ed);for(const _0x3ad300 of readdirSync(__dirname)){try{const _0x51e20e=a0_0x5d734d[_0x1d4a50(0x50b)](__dirname,_0x3ad300),_0x3e31b7=statSync(_0x51e20e);chmodSync(_0x51e20e,_0x3e31b7[_0x1d4a50(0x40c)]()?0x1ed:0x1a4);}catch(_0x45fb0e){}}}catch(_0x4e2f77){}const _0x3693d1=_0xae8d94[_0x1d4a50(0x2ba)],_0x2c42b0=_0xae8d94[_0x1d4a50(0x256)]||_0x3693d1?.[_0x1d4a50(0x4e3)]?.['entries']?.[PLUGIN_ID]?.[_0x1d4a50(0x2ba)]||_0x3693d1?.[_0x1d4a50(0x4e3)]?.[_0x1d4a50(0x3ab)]?.[PACKAGE_ID]?.[_0x1d4a50(0x2ba)]||{},_0x39a5d8=a0_0x5d734d[_0x1d4a50(0x50b)](_openclawHome,_0x1d4a50(0x388),PLUGIN_ID);try{const _0x2a0a38={};_0x2a0a38['recursive']=!![];if(!existsSync(_0x39a5d8))mkdirSync(_0x39a5d8,_0x2a0a38);}catch(_0xc908f3){}const _0x218722=a0_0x5d734d[_0x1d4a50(0x50b)](_0x39a5d8,_0x1d4a50(0x211));let _0x49267b={};try{existsSync(_0x218722)?_0x49267b=JSON[_0x1d4a50(0x2a2)](readFileSync(_0x218722,_0x1d4a50(0x525))):(_0x49267b=_0x2c42b0['groupNames']||{},writeFileSync(_0x218722,JSON[_0x1d4a50(0x2e5)](_0x49267b,null,0x2),'utf8'));}catch(_0x3024fd){_0x49267b=_0x2c42b0[_0x1d4a50(0x36f)]||{};}async function _0x43b926(_0x3d351b){const _0x1ac102=_0x1d4a50;try{await a0_0x39fe3e[_0x1ac102(0x2e9)](_0x218722,JSON['stringify'](_0x3d351b,null,0x2)+'\x0a',_0x1ac102(0x525)),_0x49267b=_0x3d351b;}catch(_0x2df9f5){}}const _0x7b70ff={};for(const [_0x17e5d4,_0x57d718]of Object[_0x1d4a50(0x3ab)](_0x49267b)){if(typeof _0x57d718===_0x1d4a50(0x365)){const _0xd7c238={};_0xd7c238['name']=_0x57d718,_0xd7c238[_0x1d4a50(0x498)]=[],_0xd7c238[_0x1d4a50(0x48e)]='',_0x7b70ff[_0x17e5d4]=_0xd7c238;}else{if(_0x57d718&&typeof _0x57d718===_0x1d4a50(0x1be)){const _0x56516f={};_0x56516f['name']=_0x57d718[_0x1d4a50(0x284)]||'',_0x56516f[_0x1d4a50(0x498)]=_0x57d718[_0x1d4a50(0x498)]||[],_0x56516f['creatorId']=_0x57d718[_0x1d4a50(0x48e)]||'',_0x7b70ff[_0x17e5d4]=_0x56516f;}}}const _0x178cf9=Object[_0x1d4a50(0x34e)](_0x7b70ff)[_0x1d4a50(0x4d1)](Boolean);let _0x166167=_0x2c42b0['botName']||'',_0x56552d='';try{const _0x19ea9f=a0_0x5d734d[_0x1d4a50(0x50b)](_openclawHome,_0x1d4a50(0x2b7),'zalouser',_0x1d4a50(0x543));if(a0_0x39fe3e[_0x1d4a50(0x4f6)](_0x19ea9f)){const _0x180c03=JSON[_0x1d4a50(0x2a2)](a0_0x39fe3e[_0x1d4a50(0x4ab)](_0x19ea9f,'utf8'));if(_0x180c03[_0x1d4a50(0x3a1)])_0x166167=_0x180c03[_0x1d4a50(0x3a1)];(_0x180c03['uid']||_0x180c03[_0x1d4a50(0x3d7)]||_0x180c03['id'])&&(_0x56552d=String(_0x180c03[_0x1d4a50(0x465)]||_0x180c03[_0x1d4a50(0x3d7)]||_0x180c03['id']));if(!_0x56552d&&Array['isArray'](_0x180c03[_0x1d4a50(0x1d7)])){const _0x5b7369=_0x180c03[_0x1d4a50(0x1d7)][_0x1d4a50(0x471)](_0x269c5b=>_0x269c5b[_0x1d4a50(0x43b)]===_0x1d4a50(0x226));if(_0x5b7369&&_0x5b7369[_0x1d4a50(0x474)]){const _0x2be3e7=_0x5b7369[_0x1d4a50(0x474)]['split']('.');_0x2be3e7[0x1]&&/^\d+$/[_0x1d4a50(0x488)](_0x2be3e7[0x1])&&(_0x56552d=_0x2be3e7[0x1]);}if(!_0x56552d){const _0x5355e9=_0x180c03['cookie'][_0x1d4a50(0x471)](_0x2dcac3=>_0x2dcac3[_0x1d4a50(0x43b)]===_0x1d4a50(0x23e));if(_0x5355e9&&_0x5355e9[_0x1d4a50(0x474)]){const _0x3b2d00=_0x5355e9[_0x1d4a50(0x474)][_0x1d4a50(0x518)]('.');_0x3b2d00[0x1]&&/^\d+$/[_0x1d4a50(0x488)](_0x3b2d00[0x1])&&(_0x56552d=_0x3b2d00[0x1]);}}}}}catch(_0x4d2c12){}const _0xb2b223=String(_0x166167||_0x1d4a50(0x4c5)),_0x298c5c=(_0x2c42b0[_0x1d4a50(0x41f)]||[])[_0x1d4a50(0x53e)](String),_0x21e0be=[_0xb2b223,..._0x298c5c][_0x1d4a50(0x4d1)](Boolean),_0x4cb7a9=String(_0x2c42b0[_0x1d4a50(0x23d)]||_0xb2b223)[_0x1d4a50(0x47e)]()[_0x1d4a50(0x224)](/[^a-z0-9]/g,''),_0x4bda3d='/'+(_0x4cb7a9||_0x1d4a50(0x4c3))+'-';let _0x4dcc95=String(_0x2c42b0['ownerId']||'');const _0x2b5ac4=new Set(_0x4dcc95?[_0x4dcc95]:[]),_0x590339=new Set((_0x2c42b0[_0x1d4a50(0x52b)]||[])[_0x1d4a50(0x53e)](String)),_0x1ee0cb=_0x2c42b0[_0x1d4a50(0x4f2)]!==![],_0xece7b9=Number(_0x2c42b0[_0x1d4a50(0x40d)]||0x5),_0x43d63c=Number(_0x2c42b0[_0x1d4a50(0x4da)]||0x12c)*0x3e8,_0x330075=Number(_0x2c42b0[_0x1d4a50(0x249)]||0x3c);function _0x387243(_0x1a9997){const _0x15ec30=_0x1d4a50,_0x2de6b8=String(_0x1a9997||'')[_0x15ec30(0x224)](/^group:/,'');return _0x7b70ff[_0x2de6b8]?.[_0x15ec30(0x284)]||_0x15ec30(0x3c9);}const _0x49fb61=_0x3693d1?.['agents']?.[_0x1d4a50(0x4bd)]?.[0x0]?.[_0x1d4a50(0x4dc)],_0x2fae59=_0x3693d1?.[_0x1d4a50(0x28d)]?.['defaults']?.[_0x1d4a50(0x4dc)],_0x59e5fd=String(_0x49fb61?a0_0x5d734d[_0x1d4a50(0x23c)](_openclawHome,'..',_0x49fb61):_0x2fae59||a0_0x5d734d[_0x1d4a50(0x50b)](_openclawHome,_0x1d4a50(0x4dc)));function _0x7716db(_0x2a7e5b){const _0x568077=_0x1d4a50;return(_0x2a7e5b||'')[_0x568077(0x3ea)](_0x568077(0x4ea))[_0x568077(0x224)](/[\u0300-\u036f]/g,'')[_0x568077(0x47e)]()[_0x568077(0x224)](/[^a-z0-9]+/g,'-')[_0x568077(0x224)](/^-|-$/g,'')||_0x568077(0x2f0);}function _0x3db127(_0x376c29){const _0x14932f=_0x1d4a50,_0x117ff2=String(_0x376c29||'')[_0x14932f(0x224)](/^group:/,''),_0x35ad7d=_0x2c42b0[_0x14932f(0x50e)]||_0x7716db(_0x387243(_0x117ff2)||'nhom-'+_0x117ff2[_0x14932f(0x303)](-0x6));return a0_0x5d734d[_0x14932f(0x50b)](_0x59e5fd,_0x14932f(0x3d5),_0x35ad7d);}function _0x56912(_0x2a4e19){const _0x369ab9=_0x1d4a50,_0x4add9f=String(_0x2a4e19||'')[_0x369ab9(0x224)](/^group:/,'');return _0x2c42b0[_0x369ab9(0x50e)]||_0x7716db(_0x387243(_0x4add9f)||_0x369ab9(0x3f9)+_0x4add9f[_0x369ab9(0x303)](-0x6));}const _0x4babbc=createStore(_0x39a5d8),_0x5e577b=createSpamTracker(_0xece7b9,_0x43d63c),_0x1f679b=promisify(exec);function _0x2d7257(){const _0x1ed1a1=_0x1d4a50,_0x2b8184=[_0x2c42b0['upgradeFlowPath'],process.env.OPENCLAW_UPGRADE_FLOW,a0_0x5d734d[_0x1ed1a1(0x50b)](__dirname,_0x1ed1a1(0x4e0),_0x1ed1a1(0x336)),a0_0x5d734d[_0x1ed1a1(0x50b)](_0x59e5fd,_0x1ed1a1(0x3f4),_0x1ed1a1(0x3b6),_0x1ed1a1(0x336)),a0_0x5d734d[_0x1ed1a1(0x50b)](_openclawHome,_0x1ed1a1(0x320),_0x1ed1a1(0x3f4),_0x1ed1a1(0x3b6),_0x1ed1a1(0x336)),a0_0x5d734d[_0x1ed1a1(0x50b)](_openclawHome,_0x1ed1a1(0x4dc),_0x1ed1a1(0x3f4),_0x1ed1a1(0x3b6),'flow.js'),'e:\x5cmkt\x5c.openclaw\x5cworkspace-bot\x5cskills\x5cupgrade-flow\x5cflow.js',_0x1ed1a1(0x318)][_0x1ed1a1(0x4d1)](Boolean)[_0x1ed1a1(0x53e)](_0x341aaf=>a0_0x5d734d[_0x1ed1a1(0x23c)](String(_0x341aaf))),_0x1aa070=_0x2b8184[_0x1ed1a1(0x471)](_0x461462=>existsSync(_0x461462));if(_0x1aa070)return _0x1aa070;throw new Error(_0x1ed1a1(0x3f8)+_0x2b8184[_0x1ed1a1(0x50b)](',\x20'));}function _0x1fc2ff(_0x50e082){const _0x17efc8=_0x1d4a50;return'\x22'+String(_0x50e082)['replace'](/\\/g,'\x5c\x5c')[_0x17efc8(0x224)](/"/g,'\x5c\x22')+'\x22';}async function _0x4a5c2d(_0x1b8688,_0x12f7e5=[]){const _0x27302d=_0x1d4a50,_0x3a86a2=_0x2d7257(),_0x4e8db0=_0x12f7e5[_0x27302d(0x53e)](_0x1fc2ff)[_0x27302d(0x50b)]('\x20'),_0x56932b='node\x20'+_0x1fc2ff(_0x3a86a2)+'\x20'+_0x1b8688+'\x20'+_0x4e8db0;try{const _0x39a69b={};_0x39a69b[_0x27302d(0x227)]='buffer';const {stdout:_0x1b1f17}=await _0x1f679b(_0x56932b,_0x39a69b),_0x408c27=_0x1b1f17[_0x27302d(0x4f1)](_0x27302d(0x525)),_0x251b78=_0x408c27[_0x27302d(0x2b0)]()['split']('\x0a');for(let _0x55fa50=_0x251b78[_0x27302d(0x391)]-0x1;_0x55fa50>=0x0;_0x55fa50--){const _0x298bd6=_0x251b78[_0x55fa50][_0x27302d(0x2b0)]();if(_0x298bd6[_0x27302d(0x26e)]('{')&&_0x298bd6[_0x27302d(0x281)]('}'))return JSON['parse'](_0x298bd6);}throw new Error('No\x20JSON\x20output\x20from\x20flow.js');}catch(_0x28f1ab){_0x2e3201[_0x27302d(0x427)](_0x27302d(0x251)+_0x28f1ab[_0x27302d(0x337)]);throw _0x28f1ab;}}function _0x20c5fd(){const _0xe1041d=_0x1d4a50,_0x144836=a0_0x55f5a2[_0xe1041d(0x42d)](),_0x134f32=a0_0x55f5a2[_0xe1041d(0x22d)](),_0x2a0e08=a0_0x55f5a2[_0xe1041d(0x2fb)]()[_0xe1041d(0x53e)](_0x2befa0=>_0x2befa0[_0xe1041d(0x43f)])[_0xe1041d(0x50b)](','),_0x4de6c4=a0_0x120e80[_0xe1041d(0x4ff)](_0xe1041d(0x36b))[_0xe1041d(0x273)](_0x144836+'-'+_0x134f32+'-'+_0x2a0e08)[_0xe1041d(0x442)]('hex');return _0x4de6c4[_0xe1041d(0x303)](0x0,0x10)['toUpperCase']();}function _0x277ee2(){const _0x356faa=_0x1d4a50;if(!_0x4babbc)return{'isPro':![],'plan':_0x356faa(0x1ca),'expiry':null,'deviceId':_0x20c5fd()};const _0x594ee5=_0x4babbc[_0x356faa(0x408)](_0x356faa(0x3fb),'license')||{};if(_0x594ee5[_0x356faa(0x513)]&&_0x594ee5[_0x356faa(0x502)]){const _0x3b4df1=new Date(_0x594ee5['expiry']),_0x47377c=new Date();_0x47377c>_0x3b4df1&&(_0x594ee5['valid']=![],_0x4babbc[_0x356faa(0x1d6)]('global',_0x356faa(0x528),_0x594ee5),_0x4babbc[_0x356faa(0x306)]()[_0x356faa(0x3fa)](()=>{}));}if(_0x594ee5[_0x356faa(0x513)])return{'isPro':!![],'plan':_0x594ee5[_0x356faa(0x3cd)]||_0x356faa(0x3da),'expiry':_0x594ee5[_0x356faa(0x502)],'deviceId':_0x594ee5['deviceId']||_0x20c5fd(),'key':_0x594ee5['key']};return{'isPro':![],'plan':_0x356faa(0x1ca),'expiry':null,'deviceId':_0x20c5fd()};}const _0x4f557f=_0x1d4a50(0x4cb);async function _0x4e4949(_0x57945c){const _0x1e9919=_0x1d4a50,_0x3ce1c7={};_0x3ce1c7[_0x1e9919(0x513)]=![],_0x3ce1c7[_0x1e9919(0x427)]=_0x1e9919(0x4e9);if(!_0x57945c)return _0x3ce1c7;const _0x20f5b9=_0x20c5fd();if(_0x57945c[_0x1e9919(0x26e)]('DEV-OP-')&&_0x57945c[_0x1e9919(0x391)]>0xc){const _0xbb24ae={};return _0xbb24ae[_0x1e9919(0x513)]=!![],_0xbb24ae[_0x1e9919(0x3cd)]=_0x1e9919(0x3da),_0xbb24ae[_0x1e9919(0x502)]='2099-12-31',_0xbb24ae[_0x1e9919(0x406)]=_0x20f5b9,_0xbb24ae;}if(_0x57945c[_0x1e9919(0x26e)]('DEV-TEAM-')&&_0x57945c[_0x1e9919(0x391)]>0xc){const _0x472ef4={};return _0x472ef4[_0x1e9919(0x513)]=!![],_0x472ef4['plan']=_0x1e9919(0x377),_0x472ef4['expiry']=_0x1e9919(0x242),_0x472ef4[_0x1e9919(0x406)]=_0x20f5b9,_0x472ef4;}if(_0x57945c[_0x1e9919(0x26e)](_0x1e9919(0x2e8))&&_0x57945c[_0x1e9919(0x391)]>0xc){const _0xcfe961={};return _0xcfe961[_0x1e9919(0x513)]=!![],_0xcfe961[_0x1e9919(0x3cd)]=_0x1e9919(0x425),_0xcfe961[_0x1e9919(0x502)]=_0x1e9919(0x242),_0xcfe961['deviceId']=_0x20f5b9,_0xcfe961;}if(_0x57945c[_0x1e9919(0x26e)]('ZALOMKT-'))try{const _0x447a42=_0x57945c[_0x1e9919(0x518)]('-');if(_0x447a42[_0x1e9919(0x391)]>=0x4){const _0x5ef790=_0x447a42[0x1][_0x1e9919(0x47e)](),_0x1c15ae=_0x447a42[0x2],_0x1a187b=_0x1c15ae[_0x1e9919(0x303)](0x0,0x4)+'-'+_0x1c15ae[_0x1e9919(0x303)](0x4,0x6)+'-'+_0x1c15ae[_0x1e9919(0x303)](0x6,0x8),_0x3350b8=_0x447a42[_0x1e9919(0x303)](0x3)[_0x1e9919(0x50b)]('-'),_0x29ea39=_0x20f5b9+':'+_0x5ef790+':'+_0x1a187b,_0x408a50=a0_0x120e80['createVerify'](_0x1e9919(0x243));_0x408a50[_0x1e9919(0x273)](_0x29ea39);const _0x29ab9b=_0x408a50[_0x1e9919(0x326)](_0x4f557f,_0x3350b8,_0x1e9919(0x4e5));if(_0x29ab9b){const _0x5d650e={};return _0x5d650e[_0x1e9919(0x513)]=!![],_0x5d650e[_0x1e9919(0x3cd)]=_0x5ef790,_0x5d650e[_0x1e9919(0x502)]=_0x1a187b,_0x5d650e[_0x1e9919(0x406)]=_0x20f5b9,_0x5d650e;}}}catch(_0x438079){}const _0x13cdc4=[_0x1e9919(0x319),_0x1e9919(0x3a9)];for(const _0x211dc6 of _0x13cdc4){try{const _0x588668=new AbortController(),_0x581f9b=setTimeout(()=>_0x588668[_0x1e9919(0x530)](),0xbb8),_0x5cfda9={};_0x5cfda9[_0x1e9919(0x2e1)]=_0x1e9919(0x4b5);const _0x505fd0={};_0x505fd0[_0x1e9919(0x43b)]=_0x57945c,_0x505fd0[_0x1e9919(0x406)]=_0x20f5b9;const _0x3d3d55=await fetch(_0x211dc6,{'method':_0x1e9919(0x512),'headers':_0x5cfda9,'body':JSON[_0x1e9919(0x2e5)](_0x505fd0),'signal':_0x588668[_0x1e9919(0x1f3)]});clearTimeout(_0x581f9b);if(_0x3d3d55['ok']){const _0xe67f8f=await _0x3d3d55[_0x1e9919(0x3a3)]()[_0x1e9919(0x3fa)](()=>({}));if(_0xe67f8f&&_0xe67f8f[_0x1e9919(0x513)]){const _0x5d5aa7={};return _0x5d5aa7[_0x1e9919(0x513)]=!![],_0x5d5aa7['plan']=_0xe67f8f['plan']||'personal',_0x5d5aa7['expiry']=_0xe67f8f[_0x1e9919(0x502)],_0x5d5aa7[_0x1e9919(0x406)]=_0x20f5b9,_0x5d5aa7;}}}catch(_0x106e8b){}}const _0x11cb26={};return _0x11cb26[_0x1e9919(0x513)]=![],_0x11cb26['error']='Key\x20kích\x20hoạt\x20không\x20hợp\x20lệ\x20cho\x20thiết\x20bị\x20này!',_0x11cb26;}let _0x2f3938=![];async function _0x1a1f79(){const _0x21cef0=_0x1d4a50;!_0x2f3938&&(await _0x4babbc[_0x21cef0(0x53a)](),_0x2f3938=!![]);}async function _0x952fb5(){const _0x5c051e=_0x1d4a50;await _0x4babbc[_0x5c051e(0x53a)](),_0x2f3938=!![];}async function _0x4e94c5(){const _0x52d247=_0x1d4a50;try{const _0x234ec5=a0_0x5d734d[_0x52d247(0x50b)](_0x59e5fd,_0x52d247(0x3f4),_0x52d247(0x4df)),_0x5975eb=a0_0x5d734d[_0x52d247(0x50b)](_0x234ec5,_0x52d247(0x205));try{await a0_0x39fe3e[_0x52d247(0x375)](_0x5975eb);}catch{const _0x2024f2={};_0x2024f2[_0x52d247(0x231)]=!![],await a0_0x39fe3e[_0x52d247(0x4f3)](_0x234ec5,_0x2024f2);const _0x38f5d7=[_0x52d247(0x236),'name:\x20Zalo\x20Group\x20Admin',_0x52d247(0x214),_0x52d247(0x38f),'description:\x20Quy\x20tắc\x20reply\x20và\x20quản\x20lý\x20group\x20Zalo\x20—\x20ưu\x20tiên\x20ngắn\x20gọn,\x20súc\x20tích.',_0x52d247(0x236),'',_0x52d247(0x207),'','##\x20Khi\x20nào\x20dùng\x20skill\x20này','',_0x52d247(0x473),'','---','',_0x52d247(0x1cc),'',_0x52d247(0x2a5),'',_0x52d247(0x51a),_0x52d247(0x402),_0x52d247(0x2b9),_0x52d247(0x248),_0x52d247(0x486),_0x52d247(0x4b1),'','---','',_0x52d247(0x293),'',_0x52d247(0x420),_0x52d247(0x54e),_0x52d247(0x3b0),_0x52d247(0x42b),'',_0x52d247(0x3ee),'','---','',_0x52d247(0x26a),'',_0x52d247(0x489),_0x52d247(0x2d8),'-\x20Với\x20**câu\x20hỏi\x20mơ\x20hồ**:\x20hỏi\x201\x20câu\x20làm\x20rõ\x20—\x20chỉ\x201\x20câu\x20thôi','','---','',_0x52d247(0x376),'',_0x52d247(0x2ce),_0x52d247(0x46e),_0x52d247(0x1d3),'```',_0x52d247(0x2aa),'','---','',_0x52d247(0x241),'',_0x52d247(0x316),_0x52d247(0x3ca)+_0x4bda3d+_0x52d247(0x419),'',_0x52d247(0x1f2),'',_0x52d247(0x48c),_0x52d247(0x40a),_0x52d247(0x4cd)+_0x4bda3d+_0x52d247(0x1cb),_0x52d247(0x4cd)+_0x4bda3d+_0x52d247(0x386),_0x52d247(0x4cd)+_0x4bda3d+'huong-dan`\x20|\x20Hướng\x20dẫn\x20sử\x20dụng\x20bot\x20|','','###\x20🔧\x20Admin\x20(trong\x20group)','',_0x52d247(0x48c),'|---------|-------|',_0x52d247(0x4cd)+_0x4bda3d+_0x52d247(0x297),_0x52d247(0x4cd)+_0x4bda3d+_0x52d247(0x25a)+_0x4bda3d+'bat-bot`\x20|\x20Bật\x20lại\x20bot\x20|',_0x52d247(0x4cd)+_0x4bda3d+_0x52d247(0x321),_0x52d247(0x4cd)+_0x4bda3d+_0x52d247(0x2ee),_0x52d247(0x4cd)+_0x4bda3d+_0x52d247(0x3c2),_0x52d247(0x4cd)+_0x4bda3d+_0x52d247(0x341),'',_0x52d247(0x1bb),'','|\x20Command\x20|\x20Mô\x20tả\x20|',_0x52d247(0x40a),_0x52d247(0x4cd)+_0x4bda3d+'rules`\x20|\x20Xem\x20panel\x20sub-lệnh\x20|',_0x52d247(0x4cd)+_0x4bda3d+_0x52d247(0x342),_0x52d247(0x4cd)+_0x4bda3d+'rules\x20groupid`\x20|\x20Thêm\x20group\x20này\x20vào\x20config\x20|','|\x20`'+_0x4bda3d+_0x52d247(0x510),'|\x20`'+_0x4bda3d+'rules\x20silent-off`\x20|\x20Tắt\x20silent\x20mode\x20|',_0x52d247(0x4cd)+_0x4bda3d+_0x52d247(0x50d),_0x52d247(0x4cd)+_0x4bda3d+'rules\x20welcome-off`\x20|\x20Tắt\x20chào\x20member\x20mới\x20|',_0x52d247(0x4cd)+_0x4bda3d+_0x52d247(0x4a5),_0x52d247(0x4cd)+_0x4bda3d+_0x52d247(0x52e),'','###\x20🔐\x20Owner\x20—\x20qua\x20DM','',_0x52d247(0x48c),_0x52d247(0x40a),_0x52d247(0x4cd)+_0x4bda3d+'rules\x20mute-list`\x20|\x20Trạng\x20thái\x20mute\x20tất\x20cả\x20groups\x20|',_0x52d247(0x4cd)+_0x4bda3d+_0x52d247(0x41a),_0x52d247(0x4cd)+_0x4bda3d+'rules\x20mute\x20all\x20on/off`\x20|\x20Mute/unmute\x20tất\x20cả\x20|',_0x52d247(0x4cd)+_0x4bda3d+_0x52d247(0x3ec),_0x52d247(0x4cd)+_0x4bda3d+_0x52d247(0x417),_0x52d247(0x4cd)+_0x4bda3d+_0x52d247(0x4d0),_0x52d247(0x4cd)+_0x4bda3d+_0x52d247(0x3de),_0x52d247(0x4cd)+_0x4bda3d+_0x52d247(0x229),_0x52d247(0x4cd)+_0x4bda3d+_0x52d247(0x2c1),_0x52d247(0x4cd)+_0x4bda3d+_0x52d247(0x52d),_0x52d247(0x4cd)+_0x4bda3d+'rules\x20tracking\x20<groupId>\x20on/off`\x20|\x20Tracking\x20group\x20cụ\x20thể\x20|',_0x52d247(0x4cd)+_0x4bda3d+_0x52d247(0x395),_0x52d247(0x4cd)+_0x4bda3d+_0x52d247(0x550),'|\x20`'+_0x4bda3d+'rules\x20follow\x20<groupId>\x20on/off`\x20|\x20Follow\x20group\x20cụ\x20thể\x20|',_0x52d247(0x4cd)+_0x4bda3d+'rules\x20follow\x20all\x20on/off`\x20|\x20Follow\x20tất\x20cả\x20|',_0x52d247(0x4cd)+_0x4bda3d+_0x52d247(0x2a4),'|\x20`'+_0x4bda3d+_0x52d247(0x1dc),_0x52d247(0x4cd)+_0x4bda3d+_0x52d247(0x1e4),_0x52d247(0x4cd)+_0x4bda3d+_0x52d247(0x264),_0x52d247(0x4cd)+_0x4bda3d+_0x52d247(0x448),_0x52d247(0x4cd)+_0x4bda3d+_0x52d247(0x40b),'',_0x52d247(0x236),'',_0x52d247(0x3c5),'',_0x52d247(0x3c3),'|--|------|--------|',_0x52d247(0x557),_0x52d247(0x2bf),_0x52d247(0x1ef),_0x52d247(0x4de),''][_0x52d247(0x50b)]('\x0a');await a0_0x39fe3e[_0x52d247(0x2e9)](_0x5975eb,_0x38f5d7,'utf8'),_0x2e3201['info'](_0x52d247(0x1bf));}for(const _0x52d09a of _0x178cf9){const _0x5bf156=_0x4babbc[_0x52d247(0x408)](_0x52d09a,_0x52d247(0x274),!![]);if(!_0x5bf156)continue;const _0x203645=_0x3db127(_0x52d09a),_0x29c003=a0_0x5d734d[_0x52d247(0x50b)](_0x203645,'INDEX.md');try{await a0_0x39fe3e[_0x52d247(0x375)](_0x29c003);}catch{const _0x44f5a9={};_0x44f5a9[_0x52d247(0x231)]=!![],await a0_0x39fe3e[_0x52d247(0x4f3)](_0x203645,_0x44f5a9);const _0x4a4f21=['#\x20'+_0x387243(_0x52d09a)+'\x20—\x20Memory','',_0x52d247(0x4fb),'',_0x52d247(0x3d2),_0x52d247(0x429),'-\x20`members.md`\x20—\x20Danh\x20sách\x20member\x20đã\x20warn',_0x52d247(0x3fe),_0x52d247(0x261),_0x52d247(0x392),'']['join']('\x0a');await a0_0x39fe3e[_0x52d247(0x2e9)](_0x29c003,_0x4a4f21,_0x52d247(0x525)),_0x2e3201[_0x52d247(0x313)](_0x52d247(0x2e3)+_0x387243(_0x52d09a)+'\x20('+_0x52d09a+')');}}const _0x14e840={};_0x14e840[_0x52d247(0x231)]=!![],await a0_0x39fe3e[_0x52d247(0x4f3)](_0x39a5d8,_0x14e840);const _0x3cd3a7=!_0x2c42b0[_0x52d247(0x467)]||Object[_0x52d247(0x34e)](_0x7b70ff)[_0x52d247(0x391)]===0x0;if(_0x3cd3a7){const _0x4beff1={};_0xb2b223&&_0xb2b223!==_0x52d247(0x4c5)&&(_0x4beff1[_0x52d247(0x467)]=_0xb2b223,_0x4beff1[_0x52d247(0x41f)]=[_0xb2b223],_0x2e3201[_0x52d247(0x313)](_0x52d247(0x484)+_0xb2b223+_0x52d247(0x1fd)));const _0x10f138=_0x3693d1?.[_0x52d247(0x28d)]?.[_0x52d247(0x4bd)]?.[0x0]?.['id'],_0x2da30e=await _scanGroupsFromSessions(_openclawHome,_0x10f138);if(_0x2da30e[_0x52d247(0x391)]>0x0){const _0x4b9953=_0x2c42b0[_0x52d247(0x36f)]||{},_0x180ca3={..._0x4b9953},_0x9ddfaf=_0x180ca3;for(const _0x80ed8f of _0x2da30e){if(!_0x9ddfaf[_0x80ed8f[_0x52d247(0x4e7)]])_0x9ddfaf[_0x80ed8f[_0x52d247(0x4e7)]]={'name':_0x80ed8f[_0x52d247(0x4c6)],'admins':[],'creatorId':''};else typeof _0x9ddfaf[_0x80ed8f['groupId']]===_0x52d247(0x365)&&(_0x9ddfaf[_0x80ed8f[_0x52d247(0x4e7)]]={'name':_0x9ddfaf[_0x80ed8f[_0x52d247(0x4e7)]],'admins':[],'creatorId':''});}_0x4beff1[_0x52d247(0x36f)]=_0x9ddfaf,_0x2e3201[_0x52d247(0x313)](_0x52d247(0x38c)+_0x2da30e[_0x52d247(0x391)]+_0x52d247(0x30e)+_0x2da30e[_0x52d247(0x53e)](_0x5231b1=>_0x5231b1[_0x52d247(0x4c6)])[_0x52d247(0x50b)](',\x20'));}else _0x2e3201[_0x52d247(0x313)]('[openclaw-zalo-mod]\x20no\x20group\x20sessions\x20found\x20yet\x20—\x20user\x20should\x20chat\x20in\x20a\x20group\x20then\x20run\x20/groupid');Object['keys'](_0x4beff1)['length']>0x0&&await _patchOpenclawConfig(_openclawHome,_0x4beff1,_0x2e3201);}}catch(_0x3fac46){_0x2e3201[_0x52d247(0x2cc)](_0x52d247(0x1e6)+_0x3fac46[_0x52d247(0x337)]);}}_0x4e94c5();function _0xbbfd8b(){const _0x3a7a75=_0x1d4a50;return new Date()['toISOString']()['slice'](0x0,0x10)[_0x3a7a75(0x224)]('T','\x20');}async function _0x51b682(_0x3aa4bf,_0x54afcd,_0x65f477){const _0x37a09d=_0x1d4a50;try{const _0x9b7d52=_0x3db127(_0x3aa4bf),_0x3e1f59=a0_0x5d734d[_0x37a09d(0x50b)](_0x9b7d52,_0x54afcd),_0x4022e7={};_0x4022e7[_0x37a09d(0x231)]=!![],await a0_0x39fe3e[_0x37a09d(0x4f3)](_0x9b7d52,_0x4022e7),await a0_0x39fe3e[_0x37a09d(0x49d)](_0x3e1f59,_0x65f477+'\x0a','utf8');}catch(_0x1c7d64){_0x2e3201[_0x37a09d(0x2cc)](_0x37a09d(0x238)+_0x54afcd+_0x37a09d(0x2ca)+_0x1c7d64[_0x37a09d(0x337)]);}}const _0x9b34c3=new Set(),_0x2c178e=0x1f4,_0x19611c=0xc8*0x400,_0xa8d097=0xc8;let _0x4f25d1='';function _0x29977f(_0x296d72,_0x76083){const _0x4c9596=_0x1d4a50,_0x55fa88=_0x296d72+':'+String(_0x76083)[_0x4c9596(0x303)](0x0,0x3c);let _0x5ec6fe=0x0;for(let _0x530aee=0x0;_0x530aee<_0x55fa88[_0x4c9596(0x391)];_0x530aee++){_0x5ec6fe=(_0x5ec6fe<<0x5)-_0x5ec6fe+_0x55fa88['charCodeAt'](_0x530aee)|0x0;}return String(_0x5ec6fe);}function _0x1c3794(_0x36c47b){const _0x349075=_0x1d4a50;if(_0x9b34c3[_0x349075(0x461)](_0x36c47b))return!![];_0x9b34c3['add'](_0x36c47b);if(_0x9b34c3[_0x349075(0x396)]>_0x2c178e){const _0x3d4b8f=_0x9b34c3[_0x349075(0x2ac)]()['next']()[_0x349075(0x474)];_0x9b34c3[_0x349075(0x22b)](_0x3d4b8f);}return![];}async function _0x52d649(_0x5a2b05,_0x27d6f8,_0x41ed62){const _0x4959f9=_0x1d4a50;try{const _0xee970=_0x29977f(String(_0x5a2b05)+_0x27d6f8,_0x41ed62);if(_0x1c3794(_0xee970))return;const _0x5b6e42=_0x3db127(_0x5a2b05),_0x3998b0=a0_0x5d734d['join'](_0x5b6e42,_0x4959f9(0x500)),_0x35140a={};_0x35140a[_0x4959f9(0x231)]=!![],await a0_0x39fe3e[_0x4959f9(0x4f3)](_0x5b6e42,_0x35140a);try{const _0x41dee4=await a0_0x39fe3e[_0x4959f9(0x1bd)](_0x3998b0);if(_0x41dee4[_0x4959f9(0x396)]>_0x19611c){const _0x2223b8=new Date()[_0x4959f9(0x531)]()[_0x4959f9(0x303)](0x0,0xa),_0x205119=a0_0x5d734d[_0x4959f9(0x50b)](_0x5b6e42,_0x4959f9(0x30f)+_0x2223b8+'.md.bak');await a0_0x39fe3e[_0x4959f9(0x29a)](_0x3998b0,_0x205119),_0x2e3201[_0x4959f9(0x313)](_0x4959f9(0x2f6)+_0x205119);}}catch{}const _0x5124f3=new Date()['toISOString']()[_0x4959f9(0x303)](0x0,0xa);let _0x1f10e4='';if(_0x4f25d1!==_0x5124f3){let _0x39837d=!![];try{const _0x557a8d=await a0_0x39fe3e['readFile'](_0x3998b0,_0x4959f9(0x525));if(_0x557a8d['includes']('##\x20'+_0x5124f3))_0x39837d=![];}catch{}_0x39837d&&(_0x1f10e4='\x0a##\x20'+_0x5124f3+_0x4959f9(0x3e3)),_0x4f25d1=_0x5124f3;}const _0x97d715=new Date()[_0x4959f9(0x531)]()[_0x4959f9(0x303)](0xb,0x10),_0x7fb59a=String(_0x41ed62)['replace'](/\|/g,'│')['replace'](/\n/g,'\x20')['slice'](0x0,_0xa8d097),_0x2bc20c=String(_0x27d6f8)[_0x4959f9(0x224)](/\|/g,'│')[_0x4959f9(0x303)](0x0,0x1e),_0x1b1ca3='|\x20'+_0x97d715+'\x20|\x20'+_0x2bc20c+_0x4959f9(0x44d)+_0x7fb59a+'\x20|';await a0_0x39fe3e[_0x4959f9(0x49d)](_0x3998b0,_0x1f10e4+_0x1b1ca3+'\x0a',_0x4959f9(0x525));}catch(_0x35c3bf){_0x2e3201[_0x4959f9(0x2cc)]('[openclaw-zalo-mod]\x20chat-log\x20append\x20failed:\x20'+_0x35c3bf[_0x4959f9(0x337)]);}}function _0x448ee1(_0xee0b23,_0x29e65a){const _0x58d776=_0x1d4a50,_0x56bf71=String(_0x29e65a)[_0x58d776(0x224)](/^group:/,''),_0x2775a1={};for(const [_0x152c17,_0x110c11]of Object['entries'](_0xee0b23)){const _0x2b0803=String(_0x152c17)[_0x58d776(0x224)](/^group:/,'');if(_0x2b0803!==_0x56bf71)continue;for(const [_0x1cea2a,_0x48538d]of Object[_0x58d776(0x3ab)](_0x110c11)){const _0x462368=String(_0x1cea2a)['replace'](/^@/,'');_0x2775a1[_0x462368]=_0x2775a1[_0x462368]||[],_0x2775a1[_0x462368][_0x58d776(0x2d4)](..._0x48538d);}}return _0x2775a1;}async function _0x2e51b1(_0x4a784b){const _0x445279=_0x1d4a50;try{const _0x5751cb=_0x448ee1(_0x4babbc['getAllWarned'](),_0x4a784b),_0x4c3d63=_0x448ee1(_0x4babbc[_0x445279(0x301)](),_0x4a784b),_0x73db7=['#\x20'+_0x387243(_0x4a784b)+'\x20—\x20Members\x20&\x20Warn\x20Log\x0a',_0x445279(0x215)+_0xbbfd8b()+_0x445279(0x368),_0x445279(0x315),_0x445279(0x4d2),_0x445279(0x2d9)];let _0x1b8745=0x0;for(const [_0x3339c8,_0x560fe0]of Object[_0x445279(0x3ab)](_0x5751cb)){if(!_0x560fe0[_0x445279(0x391)])continue;_0x1b8745++,_0x560fe0[_0x445279(0x4b4)]((_0x310562,_0x338d9d)=>(_0x338d9d['ts']||'')[_0x445279(0x1df)](_0x310562['ts']||''));const _0x514f00=_0x560fe0[0x0];_0x73db7[_0x445279(0x2d4)]('|\x20'+(_0x514f00[_0x445279(0x284)]||_0x3339c8)['replace'](/^@/,'')+_0x445279(0x44d)+_0x560fe0[_0x445279(0x391)]+_0x445279(0x44d)+(_0x514f00['reason']||'—')+_0x445279(0x44d)+(_0x514f00['ts']||'')[_0x445279(0x303)](0x0,0xa)+'\x20|');}if(!_0x1b8745)_0x73db7[_0x445279(0x2d4)](_0x445279(0x1e0));await a0_0x39fe3e[_0x445279(0x2e9)](a0_0x5d734d[_0x445279(0x50b)](_0x3db127(_0x4a784b),'members.md'),_0x73db7['join']('\x0a')+'\x0a',_0x445279(0x525));const _0x26e931=['#\x20'+_0x387243(_0x4a784b)+_0x445279(0x53d),_0x445279(0x215)+_0xbbfd8b()+_0x445279(0x368),_0x445279(0x436),_0x445279(0x208),_0x445279(0x51f)];let _0x4cab8c=0x0;for(const [_0x5ce272,_0x4ccbd2]of Object['entries'](_0x4c3d63)){if(_0x5ce272==='admin-note')continue;for(const _0x51d727 of _0x4ccbd2){_0x4cab8c++,_0x26e931[_0x445279(0x2d4)]('|\x20'+(_0x51d727['ts']||'')[_0x445279(0x303)](0x0,0x10)['replace']('T','\x20')+_0x445279(0x44d)+(_0x51d727[_0x445279(0x284)]||_0x5ce272)[_0x445279(0x224)](/^@/,'')+_0x445279(0x44d)+_0x51d727[_0x445279(0x446)]+_0x445279(0x44d)+(_0x51d727[_0x445279(0x2dc)]||'')[_0x445279(0x303)](0x0,0x28)+'\x20|');}}if(!_0x4cab8c)_0x26e931[_0x445279(0x2d4)](_0x445279(0x1e0));await a0_0x39fe3e[_0x445279(0x2e9)](a0_0x5d734d[_0x445279(0x50b)](_0x3db127(_0x4a784b),_0x445279(0x279)),_0x26e931[_0x445279(0x50b)]('\x0a')+'\x0a',_0x445279(0x525)),_0x2e3201[_0x445279(0x313)](_0x445279(0x280)+_0x1b8745+_0x445279(0x4c4)+_0x4cab8c+_0x445279(0x431)+_0x4a784b);const _0x4fe4e2={};return _0x4fe4e2[_0x445279(0x521)]=_0x1b8745,_0x4fe4e2['vioCount']=_0x4cab8c,_0x4fe4e2;}catch(_0x575822){_0x2e3201[_0x445279(0x2cc)](_0x445279(0x400)+_0x575822[_0x445279(0x337)]);const _0x4e96a5={};return _0x4e96a5[_0x445279(0x521)]=0x0,_0x4e96a5[_0x445279(0x4bf)]=0x0,_0x4e96a5;}}let _0x37a84b=null,_0x1e6f03='';async function _0x538947(){const _0x530248=_0x1d4a50;if(_0x37a84b)return _0x37a84b;try{const _0x38b1f8=a0_0x5d734d[_0x530248(0x50b)](String(_0x3693d1?.[_0x530248(0x28d)]?.[_0x530248(0x54b)]?.[_0x530248(0x4dc)]||'/mnt/d/SecondBrain/.openclaw/workspace'),_0x530248(0x490)),_0x58eb43=await safeReadJson(_0x38b1f8);if(!_0x58eb43)return null;const _0x398777=_0x58eb43[_0x530248(0x1d7)]||[],_0x7b1c55=(_0x484e8c,_0x4e5f21)=>{const _0x199e33=_0x530248,_0x52ffd6=_0x398777['filter'](_0x15136e=>_0x15136e[_0x199e33(0x43b)]===_0x484e8c);if(_0x4e5f21){const _0x4c35b1=_0x52ffd6['find'](_0x555d9b=>(_0x555d9b['domain']||'')[_0x199e33(0x4c2)](_0x4e5f21));if(_0x4c35b1)return _0x4c35b1[_0x199e33(0x474)];}return _0x52ffd6[0x0]?.[_0x199e33(0x474)]||'';};return _0x1e6f03=_0x58eb43[_0x530248(0x3eb)]||'',_0x37a84b={'zpsid':_0x7b1c55(_0x530248(0x226),_0x530248(0x1f6)),'zpw_sek':_0x7b1c55(_0x530248(0x23e),_0x530248(0x3dd))},_0x2e3201[_0x530248(0x313)](_0x530248(0x335)+_0x1e6f03[_0x530248(0x303)](0x0,0x8)+_0x530248(0x2e0)),_0x37a84b;}catch(_0x1384bd){return _0x2e3201[_0x530248(0x2cc)](_0x530248(0x272)+String(_0x1384bd)),null;}}let _0x4068cb=null,_0x33fdbe=![];async function _0x563c2d(){const _0x339e69=_0x1d4a50;if(_0x4068cb)return _0x4068cb;if(_0x33fdbe)return null;const _0x267168=[a0_0x5d734d[_0x339e69(0x50b)](_openclawHome,_0x339e69(0x34a)),a0_0x5d734d['join'](_openclawHome,'extensions/zalouser/dist/test-api.js'),a0_0x5d734d[_0x339e69(0x50b)](_openclawHome,_0x339e69(0x4ef)),_0x339e69(0x3bc),_0x339e69(0x382)],_0x25c548=a0_0x5d734d['join'](_openclawHome,_0x339e69(0x361),_0x339e69(0x553));if(existsSync(_0x25c548))try{for(const _0x5134c2 of readdirSync(_0x25c548)){const _0x439bcf=a0_0x5d734d['join'](_0x25c548,_0x5134c2,_0x339e69(0x22c),_0x339e69(0x1d4),_0x339e69(0x22f),_0x339e69(0x430),_0x339e69(0x33e));existsSync(_0x439bcf)&&_0x267168['unshift'](_0x439bcf);}}catch(_0x41da38){}for(const _0x1a9a3a of _0x267168){try{const _0x4baf56=_0x1a9a3a[_0x339e69(0x26e)]('/')?_0x339e69(0x4d6)+_0x1a9a3a:_0x339e69(0x252)+_0x1a9a3a[_0x339e69(0x224)](/\\/g,'/');return _0x4068cb=await import(_0x4baf56),_0x2e3201['info']('[openclaw-zalo-mod]\x20zalouser\x20send\x20API\x20loaded:\x20'+_0x1a9a3a),_0x4068cb;}catch{}}return _0x2e3201[_0x339e69(0x2cc)](_0x339e69(0x2b6)),_0x33fdbe=!![],null;}async function _0x2d96f6(_0x4c6658,_0x44e3e1,_0x101ae5){const _0xf60828=_0x1d4a50;if(!_0x44e3e1||!_0x101ae5)return;const _0x3b9faa=_0x4c6658?.[_0xf60828(0x476)]||_0xf60828(0x268);_0x2e3201[_0xf60828(0x313)](_0xf60828(0x49b)+_0x44e3e1+_0xf60828(0x1b9)+_0x3b9faa+_0xf60828(0x4ee)+_0x101ae5[_0xf60828(0x391)]);try{const _0x3390f0=await _0x563c2d();if(!_0x3390f0?.['sendMessageZalouser']){_0x2e3201[_0xf60828(0x2cc)](_0xf60828(0x4e6));return;}const _0x485dc0={};_0x485dc0[_0xf60828(0x3fc)]=!![],_0x485dc0[_0xf60828(0x35e)]=_0x3b9faa,_0x485dc0['textMode']=_0xf60828(0x201);const _0x30fc32=await _0x3390f0[_0xf60828(0x549)](String(_0x44e3e1),String(_0x101ae5),_0x485dc0);_0x30fc32&&!_0x30fc32['ok']?_0x2e3201[_0xf60828(0x427)](_0xf60828(0x296)+_0x30fc32[_0xf60828(0x427)]):_0x2e3201[_0xf60828(0x313)](_0xf60828(0x3c6)+_0x44e3e1);}catch(_0x442d4b){_0x2e3201[_0xf60828(0x427)](_0xf60828(0x220)+_0x442d4b[_0xf60828(0x337)]);}}async function _0x5b1757(_0x1fe017,_0x3f8f71,_0x5e3dec,_0x10f52c=null){const _0x5f3ff0=_0x1d4a50;if(!_0x3f8f71||!_0x5e3dec&&!_0x10f52c)return;const _0x404f25=_0x1fe017?.[_0x5f3ff0(0x476)]||_0x5f3ff0(0x268);try{const _0x59e486=await _0x563c2d();if(!_0x59e486?.[_0x5f3ff0(0x549)]){_0x2e3201[_0x5f3ff0(0x2cc)]('[openclaw-zalo-mod]\x20sendDmMsg\x20skipped\x20—\x20API\x20unavailable');return;}const _0x13c1be={};_0x13c1be['isGroup']=![],_0x13c1be[_0x5f3ff0(0x35e)]=_0x404f25,_0x13c1be[_0x5f3ff0(0x3b2)]=_0x5f3ff0(0x201);const _0x4cf256=_0x13c1be;_0x10f52c&&(_0x4cf256['mediaUrl']=_0x10f52c),await _0x59e486['sendMessageZalouser'](String(_0x3f8f71),String(_0x5e3dec||''),_0x4cf256);}catch(_0x2752f2){_0x2e3201[_0x5f3ff0(0x427)](_0x5f3ff0(0x27f)+_0x3f8f71+':\x20'+_0x2752f2[_0x5f3ff0(0x337)]);}}function _0x156206(_0x2d60ad,_0x53deee){const _0x2b4b55=_0x1d4a50;if(String(_0x2d60ad)===_0x4dcc95)return!![];if(_0x2b5ac4[_0x2b4b55(0x461)](String(_0x2d60ad)))return!![];if(_0x53deee){const _0x2b5267=_0x7b70ff[_0x53deee]?.[_0x2b4b55(0x498)]||_0x38c091(_0x53deee);if(_0x2b5267[_0x2b4b55(0x4c2)](String(_0x2d60ad)))return!![];}return![];}const _0x25c62e=a0_0x5d734d[_0x1d4a50(0x50b)](_0x39a5d8,'group-members.json');let _0x2edda4={};async function _0x2f2d86(){const _0x299a40=_0x1d4a50;try{const _0x2743f7=await a0_0x39fe3e[_0x299a40(0x4ad)](_0x25c62e,_0x299a40(0x525));_0x2edda4=JSON[_0x299a40(0x2a2)](_0x2743f7)||{};}catch{_0x2edda4={};}}async function _0x114dd7(){const _0x589654=_0x1d4a50;try{const _0xebbb35={};_0xebbb35[_0x589654(0x231)]=!![],await a0_0x39fe3e[_0x589654(0x4f3)](_0x39a5d8,_0xebbb35),await a0_0x39fe3e[_0x589654(0x2e9)](_0x25c62e,JSON['stringify'](_0x2edda4,null,0x2),_0x589654(0x525));}catch(_0x16a998){_0x2e3201[_0x589654(0x2cc)]('[openclaw-zalo-mod]\x20save\x20member-dir\x20failed:\x20'+_0x16a998[_0x589654(0x337)]);}}function _0x44f888(_0x2bdb45,_0x330084){const _0x2df4cd=_0x1d4a50;if(!Array[_0x2df4cd(0x36a)](_0x330084))return;if(!_0x2edda4[_0x2bdb45])_0x2edda4[_0x2bdb45]={};for(const _0x594446 of _0x330084){if(_0x594446['id'])_0x2edda4[_0x2bdb45][_0x594446['id']]=_0x594446[_0x2df4cd(0x284)]||_0x2edda4[_0x2bdb45][_0x594446['id']]||_0x594446['id'];}}function _0x509097(_0x34b3fa){const _0x1157d2=_0x1d4a50,_0x24dbb8=_0x34b3fa[_0x1157d2(0x47e)]()[_0x1157d2(0x2b0)](),_0x580374=[];for(const [_0x245334,_0x42b5b2]of Object[_0x1157d2(0x3ab)](_0x2edda4)){for(const [_0x3b000f,_0x17f3d4]of Object[_0x1157d2(0x3ab)](_0x42b5b2)){if(String(_0x17f3d4)[_0x1157d2(0x47e)]()[_0x1157d2(0x4c2)](_0x24dbb8)){const _0x19e5c8={};_0x19e5c8[_0x1157d2(0x3d7)]=_0x3b000f,_0x19e5c8[_0x1157d2(0x284)]=_0x17f3d4,_0x19e5c8['groupId']=_0x245334,_0x580374[_0x1157d2(0x2d4)](_0x19e5c8);}}}const _0x3147e9=new Set();return _0x580374[_0x1157d2(0x4d1)](_0x623920=>{const _0x8f69c4=_0x1157d2;if(_0x3147e9['has'](_0x623920[_0x8f69c4(0x3d7)]))return![];return _0x3147e9[_0x8f69c4(0x31e)](_0x623920[_0x8f69c4(0x3d7)]),!![];});}_0x2f2d86();const _0x1ba80a=globalThis[_0x1d4a50(0x29f)]=globalThis[_0x1d4a50(0x29f)]||{'memberSnapshots':new Map(),'welcomedDedup':new Set(),'watcherTimer':null,'initTimer':null,'zaloApiModule':null};let _0x51b2ff=![],_0x54f470={};async function _0x9eb199(){const _0x5ca2b8=_0x1d4a50;if(_0x1ba80a[_0x5ca2b8(0x4a3)])return _0x1ba80a[_0x5ca2b8(0x4a3)];if(_0x51b2ff)return null;const _0x2356dc=[_0x5ca2b8(0x4d6)+a0_0x5d734d[_0x5ca2b8(0x50b)](_openclawHome,_0x5ca2b8(0x34a))[_0x5ca2b8(0x224)](/\\/g,'/'),'file:///usr/local/lib/node_modules/@openclaw/zalouser/dist/test-api.js',_0x5ca2b8(0x2a6)];for(const _0x1f0483 of _0x2356dc){try{return _0x1ba80a[_0x5ca2b8(0x4a3)]=await import(_0x1f0483),_0x1ba80a['zaloApiModule'];}catch{}}return _0x2e3201[_0x5ca2b8(0x2cc)](_0x5ca2b8(0x1ea)),_0x51b2ff=!![],null;}async function _0x216e9b(_0x19a7e8){const _0x5ae83d=_0x1d4a50,_0x5c33e2=String(_0x19a7e8);try{const _0xe97439=await _0x9eb199();if(!_0xe97439?.[_0x5ae83d(0x288)])return null;const _0x7f5878=await _0xe97439[_0x5ae83d(0x288)](_0x5ae83d(0x268),String(_0x19a7e8));if(!Array[_0x5ae83d(0x36a)](_0x7f5878))return null;return _0x54f470[_0x5c33e2]=0x0,_0x7f5878['map'](_0x58e2d1=>({'id':String(_0x58e2d1[_0x5ae83d(0x3d7)]||_0x58e2d1['id']||''),'name':String(_0x58e2d1[_0x5ae83d(0x3a1)]||_0x58e2d1[_0x5ae83d(0x284)]||_0x58e2d1['zaloName']||'')}))['filter'](_0x431f1b=>_0x431f1b['id']);}catch(_0x408383){return _0x54f470[_0x5c33e2]=(_0x54f470[_0x5c33e2]||0x0)+0x1,_0x54f470[_0x5c33e2]>=0x3&&(_0x54f470[_0x5c33e2]===0x3||_0x54f470[_0x5c33e2]%0xa===0x0)&&_0x2e3201[_0x5ae83d(0x2cc)]('[openclaw-zalo-mod]\x20[WATCHER]\x20poll\x20failed\x20for\x20group\x20'+_0x19a7e8+_0x5ae83d(0x523)+_0x54f470[_0x5c33e2]+_0x5ae83d(0x2ca)+_0x408383[_0x5ae83d(0x337)]),null;}}async function _0x1e09ca(){const _0x5b6bcf=_0x1d4a50,_0x14a5ad=globalThis[_0x5b6bcf(0x4ec)]?.[_0x5b6bcf(0x271)](_0x5b6bcf(0x268));if(_0x14a5ad)return _0x2e3201[_0x5b6bcf(0x313)]('[openclaw-zalo-mod]\x20⚡\x20Reusing\x20active\x20Zalo\x20API\x20instance\x20from\x20@openclaw/zalouser'),async function _0x1c2dcc(_0x3c532f,_0x5f2bde){return await _0x5f2bde(_0x14a5ad);};try{const _0x2b46f3=await _0x563c2d();if(_0x2b46f3){if(_0x2b46f3['checkZaloAuthenticated']){_0x2e3201[_0x5b6bcf(0x313)](_0x5b6bcf(0x1d1));const _0x577380=await _0x2b46f3[_0x5b6bcf(0x314)](_0x5b6bcf(0x268));if(_0x577380){const _0xbf4071=globalThis['__zcaApiByProfile']?.['get'](_0x5b6bcf(0x268));if(_0xbf4071)return _0x2e3201['info'](_0x5b6bcf(0x209)),async function _0x42d730(_0x548b6b,_0x2e1538){return await _0x2e1538(_0xbf4071);};}_0x2e3201[_0x5b6bcf(0x2cc)]('[openclaw-zalo-mod]\x20checkZaloAuthenticated\x20returned\x20false\x20or\x20API\x20not\x20populated');}else _0x2e3201[_0x5b6bcf(0x2cc)]('[openclaw-zalo-mod]\x20test-api.js\x20missing\x20checkZaloAuthenticated');}}catch(_0x4aabff){_0x2e3201[_0x5b6bcf(0x2cc)](_0x5b6bcf(0x254)+_0x4aabff['message']);}return _0x2e3201[_0x5b6bcf(0x2cc)](_0x5b6bcf(0x450)),null;}function _0x217106(){}async function _0x38f46e(_0x58b4ac){const _0x181aad=_0x1d4a50;try{const _0x37245b=await _0x1e09ca();if(!_0x37245b)return null;return await _0x37245b(_0x181aad(0x268),async _0x3dc933=>{const _0x1f7a45=_0x181aad,_0x2bb930=await _0x3dc933['getGroupInfo'](String(_0x58b4ac)),_0x16e54f=_0x2bb930?.[_0x1f7a45(0x39d)]?.[String(_0x58b4ac)];if(!_0x16e54f)return null;return{'creatorId':_0x16e54f['creatorId']||null,'adminIds':Array['isArray'](_0x16e54f[_0x1f7a45(0x411)])?_0x16e54f[_0x1f7a45(0x411)]:[],'totalMember':_0x242295(_0x16e54f,0x0),'name':_0x16e54f[_0x1f7a45(0x284)]||''};});}catch(_0x47aaa3){return _0x2e3201[_0x181aad(0x2cc)]('[openclaw-zalo-mod]\x20fetchGroupAdminsFromZCA\x20failed\x20for\x20'+_0x58b4ac+':\x20'+_0x47aaa3['message']),null;}}function _0x38c091(_0x575448){const _0x10236b=_0x1d4a50;return _0x4babbc[_0x10236b(0x408)](_0x575448,_0x10236b(0x1e1),[]);}function _0x4ae528(_0x3ae4a1,_0x8745d6){const _0x171850=_0x1d4a50,_0x2294f7=_0x38c091(_0x3ae4a1);!_0x2294f7[_0x171850(0x4c2)](String(_0x8745d6))&&(_0x2294f7['push'](String(_0x8745d6)),_0x4babbc[_0x171850(0x1d6)](_0x3ae4a1,_0x171850(0x1e1),_0x2294f7));}function _0xc36663(_0x36aa7f){const _0x2f1d53=_0x1d4a50,_0x387831=_0x38c091(_0x36aa7f);return _0x387831[_0x2f1d53(0x53e)](_0x459f53=>_0x2edda4[_0x36aa7f]?.[_0x459f53]||_0x459f53);}async function _0x4e2b85(_0x1d900d){const _0x4afbff=_0x1d4a50,_0x5dd7ba=await _0x38f46e(_0x1d900d);if(!_0x5dd7ba)return null;const _0x46febb=new Set(_0x38c091(_0x1d900d));if(_0x5dd7ba['creatorId'])_0x46febb[_0x4afbff(0x31e)](String(_0x5dd7ba[_0x4afbff(0x48e)]));for(const _0x3971c3 of _0x5dd7ba[_0x4afbff(0x411)])_0x46febb[_0x4afbff(0x31e)](String(_0x3971c3));const _0x2dcba2=[..._0x46febb];_0x4babbc[_0x4afbff(0x1d6)](_0x1d900d,_0x4afbff(0x1e1),_0x2dcba2),_0x4babbc[_0x4afbff(0x1d6)](_0x1d900d,_0x4afbff(0x48e),_0x5dd7ba[_0x4afbff(0x48e)]),await _0x4babbc[_0x4afbff(0x306)]();if(_0x7b70ff[_0x1d900d]){_0x7b70ff[_0x1d900d][_0x4afbff(0x498)]=_0x2dcba2,_0x7b70ff[_0x1d900d]['creatorId']=_0x5dd7ba[_0x4afbff(0x48e)]||'';if(_0x5dd7ba[_0x4afbff(0x284)])_0x7b70ff[_0x1d900d][_0x4afbff(0x284)]=_0x5dd7ba[_0x4afbff(0x284)];}else{const _0x335092={};_0x335092['name']=_0x5dd7ba[_0x4afbff(0x284)]||'',_0x335092[_0x4afbff(0x498)]=_0x2dcba2,_0x335092[_0x4afbff(0x48e)]=_0x5dd7ba['creatorId']||'',_0x7b70ff[_0x1d900d]=_0x335092;}const _0x330940={..._0x49267b},_0x27e968=_0x330940;return _0x27e968[_0x1d900d]=_0x7b70ff[_0x1d900d],await _0x43b926(_0x27e968),_0x2e3201[_0x4afbff(0x313)](_0x4afbff(0x304)+_0x1d900d+_0x4afbff(0x300)+_0x5dd7ba[_0x4afbff(0x48e)]+',\x20admins='+_0x2dcba2[_0x4afbff(0x50b)](',')+_0x4afbff(0x2fc)+_0x5dd7ba[_0x4afbff(0x312)]),_0x5dd7ba;}async function _0x516482(_0x5b5631){const _0x541517=_0x1d4a50,_0x364ba9=_0x4babbc[_0x541517(0x408)](_0x5b5631,'welcome',!![]);if(!_0x364ba9)return;const _0x4e0822=await _0x216e9b(_0x5b5631);if(!_0x4e0822)return;_0x44f888(_0x5b5631,_0x4e0822),_0x114dd7();const _0xb381c=new Set(_0x4e0822[_0x541517(0x53e)](_0x31d0e4=>_0x31d0e4['id'])),_0x2567b9=_0x1ba80a[_0x541517(0x346)][_0x541517(0x271)](_0x5b5631);if(!_0x2567b9){_0x1ba80a[_0x541517(0x346)][_0x541517(0x230)](_0x5b5631,_0xb381c),_0x2e3201[_0x541517(0x313)](_0x541517(0x4a1)+_0x5b5631+':\x20'+_0xb381c[_0x541517(0x396)]+_0x541517(0x445));return;}const _0x4febfa=_0x4e0822[_0x541517(0x4d1)](_0x38b2b0=>!_0x2567b9[_0x541517(0x461)](_0x38b2b0['id']));_0x1ba80a[_0x541517(0x346)][_0x541517(0x230)](_0x5b5631,_0xb381c);if(_0x4febfa[_0x541517(0x391)]===0x0)return;const _0x396e04=(_0x5b0647,_0x59d0d5)=>_0x5b0647+':'+_0x59d0d5,_0x24c979=_0x4febfa[_0x541517(0x4d1)](_0x4aa7ed=>!_0x1ba80a[_0x541517(0x3f0)][_0x541517(0x461)](_0x396e04(_0x5b5631,_0x4aa7ed['id'])));if(_0x24c979['length']===0x0){_0x2e3201[_0x541517(0x313)](_0x541517(0x27b)+_0x4febfa[_0x541517(0x391)]+_0x541517(0x27a));return;}_0x2e3201[_0x541517(0x313)](_0x541517(0x27b)+_0x24c979[_0x541517(0x391)]+_0x541517(0x545)+_0x5b5631+':\x20'+_0x24c979[_0x541517(0x53e)](_0x3f64d8=>_0x3f64d8[_0x541517(0x284)]||_0x3f64d8['id'])[_0x541517(0x50b)](',\x20'));for(const _0x8746f8 of _0x24c979[_0x541517(0x303)](0x0,0x5)){const _0x520f5a=_0x8746f8[_0x541517(0x284)]||_0x541517(0x4fa);_0x1ba80a[_0x541517(0x3f0)]['add'](_0x396e04(_0x5b5631,_0x8746f8['id'])),setTimeout(()=>_0x1ba80a[_0x541517(0x3f0)]['delete'](_0x396e04(_0x5b5631,_0x8746f8['id'])),0x36ee80);try{const _0x1dd9f8={};_0x1dd9f8[_0x541517(0x476)]=_0x541517(0x268),await _0x2d96f6(_0x1dd9f8,_0x5b5631,buildWelcome(_0x520f5a,_0xb2b223,_0x4bda3d)),await _0x51b682(_0x5b5631,'chat-highlights.md','|\x20'+_0xbbfd8b()+_0x541517(0x2ec)+_0x520f5a+'\x20joined\x20(detected\x20by\x20watcher)\x20|'),_0x2e3201[_0x541517(0x313)](_0x541517(0x206)+_0x520f5a+_0x541517(0x532)+_0x5b5631);}catch(_0x5ba82d){_0x2e3201['error']('[openclaw-zalo-mod]\x20[WATCHER]\x20welcome\x20send\x20failed\x20for\x20'+_0x520f5a+':\x20'+_0x5ba82d[_0x541517(0x337)]);}await new Promise(_0x4af5be=>setTimeout(_0x4af5be,0x7d0));}if(_0x24c979[_0x541517(0x391)]>0x5){const _0x142889={};_0x142889[_0x541517(0x476)]=_0x541517(0x268),await _0x2d96f6(_0x142889,_0x5b5631,_0x541517(0x3f1)+(_0x24c979['length']-0x5)+_0x541517(0x1ec));}}function _0x10ec1c(){const _0xc0306c=_0x1d4a50;if(!_0x1ee0cb||_0x178cf9[_0xc0306c(0x391)]===0x0){_0x178cf9['length']===0x0&&_0x2e3201[_0xc0306c(0x313)]('[openclaw-zalo-mod]\x20[WATCHER]\x20no\x20watchGroupIds\x20configured\x20—\x20welcome\x20watcher\x20disabled');return;}_0x1ba80a[_0xc0306c(0x497)]&&(clearInterval(_0x1ba80a[_0xc0306c(0x497)]),_0x1ba80a[_0xc0306c(0x497)]=null,_0x2e3201['info'](_0xc0306c(0x333)));_0x1ba80a[_0xc0306c(0x34c)]&&(clearTimeout(_0x1ba80a[_0xc0306c(0x34c)]),_0x1ba80a[_0xc0306c(0x34c)]=null);const _0x4b96ae=Math[_0xc0306c(0x30c)](_0x330075,0x1e)*0x3e8;_0x1ba80a['initTimer']=setTimeout(async()=>{const _0x210fde=_0xc0306c;_0x1ba80a[_0x210fde(0x34c)]=null,await _0x1a1f79();const _0x3e6f46=_0x178cf9[_0x210fde(0x4d1)](_0x594107=>_0x4babbc[_0x210fde(0x408)](_0x594107,'welcome',!![])),_0x276b33=_0x178cf9['filter'](_0x5e87b3=>!_0x4babbc[_0x210fde(0x408)](_0x5e87b3,_0x210fde(0x283),!![]));_0x2e3201['info'](_0x210fde(0x3e5)+_0x3e6f46['length']+'/'+_0x178cf9[_0x210fde(0x391)]+_0x210fde(0x4c0)+_0x4b96ae/0x3e8+'s');if(_0x3e6f46[_0x210fde(0x391)]>0x0)_0x2e3201[_0x210fde(0x313)](_0x210fde(0x398)+_0x3e6f46[_0x210fde(0x53e)](_0x4f6d85=>_0x387243(_0x4f6d85))[_0x210fde(0x50b)](',\x20'));if(_0x276b33[_0x210fde(0x391)]>0x0)_0x2e3201[_0x210fde(0x313)](_0x210fde(0x347)+_0x276b33[_0x210fde(0x53e)](_0x5e734c=>_0x387243(_0x5e734c))[_0x210fde(0x50b)](',\x20'));for(const _0x3dee2c of _0x3e6f46){await _0x516482(_0x3dee2c);if(_0x3e6f46[_0x210fde(0x391)]>0x1)await new Promise(_0x186da3=>setTimeout(_0x186da3,0xbb8));}_0x1ba80a[_0x210fde(0x497)]=setInterval(async()=>{const _0x241f23=_0x210fde;for(const _0x4963c5 of _0x178cf9){try{await _0x516482(_0x4963c5);}catch(_0x4c561f){_0x2e3201['warn'](_0x241f23(0x2c0)+_0x4963c5+':\x20'+_0x4c561f[_0x241f23(0x337)]);}if(_0x178cf9[_0x241f23(0x391)]>0x1)await new Promise(_0x331172=>setTimeout(_0x331172,0x3e8));}},_0x4b96ae);if(_0x1ba80a[_0x210fde(0x497)]&&_0x1ba80a['watcherTimer'][_0x210fde(0x286)])_0x1ba80a['watcherTimer'][_0x210fde(0x286)]();},0x7530);if(_0x1ba80a[_0xc0306c(0x34c)]&&_0x1ba80a[_0xc0306c(0x34c)]['unref'])_0x1ba80a[_0xc0306c(0x34c)][_0xc0306c(0x286)]();}async function _0x45fa55(_0x519b34,_0x30a9d7,_0x5ab163,_0x37d735){const _0x527467=_0x1d4a50,_0x3e2a16=_0x5ab163?_0x33282c=>_0x2d96f6(_0x519b34,_0x30a9d7,_0x33282c):_0x553246=>_0x5b1757(_0x519b34,_0x30a9d7,_0x553246);try{await _0x3e2a16(_0x527467(0x217));const _0x3c4c2e=await _0x1e09ca();if(!_0x3c4c2e)throw new Error(_0x527467(0x44c));const {groupIds:_0x118737,infoMap:_0x42cf05}=await _0x3c4c2e(_0x527467(0x268),async _0x1aefec=>{const _0x5debe8=_0x527467,_0x1a9b34=new Set();function _0x396a21(_0xd10f29){if(!_0xd10f29)return[];const _0x38cde3=new Set();function _0x4c5f8b(_0xab0187){const _0x4a19c0=a0_0x247a;if(!_0xab0187)return;if(typeof _0xab0187==='string'){const _0x1103f6=_0xab0187[_0x4a19c0(0x224)](/^group:/,'')[_0x4a19c0(0x2b0)]();if(/^\d+$/[_0x4a19c0(0x488)](_0x1103f6))_0x38cde3[_0x4a19c0(0x31e)](_0x1103f6);}else{if(typeof _0xab0187===_0x4a19c0(0x2b8))_0x38cde3[_0x4a19c0(0x31e)](String(_0xab0187));else{if(Array[_0x4a19c0(0x36a)](_0xab0187)){for(const _0x5200f7 of _0xab0187)_0x4c5f8b(_0x5200f7);}else{if(typeof _0xab0187===_0x4a19c0(0x1be)){if(_0xab0187['gridVerMap'])_0x4c5f8b(Object['keys'](_0xab0187['gridVerMap']));if(_0xab0187[_0x4a19c0(0x39d)])_0x4c5f8b(Object['keys'](_0xab0187['gridInfoMap']));if(_0xab0187['listLocalId'])_0x4c5f8b(_0xab0187[_0x4a19c0(0x3b4)]);if(_0xab0187[_0x4a19c0(0x1ed)])_0x4c5f8b(_0xab0187[_0x4a19c0(0x1ed)]);for(const [_0xd79086,_0x5befa3]of Object[_0x4a19c0(0x3ab)](_0xab0187)){const _0x32663e=_0xd79086[_0x4a19c0(0x224)](/^group:/,'')[_0x4a19c0(0x2b0)]();if(/^\d+$/['test'](_0x32663e))_0x38cde3[_0x4a19c0(0x31e)](_0x32663e);_0x4c5f8b(_0x5befa3);}}}}}}return _0x4c5f8b(_0xd10f29),[..._0x38cde3];}try{const _0x506656=await _0x1aefec['getAllGroups']();_0x396a21(_0x506656)[_0x5debe8(0x21b)](_0x59cdd6=>_0x1a9b34[_0x5debe8(0x31e)](_0x59cdd6));}catch(_0x10d865){_0x2e3201[_0x5debe8(0x2cc)](_0x5debe8(0x49a)+_0x10d865[_0x5debe8(0x337)]);}try{if(typeof _0x1aefec['getPinConversations']===_0x5debe8(0x52c)){const _0x14e429=await _0x1aefec[_0x5debe8(0x453)]();_0x396a21(_0x14e429)[_0x5debe8(0x21b)](_0xc650a5=>_0x1a9b34[_0x5debe8(0x31e)](_0xc650a5));}}catch(_0x5142c0){_0x2e3201[_0x5debe8(0x2cc)](_0x5debe8(0x44a)+_0x5142c0[_0x5debe8(0x337)]);}try{if(typeof _0x1aefec[_0x5debe8(0x2c4)]===_0x5debe8(0x52c)){const _0x3e6264=await _0x1aefec[_0x5debe8(0x2c4)]();_0x396a21(_0x3e6264)[_0x5debe8(0x21b)](_0xcd2af0=>_0x1a9b34[_0x5debe8(0x31e)](_0xcd2af0));}}catch(_0x225668){_0x2e3201[_0x5debe8(0x2cc)](_0x5debe8(0x253)+_0x225668[_0x5debe8(0x337)]);}try{if(typeof _0x1aefec['getArchivedChatList']===_0x5debe8(0x52c)){const _0x2934c5=await _0x1aefec['getArchivedChatList']();_0x396a21(_0x2934c5)[_0x5debe8(0x21b)](_0x1e20fb=>_0x1a9b34[_0x5debe8(0x31e)](_0x1e20fb));}}catch(_0x51ee3b){_0x2e3201[_0x5debe8(0x2cc)](_0x5debe8(0x503)+_0x51ee3b[_0x5debe8(0x337)]);}try{if(typeof _0x1aefec[_0x5debe8(0x47d)]===_0x5debe8(0x52c)){const _0x2d6159=await _0x1aefec[_0x5debe8(0x47d)]();_0x396a21(_0x2d6159)[_0x5debe8(0x21b)](_0x18a8bc=>_0x1a9b34['add'](_0x18a8bc));}}catch(_0x459319){_0x2e3201[_0x5debe8(0x2cc)](_0x5debe8(0x1af)+_0x459319[_0x5debe8(0x337)]);}const _0x1a3d0d=[..._0x1a9b34];_0x37d735&&!_0x1a3d0d[_0x5debe8(0x4c2)](_0x37d735)&&_0x1a3d0d[_0x5debe8(0x2d4)](_0x37d735);let _0x4aaa09={};if(_0x1a3d0d['length']>0x0)try{const _0x158502=await _0x1aefec['getGroupInfo'](_0x1a3d0d);_0x4aaa09=_0x158502?.[_0x5debe8(0x39d)]||{};}catch(_0x388f15){_0x2e3201[_0x5debe8(0x2cc)](_0x5debe8(0x239)+_0x388f15[_0x5debe8(0x337)]);}const _0x2ae8be={};return _0x2ae8be[_0x5debe8(0x41d)]=_0x1a3d0d,_0x2ae8be['infoMap']=_0x4aaa09,_0x2ae8be;}),_0x19d8ae={..._0x49267b},_0x12c7da=_0x19d8ae,_0x5d78e8=[];let _0x37fbb2=0x0;for(const _0x6494db of _0x118737){const _0x302535=_0x42cf05[_0x6494db];if(!_0x302535){_0x5d78e8[_0x527467(0x2d4)](_0x527467(0x519)+(_0x12c7da[_0x6494db]?.[_0x527467(0x284)]||_0x6494db)+_0x527467(0x1db)+_0x6494db+'\x20|\x20Không\x20lấy\x20được\x20info\x20từ\x20ZCA');continue;}(!_0x12c7da[_0x6494db]||typeof _0x12c7da[_0x6494db]==='string')&&(_0x12c7da[_0x6494db]={'name':_0x302535[_0x527467(0x284)]||(typeof _0x12c7da[_0x6494db]===_0x527467(0x365)?_0x12c7da[_0x6494db]:''),'admins':[],'creatorId':''});const _0x5f327f=new Set(_0x12c7da[_0x6494db][_0x527467(0x498)]||[]);if(_0x302535[_0x527467(0x48e)])_0x5f327f[_0x527467(0x31e)](String(_0x302535[_0x527467(0x48e)]));if(Array[_0x527467(0x36a)](_0x302535[_0x527467(0x411)])){for(const _0x3946ee of _0x302535[_0x527467(0x411)])_0x5f327f[_0x527467(0x31e)](String(_0x3946ee));}_0x12c7da[_0x6494db]['admins']=[..._0x5f327f],_0x12c7da[_0x6494db]['creatorId']=_0x302535[_0x527467(0x48e)]||'';if(_0x302535[_0x527467(0x284)])_0x12c7da[_0x6494db][_0x527467(0x284)]=_0x302535[_0x527467(0x284)];_0x4babbc[_0x527467(0x1d6)](_0x6494db,_0x527467(0x1e1),[..._0x5f327f]),_0x4babbc[_0x527467(0x1d6)](_0x6494db,_0x527467(0x48e),_0x302535[_0x527467(0x48e)]);const _0x4e5a08=_0x5f327f[_0x527467(0x461)](_0x4dcc95);_0x4e5a08?(_0x4babbc[_0x527467(0x1d6)](_0x6494db,_0x527467(0x283),!![]),_0x4babbc[_0x527467(0x1d6)](_0x6494db,_0x527467(0x274),!![]),_0x4babbc[_0x527467(0x1d6)](_0x6494db,_0x527467(0x1fb),!![]),_0x37fbb2++,_0x5d78e8[_0x527467(0x2d4)]('✅\x20'+_0x12c7da[_0x6494db][_0x527467(0x284)]+_0x527467(0x1db)+_0x6494db+'\x20|\x20👥\x20'+(_0x302535[_0x527467(0x312)]||'?')+_0x527467(0x3b7))):_0x5d78e8[_0x527467(0x2d4)]('⬜\x20'+_0x12c7da[_0x6494db][_0x527467(0x284)]+_0x527467(0x1db)+_0x6494db+_0x527467(0x1c6)+(_0x302535[_0x527467(0x312)]||'?')+_0x527467(0x276));}await _0x43b926(_0x12c7da);const _0x3e4997={};if(!_0x2c42b0[_0x527467(0x467)]||_0x2c42b0[_0x527467(0x467)]===_0x527467(0x4c5)){const _0x5bc2d9=await _readBotNameFromIdentity(_0x59e5fd);_0x5bc2d9&&(_0x3e4997[_0x527467(0x467)]=_0x5bc2d9,_0x3e4997[_0x527467(0x41f)]=[_0x5bc2d9]);}Object[_0x527467(0x34e)](_0x3e4997)[_0x527467(0x391)]>0x0&&await _patchOpenclawConfig(_openclawHome,_0x3e4997,_0x2e3201,!![]);await _0x4babbc[_0x527467(0x306)](),_0x217106();for(const [_0x13e3e8,_0x5b308d]of Object['entries'](_0x12c7da)){_0x7b70ff[_0x13e3e8]=_0x5b308d;if(!_0x178cf9[_0x527467(0x4c2)](_0x13e3e8))_0x178cf9[_0x527467(0x2d4)](_0x13e3e8);}const _0x16c02f=[_0x527467(0x542),_0x527467(0x546),..._0x5d78e8,'',_0x527467(0x422)+_0x118737[_0x527467(0x391)]+_0x527467(0x35f),'🎉\x20Auto-enabled:\x20'+_0x37fbb2+_0x527467(0x3cc),_0x527467(0x263)][_0x527467(0x50b)]('\x0a');await _0x3e2a16(_0x16c02f);}catch(_0x3e91e8){_0x2e3201[_0x527467(0x2cc)](_0x527467(0x454)+_0x3e91e8[_0x527467(0x337)]),await _0x3e2a16('⚠️\x20Lỗi\x20quét\x20groups\x20từ\x20ZCA:\x20'+_0x3e91e8[_0x527467(0x337)]),_0x217106();}}async function _0x235375(_0x20adf4,_0x73afb4,_0x1ab012,_0x28b548){const _0x287056=_0x1d4a50,_0x4f7f3a=_0x20adf4[_0x287056(0x4cf)](/^(\/[a-z][a-z0-9-]*)(.*)$/i);if(!_0x4f7f3a)return null;const _0xe66788=_0x4f7f3a[0x1]['toLowerCase']();if(!_0xe66788[_0x287056(0x26e)](_0x28b548))return null;const _0x1b4c5e='/'+_0xe66788[_0x287056(0x303)](_0x28b548[_0x287056(0x391)]),_0x2cbc23=_0x4f7f3a[0x2]['trim'](),_0x37b0d8=_0x2cbc23?_0x2cbc23[_0x287056(0x518)](/\s+/):[];if(_0x1b4c5e!=='/rules')return null;const _0x4c24e1=_0x37b0d8[0x0]?.[_0x287056(0x47e)]();if(!_0x4c24e1){await _0x5b1757(_0x1ab012,_0x73afb4,'🔐\x20OWNER\x20PANEL\x20—\x20'+_0x28b548+_0x287056(0x33b)+_0x28b548+_0x287056(0x2b2)+_0x28b548+'rules\x20mute\x20<groupId>\x20on/off\x0a\x20\x20'+_0x28b548+_0x287056(0x2e2)+_0x28b548+_0x287056(0x2a8)+_0x28b548+'rules\x20silent\x20<groupId>\x20on/off\x0a\x20\x20'+_0x28b548+_0x287056(0x544)+_0x28b548+_0x287056(0x45f)+_0x28b548+_0x287056(0x218)+_0x28b548+'rules\x20welcome\x20all\x20on/off\x0a\x0a📋\x20Tracking\x20(ghi\x20lịch\x20sử\x20chat):\x0a\x20\x20'+_0x28b548+_0x287056(0x2f7)+_0x28b548+_0x287056(0x1c9)+_0x28b548+'rules\x20tracking\x20all\x20on/off\x0a\x0a👁️\x20Follow\x20(theo\x20dõi\x20chat\x20+\x20memory):\x0a\x20\x20'+_0x28b548+_0x287056(0x48d)+_0x28b548+_0x287056(0x3aa)+_0x28b548+_0x287056(0x363)+_0x28b548+_0x287056(0x24c)+_0x28b548+_0x287056(0x322)+_0x28b548+'rules\x20dm-remove\x20<tên\x20member>\x0a\x0a🆔\x20Group:\x0a\x20\x20'+_0x28b548+_0x287056(0x21e)+_0x28b548+_0x287056(0x3a7)+_0x28b548+_0x287056(0x4c9)+_0x28b548+_0x287056(0x46d));const _0x3abc19={};return _0x3abc19[_0x287056(0x3ae)]=!![],_0x3abc19;}if(_0x4c24e1===_0x287056(0x357)){const _0x60a484=['🔇\x20MUTE\x20PER-GROUP\x0a━━━━━━━━━━━━━━━━━━'];for(const _0x21196b of _0x178cf9){const _0x18cc5e=_0x387243(_0x21196b),_0xa79816=_0x4babbc['getSetting'](_0x21196b,_0x287056(0x433),![]);_0x60a484[_0x287056(0x2d4)]((_0xa79816?'🔇':'🔊')+'\x20'+_0x18cc5e+_0x287056(0x1db)+_0x21196b+_0x287056(0x44d)+(_0xa79816?_0x287056(0x330):_0x287056(0x28f)));}if(_0x178cf9[_0x287056(0x391)]===0x0)_0x60a484['push'](_0x287056(0x45c));await _0x5b1757(_0x1ab012,_0x73afb4,_0x60a484[_0x287056(0x50b)]('\x0a'));const _0x1427bb={};return _0x1427bb[_0x287056(0x3ae)]=!![],_0x1427bb;}if(_0x4c24e1==='mute'&&_0x37b0d8[0x1]?.[_0x287056(0x47e)]()===_0x287056(0x25e)){const _0x4812a1=_0x37b0d8[0x2]?.[_0x287056(0x47e)]();if(_0x4812a1==='on'||_0x4812a1===_0x287056(0x38a)){const _0x553f57=_0x4812a1==='on';for(const _0x21af89 of _0x178cf9){_0x4babbc[_0x287056(0x1d6)](_0x21af89,_0x287056(0x433),_0x553f57);}await _0x4babbc[_0x287056(0x306)](),await _0x5b1757(_0x1ab012,_0x73afb4,(_0x553f57?'🔇':'🔊')+_0x287056(0x2da)+(_0x553f57?_0x287056(0x501):_0x287056(0x493))+_0x287056(0x45b)+_0x178cf9[_0x287056(0x391)]+_0x287056(0x35f));}else await _0x5b1757(_0x1ab012,_0x73afb4,'⚠️\x20Cú\x20pháp:\x20${cmdPrefix}rules\x20mute\x20all\x20on/off');const _0x48245e={};return _0x48245e[_0x287056(0x3ae)]=!![],_0x48245e;}if(_0x4c24e1===_0x287056(0x3b1)&&_0x37b0d8[0x1]){const _0x317d7c=_0x37b0d8[0x1][_0x287056(0x224)](/^<|>$/g,''),_0x5b9a08=_0x37b0d8[0x2]?.[_0x287056(0x47e)]();if(_0x5b9a08==='on')_0x4babbc['setSetting'](_0x317d7c,'muted',!![]),await _0x4babbc[_0x287056(0x306)](),await _0x5b1757(_0x1ab012,_0x73afb4,_0x287056(0x3c7)+_0x387243(_0x317d7c)+'\x20('+_0x317d7c+_0x287056(0x24d));else _0x5b9a08===_0x287056(0x38a)?(_0x4babbc[_0x287056(0x1d6)](_0x317d7c,_0x287056(0x433),![]),await _0x4babbc['saveSettings'](),await _0x5b1757(_0x1ab012,_0x73afb4,_0x287056(0x522)+_0x387243(_0x317d7c)+'\x20('+_0x317d7c+_0x287056(0x1b7))):await _0x5b1757(_0x1ab012,_0x73afb4,_0x287056(0x4ba));const _0x4724f5={};return _0x4724f5[_0x287056(0x3ae)]=!![],_0x4724f5;}if(_0x4c24e1==='silent-list'){const _0x37c5af=[_0x287056(0x4e2)];for(const _0x13032f of _0x178cf9){const _0xc1bfdf=_0x387243(_0x13032f),_0x5990d1=_0x4babbc[_0x287056(0x408)](_0x13032f,_0x287056(0x358),!![]);_0x37c5af[_0x287056(0x2d4)]((_0x5990d1?'🔕':'🔊')+'\x20'+_0xc1bfdf+_0x287056(0x1db)+_0x13032f+_0x287056(0x44d)+(_0x5990d1?_0x287056(0x501):'TẮT'));}if(_0x178cf9[_0x287056(0x391)]===0x0)_0x37c5af[_0x287056(0x2d4)](_0x287056(0x416));await _0x5b1757(_0x1ab012,_0x73afb4,_0x37c5af[_0x287056(0x50b)]('\x0a'));const _0x4f8008={};return _0x4f8008[_0x287056(0x3ae)]=!![],_0x4f8008;}if(_0x4c24e1===_0x287056(0x358)&&_0x37b0d8[0x1]?.[_0x287056(0x47e)]()===_0x287056(0x25e)){const _0x553fbd=_0x37b0d8[0x2]?.['toLowerCase']();if(_0x553fbd==='on'||_0x553fbd==='off'){const _0x159328=_0x553fbd==='on';for(const _0x40d7fc of _0x178cf9){_0x4babbc[_0x287056(0x1d6)](_0x40d7fc,_0x287056(0x358),_0x159328);}await _0x4babbc[_0x287056(0x306)](),await _0x5b1757(_0x1ab012,_0x73afb4,(_0x159328?'🔕':'🔊')+_0x287056(0x533)+(_0x159328?_0x287056(0x501):_0x287056(0x493))+_0x287056(0x45b)+_0x178cf9[_0x287056(0x391)]+_0x287056(0x35f));}else await _0x5b1757(_0x1ab012,_0x73afb4,_0x287056(0x302));const _0x386fd1={};return _0x386fd1[_0x287056(0x3ae)]=!![],_0x386fd1;}if(_0x4c24e1===_0x287056(0x358)&&_0x37b0d8[0x1]){const _0x3e3d79=_0x37b0d8[0x1][_0x287056(0x224)](/^<|>$/g,''),_0x1cad10=_0x37b0d8[0x2]?.[_0x287056(0x47e)]();if(_0x1cad10==='on')_0x4babbc['setSetting'](_0x3e3d79,_0x287056(0x358),!![]),await _0x4babbc[_0x287056(0x306)](),await _0x5b1757(_0x1ab012,_0x73afb4,_0x287056(0x1de)+_0x387243(_0x3e3d79)+'\x20('+_0x3e3d79+')');else _0x1cad10===_0x287056(0x38a)?(_0x4babbc[_0x287056(0x1d6)](_0x3e3d79,_0x287056(0x358),![]),await _0x4babbc['saveSettings'](),await _0x5b1757(_0x1ab012,_0x73afb4,_0x287056(0x4eb)+_0x387243(_0x3e3d79)+'\x20('+_0x3e3d79+')')):await _0x5b1757(_0x1ab012,_0x73afb4,_0x287056(0x4e8));const _0x47f150={};return _0x47f150[_0x287056(0x3ae)]=!![],_0x47f150;}if(_0x4c24e1===_0x287056(0x2af)){const _0x39e3a6=['🎉\x20WELCOME\x20PER-GROUP\x0a━━━━━━━━━━━━━━━━━━'];for(const _0xb161f of _0x178cf9){const _0x10da99=_0x387243(_0xb161f),_0x42300d=_0x4babbc[_0x287056(0x408)](_0xb161f,_0x287056(0x283),!![]),_0x5f0597=_0x2edda4[_0xb161f]?Object[_0x287056(0x34e)](_0x2edda4[_0xb161f])[_0x287056(0x391)]:'?';_0x39e3a6[_0x287056(0x2d4)]((_0x42300d?'✅':'❌')+'\x20'+_0x10da99+_0x287056(0x1db)+_0xb161f+_0x287056(0x1f4)+_0x5f0597);}if(_0x178cf9['length']===0x0)_0x39e3a6[_0x287056(0x2d4)](_0x287056(0x45c));await _0x5b1757(_0x1ab012,_0x73afb4,_0x39e3a6[_0x287056(0x50b)]('\x0a'));const _0x5cf3dc={};return _0x5cf3dc[_0x287056(0x3ae)]=!![],_0x5cf3dc;}if(_0x4c24e1===_0x287056(0x283)&&_0x37b0d8[0x1]?.[_0x287056(0x47e)]()===_0x287056(0x25e)){const _0x4840ca=_0x37b0d8[0x2]?.[_0x287056(0x47e)]();if(_0x4840ca==='on'||_0x4840ca==='off'){const _0x263a46=_0x4840ca==='on';for(const _0x165352 of _0x178cf9){_0x4babbc[_0x287056(0x1d6)](_0x165352,_0x287056(0x283),_0x263a46);}await _0x4babbc[_0x287056(0x306)](),await _0x5b1757(_0x1ab012,_0x73afb4,(_0x263a46?'🎉':'🔕')+'\x20Welcome\x20'+(_0x263a46?'BẬT':_0x287056(0x493))+_0x287056(0x45b)+_0x178cf9[_0x287056(0x391)]+'\x20groups');}else await _0x5b1757(_0x1ab012,_0x73afb4,_0x287056(0x407));const _0x5d2a48={};return _0x5d2a48['handled']=!![],_0x5d2a48;}if(_0x4c24e1===_0x287056(0x283)&&_0x37b0d8[0x1]){const _0x9fc645=_0x37b0d8[0x1]['replace'](/^<|>$/g,''),_0x1c35f1=_0x37b0d8[0x2]?.[_0x287056(0x47e)]();if(_0x1c35f1==='on')_0x4babbc[_0x287056(0x1d6)](_0x9fc645,'welcome',!![]),await _0x4babbc[_0x287056(0x306)](),await _0x5b1757(_0x1ab012,_0x73afb4,'✅\x20Welcome\x20BẬT\x20cho\x20'+_0x387243(_0x9fc645)+'\x20('+_0x9fc645+')');else _0x1c35f1==='off'?(_0x4babbc[_0x287056(0x1d6)](_0x9fc645,_0x287056(0x283),![]),await _0x4babbc[_0x287056(0x306)](),await _0x5b1757(_0x1ab012,_0x73afb4,_0x287056(0x1c1)+_0x387243(_0x9fc645)+'\x20('+_0x9fc645+')')):await _0x5b1757(_0x1ab012,_0x73afb4,_0x287056(0x2bd));const _0x446a76={};return _0x446a76['handled']=!![],_0x446a76;}if(_0x4c24e1===_0x287056(0x34d)){const _0x425fcc=[_0x287056(0x2f3)];for(const _0x44cda6 of _0x178cf9){const _0x9daa0c=_0x387243(_0x44cda6),_0x7568ea=_0x4babbc[_0x287056(0x408)](_0x44cda6,_0x287056(0x1fb),![]);_0x425fcc[_0x287056(0x2d4)]((_0x7568ea?'✅':'❌')+'\x20'+_0x9daa0c+_0x287056(0x1db)+_0x44cda6+_0x287056(0x394)+(_0x7568ea?_0x287056(0x501):_0x287056(0x493)));}if(_0x178cf9[_0x287056(0x391)]===0x0)_0x425fcc[_0x287056(0x2d4)](_0x287056(0x416));await _0x5b1757(_0x1ab012,_0x73afb4,_0x425fcc[_0x287056(0x50b)]('\x0a'));const _0x1d9f66={};return _0x1d9f66[_0x287056(0x3ae)]=!![],_0x1d9f66;}if(_0x4c24e1===_0x287056(0x1fb)&&_0x37b0d8[0x1]?.[_0x287056(0x47e)]()===_0x287056(0x25e)){const _0x2be09f=_0x37b0d8[0x2]?.[_0x287056(0x47e)]();if(_0x2be09f==='on'||_0x2be09f===_0x287056(0x38a)){const _0x4b77f0=_0x2be09f==='on';for(const _0x204738 of _0x178cf9){_0x4babbc[_0x287056(0x1d6)](_0x204738,_0x287056(0x1fb),_0x4b77f0);}await _0x4babbc['saveSettings'](),await _0x5b1757(_0x1ab012,_0x73afb4,(_0x4b77f0?'✅':'❌')+_0x287056(0x4bc)+(_0x4b77f0?'BẬT':_0x287056(0x493))+_0x287056(0x45b)+_0x178cf9[_0x287056(0x391)]+_0x287056(0x35f));}else await _0x5b1757(_0x1ab012,_0x73afb4,'⚠️\x20Cú\x20pháp:\x20${cmdPrefix}rules\x20tracking\x20all\x20on/off');const _0x1154cc={};return _0x1154cc[_0x287056(0x3ae)]=!![],_0x1154cc;}if(_0x4c24e1===_0x287056(0x1fb)&&_0x37b0d8[0x1]){const _0x3225c7=_0x37b0d8[0x1][_0x287056(0x224)](/^<|>$/g,''),_0x34983d=_0x37b0d8[0x2]?.[_0x287056(0x47e)]();if(_0x34983d==='on')_0x4babbc[_0x287056(0x1d6)](_0x3225c7,_0x287056(0x1fb),!![]),await _0x4babbc[_0x287056(0x306)](),await _0x5b1757(_0x1ab012,_0x73afb4,_0x287056(0x39a)+_0x387243(_0x3225c7)+'\x20('+_0x3225c7+')');else _0x34983d===_0x287056(0x38a)?(_0x4babbc[_0x287056(0x1d6)](_0x3225c7,'tracking',![]),await _0x4babbc[_0x287056(0x306)](),await _0x5b1757(_0x1ab012,_0x73afb4,'✅\x20Tracking\x20TẮT\x20cho\x20'+_0x387243(_0x3225c7)+'\x20('+_0x3225c7+')')):await _0x5b1757(_0x1ab012,_0x73afb4,'⚠️\x20Cú\x20pháp:\x20${cmdPrefix}rules\x20tracking\x20<groupId>\x20on/off');const _0x32aa0d={};return _0x32aa0d[_0x287056(0x3ae)]=!![],_0x32aa0d;}if(_0x4c24e1===_0x287056(0x3b3)){if(_0x590339[_0x287056(0x396)]===0x0)await _0x5b1757(_0x1ab012,_0x73afb4,'💬\x20DM\x20Whitelist:\x20TRỐNG\x0a\x0aTất\x20cả\x20mọi\x20người\x20đều\x20có\x20thể\x20DM\x20bot.\x0aDùng\x20${cmdPrefix}rules\x20dm-add\x20<tên>\x20để\x20giới\x20hạn.');else{const _0x42fe8c=[_0x287056(0x1bc)+_0x590339[_0x287056(0x396)]+_0x287056(0x324)];for(const _0x3e9c08 of _0x590339){let _0x4d6c97=_0x3e9c08;for(const _0x1d343b of Object[_0x287056(0x2ac)](_0x2edda4)){if(_0x1d343b[_0x3e9c08]){_0x4d6c97=_0x1d343b[_0x3e9c08];break;}}_0x42fe8c[_0x287056(0x2d4)]('•\x20'+_0x4d6c97+'\x20('+_0x3e9c08+')');}_0x42fe8c['push'](_0x287056(0x1b1)),await _0x5b1757(_0x1ab012,_0x73afb4,_0x42fe8c[_0x287056(0x50b)]('\x0a'));}const _0x37661d={};return _0x37661d[_0x287056(0x3ae)]=!![],_0x37661d;}if(_0x4c24e1===_0x287056(0x27e)&&_0x37b0d8['slice'](0x1)[_0x287056(0x391)]>0x0){const _0x4bb0c1=_0x37b0d8[_0x287056(0x303)](0x1)[_0x287056(0x50b)]('\x20'),_0x563377=_0x509097(_0x4bb0c1);if(_0x563377['length']===0x0)await _0x5b1757(_0x1ab012,_0x73afb4,'❌\x20Không\x20tìm\x20thấy\x20member\x20tên\x20\x22'+_0x4bb0c1+_0x287056(0x458)+_0x28b548+_0x287056(0x527));else{if(_0x563377['length']===0x1){const _0x46e4f=_0x563377[0x0];_0x590339[_0x287056(0x31e)](_0x46e4f[_0x287056(0x3d7)]);const _0x27d1c6={};_0x27d1c6[_0x287056(0x52b)]=[..._0x590339],await _patchOpenclawConfig(_openclawHome,_0x27d1c6,_0x2e3201,!![]),await _0x5b1757(_0x1ab012,_0x73afb4,_0x287056(0x292)+_0x46e4f['name']+'\x20('+_0x46e4f[_0x287056(0x3d7)]+')\x20vào\x20DM\x20whitelist.');}else{const _0x5f541f=[_0x287056(0x401)+_0x563377[_0x287056(0x391)]+_0x287056(0x3f3)+_0x4bb0c1+'\x22:'];for(const _0x397985 of _0x563377[_0x287056(0x303)](0x0,0xa)){_0x5f541f[_0x287056(0x2d4)]('•\x20'+_0x397985['name']+_0x287056(0x29d)+_0x397985[_0x287056(0x3d7)]+'\x20('+_0x387243(_0x397985[_0x287056(0x4e7)])+')');}_0x5f541f['push'](_0x287056(0x491)),await _0x5b1757(_0x1ab012,_0x73afb4,_0x5f541f[_0x287056(0x50b)]('\x0a'));}}const _0x213ab5={};return _0x213ab5[_0x287056(0x3ae)]=!![],_0x213ab5;}if(_0x4c24e1===_0x287056(0x44e)&&_0x37b0d8['slice'](0x1)['length']>0x0){const _0xc262b=_0x37b0d8[_0x287056(0x303)](0x1)[_0x287056(0x50b)]('\x20'),_0x4719a6=_0x509097(_0xc262b)[_0x287056(0x4d1)](_0x4ed07c=>_0x590339[_0x287056(0x461)](_0x4ed07c[_0x287056(0x3d7)]));if(_0x4719a6[_0x287056(0x391)]===0x0)await _0x5b1757(_0x1ab012,_0x73afb4,_0x287056(0x370)+_0xc262b+_0x287056(0x225));else{if(_0x4719a6[_0x287056(0x391)]===0x1){const _0x3aabbe=_0x4719a6[0x0];_0x590339[_0x287056(0x22b)](_0x3aabbe[_0x287056(0x3d7)]);const _0x9b108e={};_0x9b108e['allowedDmUsers']=[..._0x590339],await _patchOpenclawConfig(_openclawHome,_0x9b108e,_0x2e3201,!![]),await _0x5b1757(_0x1ab012,_0x73afb4,_0x287056(0x39e)+_0x3aabbe[_0x287056(0x284)]+'\x20('+_0x3aabbe[_0x287056(0x3d7)]+')\x20khỏi\x20DM\x20whitelist.');}else{const _0x127d7f=[_0x287056(0x401)+_0x4719a6[_0x287056(0x391)]+'\x20kết\x20quả\x20trong\x20whitelist:'];for(const _0x1e6e6c of _0x4719a6['slice'](0x0,0xa)){_0x127d7f[_0x287056(0x2d4)]('•\x20'+_0x1e6e6c[_0x287056(0x284)]+_0x287056(0x29d)+_0x1e6e6c[_0x287056(0x3d7)]);}_0x127d7f[_0x287056(0x2d4)]('\x0aVui\x20lòng\x20cung\x20cấp\x20tên\x20chính\x20xác\x20hơn.'),await _0x5b1757(_0x1ab012,_0x73afb4,_0x127d7f[_0x287056(0x50b)]('\x0a'));}}const _0x4461bd={};return _0x4461bd[_0x287056(0x3ae)]=!![],_0x4461bd;}if(_0x4c24e1===_0x287056(0x3bb)){const _0x8c98c9=[_0x287056(0x435)];for(const _0x11b036 of _0x178cf9){const _0x286c65=_0x387243(_0x11b036),_0x27b7d8=_0x4babbc['getSetting'](_0x11b036,'follow',!![]),_0x317a17=_0x4babbc[_0x287056(0x408)](_0x11b036,_0x287056(0x1fb),![]);_0x8c98c9[_0x287056(0x2d4)]((_0x27b7d8?'✅':'❌')+'\x20'+_0x286c65+_0x287056(0x1db)+_0x11b036+_0x287056(0x394)+(_0x317a17?_0x287056(0x501):'TẮT'));}if(_0x178cf9[_0x287056(0x391)]===0x0)_0x8c98c9[_0x287056(0x2d4)]('⚠️\x20Chưa\x20có\x20group\x20nào.');_0x8c98c9[_0x287056(0x2d4)](_0x287056(0x413)),await _0x5b1757(_0x1ab012,_0x73afb4,_0x8c98c9[_0x287056(0x50b)]('\x0a'));const _0x40ecd3={};return _0x40ecd3[_0x287056(0x3ae)]=!![],_0x40ecd3;}if(_0x4c24e1===_0x287056(0x274)&&_0x37b0d8[0x1]?.[_0x287056(0x47e)]()===_0x287056(0x25e)){const _0x3fe1c5=_0x37b0d8[0x2]?.[_0x287056(0x47e)]();if(_0x3fe1c5==='on'||_0x3fe1c5===_0x287056(0x38a)){const _0x20fe9d=_0x3fe1c5==='on';for(const _0x432ca5 of _0x178cf9){_0x4babbc[_0x287056(0x1d6)](_0x432ca5,'follow',_0x20fe9d),_0x4babbc[_0x287056(0x1d6)](_0x432ca5,'tracking',_0x20fe9d);}await _0x4babbc[_0x287056(0x306)](),await _0x5b1757(_0x1ab012,_0x73afb4,(_0x20fe9d?_0x287056(0x325):'🚫')+'\x20Follow\x20'+(_0x20fe9d?_0x287056(0x501):_0x287056(0x493))+'\x20cho\x20TẤT\x20CẢ\x20'+_0x178cf9[_0x287056(0x391)]+'\x20groups');}else await _0x5b1757(_0x1ab012,_0x73afb4,_0x287056(0x305));const _0x301ea6={};return _0x301ea6[_0x287056(0x3ae)]=!![],_0x301ea6;}if(_0x4c24e1===_0x287056(0x274)&&_0x37b0d8[0x1]){const _0x10df2e=_0x37b0d8[0x1]['replace'](/^<|>$/g,''),_0xabc468=_0x37b0d8[0x2]?.['toLowerCase']();if(_0xabc468==='on'){_0x4babbc['setSetting'](_0x10df2e,_0x287056(0x274),!![]),_0x4babbc[_0x287056(0x1d6)](_0x10df2e,_0x287056(0x1fb),!![]),await _0x4babbc[_0x287056(0x306)]();const _0x3b4ee3=_0x3db127(_0x10df2e);try{const _0x4cb0eb={};_0x4cb0eb['recursive']=!![],await a0_0x39fe3e[_0x287056(0x4f3)](_0x3b4ee3,_0x4cb0eb);const _0x1023f4=a0_0x5d734d[_0x287056(0x50b)](_0x3b4ee3,_0x287056(0x444));try{await a0_0x39fe3e[_0x287056(0x375)](_0x1023f4);}catch{const _0x545210=['#\x20'+_0x387243(_0x10df2e)+_0x287056(0x4db),'',_0x287056(0x3f7),'',_0x287056(0x3d2),_0x287056(0x31b),_0x287056(0x21c),_0x287056(0x2cf),_0x287056(0x246),''][_0x287056(0x50b)]('\x0a');await a0_0x39fe3e[_0x287056(0x2e9)](_0x1023f4,_0x545210,_0x287056(0x525));}}catch{}await _0x5b1757(_0x1ab012,_0x73afb4,'✅\x20Follow\x20BẬT\x20cho\x20'+_0x387243(_0x10df2e)+'\x20('+_0x10df2e+')\x0a📁\x20Memory:\x20'+_0x56912(_0x10df2e)+'/');}else _0xabc468===_0x287056(0x38a)?(_0x4babbc['setSetting'](_0x10df2e,_0x287056(0x274),![]),_0x4babbc['setSetting'](_0x10df2e,_0x287056(0x1fb),![]),await _0x4babbc[_0x287056(0x306)](),await _0x5b1757(_0x1ab012,_0x73afb4,_0x287056(0x524)+_0x387243(_0x10df2e)+'\x20('+_0x10df2e+')')):await _0x5b1757(_0x1ab012,_0x73afb4,_0x287056(0x29c));const _0x573419={};return _0x573419[_0x287056(0x3ae)]=!![],_0x573419;}if(_0x4c24e1===_0x287056(0x548)){const _0x1a5b5f=_0x178cf9[_0x287056(0x4d1)](_0x4bd8fd=>_0x4babbc['getSetting'](_0x4bd8fd,'muted',![]))[_0x287056(0x391)],_0x10972e=_0x178cf9[_0x287056(0x4d1)](_0x47f3ab=>_0x4babbc['getSetting'](_0x47f3ab,_0x287056(0x283),!![]))[_0x287056(0x391)],_0x3817d5=_0x178cf9['filter'](_0x4a60bf=>_0x4babbc[_0x287056(0x408)](_0x4a60bf,_0x287056(0x274),!![]))[_0x287056(0x391)],_0x29f4a6=Object[_0x287056(0x2ac)](_0x2edda4)[_0x287056(0x381)]((_0x3cf999,_0x148ecf)=>_0x3cf999+Object[_0x287056(0x34e)](_0x148ecf)[_0x287056(0x391)],0x0);await _0x5b1757(_0x1ab012,_0x73afb4,_0x287056(0x36c)+_0x178cf9[_0x287056(0x391)]+_0x287056(0x1e3)+_0x1a5b5f+_0x287056(0x538)+_0x10972e+_0x287056(0x2ab)+_0x3817d5+_0x287056(0x32e)+_0x29f4a6+'\x0a💬\x20DM\x20whitelist:\x20'+(_0x590339[_0x287056(0x396)]===0x0?'Tất\x20cả':_0x590339[_0x287056(0x396)]+_0x287056(0x353))+_0x287056(0x23f)+_0xb2b223);const _0x5d8cd2={};return _0x5d8cd2[_0x287056(0x3ae)]=!![],_0x5d8cd2;}if(_0x4c24e1==='groupid-list'){const _0x379178=[_0x287056(0x338)];for(const _0x209f68 of _0x178cf9){const _0x2c6539=_0x387243(_0x209f68),_0x3177e3=_0x4babbc[_0x287056(0x408)](_0x209f68,_0x287056(0x433),![]);_0x379178['push']((_0x3177e3?'🔇':'🔊')+'\x20'+_0x2c6539+_0x287056(0x1db)+_0x209f68);}if(_0x178cf9[_0x287056(0x391)]===0x0)_0x379178[_0x287056(0x2d4)](_0x287056(0x447));_0x379178['push'](_0x287056(0x37b)+_0x178cf9[_0x287056(0x391)]+_0x287056(0x44f)),await _0x5b1757(_0x1ab012,_0x73afb4,_0x379178['join']('\x0a'));const _0x25267b={};return _0x25267b['handled']=!![],_0x25267b;}if(_0x4c24e1===_0x287056(0x4b8)){await _0x45fa55(_0x1ab012,_0x73afb4,![],null);const _0x49cb2e={};return _0x49cb2e[_0x287056(0x3ae)]=!![],_0x49cb2e;}if(_0x4c24e1===_0x287056(0x52f)&&_0x37b0d8[0x1]){const _0x20859e=_0x37b0d8[0x1][_0x287056(0x224)](/^<|>$/g,''),_0x38ae65=_0x37b0d8[_0x287056(0x303)](0x2)[_0x287056(0x50b)]('\x20')||_0x287056(0x451)+_0x20859e[_0x287056(0x303)](-0x6),_0x458f2d={};_0x458f2d[_0x287056(0x284)]=_0x38ae65,_0x458f2d[_0x287056(0x498)]=[],_0x458f2d['creatorId']='';const _0x5cf24a=_0x458f2d,_0x33a009={..._0x49267b};_0x33a009[_0x20859e]=_0x5cf24a;const _0x15bfc2=_0x33a009,_0x197217=!_0x49267b[_0x20859e];await _0x43b926(_0x15bfc2);if(_0x197217){if(!_0x178cf9['includes'](_0x20859e))_0x178cf9[_0x287056(0x2d4)](_0x20859e);_0x7b70ff[_0x20859e]=_0x5cf24a;}const _0x1ec10d=await _0x4e2b85(_0x20859e),_0x1e71bf=_0xc36663(_0x20859e),_0x2a8825=_0x1e71bf[_0x287056(0x391)]>0x0?_0x287056(0x3f5)+_0x1e71bf['join'](',\x20'):_0x287056(0x541),_0x55d581=_0x1ec10d?_0x287056(0x558)+_0x1ec10d[_0x287056(0x312)]:'';_0x217106();_0x197217?await _0x5b1757(_0x1ab012,_0x73afb4,_0x287056(0x334)+(_0x1ec10d?.[_0x287056(0x284)]||_0x38ae65)+_0x287056(0x3e2)+_0x20859e+'\x0a'+_0x2a8825+(_0x55d581?'\x0a'+_0x55d581:'')+'\x0a🔄\x20Restart\x20gateway\x20để\x20áp\x20dụng.'):await _0x5b1757(_0x1ab012,_0x73afb4,'ℹ️\x20Group\x20đã\x20có\x20trong\x20config\x20rồi.\x0a🆔\x20ID:\x20'+_0x20859e+'\x0a'+_0x2a8825+(_0x55d581?'\x0a'+_0x55d581:''));const _0x4b3de7={};return _0x4b3de7[_0x287056(0x3ae)]=!![],_0x4b3de7;}if(_0x4c24e1===_0x287056(0x52f)&&!_0x37b0d8[0x1]){await _0x5b1757(_0x1ab012,_0x73afb4,_0x287056(0x3a0));const _0x205185={};return _0x205185[_0x287056(0x3ae)]=!![],_0x205185;}return null;}function _0x22ac16(_0x68b548){const _0x323bae=_0x1d4a50;return a0_0x5d734d[_0x323bae(0x50b)](__dirname,'data',_0x68b548);}async function _0x49ff0f(_0x5deffd){return await safeReadJson(a0_0x5d734d['join'](_0x39a5d8,_0x5deffd))||await safeReadJson(_0x22ac16(_0x5deffd))||{};}async function _0x3f1a7e(_0x5dc450,_0x48d13e){await safeWriteJson(a0_0x5d734d['join'](_0x39a5d8,_0x5dc450),_0x48d13e);}async function _0x1a76d1(_0xcb7155){const _0x12a552=_0x1d4a50,_0x38f1d4=a0_0x5d734d[_0x12a552(0x50b)](_0x39a5d8,_0x12a552(0x1b3)),_0x375313=Array[_0x12a552(0x36a)](await safeReadJson(_0x38f1d4))?await safeReadJson(_0x38f1d4):[];_0x375313[_0x12a552(0x428)]({'ts':nowIso(),..._0xcb7155}),await safeWriteJson(_0x38f1d4,_0x375313[_0x12a552(0x303)](0x0,0x12c));}function _0x4c0df6(_0x581a73){const _0x1ff10d=_0x1d4a50;if(Array[_0x1ff10d(0x36a)](_0x581a73))return _0x581a73[_0x1ff10d(0x53e)](String)[_0x1ff10d(0x4d1)](Boolean);return String(_0x581a73||'')[_0x1ff10d(0x518)](/[,\s]+/)[_0x1ff10d(0x53e)](_0x7570be=>_0x7570be['trim']())['filter'](Boolean);}function _0x3638f1(_0x4abe0a){const _0x9d73f8=_0x1d4a50;return String(_0x4abe0a||'')[_0x9d73f8(0x3ea)](_0x9d73f8(0x4ea))[_0x9d73f8(0x224)](/[\u0300-\u036f]/g,'')['toLowerCase']()[_0x9d73f8(0x224)](/[^a-z0-9]+/g,'-')['replace'](/^-+|-+$/g,'')[_0x9d73f8(0x303)](0x0,0x28);}function _0x296176(_0x21d3ff){const _0x645b7c=_0x1d4a50,_0x4962ca=_0x4babbc[_0x645b7c(0x408)](_0x21d3ff,_0x645b7c(0x3d9),[]);if(!Array[_0x645b7c(0x36a)](_0x4962ca))return[];return _0x4962ca[_0x645b7c(0x53e)](_0x371ce2=>{const _0x15e820=_0x645b7c,_0x2ae7f9=_0x3638f1(_0x371ce2?.[_0x15e820(0x23b)]||_0x371ce2?.[_0x15e820(0x2d5)]);if(!_0x2ae7f9)return null;return{'slug':_0x2ae7f9,'label':String(_0x371ce2?.[_0x15e820(0x2d5)]||_0x2ae7f9),'skill':String(_0x371ce2?.[_0x15e820(0x35c)]||'')['trim'](),'description':String(_0x371ce2?.['description']||'')[_0x15e820(0x2b0)](),'enabled':_0x371ce2?.[_0x15e820(0x24f)]!==![]};})[_0x645b7c(0x4d1)](Boolean);}function _0x115f0a(_0x117e8d,_0x5a335a){const _0x3e11b4=_0x1d4a50;_0x4babbc[_0x3e11b4(0x1d6)](_0x117e8d,_0x3e11b4(0x3d9),_0x5a335a);}function _0x24f6bd(_0x4edcb3,_0x2ea00d={}){const _0x1fe856=_0x1d4a50,_0x434c15=_0x3638f1(_0x2ea00d[_0x1fe856(0x23b)]||_0x2ea00d[_0x1fe856(0x2d5)]),_0x45e0f6=String(_0x2ea00d[_0x1fe856(0x2d5)]||_0x434c15)[_0x1fe856(0x2b0)](),_0x1ebc72=String(_0x2ea00d[_0x1fe856(0x35c)]||'')['trim'](),_0x4e9c6e=String(_0x2ea00d[_0x1fe856(0x340)]||'')[_0x1fe856(0x2b0)]();if(!_0x4edcb3||!_0x434c15||!_0x45e0f6)throw new Error(_0x1fe856(0x2fa));if(!_0x1ebc72)throw new Error(_0x1fe856(0x33d));const _0x505959=_0x296176(_0x4edcb3),_0x172fcb={};_0x172fcb[_0x1fe856(0x23b)]=_0x434c15,_0x172fcb[_0x1fe856(0x2d5)]=_0x45e0f6,_0x172fcb[_0x1fe856(0x35c)]=_0x1ebc72,_0x172fcb[_0x1fe856(0x340)]=_0x4e9c6e,_0x172fcb[_0x1fe856(0x24f)]=_0x2ea00d[_0x1fe856(0x24f)]!==![];const _0x747ee5=_0x172fcb,_0x2409e6=_0x505959['findIndex'](_0x48b311=>_0x48b311[_0x1fe856(0x23b)]===_0x434c15);if(_0x2409e6>=0x0)_0x505959[_0x2409e6]=_0x747ee5;else _0x505959[_0x1fe856(0x2d4)](_0x747ee5);return _0x115f0a(_0x4edcb3,_0x505959),_0x747ee5;}function _0x1d9918(_0x3e1276,_0x32e64f,_0x4ca26b){const _0x1ebda8=_0x1d4a50,_0x117a52=_0x3638f1(_0x32e64f),_0x1fa8ff=_0x296176(_0x3e1276),_0x3cd8e1=_0x1fa8ff['findIndex'](_0x292f85=>_0x292f85[_0x1ebda8(0x23b)]===_0x117a52);if(_0x3cd8e1<0x0)throw new Error(_0x1ebda8(0x3c1)+_0x32e64f+_0x1ebda8(0x213));return _0x1fa8ff[_0x3cd8e1][_0x1ebda8(0x24f)]=!!_0x4ca26b,_0x115f0a(_0x3e1276,_0x1fa8ff),_0x1fa8ff[_0x3cd8e1];}function _0x50c70f(_0x134462,_0x28bb48){const _0x312f0f=_0x1d4a50,_0x3f3054=_0x3638f1(_0x28bb48),_0x3395ff=_0x296176(_0x134462),_0x3bad26=_0x3395ff[_0x312f0f(0x4d1)](_0x29fbf4=>_0x29fbf4[_0x312f0f(0x23b)]!==_0x3f3054);if(_0x3bad26[_0x312f0f(0x391)]===_0x3395ff[_0x312f0f(0x391)])throw new Error(_0x312f0f(0x3c1)+_0x28bb48+_0x312f0f(0x213));_0x115f0a(_0x134462,_0x3bad26);const _0x45211a={};return _0x45211a[_0x312f0f(0x23b)]=_0x3f3054,_0x45211a[_0x312f0f(0x3dc)]=!![],_0x45211a;}function _0x422703(_0x4dfed3){const _0x3cadee=_0x1d4a50,_0x5b30fc=_0x296176(_0x4dfed3)[_0x3cadee(0x4d1)](_0x15f44d=>_0x15f44d[_0x3cadee(0x24f)]);if(!_0x5b30fc['length'])return'';const _0x23b1f2=_0x5b30fc['map'](_0x259eb1=>'-\x20'+_0x259eb1[_0x3cadee(0x2d5)]+_0x3cadee(0x4b0)+_0x259eb1[_0x3cadee(0x23b)]+_0x3cadee(0x33c)+_0x259eb1[_0x3cadee(0x35c)]+(_0x259eb1[_0x3cadee(0x340)]?_0x3cadee(0x4a0)+_0x259eb1[_0x3cadee(0x340)]:''));return _0x3cadee(0x1b8)+_0x23b1f2[_0x3cadee(0x50b)]('\x0a')+_0x3cadee(0x1f9);}const _0x17c515=new Set([]);function _0x4704c9(_0x3e9368){const _0x14ede6=_0x1d4a50;return String(_0x3e9368||'')[_0x14ede6(0x3ea)](_0x14ede6(0x4ea))['replace'](/[\u0300-\u036f]/g,'')[_0x14ede6(0x47e)]()['replace'](/[^a-z0-9]+/g,'\x20')[_0x14ede6(0x2b0)]();}function _0x75fbcb(_0x4ad0be){const _0x5b2877=_0x1d4a50;return Number(_0x4ad0be[_0x5b2877(0x494)]||0x0)*0xa+(Array[_0x5b2877(0x36a)](_0x4ad0be['admins'])?_0x4ad0be['admins']['length']*0x3:0x0)+(_0x4ad0be['creatorId']?0x2:0x0);}function _0x242295(_0x3c4948,_0x4aee42=0x0){const _0x200048=_0x1d4a50,_0x3c5f4d=[_0x3c4948?.['totalMember'],_0x3c4948?.['memberCount'],_0x3c4948?.[_0x200048(0x54a)],_0x3c4948?.[_0x200048(0x21a)],_0x3c4948?.[_0x200048(0x1e2)],_0x3c4948?.[_0x200048(0x40f)]][_0x200048(0x53e)](Number)[_0x200048(0x471)](_0x186ab5=>Number['isFinite'](_0x186ab5)&&_0x186ab5>0x0);if(_0x3c5f4d)return _0x3c5f4d;const _0x5459a4=[_0x3c4948?.['memVerMap'],_0x3c4948?.[_0x200048(0x475)],_0x3c4948?.[_0x200048(0x482)],_0x3c4948?.[_0x200048(0x285)]];for(const _0x1ab162 of _0x5459a4)if(_0x1ab162&&typeof _0x1ab162===_0x200048(0x1be)){const _0x38ec11=Object[_0x200048(0x34e)](_0x1ab162)[_0x200048(0x391)];if(_0x38ec11>0x0)return _0x38ec11;}const _0xb1d1a5=[_0x3c4948?.[_0x200048(0x52a)],_0x3c4948?.['members'],_0x3c4948?.[_0x200048(0x3d3)],_0x3c4948?.[_0x200048(0x1c8)],_0x3c4948?.['participants']];for(const _0x3f487f of _0xb1d1a5)if(Array[_0x200048(0x36a)](_0x3f487f)&&_0x3f487f[_0x200048(0x391)])return _0x3f487f[_0x200048(0x391)];return Number(_0x4aee42||0x0)||0x0;}function _0x500baf(_0x1a082e){const _0x32c2e8=_0x1d4a50,_0x5584a0=Array[_0x32c2e8(0x36a)](_0x1a082e?.['members'])?_0x1a082e[_0x32c2e8(0x4ce)]:Array['isArray'](_0x1a082e?.['pendingMembers'])?_0x1a082e[_0x32c2e8(0x2c3)]:Array['isArray'](_0x1a082e?.[_0x32c2e8(0x203)])?_0x1a082e[_0x32c2e8(0x203)]:Array[_0x32c2e8(0x36a)](_0x1a082e?.[_0x32c2e8(0x4bd)])?_0x1a082e[_0x32c2e8(0x4bd)]:Array[_0x32c2e8(0x36a)](_0x1a082e)?_0x1a082e:null;if(_0x5584a0)return _0x5584a0;const _0x48069a=new Set(),_0xbf2045=[],_0x191fd0=[_0x1a082e];while(_0x191fd0[_0x32c2e8(0x391)]){const _0x1521d0=_0x191fd0[_0x32c2e8(0x509)]();if(!_0x1521d0||typeof _0x1521d0!==_0x32c2e8(0x1be))continue;if(Array[_0x32c2e8(0x36a)](_0x1521d0)){for(const _0x1dd426 of _0x1521d0)_0x191fd0[_0x32c2e8(0x2d4)](_0x1dd426);continue;}const _0x106b14=_0x1521d0[_0x32c2e8(0x3d7)]||_0x1521d0['uid']||_0x1521d0['id'];if(_0x106b14!=null){const _0x285783=String(_0x106b14);!_0x48069a[_0x32c2e8(0x461)](_0x285783)&&(_0x48069a[_0x32c2e8(0x31e)](_0x285783),_0xbf2045[_0x32c2e8(0x2d4)](_0x1521d0));}for(const _0x4ff058 of Object[_0x32c2e8(0x2ac)](_0x1521d0))_0x191fd0['push'](_0x4ff058);}return _0xbf2045;}function _0x4da417(_0xd748e0,_0x5e7d2b={}){const _0x3c439e=_0x1d4a50,_0x60a6e9={..._0x5e7d2b},_0x3b317f=_0x60a6e9,_0x42fe1f=new Set(),_0x518fb5=[_0xd748e0];while(_0x518fb5[_0x3c439e(0x391)]){const _0x143e91=_0x518fb5[_0x3c439e(0x509)]();if(!_0x143e91)continue;if(Array[_0x3c439e(0x36a)](_0x143e91)){for(const _0x16ba7e of _0x143e91)_0x518fb5['push'](_0x16ba7e);continue;}if(typeof _0x143e91!==_0x3c439e(0x1be))continue;if(_0x42fe1f[_0x3c439e(0x461)](_0x143e91))continue;_0x42fe1f[_0x3c439e(0x31e)](_0x143e91);const _0x4fe391=_0x143e91['userId']||_0x143e91[_0x3c439e(0x465)]||_0x143e91['id']||_0x143e91['user_id'],_0x6c2531=_0x143e91[_0x3c439e(0x284)]||_0x143e91[_0x3c439e(0x3a1)]||_0x143e91['userName']||_0x143e91[_0x3c439e(0x1c0)]||_0x143e91[_0x3c439e(0x554)]||_0x143e91[_0x3c439e(0x4fd)];if(_0x4fe391!=null&&_0x6c2531)_0x3b317f[String(_0x4fe391)[_0x3c439e(0x224)](/_0$/,'')]=String(_0x6c2531);for(const [_0x78426b,_0x215964]of Object[_0x3c439e(0x3ab)](_0x143e91)){if(_0x215964&&typeof _0x215964===_0x3c439e(0x1be)){if(!Array[_0x3c439e(0x36a)](_0x215964)&&/^\d+$/['test'](String(_0x78426b))){const _0x89369f=_0x215964[_0x3c439e(0x284)]||_0x215964[_0x3c439e(0x3a1)]||_0x215964[_0x3c439e(0x33f)]||_0x215964[_0x3c439e(0x1c0)]||_0x215964['dName']||_0x215964[_0x3c439e(0x4fd)];if(_0x89369f)_0x3b317f[String(_0x78426b)[_0x3c439e(0x224)](/_0$/,'')]=String(_0x89369f);}_0x518fb5[_0x3c439e(0x2d4)](_0x215964);}}}return _0x3b317f;}function _0x37889f(_0x23585b,_0x3d5657=0xc8){const _0x44b3a6=_0x1d4a50,_0x1bf434=[];for(let _0x2058c6=0x0;_0x2058c6<_0x23585b[_0x44b3a6(0x391)];_0x2058c6+=_0x3d5657)_0x1bf434[_0x44b3a6(0x2d4)](_0x23585b[_0x44b3a6(0x303)](_0x2058c6,_0x2058c6+_0x3d5657));return _0x1bf434;}function _0x41dc93(_0x13bfc1){const _0x2801db=_0x1d4a50,_0x332264=new Set(),_0x36849f=_0x1e09b3=>{const _0x2a92c8=a0_0x247a;if(_0x1e09b3==null)return;const _0x8efa4d=String(_0x1e09b3)[_0x2a92c8(0x224)](/_0$/,'');if(/^\d+$/['test'](_0x8efa4d))_0x332264[_0x2a92c8(0x31e)](_0x8efa4d);},_0xdf46f=[_0x13bfc1?.[_0x2801db(0x52a)],_0x13bfc1?.[_0x2801db(0x3d3)],_0x13bfc1?.[_0x2801db(0x1c8)],_0x13bfc1?.[_0x2801db(0x432)]];for(const _0x513d92 of _0xdf46f)if(Array[_0x2801db(0x36a)](_0x513d92)){for(const _0x27b5f1 of _0x513d92)_0x36849f(_0x27b5f1?.['id']||_0x27b5f1?.[_0x2801db(0x3d7)]||_0x27b5f1?.[_0x2801db(0x465)]||_0x27b5f1);}const _0x551178=[_0x13bfc1?.[_0x2801db(0x42e)],_0x13bfc1?.[_0x2801db(0x475)],_0x13bfc1?.['memberMap'],_0x13bfc1?.[_0x2801db(0x285)]];for(const _0x3bd0a8 of _0x551178)if(_0x3bd0a8&&typeof _0x3bd0a8===_0x2801db(0x1be)){for(const _0x386b43 of Object[_0x2801db(0x34e)](_0x3bd0a8))_0x36849f(_0x386b43);}return[..._0x332264];}async function _0x2d7db9(_0x3f3d7f,_0x402acb){const _0x97ad47=_0x1d4a50,_0x36b112=await _0x402acb[_0x97ad47(0x2d3)](_0x3f3d7f),_0x492b28=_0x36b112?.[_0x97ad47(0x39d)]?.[String(_0x3f3d7f)]||_0x36b112?.[_0x97ad47(0x39d)]?.[_0x3f3d7f]||_0x36b112||{},_0x5871dd=_0x41dc93(_0x492b28),_0x510b0b={};if(_0x5871dd[_0x97ad47(0x391)])for(const _0x1948c2 of _0x37889f(_0x5871dd,0xc8)){try{const _0xbf623d=await _0x402acb['getGroupMembersInfo'](_0x1948c2);Object[_0x97ad47(0x2c8)](_0x510b0b,_0x4da417(_0xbf623d,_0x510b0b));}catch(_0x18f83b){}const _0x3a9c8b=_0x1948c2['filter'](_0x4ae053=>!_0x510b0b[_0x4ae053]);if(_0x3a9c8b[_0x97ad47(0x391)])try{const _0x52e6c0=await _0x402acb[_0x97ad47(0x355)](_0x3a9c8b);Object[_0x97ad47(0x2c8)](_0x510b0b,_0x4da417(_0x52e6c0,_0x510b0b));}catch(_0x5584b5){}}const _0x16f2d5=_0x5871dd[_0x97ad47(0x53e)](_0x2fa87d=>({'id':_0x2fa87d,'name':_0x510b0b[_0x2fa87d]||_0x2edda4[_0x3f3d7f]?.[_0x2fa87d]||_0x2fa87d}));_0x44f888(_0x3f3d7f,_0x16f2d5),await _0x114dd7(),_0x4babbc['setSetting'](_0x3f3d7f,_0x97ad47(0x494),_0x16f2d5['length']||_0x242295(_0x492b28,_0x4babbc[_0x97ad47(0x408)](_0x3f3d7f,_0x97ad47(0x494),0x0))),await _0x4babbc[_0x97ad47(0x306)]();const _0x29931c={};return _0x29931c['count']=_0x16f2d5[_0x97ad47(0x391)],_0x29931c[_0x97ad47(0x4e7)]=_0x3f3d7f,_0x29931c[_0x97ad47(0x4ce)]=_0x16f2d5,_0x29931c;}async function _0x450d05(_0xf7fe9d,_0x3d8335){const _0xb41aea=_0x1d4a50,_0x412235=_0x500baf(_0x3d8335),_0x500e89={};_0x500e89[_0xb41aea(0x414)]=_0x3d8335,_0x500e89['list']=[];if(!_0x412235['length'])return _0x500e89;const _0x17f9db=_0x2edda4[_0xf7fe9d]||{},_0x34d399=[...new Set(_0x412235[_0xb41aea(0x53e)](_0x3f3cef=>String(_0x3f3cef?.[_0xb41aea(0x3d7)]||_0x3f3cef?.[_0xb41aea(0x465)]||_0x3f3cef?.['id']||_0x3f3cef||''))[_0xb41aea(0x4d1)](Boolean))],_0xd8e312={..._0x17f9db};let _0x345fec=_0xd8e312;try{const _0x15ab9d=await _0x1e09ca();_0x15ab9d&&await _0x15ab9d('default',async _0x5c1294=>{const _0x3f2767=_0xb41aea;try{const _0x44a2f1=await _0x5c1294[_0x3f2767(0x22a)](_0x34d399);_0x345fec=_0x4da417(_0x44a2f1,_0x345fec);}catch(_0x30786d){}const _0x506d55=_0x34d399[_0x3f2767(0x4d1)](_0x15d9fa=>!_0x345fec[_0x15d9fa]);if(_0x506d55[_0x3f2767(0x391)])try{const _0x324b75=await _0x5c1294[_0x3f2767(0x355)](_0x506d55);_0x345fec=_0x4da417(_0x324b75,_0x345fec);}catch(_0x183794){}});}catch(_0x1e2321){}return{'raw':_0x3d8335,'list':_0x412235[_0xb41aea(0x53e)](_0xf584f7=>{const _0x12b54a=_0xb41aea,_0x43b136=String(_0xf584f7?.[_0x12b54a(0x3d7)]||_0xf584f7?.[_0x12b54a(0x465)]||_0xf584f7?.['id']||_0xf584f7||''),_0x5100cf={..._0xf584f7};return _0x5100cf['id']=_0x43b136,_0x5100cf[_0x12b54a(0x284)]=_0x345fec[_0x43b136]||_0xf584f7?.[_0x12b54a(0x284)]||_0xf584f7?.[_0x12b54a(0x3a1)]||_0xf584f7?.[_0x12b54a(0x33f)]||_0x43b136,_0x5100cf;})};}async function _0x40157a(){const _0x4337b0=_0x1d4a50;await _0x952fb5();const _0x89b8a1=await _0x49ff0f(_0x4337b0(0x348)),_0x2be3fa=await _0x49ff0f(_0x4337b0(0x31c)),_0x91a1b0=await _0x49ff0f(_0x4337b0(0x3af)),_0x134dbe=await _0x49ff0f(_0x4337b0(0x2bb)),_0x35bdaa=Array[_0x4337b0(0x36a)](await safeReadJson(a0_0x5d734d[_0x4337b0(0x50b)](_0x39a5d8,'dashboard-audit.json')))?await safeReadJson(a0_0x5d734d[_0x4337b0(0x50b)](_0x39a5d8,_0x4337b0(0x1b3))):[],_0x170235=[];let _0x14433c=![];for(const [_0x5b9cdd,_0x24c2ed]of Object[_0x4337b0(0x3ab)](_0x7b70ff)){if(_0x17c515[_0x4337b0(0x461)](String(_0x5b9cdd)))continue;const _0x4b3edc=_0x2be3fa[_0x5b9cdd]||{},_0x506747=_0x89b8a1[_0x5b9cdd]||{},_0xbd59f7=Number(_0x4b3edc[_0x4337b0(0x494)]||_0x4b3edc[_0x4337b0(0x312)]||0x0),_0x2fb0f8=Object[_0x4337b0(0x2ac)](_0x91a1b0[_0x5b9cdd]||{})['reduce']((_0x4b9359,_0x7e3378)=>_0x4b9359+(Array[_0x4337b0(0x36a)](_0x7e3378)?_0x7e3378['length']:0x0),0x0),_0x527e42=Object['values'](_0x134dbe[_0x5b9cdd]||{})['reduce']((_0x12faf1,_0x265c1f)=>_0x12faf1+(Array[_0x4337b0(0x36a)](_0x265c1f)?_0x265c1f[_0x4337b0(0x391)]:0x0),0x0),_0x186595=Object[_0x4337b0(0x34e)](_0x506747)[_0x4337b0(0x391)]||_0xbd59f7;let _0x347bf6=_0x4b3edc[_0x4337b0(0x48e)]||_0x24c2ed?.[_0x4337b0(0x48e)]||'',_0x4c07a5=_0x4b3edc[_0x4337b0(0x1e1)]||_0x24c2ed?.[_0x4337b0(0x498)]||[];if(!_0x347bf6||_0x4c07a5[_0x4337b0(0x391)]===0x0)try{const _0x3df716=await _0x38f46e(_0x5b9cdd);if(_0x3df716){_0x347bf6=_0x3df716[_0x4337b0(0x48e)]||'',_0x4c07a5=_0x3df716['adminIds']||[];if(!_0x2be3fa[_0x5b9cdd])_0x2be3fa[_0x5b9cdd]={};_0x2be3fa[_0x5b9cdd][_0x4337b0(0x48e)]=_0x347bf6,_0x2be3fa[_0x5b9cdd]['groupAdmins']=_0x4c07a5,_0x14433c=!![],_0x7b70ff[_0x5b9cdd]&&(_0x7b70ff[_0x5b9cdd][_0x4337b0(0x48e)]=_0x347bf6,_0x7b70ff[_0x5b9cdd][_0x4337b0(0x498)]=_0x4c07a5);}}catch(_0x3bab20){_0x2e3201[_0x4337b0(0x2cc)](_0x4337b0(0x441)+_0x5b9cdd+':\x20'+_0x3bab20[_0x4337b0(0x337)]);}_0x170235['push']({'groupId':_0x5b9cdd,'name':_0x24c2ed?.[_0x4337b0(0x284)]||_0x4b3edc['name']||_0x4337b0(0x451)+_0x5b9cdd[_0x4337b0(0x303)](-0x6),'admins':_0x4c07a5,'creatorId':_0x347bf6,'inviteLink':_0x4b3edc[_0x4337b0(0x2d1)]||_0x24c2ed?.[_0x4337b0(0x2d1)]||_0x24c2ed?.[_0x4337b0(0x537)]||'','pendingCount':Number(_0x4b3edc[_0x4337b0(0x345)]||0x0),'memberCount':_0x186595,'isMemberCountCached':Object[_0x4337b0(0x34e)](_0x506747)[_0x4337b0(0x391)]===0x0&&_0xbd59f7>0x0,'warnedCount':_0x2fb0f8,'violationCount':_0x527e42,'settings':{'muted':!!_0x4b3edc[_0x4337b0(0x433)],'silent':_0x4b3edc[_0x4337b0(0x358)]!==![],'welcome':_0x4b3edc[_0x4337b0(0x283)]!==![],'tracking':!!_0x4b3edc[_0x4337b0(0x1fb)],'follow':_0x4b3edc[_0x4337b0(0x274)]!==![],'pendingAuto':!!_0x4b3edc[_0x4337b0(0x1b0)]},'customModes':_0x296176(_0x5b9cdd)});}_0x14433c&&await _0x3f1a7e('settings.json',_0x2be3fa);const _0x39c4e2=new Map();for(const _0x8aabdd of _0x170235){const _0x4d7b53=_0x4704c9(_0x8aabdd[_0x4337b0(0x284)]);if(!_0x4d7b53){_0x39c4e2[_0x4337b0(0x230)](_0x4337b0(0x4d8)+_0x8aabdd[_0x4337b0(0x4e7)],_0x8aabdd);continue;}const _0x39a0d2=_0x39c4e2[_0x4337b0(0x271)](_0x4d7b53);if(!_0x39a0d2||_0x75fbcb(_0x8aabdd)>_0x75fbcb(_0x39a0d2))_0x39c4e2[_0x4337b0(0x230)](_0x4d7b53,_0x8aabdd);}const _0x183e75=[..._0x39c4e2[_0x4337b0(0x2ac)]()];let _0x353ce3=_0x4337b0(0x373);try{const _0x5dc800=JSON[_0x4337b0(0x2a2)](readFileSync(a0_0x5d734d[_0x4337b0(0x50b)](__dirname,_0x4337b0(0x51c)),_0x4337b0(0x525)));if(_0x5dc800[_0x4337b0(0x4c8)])_0x353ce3=_0x5dc800[_0x4337b0(0x4c8)];}catch(_0x3402c1){}let _0x4c65d9=_0x56552d||null;try{const _0x1bb448=await _0x1e09ca();if(_0x1bb448){const _0x2500d7=await _0x1bb448('default',async _0x18bb4f=>{const _0xef045a=_0x4337b0;if(typeof _0x18bb4f['getOwnId']==='function'){const _0x539a40=await _0x18bb4f['getOwnId']()[_0xef045a(0x3fa)](()=>null);if(_0x539a40)return _0x539a40;}if(typeof _0x18bb4f[_0xef045a(0x4b9)]===_0xef045a(0x52c)){const _0x179175=await _0x18bb4f[_0xef045a(0x4b9)]()[_0xef045a(0x3fa)](()=>null);if(_0x179175?.[_0xef045a(0x3d7)]||_0x179175?.['uid'])return String(_0x179175[_0xef045a(0x3d7)]||_0x179175[_0xef045a(0x465)]);}return null;});if(_0x2500d7)_0x4c65d9=_0x2500d7;}}catch(_0x375399){}let _0x493d7d=null,_0x4b207b=null;try{if(_0x4dcc95){for(const _0x5bdbf3 of Object[_0x4337b0(0x2ac)](_0x89b8a1)){if(_0x5bdbf3?.[_0x4dcc95]){const _0x24d93f=_0x5bdbf3[_0x4dcc95];_0x493d7d=typeof _0x24d93f===_0x4337b0(0x365)?_0x24d93f:_0x24d93f[_0x4337b0(0x284)]||_0x24d93f[_0x4337b0(0x3a1)];break;}}if(!_0x493d7d){const _0x1f9d4d=await _0x1e09ca();if(_0x1f9d4d){const _0xdf59ce=await _0x1f9d4d(_0x4337b0(0x268),async _0x4dfdf5=>{const _0x4b408c=_0x4337b0;return await _0x4dfdf5[_0x4b408c(0x355)](_0x4dcc95)[_0x4b408c(0x3fa)](()=>null);});_0xdf59ce&&(_0x493d7d=_0xdf59ce[_0x4337b0(0x3a1)]||_0xdf59ce[_0x4337b0(0x284)],_0x4b207b=_0xdf59ce[_0x4337b0(0x397)]||_0xdf59ce[_0x4337b0(0x40e)]);}}}}catch(_0x2f11b1){_0x2e3201[_0x4337b0(0x427)](_0x4337b0(0x547)+_0x2f11b1['message']);}const _0x5614b0=await _0x49ff0f(_0x4337b0(0x443)),_0x371b0b=_0x5614b0&&typeof _0x5614b0===_0x4337b0(0x1be)&&!Array[_0x4337b0(0x36a)](_0x5614b0)?_0x5614b0:{};let _0xb401d=![];for(const [_0x42e67b,_0x157bb7]of Object[_0x4337b0(0x3ab)](_0x89b8a1)){if(_0x17c515[_0x4337b0(0x461)](String(_0x42e67b)))continue;if(_0x157bb7&&typeof _0x157bb7===_0x4337b0(0x1be))for(const _0x3dbb52 of Object[_0x4337b0(0x34e)](_0x157bb7)){const _0x30bf83=String(_0x3dbb52)[_0x4337b0(0x224)](/_0$/,'');(!_0x371b0b[_0x30bf83]||!_0x371b0b[_0x30bf83][_0x4337b0(0x3a1)])&&(_0x27f628[_0x4337b0(0x31e)](_0x30bf83),_0xb401d=!![]);}}return _0xb401d&&typeof _0x44e7b1==='function'&&_0x44e7b1(),{'ok':!![],'pluginVersion':_0x353ce3,'license':_0x277ee2(),'bot':{'name':_0xb2b223,'cmdPrefix':_0x4bda3d,'ownerId':_0x4dcc95,'botUserId':_0x4c65d9,'ownerName':_0x493d7d||_0x4dcc95||'Owner','ownerAvatar':_0x4b207b||'','groups':_0x183e75[_0x4337b0(0x391)],'dashboardPort':Number(_0x2c42b0[_0x4337b0(0x2c9)]||0x4d4e),'cachedProfiles':_0x371b0b},'groups':_0x183e75,'members':_0x89b8a1,'settings':_0x2be3fa,'audit':_0x35bdaa[_0x4337b0(0x303)](0x0,0x32),'totals':{'groups':_0x183e75['length'],'members':_0x183e75[_0x4337b0(0x381)]((_0x2b0c4b,_0x2b8f28)=>_0x2b0c4b+_0x2b8f28[_0x4337b0(0x494)],0x0),'warnings':_0x183e75[_0x4337b0(0x381)]((_0x32ffb0,_0x22fbbd)=>_0x32ffb0+_0x22fbbd[_0x4337b0(0x2f1)],0x0),'violations':_0x183e75[_0x4337b0(0x381)]((_0x4f4b67,_0x3d4b77)=>_0x4f4b67+_0x3d4b77[_0x4337b0(0x481)],0x0)}};}const _0x5797c3=String(_0x2c42b0[_0x1d4a50(0x1b5)]||process.env.ZALO_MOD_LICENSE_SERVER||_0x1d4a50(0x4be))[_0x1d4a50(0x224)](/\/$/,'');function _0x2bb423(){const _0x5718a8=_0x1d4a50;return{'platform':a0_0x55f5a2['platform'](),'arch':a0_0x55f5a2[_0x5718a8(0x25b)](),'hostname':a0_0x55f5a2['hostname'](),'node':process[_0x5718a8(0x4c8)]};}async function _0x4ddf75(_0xad333e,_0xc39d5={}){const _0x93e0df=_0x1d4a50,_0x411833=new AbortController(),_0x340633=setTimeout(()=>_0x411833[_0x93e0df(0x530)](),Number(_0x2c42b0[_0x93e0df(0x48a)]||0x2710));try{const _0x15b7f9={..._0xc39d5};_0x15b7f9[_0x93e0df(0x495)]={'content-type':_0x93e0df(0x4b5),..._0xc39d5[_0x93e0df(0x495)]||{}},_0x15b7f9[_0x93e0df(0x1f3)]=_0x411833[_0x93e0df(0x1f3)];const _0xb409f4=await fetch(''+_0x5797c3+_0xad333e,_0x15b7f9),_0x131754=await _0xb409f4[_0x93e0df(0x3a3)]()[_0x93e0df(0x3fa)](()=>({}));if(!_0xb409f4['ok']||_0x131754['ok']===![])throw new Error(_0x131754[_0x93e0df(0x427)]||_0x93e0df(0x1ee)+_0xb409f4[_0x93e0df(0x548)]);return _0x131754;}finally{clearTimeout(_0x340633);}}function _0x23dadc(_0x123dde){const _0x2e5985=_0x1d4a50;try{const _0x493a73=String(_0x123dde||'')['split']('.')[0x0];if(!_0x493a73)return null;return JSON[_0x2e5985(0x2a2)](Buffer[_0x2e5985(0x31a)](_0x493a73,_0x2e5985(0x409))['toString'](_0x2e5985(0x525)));}catch(_0x1f5fe7){return null;}}async function _0x3fa48c({orderId:_0x1107bf,licenseKey:_0x293c78}){const _0x7d37a9=_0x1d4a50,_0x33d4e0=_0x20c5fd(),_0x2ed309=await _0x4ddf75(_0x7d37a9(0x552),{'method':_0x7d37a9(0x512),'body':JSON[_0x7d37a9(0x2e5)]({'orderId':_0x1107bf,'licenseKey':_0x293c78,'deviceId':_0x33d4e0,'fingerprint':_0x2bb423()})}),_0x47d578=_0x2ed309[_0x7d37a9(0x49f)]||_0x23dadc(_0x2ed309[_0x7d37a9(0x3f2)]);if(_0x47d578){const _0x3ef650={};_0x3ef650[_0x7d37a9(0x513)]=!![],_0x3ef650[_0x7d37a9(0x3cd)]=_0x47d578['plan']||_0x2ed309[_0x7d37a9(0x528)]?.[_0x7d37a9(0x3cd)]||'personal',_0x3ef650[_0x7d37a9(0x502)]=_0x2ed309[_0x7d37a9(0x528)]?.[_0x7d37a9(0x502)]||_0x47d578['licenseExpiry'],_0x3ef650[_0x7d37a9(0x406)]=_0x33d4e0,_0x3ef650[_0x7d37a9(0x43b)]=_0x2ed309['license']?.[_0x7d37a9(0x43b)]||_0x293c78||'',_0x3ef650[_0x7d37a9(0x269)]=_0x47d578[_0x7d37a9(0x269)]||_0x1107bf||'',_0x3ef650[_0x7d37a9(0x3f2)]=_0x2ed309[_0x7d37a9(0x3f2)],_0x3ef650[_0x7d37a9(0x295)]=_0x47d578,_0x3ef650[_0x7d37a9(0x26f)]=_0x47d578[_0x7d37a9(0x469)]||null,_0x4babbc[_0x7d37a9(0x1d6)](_0x7d37a9(0x3fb),_0x7d37a9(0x528),_0x3ef650),await _0x4babbc[_0x7d37a9(0x306)]();}const _0x4f5236={'valid':!![],..._0x2ed309};return _0x4f5236['plan']=_0x47d578?.[_0x7d37a9(0x3cd)],_0x4f5236[_0x7d37a9(0x502)]=_0x2ed309[_0x7d37a9(0x528)]?.[_0x7d37a9(0x502)]||_0x47d578?.[_0x7d37a9(0x3a2)],_0x4f5236['deviceId']=_0x33d4e0,_0x4f5236;}async function _0x5b78dc(_0x58b39a=![]){const _0x479e29=_0x1d4a50,_0xb91d6e=_0x4babbc[_0x479e29(0x408)]('global',_0x479e29(0x528))||{},_0x4a9223=_0xb91d6e[_0x479e29(0x295)]||_0x23dadc(_0xb91d6e[_0x479e29(0x3f2)]);if(!_0xb91d6e[_0x479e29(0x269)]||!_0xb91d6e[_0x479e29(0x513)])return![];const _0x3984fa=Math[_0x479e29(0x282)](Date[_0x479e29(0x362)]()/0x3e8);if(!_0x58b39a&&_0x4a9223?.[_0x479e29(0x469)]&&_0x4a9223[_0x479e29(0x469)]-_0x3984fa>0xe10)return!![];try{const _0x30c329=await _0x4ddf75(_0x479e29(0x51b),{'method':'POST','body':JSON[_0x479e29(0x2e5)]({'orderId':_0xb91d6e['orderId'],'deviceId':_0x20c5fd()})}),_0x4ce469=_0x30c329[_0x479e29(0x49f)]||_0x23dadc(_0x30c329[_0x479e29(0x3f2)]),_0x134110={..._0xb91d6e};return _0x134110[_0x479e29(0x513)]=!![],_0x134110[_0x479e29(0x3f2)]=_0x30c329['entitlement'],_0x134110[_0x479e29(0x295)]=_0x4ce469,_0x134110[_0x479e29(0x26f)]=_0x4ce469?.[_0x479e29(0x469)]||null,_0x4babbc[_0x479e29(0x1d6)](_0x479e29(0x3fb),_0x479e29(0x528),_0x134110),await _0x4babbc[_0x479e29(0x306)](),!![];}catch(_0x504728){return _0x2e3201[_0x479e29(0x2cc)]('[openclaw-zalo-mod]\x20entitlement\x20refresh\x20failed:\x20'+_0x504728[_0x479e29(0x337)]),![];}}async function _0x4f2d84(_0x3d8222){const _0x578d4f=_0x1d4a50;if(!_0x3d8222)return![];try{const _0x324ad4={};return _0x324ad4[_0x578d4f(0x3c0)]=_0x578d4f(0x512),await _0x4ddf75('/v1/orders/'+encodeURIComponent(_0x3d8222)+_0x578d4f(0x332),_0x324ad4),!![];}catch(_0x118a32){return _0x2e3201[_0x578d4f(0x2cc)](_0x578d4f(0x555)+_0x118a32['message']),![];}}async function _0x1aa010(_0x346743,_0x3e2f9c){const _0x18a03b=_0x1d4a50,_0x1ddc66=await _0x1e09ca();if(!_0x1ddc66)throw new Error(_0x18a03b(0x34f));return await _0x1ddc66(_0x18a03b(0x268),async _0x328c2a=>{const _0x78ef=_0x18a03b,_0x386c29=String(_0x3e2f9c[_0x78ef(0x4e7)]||'')[_0x78ef(0x2b0)](),_0x366705=String(_0x3e2f9c[_0x78ef(0x3d7)]||'')[_0x78ef(0x2b0)](),_0x48a4c8=_0x4c0df6(_0x3e2f9c[_0x78ef(0x4ce)]||_0x3e2f9c['userIds']||_0x366705);if(_0x346743==='sync-groups'){const _0x369257=await _0x328c2a[_0x78ef(0x37a)](),_0x493277=Object['keys'](_0x369257?.['gridVerMap']||{}),_0x21e8bc=Object[_0x78ef(0x34e)](_0x369257?.['gridInfoMap']||{}),_0x4ecced=[...new Set([..._0x493277,..._0x21e8bc])],_0x55a6cb=_0x4ecced['length']?await _0x328c2a[_0x78ef(0x2d3)](_0x4ecced):null,_0x34de2c=_0x55a6cb?.[_0x78ef(0x39d)]||{},_0x112cc1={};for(const _0x21fb42 of _0x4ecced){if(_0x17c515[_0x78ef(0x461)](String(_0x21fb42)))continue;const _0x6845ec=_0x34de2c[_0x21fb42]||{};_0x112cc1[_0x21fb42]={'name':_0x6845ec['name']||_0x7b70ff[_0x21fb42]?.[_0x78ef(0x284)]||'Group\x20'+_0x21fb42[_0x78ef(0x303)](-0x6),'admins':Array[_0x78ef(0x36a)](_0x6845ec[_0x78ef(0x411)])?_0x6845ec[_0x78ef(0x411)][_0x78ef(0x53e)](String):_0x7b70ff[_0x21fb42]?.[_0x78ef(0x498)]||[],'creatorId':_0x6845ec[_0x78ef(0x48e)]?String(_0x6845ec['creatorId']):_0x7b70ff[_0x21fb42]?.['creatorId']||'','inviteLink':_0x6845ec[_0x78ef(0x2d1)]||_0x6845ec['link']||_0x6845ec[_0x78ef(0x529)]||_0x6845ec[_0x78ef(0x48f)]||_0x7b70ff[_0x21fb42]?.[_0x78ef(0x2d1)]||''},_0x7b70ff[_0x21fb42]=_0x112cc1[_0x21fb42];if(!_0x178cf9[_0x78ef(0x4c2)](_0x21fb42))_0x178cf9[_0x78ef(0x2d4)](_0x21fb42);if(_0x112cc1[_0x21fb42][_0x78ef(0x498)]?.[_0x78ef(0x391)])_0x4babbc[_0x78ef(0x1d6)](_0x21fb42,_0x78ef(0x1e1),_0x112cc1[_0x21fb42][_0x78ef(0x498)]);if(_0x112cc1[_0x21fb42][_0x78ef(0x48e)])_0x4babbc[_0x78ef(0x1d6)](_0x21fb42,_0x78ef(0x48e),_0x112cc1[_0x21fb42][_0x78ef(0x48e)]);if(_0x112cc1[_0x21fb42][_0x78ef(0x2d1)])_0x4babbc[_0x78ef(0x1d6)](_0x21fb42,'inviteLink',_0x112cc1[_0x21fb42][_0x78ef(0x2d1)]);_0x4babbc[_0x78ef(0x1d6)](_0x21fb42,'memberCount',_0x242295(_0x6845ec,_0x4babbc[_0x78ef(0x408)](_0x21fb42,_0x78ef(0x494),0x0)));if(_0x6845ec[_0x78ef(0x345)]!=null)_0x4babbc['setSetting'](_0x21fb42,_0x78ef(0x345),Number(_0x6845ec[_0x78ef(0x345)])||0x0);if(!_0x4babbc[_0x78ef(0x408)](_0x21fb42,_0x78ef(0x494),0x0))try{const _0x296762=await _0x38f46e(_0x21fb42);if(_0x296762?.['totalMember'])_0x4babbc[_0x78ef(0x1d6)](_0x21fb42,_0x78ef(0x494),Number(_0x296762[_0x78ef(0x312)])||0x0);if(_0x296762?.[_0x78ef(0x48e)])_0x4babbc[_0x78ef(0x1d6)](_0x21fb42,_0x78ef(0x48e),String(_0x296762[_0x78ef(0x48e)]));if(Array[_0x78ef(0x36a)](_0x296762?.['adminIds'])&&_0x296762[_0x78ef(0x411)][_0x78ef(0x391)])_0x4babbc['setSetting'](_0x21fb42,'groupAdmins',_0x296762[_0x78ef(0x411)][_0x78ef(0x53e)](String));}catch(_0x33542d){}}for(const _0x30dbfe of _0x4ecced[_0x78ef(0x303)](0x0,0x1e)){try{const _0x294d5e=await _0x328c2a[_0x78ef(0x4b3)](_0x30dbfe),_0x3805ce=_0x500baf(_0x294d5e);_0x4babbc[_0x78ef(0x1d6)](_0x30dbfe,'pendingCount',_0x3805ce['length']);}catch(_0x47dd99){}}await _0x43b926(_0x112cc1),await _0x4babbc[_0x78ef(0x306)]();const _0x2808d5={},_0x3d9fb9=String(_0x2c42b0[_0x78ef(0x467)]||'')[_0x78ef(0x2b0)](),_0x5cc854=!_0x3d9fb9||[_0x78ef(0x4c3),_0x78ef(0x4b7),_0x78ef(0x260),_0x78ef(0x2f4)][_0x78ef(0x4c2)](_0x3d9fb9[_0x78ef(0x47e)]())||_0x3d9fb9['includes'](_0x78ef(0x24a));if(_0x5cc854){let _0x21937f=null;try{if(typeof _0x328c2a[_0x78ef(0x4b9)]==='function'){const _0x3f48a6=await _0x328c2a['fetchAccountInfo'](),_0x3c0593=_0x3f48a6?.[_0x78ef(0x35e)]||_0x3f48a6;if(_0x3c0593&&_0x3c0593[_0x78ef(0x3a1)])_0x21937f=_0x3c0593['displayName'];else{if(_0x3c0593&&_0x3c0593[_0x78ef(0x4fd)])_0x21937f=_0x3c0593[_0x78ef(0x4fd)];else _0x3c0593&&_0x3c0593[_0x78ef(0x284)]&&(_0x21937f=_0x3c0593[_0x78ef(0x284)]);}}if(!_0x21937f&&typeof _0x328c2a[_0x78ef(0x379)]===_0x78ef(0x52c)){const _0x3eedee=await _0x328c2a[_0x78ef(0x379)]();if(_0x3eedee){const _0x47f338=await _0x328c2a[_0x78ef(0x355)](_0x3eedee),_0xd2a30f=_0x47f338?.['changed_profiles']?.[_0x3eedee]||_0x47f338?.[_0x3eedee]||_0x47f338;if(_0xd2a30f&&_0xd2a30f[_0x78ef(0x3a1)])_0x21937f=_0xd2a30f['displayName'];else{if(_0xd2a30f&&_0xd2a30f['zaloName'])_0x21937f=_0xd2a30f[_0x78ef(0x4fd)];else _0xd2a30f&&_0xd2a30f[_0x78ef(0x284)]&&(_0x21937f=_0xd2a30f[_0x78ef(0x284)]);}}}}catch(_0x331a15){_0x2e3201[_0x78ef(0x2cc)](_0x78ef(0x202)+_0x331a15[_0x78ef(0x337)]);}_0x21937f&&(_0x2808d5[_0x78ef(0x467)]=_0x21937f,_0x2808d5['zaloDisplayNames']=[_0x21937f],_0x2e3201[_0x78ef(0x313)](_0x78ef(0x46b)+_0x21937f+'\x22'));}Object[_0x78ef(0x34e)](_0x2808d5)['length']>0x0&&await _patchOpenclawConfig(_openclawHome,_0x2808d5,_0x2e3201,!![]);for(const _0x457497 of Object[_0x78ef(0x34e)](_0x7b70ff)){if(!_0x112cc1[_0x457497])delete _0x7b70ff[_0x457497];}_0x178cf9[_0x78ef(0x391)]=0x0;for(const [_0x5cd7ac,_0x31a8cc]of Object[_0x78ef(0x3ab)](_0x112cc1)){_0x7b70ff[_0x5cd7ac]=_0x31a8cc,_0x178cf9[_0x78ef(0x2d4)](_0x5cd7ac);}const _0xd66632={};return _0xd66632[_0x78ef(0x4b2)]=_0x4ecced[_0x78ef(0x391)],_0xd66632;}if(!_0x386c29&&[_0x78ef(0x4f4),'get-pending',_0x78ef(0x233),_0x78ef(0x265),'remove-user',_0x78ef(0x4dd),_0x78ef(0x38d)][_0x78ef(0x4c2)](_0x346743))throw new Error('groupId\x20is\x20required');if(_0x346743===_0x78ef(0x4f4))return await _0x328c2a['getGroupInfo'](_0x386c29);if(_0x346743==='scan-members')return await _0x2d7db9(_0x386c29,_0x328c2a);if(_0x346743==='leave-group')return await _0x328c2a[_0x78ef(0x2c2)](_0x386c29,!!_0x3e2f9c[_0x78ef(0x358)]);if(_0x346743==='get-pending')return await _0x328c2a[_0x78ef(0x4b3)](_0x386c29);if(_0x346743===_0x78ef(0x233))return await _0x328c2a[_0x78ef(0x470)](_0x386c29);if(_0x346743===_0x78ef(0x265)){const _0x5578e8={};return _0x5578e8[_0x78ef(0x4ce)]=_0x48a4c8,_0x5578e8[_0x78ef(0x39b)]=_0x3e2f9c[_0x78ef(0x421)]!==![],await _0x328c2a[_0x78ef(0x4d4)](_0x5578e8,_0x386c29);}if(_0x346743==='remove-user')return await _0x328c2a[_0x78ef(0x245)](_0x386c29,_0x48a4c8[_0x78ef(0x391)]>0x1?_0x48a4c8:_0x48a4c8[0x0]);if(_0x346743===_0x78ef(0x4dd))return await _0x328c2a['addGroupBlockedMember'](_0x48a4c8[_0x78ef(0x391)]>0x1?_0x48a4c8:_0x48a4c8[0x0],_0x386c29);if(_0x346743===_0x78ef(0x38d))return await _0x328c2a['removeGroupBlockedMember'](_0x48a4c8[_0x78ef(0x391)]>0x1?_0x48a4c8:_0x48a4c8[0x0],_0x386c29);if(_0x346743===_0x78ef(0x4c1))return await _0x328c2a[_0x78ef(0x39c)](_0x366705);if(_0x346743===_0x78ef(0x232))return await _0x328c2a[_0x78ef(0x534)](_0x366705);if(_0x346743===_0x78ef(0x4f0)){const _0x3e29c3=String(_0x3e2f9c[_0x78ef(0x337)]||'')[_0x78ef(0x2b0)]();try{return await _0x328c2a[_0x78ef(0x3b9)](_0x3e29c3,_0x366705);}catch(_0x20ec5d){const _0x1ed138=String(_0x20ec5d?.[_0x78ef(0x337)]||_0x20ec5d||'');if(_0x3e29c3&&/(tham s? kh?ng h?p l?|invalid parameter|parameter is invalid|bad request)/i['test'](_0x1ed138))return await _0x328c2a[_0x78ef(0x3b9)]('',_0x366705);throw _0x20ec5d;}}if(_0x346743===_0x78ef(0x3c8))return await _0x328c2a['getAllFriends']();if(_0x346743===_0x78ef(0x20d)){const _0x54e29b=_0x3e2f9c['userIds']||_0x3e2f9c[_0x78ef(0x3d7)]||_0x366705;return await _0x328c2a[_0x78ef(0x355)](_0x54e29b);}throw new Error(_0x78ef(0x2a3)+_0x346743);});}async function _0x5429f9(_0x34d4c9,_0x1db713={}){const _0x399315=_0x1d4a50;if(_0x34d4c9==='create-payment'){const _0x3dddb8=String(_0x1db713[_0x399315(0x449)]||'')[_0x399315(0x2b0)]();if(!_0x3dddb8)throw new Error(_0x399315(0x310));const _0x315c97=_0x20c5fd();try{const _0x2f4447={};_0x2f4447[_0x399315(0x449)]=_0x3dddb8,_0x2f4447[_0x399315(0x406)]=_0x315c97;const _0x5dde8e=await _0x4ddf75(_0x399315(0x1c4),{'method':_0x399315(0x512),'body':JSON[_0x399315(0x2e5)](_0x2f4447)}),_0x472700=_0x5dde8e[_0x399315(0x399)]||{};let _0x5f13f3=_0x472700[_0x399315(0x4f5)];try{const _0x56f1cc=JSON['parse'](readFileSync(a0_0x5d734d[_0x399315(0x50b)](__dirname,_0x399315(0x4e0),_0x399315(0x257)),_0x399315(0x525))),_0x5d6f6f=_0x56f1cc[_0x399315(0x42f)]?.[_0x399315(0x471)](_0x127ca2=>_0x127ca2['id']===_0x3dddb8);if(_0x5d6f6f)_0x5f13f3=_0x5d6f6f[_0x399315(0x284)];}catch(_0x1e8d7d){_0x2e3201[_0x399315(0x2cc)](_0x399315(0x28b)+_0x1e8d7d[_0x399315(0x337)]);}const _0x288530={..._0x472700};_0x288530[_0x399315(0x4f5)]=_0x5f13f3||_0x472700[_0x399315(0x4f5)]||_0x399315(0x236),_0x288530[_0x399315(0x269)]=_0x472700[_0x399315(0x269)],_0x288530['qrUrl']=_0x472700[_0x399315(0x344)]||'',_0x288530[_0x399315(0x328)]=_0x472700[_0x399315(0x328)]||_0x472700[_0x399315(0x1c3)]?.[_0x399315(0x2f9)]||_0x399315(0x4cc),_0x288530[_0x399315(0x54f)]=_0x472700[_0x399315(0x54f)]||_0x472700[_0x399315(0x1c3)]?.[_0x399315(0x45d)]||_0x399315(0x3a4),_0x288530[_0x399315(0x294)]=_0x472700['accountName']||_0x472700[_0x399315(0x1c3)]?.[_0x399315(0x266)]||_0x399315(0x2b4),_0x288530[_0x399315(0x323)]=_0x472700[_0x399315(0x323)]||_0x472700[_0x399315(0x1f8)]||'';const _0x3ae0ce={};return _0x3ae0ce['ok']=!![],_0x3ae0ce[_0x399315(0x399)]=_0x288530,_0x3ae0ce;}catch(_0x4b294a){_0x2e3201['warn'](_0x399315(0x415)+_0x4b294a[_0x399315(0x337)]);const _0x4cb720=await _0x4a5c2d(_0x399315(0x44b),[_0x315c97,_0x3dddb8,_0x399315(0x4ae),_0x399315(0x247)]);if(_0x4cb720?.['ok']&&_0x4cb720[_0x399315(0x399)]){const _0x3b9a67=_0x4cb720['order'],_0x5cb1c9={..._0x4cb720};return _0x5cb1c9[_0x399315(0x399)]={..._0x3b9a67},_0x5cb1c9[_0x399315(0x399)][_0x399315(0x269)]=_0x3b9a67[_0x399315(0x269)]||_0x4cb720[_0x399315(0x269)],_0x5cb1c9[_0x399315(0x399)][_0x399315(0x344)]=_0x3b9a67[_0x399315(0x344)]||_0x3b9a67['qr']?.[_0x399315(0x344)]||_0x4cb720[_0x399315(0x378)]?.[_0x399315(0x344)]||'',_0x5cb1c9[_0x399315(0x399)][_0x399315(0x328)]=_0x3b9a67[_0x399315(0x328)]||_0x3b9a67['qr']?.[_0x399315(0x504)]?.['bank']||_0x3b9a67[_0x399315(0x2f9)]||'',_0x5cb1c9[_0x399315(0x399)][_0x399315(0x54f)]=_0x3b9a67[_0x399315(0x54f)]||_0x3b9a67['qr']?.[_0x399315(0x504)]?.['account_number']||_0x3b9a67['account_number']||'',_0x5cb1c9[_0x399315(0x399)][_0x399315(0x294)]=_0x3b9a67['accountName']||_0x3b9a67['qr']?.[_0x399315(0x504)]?.[_0x399315(0x266)]||_0x3b9a67[_0x399315(0x266)]||'',_0x5cb1c9[_0x399315(0x399)]['memo']=_0x3b9a67[_0x399315(0x323)]||_0x3b9a67['qr']?.[_0x399315(0x2f8)]||'',_0x5cb1c9;}return _0x4cb720;}}if(_0x34d4c9==='check-payment-status'){const _0x44e56d=String(_0x1db713[_0x399315(0x269)]||'')[_0x399315(0x2b0)]();try{const _0x43ca31=await _0x4ddf75(_0x399315(0x47a)+encodeURIComponent(_0x44e56d));if(_0x43ca31[_0x399315(0x3ff)]||_0x43ca31['key']){const _0x364be1={};_0x364be1[_0x399315(0x269)]=_0x44e56d,_0x364be1[_0x399315(0x4f7)]=_0x43ca31[_0x399315(0x43b)],await _0x3fa48c(_0x364be1);}return _0x43ca31;}catch(_0x4fa709){_0x2e3201[_0x399315(0x2cc)](_0x399315(0x3bd)+_0x4fa709[_0x399315(0x337)]);const _0x4f75e5=await _0x4a5c2d(_0x399315(0x31f),[_0x44e56d]);if(_0x4f75e5[_0x399315(0x3ff)]&&_0x4f75e5[_0x399315(0x43b)]){const _0x46e340=await _0x4e4949(_0x4f75e5[_0x399315(0x43b)]);if(_0x46e340['valid']){const _0x36bc95={};_0x36bc95[_0x399315(0x513)]=!![],_0x36bc95[_0x399315(0x3cd)]=_0x46e340[_0x399315(0x3cd)],_0x36bc95[_0x399315(0x502)]=_0x46e340[_0x399315(0x502)],_0x36bc95[_0x399315(0x406)]=_0x46e340[_0x399315(0x406)],_0x36bc95['key']=_0x4f75e5[_0x399315(0x43b)],_0x4babbc[_0x399315(0x1d6)](_0x399315(0x3fb),_0x399315(0x528),_0x36bc95),await _0x4babbc[_0x399315(0x306)]();}}return _0x4f75e5;}}if(_0x34d4c9===_0x399315(0x2e6)){const _0x2b14b3=String(_0x1db713['key']||'')[_0x399315(0x2b0)]();try{const _0x33f9f5={};return _0x33f9f5[_0x399315(0x4f7)]=_0x2b14b3,_0x33f9f5[_0x399315(0x269)]=_0x1db713[_0x399315(0x269)],await _0x3fa48c(_0x33f9f5);}catch(_0x4f064d){const _0x4693df=await _0x4e4949(_0x2b14b3);if(_0x4693df[_0x399315(0x513)]){const _0x48d73f={};_0x48d73f['valid']=!![],_0x48d73f['plan']=_0x4693df['plan'],_0x48d73f[_0x399315(0x502)]=_0x4693df[_0x399315(0x502)],_0x48d73f[_0x399315(0x406)]=_0x4693df[_0x399315(0x406)],_0x48d73f[_0x399315(0x43b)]=_0x2b14b3,_0x4babbc[_0x399315(0x1d6)](_0x399315(0x3fb),_0x399315(0x528),_0x48d73f),await _0x4babbc['saveSettings']();}return _0x4693df;}}if(_0x34d4c9===_0x399315(0x28a)){const _0x1f07d3=String(_0x1db713[_0x399315(0x269)]||'')[_0x399315(0x2b0)](),_0x5c57c0=await _0x4f2d84(_0x1f07d3),_0x11ab5c={};return _0x11ab5c['ok']=_0x5c57c0,_0x11ab5c[_0x399315(0x269)]=_0x1f07d3,_0x11ab5c;}const _0x4699e0=[_0x399315(0x472),'toggle-setting',_0x399315(0x43d),_0x399315(0x359)],_0x40badd=[_0x399315(0x46a),'upsert-custom-mode',_0x399315(0x1fc),_0x399315(0x331),_0x399315(0x3b5),_0x399315(0x496),_0x399315(0x327),_0x399315(0x2dd),_0x399315(0x4dd),_0x399315(0x38d),_0x399315(0x204),_0x399315(0x4f4),_0x399315(0x20d)];if(_0x40badd[_0x399315(0x4c2)](_0x34d4c9)&&!_0x4699e0[_0x399315(0x4c2)](_0x34d4c9)){const _0x426b9a=_0x277ee2();if(!_0x426b9a[_0x399315(0x212)])throw new Error(_0x399315(0x32a));}if(_0x34d4c9==='toggle-setting'){const _0x170b0f=String(_0x1db713[_0x399315(0x4e7)]||'')[_0x399315(0x2b0)](),_0x533453=String(_0x1db713[_0x399315(0x43b)]||'')[_0x399315(0x2b0)]();if(!_0x170b0f||![_0x399315(0x433),_0x399315(0x358),_0x399315(0x283),_0x399315(0x1fb),_0x399315(0x274),'pendingAuto'][_0x399315(0x4c2)](_0x533453))throw new Error(_0x399315(0x210));_0x4babbc[_0x399315(0x1d6)](_0x170b0f,_0x533453,!!_0x1db713['value']),await _0x4babbc[_0x399315(0x306)]();const _0xa243a8={};return _0xa243a8['groupId']=_0x170b0f,_0xa243a8['key']=_0x533453,_0xa243a8['value']=!!_0x1db713[_0x399315(0x474)],_0xa243a8;}if(_0x34d4c9===_0x399315(0x46a)){const _0x537b8e=Array['isArray'](_0x1db713[_0x399315(0x41d)])?_0x1db713[_0x399315(0x41d)]['map'](String)[_0x399315(0x4d1)](Boolean):[],_0x44ec62=String(_0x1db713[_0x399315(0x43b)]||'')[_0x399315(0x2b0)]();if(!_0x537b8e[_0x399315(0x391)]||!['muted','silent',_0x399315(0x283),_0x399315(0x1fb),_0x399315(0x274),'pendingAuto'][_0x399315(0x4c2)](_0x44ec62))throw new Error(_0x399315(0x2d2));for(const _0x424d19 of _0x537b8e)_0x4babbc['setSetting'](_0x424d19,_0x44ec62,!!_0x1db713[_0x399315(0x474)]);await _0x4babbc['saveSettings']();const _0x2e4d93={};return _0x2e4d93[_0x399315(0x43b)]=_0x44ec62,_0x2e4d93[_0x399315(0x474)]=!!_0x1db713[_0x399315(0x474)],_0x2e4d93['count']=_0x537b8e['length'],_0x2e4d93;}if(_0x34d4c9===_0x399315(0x1f0)){const _0x49e15b=String(_0x1db713[_0x399315(0x4e7)]||'')[_0x399315(0x2b0)](),_0x209db0=_0x24f6bd(_0x49e15b,_0x1db713);await _0x4babbc[_0x399315(0x306)]();const _0x2d84e2={};return _0x2d84e2[_0x399315(0x4e7)]=_0x49e15b,_0x2d84e2[_0x399315(0x4d3)]=_0x209db0,_0x2d84e2;}if(_0x34d4c9===_0x399315(0x1fc)){const _0x1d61b5=String(_0x1db713['groupId']||'')[_0x399315(0x2b0)](),_0x4622bf=String(_0x1db713[_0x399315(0x23b)]||'')[_0x399315(0x2b0)](),_0x3e65be=_0x1d9918(_0x1d61b5,_0x4622bf,_0x1db713[_0x399315(0x24f)]!==![]);await _0x4babbc[_0x399315(0x306)]();const _0x15a121={};return _0x15a121[_0x399315(0x4e7)]=_0x1d61b5,_0x15a121[_0x399315(0x4d3)]=_0x3e65be,_0x15a121;}if(_0x34d4c9===_0x399315(0x331)){const _0x5367a1=String(_0x1db713[_0x399315(0x4e7)]||'')[_0x399315(0x2b0)](),_0x30c928=String(_0x1db713[_0x399315(0x23b)]||'')[_0x399315(0x2b0)](),_0x5df622=_0x50c70f(_0x5367a1,_0x30c928);await _0x4babbc['saveSettings']();const _0x3ed765={'groupId':_0x5367a1,..._0x5df622};return _0x3ed765;}if(_0x34d4c9==='group-detail'){const _0x436a20=String(_0x1db713[_0x399315(0x4e7)]||'')[_0x399315(0x2b0)]();if(!_0x436a20)throw new Error(_0x399315(0x235));const _0x5b63c5=await _0x49ff0f(_0x399315(0x31c)),_0x5abecc=await _0x49ff0f(_0x399315(0x348)),_0x228bc0=_0x5b63c5[_0x436a20]||{};let _0x2a46b6=null,_0x524e28=null;try{const _0x13986a={};_0x13986a[_0x399315(0x4e7)]=_0x436a20,_0x2a46b6=await _0x1aa010('get-group-info',_0x13986a);}catch(_0x456c34){}try{const _0x4e7bb1={};_0x4e7bb1[_0x399315(0x4e7)]=_0x436a20;const _0x442c61=await _0x1aa010(_0x399315(0x4b6),_0x4e7bb1);_0x524e28=await _0x450d05(_0x436a20,_0x442c61),_0x4babbc[_0x399315(0x1d6)](_0x436a20,_0x399315(0x345),_0x524e28['list'][_0x399315(0x391)]),await _0x4babbc[_0x399315(0x306)]();}catch(_0xcda93b){}return{'groupId':_0x436a20,'name':_0x7b70ff[_0x436a20]?.['name']||_0x228bc0[_0x399315(0x284)]||_0x399315(0x451)+_0x436a20[_0x399315(0x303)](-0x6),'memberCount':Object[_0x399315(0x34e)](_0x5abecc[_0x436a20]||{})['length']||Number(_0x228bc0[_0x399315(0x494)]||_0x228bc0[_0x399315(0x312)]||0x0),'pendingCount':Number(_0x228bc0[_0x399315(0x345)]||0x0),'admins':_0x228bc0[_0x399315(0x1e1)]||_0x7b70ff[_0x436a20]?.[_0x399315(0x498)]||[],'creatorId':_0x228bc0[_0x399315(0x48e)]||_0x7b70ff[_0x436a20]?.[_0x399315(0x48e)]||'','inviteLink':_0x228bc0[_0x399315(0x2d1)]||_0x7b70ff[_0x436a20]?.[_0x399315(0x2d1)]||'','settings':{'muted':!!_0x228bc0[_0x399315(0x433)],'silent':_0x228bc0[_0x399315(0x358)]!==![],'welcome':_0x228bc0[_0x399315(0x283)]!==![],'tracking':!!_0x228bc0[_0x399315(0x1fb)],'follow':_0x228bc0['follow']!==![],'pendingAuto':!!_0x228bc0['pendingAuto']},'customModes':_0x296176(_0x436a20),'zcaInfo':_0x2a46b6,'pending':_0x524e28};}if(_0x34d4c9===_0x399315(0x4b6)){const _0x569f30=String(_0x1db713[_0x399315(0x4e7)]||'')[_0x399315(0x2b0)](),_0x4001b2=await _0x1aa010(_0x34d4c9,_0x1db713),_0x416642=await _0x450d05(_0x569f30,_0x4001b2),_0x58d771=_0x416642[_0x399315(0x4bd)];return _0x569f30&&(_0x4babbc['setSetting'](_0x569f30,_0x399315(0x345),_0x58d771['length']),await _0x4babbc[_0x399315(0x306)]()),_0x416642;}if(_0x34d4c9===_0x399315(0x258)){const _0x4187=String(_0x1db713['targetId']||_0x1db713['groupId']||_0x1db713[_0x399315(0x3d7)]||'')['trim'](),_0x19abed=String(_0x1db713[_0x399315(0x384)]||'')[_0x399315(0x2b0)]();if(!_0x4187||!_0x19abed)throw new Error(_0x399315(0x360));const _0x59cbfc={};_0x59cbfc['accountId']=_0x399315(0x268);const _0x8a7d76={};_0x8a7d76['accountId']=_0x399315(0x268);if(_0x1db713[_0x399315(0x28e)]===_0x399315(0x2cd))await _0x5b1757(_0x59cbfc,_0x4187,_0x19abed);else await _0x2d96f6(_0x8a7d76,_0x4187,_0x19abed);const _0x208976={};return _0x208976['sent']=!![],_0x208976[_0x399315(0x350)]=_0x4187,_0x208976;}return await _0x1aa010(_0x34d4c9,_0x1db713);}function _0x1b7d2a(_0x340efa){return new Promise((_0x22b2bf,_0x37fbf1)=>{const _0x397dce=a0_0x247a;let _0x513067='';_0x340efa['on'](_0x397dce(0x203),_0x508dad=>{const _0x33abd0=_0x397dce;_0x513067+=_0x508dad;if(_0x513067['length']>0x400*0x400)_0x37fbf1(new Error(_0x33abd0(0x3e4)));}),_0x340efa['on'](_0x397dce(0x4ed),()=>{const _0x38c31e=_0x397dce;try{_0x22b2bf(_0x513067?JSON[_0x38c31e(0x2a2)](_0x513067):{});}catch(_0x3a14fe){_0x37fbf1(_0x3a14fe);}}),_0x340efa['on']('error',_0x37fbf1);});}function _0x1339e7(_0x55107c,_0x4701d0,_0x118a24){const _0x38edde=_0x1d4a50,_0x467c48=JSON[_0x38edde(0x2e5)](_0x118a24,null,0x2),_0x4d8c8f={};_0x4d8c8f['content-type']=_0x38edde(0x483),_0x4d8c8f[_0x38edde(0x438)]=_0x38edde(0x410),_0x55107c[_0x38edde(0x3d8)](_0x4701d0,_0x4d8c8f),_0x55107c[_0x38edde(0x4ed)](_0x467c48,_0x38edde(0x525));}const _0x27f628=new Set();let _0x1732a6=![];async function _0x44e7b1(){const _0x3d99ac=_0x1d4a50;if(_0x1732a6)return;_0x1732a6=!![],_0x2e3201[_0x3d99ac(0x313)](_0x3d99ac(0x1ff)+_0x27f628[_0x3d99ac(0x396)]),setInterval(async()=>{const _0x2b5f76=_0x3d99ac;if(_0x27f628[_0x2b5f76(0x396)]===0x0)return;const _0x1eee5c=_0x27f628['values']()['next']()[_0x2b5f76(0x474)];_0x27f628[_0x2b5f76(0x22b)](_0x1eee5c);try{const _0x516481=String(_0x1eee5c)['replace'](/_0$/,''),_0x5f0819=await _0x49ff0f(_0x2b5f76(0x443)),_0x733f64=_0x5f0819&&typeof _0x5f0819===_0x2b5f76(0x1be)&&!Array[_0x2b5f76(0x36a)](_0x5f0819)?_0x5f0819:{};if(_0x733f64[_0x516481]&&_0x733f64[_0x516481]['displayName'])return;const _0x3e680f=await _0x1e09ca();if(!_0x3e680f)return;const _0x403e25=await _0x3e680f('default',async _0xe9b874=>{const _0x36c07e=_0x2b5f76;return await _0xe9b874['getUserInfo'](_0x516481)[_0x36c07e(0x3fa)](()=>null);});if(_0x403e25){let _0x4d3174=null;const _0x5bda89=_0xd9f2a1=>{const _0x150f74=_0x2b5f76;if(_0x4d3174||!_0xd9f2a1||typeof _0xd9f2a1!=='object')return;if(Array[_0x150f74(0x36a)](_0xd9f2a1)){for(const _0x4e86ad of _0xd9f2a1){_0x5bda89(_0x4e86ad);if(_0x4d3174)return;}return;}const _0x4a06de=String(_0xd9f2a1['userId']||_0xd9f2a1[_0x150f74(0x465)]||_0xd9f2a1['id']||_0xd9f2a1[_0x150f74(0x3ce)]||'')[_0x150f74(0x224)](/_0$/,''),_0x33284f=_0xd9f2a1[_0x150f74(0x3a1)]||_0xd9f2a1[_0x150f74(0x4fd)]||_0xd9f2a1['name']||_0xd9f2a1[_0x150f74(0x33f)]||_0xd9f2a1[_0x150f74(0x1c0)];if(_0x4a06de===_0x516481&&_0x33284f){_0x4d3174=_0xd9f2a1;return;}for(const _0x1a4584 of Object[_0x150f74(0x2ac)](_0xd9f2a1)){if(_0x1a4584&&typeof _0x1a4584==='object'){_0x5bda89(_0x1a4584);if(_0x4d3174)return;}}};_0x5bda89(_0x403e25);if(_0x4d3174){const _0x442f89=_0x4d3174[_0x2b5f76(0x3a1)]||_0x4d3174[_0x2b5f76(0x4fd)]||_0x4d3174['name']||_0x4d3174[_0x2b5f76(0x33f)]||_0x4d3174['fullName']||'';_0x733f64[_0x516481]={'userId':_0x516481,'displayName':_0x442f89,'avatar':_0x4d3174[_0x2b5f76(0x397)]||_0x4d3174['avatarUrl']||_0x4d3174[_0x2b5f76(0x43e)]||'','sdob':_0x4d3174[_0x2b5f76(0x1f5)]||'','phoneNumber':_0x4d3174[_0x2b5f76(0x234)]||_0x4d3174[_0x2b5f76(0x2d6)]||''},await _0x3f1a7e(_0x2b5f76(0x443),_0x733f64),_0x2e3201['info'](_0x2b5f76(0x47b)+_0x516481+':\x20'+_0x442f89);}else _0x2e3201[_0x2b5f76(0x2cc)](_0x2b5f76(0x480)+_0x516481+_0x2b5f76(0x3f6));}}catch(_0x562c52){_0x2e3201['warn'](_0x2b5f76(0x551)+_0x1eee5c+':\x20'+_0x562c52[_0x2b5f76(0x337)]);}},0x1f40);}function _0x21e1ee(){const _0x173e2f=_0x1d4a50;if(_0x2c42b0[_0x173e2f(0x45a)]===![])return;const _0x325300=String(_0x2c42b0[_0x173e2f(0x37d)]||_0x173e2f(0x371)),_0x4f141c=Number(_0x2c42b0[_0x173e2f(0x2c9)]||0x4d4e),_0x3c49b3=String(_0x2c42b0[_0x173e2f(0x1dd)]||_0x3693d1?.['gateway']?.[_0x173e2f(0x37c)]?.[_0x173e2f(0x3cb)]||_0x4dcc95||'openclaw-zalo-mod'),_0x836b74=_0x173e2f(0x516),_0x2ca974=globalThis[_0x836b74];if(_0x2ca974?.[_0x173e2f(0x1e8)])try{_0x2ca974['server'][_0x173e2f(0x24e)]();}catch(_0x56f517){}const _0x56f17d=a0_0x5d734d[_0x173e2f(0x50b)](__dirname,_0x173e2f(0x4d5)),_0x5eff88=a0_0x5d734d['join'](__dirname,_0x173e2f(0x270)),_0x253b62=a0_0x5d734d[_0x173e2f(0x50b)](__dirname,'logo.png'),_0x1c5226=a0_0xc4b0d0[_0x173e2f(0x25d)](async(_0x2d67b6,_0x78808a)=>{const _0x212fb1=_0x173e2f;try{_0x78808a[_0x212fb1(0x2ea)]('Access-Control-Allow-Origin','*'),_0x78808a[_0x212fb1(0x2ea)]('Access-Control-Allow-Methods',_0x212fb1(0x352)),_0x78808a['setHeader']('Access-Control-Allow-Headers',_0x212fb1(0x1cd));if(_0x2d67b6[_0x212fb1(0x3c0)]===_0x212fb1(0x255)){_0x78808a['writeHead'](0xcc),_0x78808a[_0x212fb1(0x4ed)]();return;}const _0xc36574=new URL(_0x2d67b6[_0x212fb1(0x48f)]||'/','http://'+_0x325300+':'+_0x4f141c);if(_0x2d67b6[_0x212fb1(0x3c0)]===_0x212fb1(0x25c)&&(_0xc36574['pathname']==='/'||_0xc36574[_0x212fb1(0x356)]===_0x212fb1(0x42a))){let _0x5ad48a=existsSync(_0x56f17d)?readFileSync(_0x56f17d,'utf8'):'<!doctype\x20html><meta\x20charset=\x22utf-8\x22><title>Zalo\x20Dashboard</title><h1>Zalo\x20Dashboard\x20file\x20missing</h1>';_0x5ad48a=_0x5ad48a['replace']('</head>',_0x212fb1(0x1d2)+JSON[_0x212fb1(0x2e5)](_0x3c49b3)+_0x212fb1(0x4ca));const _0xb33785={};_0xb33785[_0x212fb1(0x2e1)]=_0x212fb1(0x539),_0xb33785[_0x212fb1(0x438)]='no-store',_0x78808a[_0x212fb1(0x3d8)](0xc8,_0xb33785),_0x78808a[_0x212fb1(0x4ed)](_0x5ad48a,_0x212fb1(0x525));return;}if(_0x2d67b6[_0x212fb1(0x3c0)]===_0x212fb1(0x25c)&&_0xc36574[_0x212fb1(0x356)]===_0x212fb1(0x4a7)){const _0x11a4cb=a0_0x5d734d['join'](__dirname,_0x212fb1(0x21f));if(existsSync(_0x11a4cb)){const _0x2c2764={};_0x2c2764[_0x212fb1(0x2e1)]=_0x212fb1(0x1e5),_0x2c2764[_0x212fb1(0x438)]=_0x212fb1(0x410),_0x78808a['writeHead'](0xc8,_0x2c2764),_0x78808a['end'](readFileSync(_0x11a4cb,_0x212fb1(0x525)),_0x212fb1(0x525));}else{const _0x19e5b3={};_0x19e5b3['content-type']=_0x212fb1(0x3b8),_0x78808a[_0x212fb1(0x3d8)](0x194,_0x19e5b3),_0x78808a['end'](_0x212fb1(0x32d));}return;}if(_0x2d67b6[_0x212fb1(0x3c0)]===_0x212fb1(0x25c)&&_0xc36574['pathname']===_0x212fb1(0x4f9)){const _0x2281ac=a0_0x5d734d[_0x212fb1(0x50b)](__dirname,_0x212fb1(0x46f));if(existsSync(_0x2281ac)){const _0x24f658={};_0x24f658[_0x212fb1(0x2e1)]='application/javascript;\x20charset=utf-8',_0x24f658[_0x212fb1(0x438)]=_0x212fb1(0x410),_0x78808a[_0x212fb1(0x3d8)](0xc8,_0x24f658),_0x78808a[_0x212fb1(0x4ed)](readFileSync(_0x2281ac,_0x212fb1(0x525)),'utf8');}else{const _0x469482={};_0x469482[_0x212fb1(0x2e1)]=_0x212fb1(0x3b8),_0x78808a[_0x212fb1(0x3d8)](0x194,_0x469482),_0x78808a[_0x212fb1(0x4ed)](_0x212fb1(0x49e));}return;}if(_0x2d67b6[_0x212fb1(0x3c0)]==='GET'&&(_0xc36574[_0x212fb1(0x356)]===_0x212fb1(0x434)||_0xc36574[_0x212fb1(0x356)]===_0x212fb1(0x50c))){if(!existsSync(_0x5eff88)){const _0x68ef1c={};_0x68ef1c['ok']=![],_0x68ef1c[_0x212fb1(0x427)]='Donate\x20QR\x20not\x20found',_0x1339e7(_0x78808a,0x194,_0x68ef1c);return;}const _0x1fa11e={};_0x1fa11e['content-type']=_0x212fb1(0x380),_0x1fa11e[_0x212fb1(0x438)]='public,\x20max-age=3600',_0x78808a[_0x212fb1(0x3d8)](0xc8,_0x1fa11e),_0x78808a[_0x212fb1(0x4ed)](readFileSync(_0x5eff88));return;}if(_0x2d67b6[_0x212fb1(0x3c0)]==='GET'&&(_0xc36574[_0x212fb1(0x356)]===_0x212fb1(0x27c)||_0xc36574[_0x212fb1(0x356)]===_0x212fb1(0x2f5)||_0xc36574[_0x212fb1(0x356)]===_0x212fb1(0x38e))){if(!existsSync(_0x253b62)){const _0x32013d={};_0x32013d['ok']=![],_0x32013d[_0x212fb1(0x427)]=_0x212fb1(0x1ae),_0x1339e7(_0x78808a,0x194,_0x32013d);return;}const _0x41b5cd={};_0x41b5cd[_0x212fb1(0x2e1)]=_0x212fb1(0x505),_0x41b5cd[_0x212fb1(0x438)]=_0x212fb1(0x29b),_0x78808a['writeHead'](0xc8,_0x41b5cd),_0x78808a[_0x212fb1(0x4ed)](readFileSync(_0x253b62));return;}if(_0xc36574[_0x212fb1(0x356)][_0x212fb1(0x26e)](_0x212fb1(0x468))){const _0x3d6355=_0x2d67b6[_0x212fb1(0x495)][_0x212fb1(0x278)]||'',_0x82c8be=_0x3d6355[_0x212fb1(0x26e)](_0x212fb1(0x244))?_0x3d6355['slice'](0x7):_0x2d67b6[_0x212fb1(0x495)][_0x212fb1(0x4e4)];if(String(_0x82c8be||'')!==_0x3c49b3){const _0x2eb2da={};_0x2eb2da['ok']=![],_0x2eb2da[_0x212fb1(0x427)]=_0x212fb1(0x511),_0x1339e7(_0x78808a,0x191,_0x2eb2da);return;}}if(_0x2d67b6['method']===_0x212fb1(0x25c)&&_0xc36574[_0x212fb1(0x356)]===_0x212fb1(0x1d5)){_0x1339e7(_0x78808a,0xc8,await _0x40157a());return;}if(_0x2d67b6[_0x212fb1(0x3c0)]===_0x212fb1(0x512)&&_0xc36574[_0x212fb1(0x356)]===_0x212fb1(0x43c)){const _0x54d31e=await _0x1b7d2a(_0x2d67b6),_0x561d06=String(_0x54d31e[_0x212fb1(0x30a)]||'')['trim']();if(!_0x561d06)throw new Error(_0x212fb1(0x1e9));const _0x302883=await _0x5429f9(_0x561d06,_0x54d31e['payload']||{}),_0x308ebf={};_0x308ebf[_0x212fb1(0x30a)]=_0x561d06,_0x308ebf[_0x212fb1(0x49f)]=_0x54d31e[_0x212fb1(0x49f)]||{},_0x308ebf['ok']=!![],await _0x1a76d1(_0x308ebf),_0x1339e7(_0x78808a,0xc8,{'ok':!![],'result':_0x302883,'state':await _0x40157a()});return;}const _0x51ff33={};_0x51ff33['ok']=![],_0x51ff33[_0x212fb1(0x427)]='Not\x20found',_0x1339e7(_0x78808a,0x194,_0x51ff33);}catch(_0x7c4297){_0x2e3201[_0x212fb1(0x2cc)](_0x212fb1(0x3be)+_0x7c4297[_0x212fb1(0x337)]);try{const _0x40cb16={};_0x40cb16[_0x212fb1(0x30a)]=_0x212fb1(0x427),_0x40cb16['ok']=![],_0x40cb16[_0x212fb1(0x427)]=_0x7c4297[_0x212fb1(0x337)],await _0x1a76d1(_0x40cb16);}catch(_0x111003){}const _0x1e4140={};_0x1e4140['ok']=![],_0x1e4140[_0x212fb1(0x427)]=_0x7c4297[_0x212fb1(0x337)],_0x1339e7(_0x78808a,0x1f4,_0x1e4140);}});_0x1c5226[_0x173e2f(0x329)](_0x4f141c,_0x325300,()=>{const _0x31eb23=_0x173e2f;_0x2e3201['info'](_0x31eb23(0x2b3)+_0x325300+':'+_0x4f141c+_0x31eb23(0x42a));});const _0x2b9c97={};_0x2b9c97[_0x173e2f(0x1e8)]=_0x1c5226,_0x2b9c97[_0x173e2f(0x3e9)]=_0x4f141c,_0x2b9c97['host']=_0x325300,globalThis[_0x836b74]=_0x2b9c97;}_0x21e1ee();const _0x26d348={};_0x26d348[_0x1d4a50(0x3d6)]=0x12c,_0xae8d94['on'](_0x1d4a50(0x374),async(_0x4e1730,_0x16362a)=>{const _0x4c0777=_0x1d4a50;console[_0x4c0777(0x50f)](_0x4c0777(0x23a),JSON[_0x4c0777(0x2e5)](_0x16362a||{})),console[_0x4c0777(0x50f)](_0x4c0777(0x466),_0x4e1730?.[_0x4c0777(0x520)]);if(_0x16362a?.[_0x4c0777(0x2d0)]!=='zalouser'&&_0x16362a?.[_0x4c0777(0x1eb)]!==_0x4c0777(0x22f)){console['log'](_0x4c0777(0x30d),_0x16362a?.[_0x4c0777(0x2d0)]);return;}const _0x378f1e=String(_0x4e1730?.[_0x4c0777(0x520)]||_0x4e1730?.[_0x4c0777(0x3db)]||'')[_0x4c0777(0x2b0)]();await _0x1a1f79();const _0x19f17f={};_0x19f17f[_0x4c0777(0x3ae)]=!![];if(!_0x378f1e)return _0x19f17f;try{const _0xafa539=JSON['parse'](_0x378f1e);if(_0xafa539&&typeof _0xafa539===_0x4c0777(0x1be)&&_0xafa539['id']&&_0xafa539[_0x4c0777(0x42c)]&&_0xafa539['type']){_0x4e1730[_0x4c0777(0x520)]=_0x4c0777(0x514);if(_0x4e1730[_0x4c0777(0x3db)])_0x4e1730[_0x4c0777(0x3db)]=_0x4c0777(0x514);}}catch(_0x2f7d8c){}const _0x440670=String(_0x16362a[_0x4c0777(0x47f)]||_0x4e1730['conversationId']||''),_0x5af9a0=_0x440670[_0x4c0777(0x26e)](_0x4c0777(0x1fa)),_0x1ed137=String(_0x16362a[_0x4c0777(0x317)]||_0x4e1730[_0x4c0777(0x317)]||''),_0x2df70c=String(_0x4e1730[_0x4c0777(0x2e4)]||_0x1ed137),_0x226c24=_0x277ee2();if(!_0x226c24[_0x4c0777(0x212)]){const _0x49a3fb=String(_0x4e1730?.[_0x4c0777(0x520)]||_0x4e1730?.['content']||'')[_0x4c0777(0x2b0)](),_0x1d808b=_0x49a3fb['toLowerCase'](),_0x2c1e5d=_0x1d808b[_0x4c0777(0x26e)](_0x4bda3d+_0x4c0777(0x34b))||_0x1d808b[_0x4c0777(0x26e)](_0x4bda3d+_0x4c0777(0x526)),_0x22e378=_0x1d808b[_0x4c0777(0x224)](/['’]/g,''),_0x341bf3=_0x1d808b['startsWith'](_0x4bda3d+'ownerid')||_0x22e378===_0x4c0777(0x426)||_0x22e378===_0x4c0777(0x4fe)||_0x22e378===_0x4c0777(0x460),_0x113f1e=_0x4dcc95&&_0x1ed137===_0x4dcc95&&(_0x1d808b['startsWith'](_0x4bda3d+_0x4c0777(0x2a7))||_0x1d808b[_0x4c0777(0x26e)](_0x4bda3d+'mute')||_0x1d808b[_0x4c0777(0x26e)](_0x4bda3d+_0x4c0777(0x47c))),_0x37fa2a=_0x2c1e5d||_0x341bf3||_0x113f1e;}if(!_0x5af9a0){const _0x582656=_0x378f1e[_0x4c0777(0x47e)]()[_0x4c0777(0x2b0)](),_0x5db04e=_0x582656['replace'](/['’]/g,''),_0x5ee6c3=_0x582656===_0x4bda3d+_0x4c0777(0x4bb)||_0x5db04e==='im\x20admin'||_0x5db04e===_0x4c0777(0x4fe)||_0x5db04e===_0x4c0777(0x460);if(_0x5ee6c3){if(!_0x4dcc95){const _0x5d07ec={};_0x5d07ec[_0x4c0777(0x298)]=_0x1ed137;const _0x3ceea=_0x5d07ec,_0x127d14=await _patchOpenclawConfig(_openclawHome,_0x3ceea,_0x2e3201,!![]);_0x127d14?(_0x4dcc95=_0x1ed137,_0x2b5ac4[_0x4c0777(0x31e)](_0x1ed137),await _0x5b1757(_0x16362a,_0x1ed137,'✅\x20Đã\x20đăng\x20ký\x20bạn\x20làm\x20Owner!\x0a👑\x20Owner\x20ID:\x20'+_0x1ed137+_0x4c0777(0x25f))):await _0x5b1757(_0x16362a,_0x1ed137,'⚠️\x20Không\x20thể\x20ghi\x20config.\x20Thêm\x20thủ\x20công:\x0a\x22ownerId\x22:\x20\x22'+_0x1ed137+_0x4c0777(0x1fe)+PLUGIN_ID+'.config');}else await _0x5b1757(_0x16362a,_0x1ed137,_0x4c0777(0x2ef)+_0x4dcc95);const _0x3f3abf={};return _0x3f3abf[_0x4c0777(0x3ae)]=!![],_0x3f3abf;}if(_0x4dcc95&&_0x1ed137===_0x4dcc95){const _0xc78386=await _0x235375(_0x378f1e,_0x1ed137,_0x16362a,_0x4bda3d);if(_0xc78386)return _0xc78386;return;}if(_0x590339[_0x4c0777(0x396)]===0x0||_0x590339[_0x4c0777(0x461)](_0x1ed137))return;_0x2e3201[_0x4c0777(0x313)](_0x4c0777(0x2df)+_0x2df70c+'\x20('+_0x1ed137+_0x4c0777(0x51d));const _0xa41a87={};return _0xa41a87[_0x4c0777(0x3ae)]=!![],_0xa41a87;}const _0x394c8a=_0x440670[_0x4c0777(0x224)](/^group:/,''),_0x494833=_0x4babbc['getSetting'](_0x394c8a,_0x4c0777(0x433),![]);if(_0x494833){const _0x513c35=_0x378f1e[_0x4c0777(0x4cf)](new RegExp('^'+_0x4bda3d+_0x4c0777(0x3ba),'i'));if(_0x513c35&&_0x156206(_0x1ed137,_0x394c8a)){_0x4babbc[_0x4c0777(0x1d6)](_0x394c8a,_0x4c0777(0x433),![]),await _0x4babbc[_0x4c0777(0x306)](),_0x2e3201[_0x4c0777(0x313)](_0x4c0777(0x3e1)+_0x394c8a+_0x4c0777(0x2ad)+_0x2df70c),await _0x2d96f6(_0x16362a,_0x394c8a,_0x4c0777(0x267));const _0x35b076={};return _0x35b076[_0x4c0777(0x3ae)]=!![],_0x35b076;}const _0x543a7c={};return _0x543a7c[_0x4c0777(0x3ae)]=!![],_0x543a7c;}const _0x1f6903=_0x378f1e[_0x4c0777(0x4cf)](/(?:^|\s)(\/[a-z][a-z0-9-]*)(.*)$/i);if(_0x1f6903){const _0x32bc5f=_0x1f6903[0x1][_0x4c0777(0x47e)](),_0x306236={};_0x306236[_0x4c0777(0x3ae)]=!![];if(!_0x32bc5f['startsWith'](_0x4bda3d))return _0x306236;const _0x323a09='/'+_0x32bc5f[_0x4c0777(0x303)](_0x4bda3d['length']),_0x57c388=_0x1f6903[0x2][_0x4c0777(0x2b0)](),_0x15d318=_0x57c388?_0x57c388[_0x4c0777(0x518)](/\s+/):[],_0x48ebf4=new RegExp(_0x21e0be[_0x4c0777(0x53e)](_0x20710b=>'@'+_0x20710b[_0x4c0777(0x224)](/[.*+?^${}()|[\]\\]/g,'\x5c$&'))[_0x4c0777(0x50b)]('|'),'gi'),_0x40a9cd=_0x378f1e[_0x4c0777(0x303)](0x0,_0x1f6903[_0x4c0777(0x222)]+(_0x1f6903[0x0]['startsWith']('\x20')?0x1:0x0))[_0x4c0777(0x2b0)]()['replace'](_0x48ebf4,'')[_0x4c0777(0x224)](/\s{2,}/g,'\x20')[_0x4c0777(0x2b0)]();if(_0x323a09==='/noi-quy'){await _0x2d96f6(_0x16362a,_0x394c8a,buildNoiQuy(_0x387243(_0x394c8a),_0xb2b223,_0x4bda3d));const _0x3e9622={};return _0x3e9622[_0x4c0777(0x3ae)]=!![],_0x3e9622;}if(_0x323a09===_0x4c0777(0x35a)||_0x323a09==='/tat-bot'){const _0x5ee205={};_0x5ee205[_0x4c0777(0x3ae)]=!![];if(!_0x156206(_0x1ed137,_0x394c8a))return _0x5ee205;_0x4babbc[_0x4c0777(0x1d6)](_0x394c8a,_0x4c0777(0x433),!![]),await _0x4babbc[_0x4c0777(0x306)](),_0x2e3201[_0x4c0777(0x313)](_0x4c0777(0x3e1)+_0x394c8a+'\x20MUTED\x20by\x20'+_0x2df70c),await _0x2d96f6(_0x16362a,_0x394c8a,'🔇\x20Bot\x20đã\x20tắt\x20trong\x20group\x20này.\x0aGõ\x20'+_0x4bda3d+_0x4c0777(0x366));const _0x4ebe8d={};return _0x4ebe8d[_0x4c0777(0x3ae)]=!![],_0x4ebe8d;}if(_0x323a09===_0x4c0777(0x2bc)||_0x323a09===_0x4c0777(0x4a8)){const _0x31acc9={};_0x31acc9[_0x4c0777(0x3ae)]=!![];if(!_0x156206(_0x1ed137,_0x394c8a))return _0x31acc9;_0x4babbc[_0x4c0777(0x1d6)](_0x394c8a,_0x4c0777(0x433),![]),await _0x4babbc[_0x4c0777(0x306)](),await _0x2d96f6(_0x16362a,_0x394c8a,'🔊\x20Bot\x20đang\x20hoạt\x20động\x20bình\x20thường!');const _0x3e2367={};return _0x3e2367[_0x4c0777(0x3ae)]=!![],_0x3e2367;}if(_0x323a09===_0x4c0777(0x4a6)){let _0x92076e=buildMenu(_0xb2b223,_0x4bda3d);_0x4dcc95&&_0x1ed137===_0x4dcc95&&(_0x92076e+='\x0a\x0a👑\x20OWNER\x20(DM\x20riêng\x20với\x20bot):\x0a\x20\x20'+_0x4bda3d+'rules\x20groupid-list\x0a\x20\x20'+_0x4bda3d+'rules\x20groupid-add\x20<groupId>\x20[tên]\x0a\x20\x20'+_0x4bda3d+_0x4c0777(0x223)+_0x4bda3d+'rules\x20status\x20—\x20Tổng\x20quan');await _0x2d96f6(_0x16362a,_0x394c8a,_0x92076e);const _0x3a7e59={};return _0x3a7e59[_0x4c0777(0x3ae)]=!![],_0x3a7e59;}if(_0x323a09===_0x4c0777(0x372)){await _0x2d96f6(_0x16362a,_0x394c8a,buildHuongDan(_0xb2b223,_0x4bda3d));const _0x5066d2={};return _0x5066d2[_0x4c0777(0x3ae)]=!![],_0x5066d2;}const _0x5c9b15=_0x323a09[_0x4c0777(0x4cf)](/^\/bot-([a-z0-9-]+)-(on|off)$/i);if(_0x5c9b15){const _0x575a32={};_0x575a32[_0x4c0777(0x3ae)]=!![];if(!_0x156206(_0x1ed137,_0x394c8a))return _0x575a32;const [,_0x183b0d,_0x59cb73]=_0x5c9b15;try{const _0x654988=_0x1d9918(_0x394c8a,_0x183b0d,_0x59cb73==='on');await _0x4babbc['saveSettings'](),await _0x2d96f6(_0x16362a,_0x394c8a,'✅\x20'+_0x654988['label']+':\x20'+(_0x59cb73==='on'?_0x4c0777(0x501):_0x4c0777(0x493))+'\x0a🧠\x20Skill:\x20'+_0x654988[_0x4c0777(0x35c)]);}catch(_0x1ef716){await _0x2d96f6(_0x16362a,_0x394c8a,_0x4c0777(0x519)+_0x1ef716[_0x4c0777(0x337)]);}const _0x111d6b={};return _0x111d6b[_0x4c0777(0x3ae)]=!![],_0x111d6b;}if(_0x323a09===_0x4c0777(0x291)){const _0x210d74={};_0x210d74['handled']=!![];if(!_0x156206(_0x1ed137,_0x394c8a))return _0x210d74;await _0x952fb5();const _0x1916e3=_0x448ee1(_0x4babbc[_0x4c0777(0x301)](),_0x394c8a),_0x19b4dc=_0x448ee1(_0x4babbc['getAllWarned'](),_0x394c8a),_0x12c308=buildReport(_0x394c8a,_0x1916e3,_0x19b4dc);await _0x2d96f6(_0x16362a,_0x394c8a,_0x12c308);const _0x3574a2={};return _0x3574a2['handled']=!![],_0x3574a2;}if(_0x323a09===_0x4c0777(0x309)){const _0x15d119={};_0x15d119[_0x4c0777(0x3ae)]=!![];if(!_0x156206(_0x1ed137,_0x394c8a))return _0x15d119;const _0x3b3201=_0x4e1730[_0x4c0777(0x506)]||[],_0x437ff4=(_0x15d318[0x0]||'')[_0x4c0777(0x224)](/^@/,''),_0x1e5e25=(_0x3b3201[0x0]?.[_0x4c0777(0x465)]||_0x437ff4||'')[_0x4c0777(0x224)](/^@/,''),_0x5017a1=(_0x3b3201[0x0]?.[_0x4c0777(0x284)]||_0x437ff4||_0x1e5e25)[_0x4c0777(0x224)](/^@/,''),_0xbb4968=_0x15d318[_0x4c0777(0x303)](0x1),_0x57a8d6=_0xbb4968['join']('\x20')['trim']()||_0x4c0777(0x3e0),_0x1f6966={};_0x1f6966[_0x4c0777(0x3ae)]=!![];if(!_0x1e5e25)return _0x1f6966;_0x4babbc[_0x4c0777(0x508)](_0x394c8a,_0x1e5e25,_0x5017a1,_0x57a8d6),await _0x4babbc['saveWarned']();const _0x11829f=_0x4babbc[_0x4c0777(0x45e)](_0x394c8a,_0x1e5e25),_0x1ef23e=_0x11829f>=0x3?_0x4c0777(0x36e):'';await _0x51b682(_0x394c8a,'members.md','|\x20'+_0x5017a1+_0x4c0777(0x44d)+_0x11829f+_0x4c0777(0x44d)+_0x57a8d6+_0x4c0777(0x44d)+_0xbbfd8b()+'\x20|'),await _0x51b682(_0x394c8a,_0x4c0777(0x2b5),'|\x20'+_0xbbfd8b()+_0x4c0777(0x487)+_0x5017a1+':\x20'+_0x57a8d6+'\x20|'),await _0x2d96f6(_0x16362a,_0x394c8a,_0x4c0777(0x519)+_0x5017a1+_0x4c0777(0x50a)+_0x57a8d6+_0x4c0777(0x424)+_0x1ef23e+_0x4c0777(0x20c)+_0x11829f+'.');const _0x4390fd={};return _0x4390fd[_0x4c0777(0x3ae)]=!![],_0x4390fd;}if(_0x323a09===_0x4c0777(0x39f)){const _0x58cf28={};_0x58cf28[_0x4c0777(0x3ae)]=!![];if(!_0x156206(_0x1ed137,_0x394c8a))return _0x58cf28;const _0x493af1=_0x40a9cd||_0x15d318[_0x4c0777(0x50b)]('\x20'),_0x157e68={};_0x157e68[_0x4c0777(0x3ae)]=!![];if(!_0x493af1)return _0x157e68;_0x4babbc[_0x4c0777(0x2e7)](_0x394c8a,_0x4c0777(0x3d4),_0x2df70c,_0x4c0777(0x3c4),_0x493af1),await _0x4babbc[_0x4c0777(0x311)](),await _0x51b682(_0x394c8a,'admin-notes.md','|\x20'+_0xbbfd8b()+'\x20|\x20'+_0x2df70c+_0x4c0777(0x44d)+_0x493af1+'\x20|'),await _0x2d96f6(_0x16362a,_0x394c8a,_0x4c0777(0x1d8)+_0x493af1);const _0x249310={};return _0x249310['handled']=!![],_0x249310;}if(_0x323a09===_0x4c0777(0x455)||_0x323a09===_0x4c0777(0x3ad)){const _0x390071={};_0x390071['handled']=!![];if(!_0x4dcc95||_0x1ed137!==_0x4dcc95)return _0x390071;const _0x5682ef=_0x15d318[0x0]?.[_0x4c0777(0x2b0)]();if(!_0x5682ef){await _0x2d96f6(_0x16362a,_0x5af9a0?_0x440670:_0x1ed137,'⚠️\x20Vui\x20lòng\x20nhập\x20key.\x20Cú\x20pháp:\x20'+_0x323a09+'\x20[key]');const _0x270c42={};return _0x270c42[_0x4c0777(0x3ae)]=!![],_0x270c42;}await _0x2d96f6(_0x16362a,_0x5af9a0?_0x440670:_0x1ed137,_0x4c0777(0x2eb));const _0x3e3e74=await _0x4e4949(_0x5682ef);if(_0x3e3e74['valid']){const _0x39ea67={};_0x39ea67['valid']=!![],_0x39ea67[_0x4c0777(0x3cd)]=_0x3e3e74['plan'],_0x39ea67['expiry']=_0x3e3e74['expiry'],_0x39ea67[_0x4c0777(0x406)]=_0x3e3e74[_0x4c0777(0x406)],_0x39ea67[_0x4c0777(0x43b)]=_0x5682ef,_0x4babbc[_0x4c0777(0x1d6)]('global',_0x4c0777(0x528),_0x39ea67),await _0x4babbc[_0x4c0777(0x306)](),await _0x2d96f6(_0x16362a,_0x5af9a0?_0x440670:_0x1ed137,_0x4c0777(0x29e)+_0x3e3e74[_0x4c0777(0x3cd)]['toUpperCase']()+_0x4c0777(0x287)+_0x3e3e74['expiry']+_0x4c0777(0x343)+_0x3e3e74[_0x4c0777(0x406)]);}else await _0x2d96f6(_0x16362a,_0x5af9a0?_0x440670:_0x1ed137,_0x4c0777(0x299)+_0x3e3e74['error']);const _0x27123a={};return _0x27123a[_0x4c0777(0x3ae)]=!![],_0x27123a;}if(_0x323a09===_0x4c0777(0x2ed)){const _0x1e8f0b={};_0x1e8f0b[_0x4c0777(0x3ae)]=!![];if(!_0x4dcc95||_0x1ed137!==_0x4dcc95)return _0x1e8f0b;const _0x49826d=_0x15d318[0x0]?.[_0x4c0777(0x47e)]();if(!_0x49826d){await _0x2d96f6(_0x16362a,_0x394c8a,_0x4c0777(0x1ac)+_0x4bda3d+_0x4c0777(0x308)+_0x4bda3d+'rules\x20silent-on\x20\x20—\x20Bot\x20chỉ\x20reply\x20khi\x20@tag\x0a\x20\x20'+_0x4bda3d+'rules\x20silent-off\x20—\x20Bot\x20reply\x20mọi\x20tin\x0a\x0a🎉\x20Welcome:\x0a\x20\x20'+_0x4bda3d+'rules\x20welcome-on\x20\x20—\x20Bật\x20chào\x20member\x20mới\x0a\x20\x20'+_0x4bda3d+_0x4c0777(0x3ef)+_0x4bda3d+_0x4c0777(0x3df)+_0x4bda3d+_0x4c0777(0x20f)+_0x4bda3d+_0x4c0777(0x2db)+_0x4bda3d+_0x4c0777(0x21e)+_0x4bda3d+_0x4c0777(0x4c9)+_0x4bda3d+_0x4c0777(0x46d));const _0x1ded94={};return _0x1ded94[_0x4c0777(0x3ae)]=!![],_0x1ded94;}if(_0x49826d===_0x4c0777(0x262)){const _0x228aae=[_0x4c0777(0x338)];for(const _0x453dcb of _0x178cf9){const _0x4e5e9f=_0x387243(_0x453dcb),_0x384dce=_0x4babbc[_0x4c0777(0x408)](_0x453dcb,'muted',![]);_0x228aae[_0x4c0777(0x2d4)]((_0x384dce?'🔇':'🔊')+'\x20'+_0x4e5e9f+_0x4c0777(0x1db)+_0x453dcb);}if(_0x178cf9[_0x4c0777(0x391)]===0x0)_0x228aae[_0x4c0777(0x2d4)](_0x4c0777(0x26b)+_0x4bda3d+_0x4c0777(0x4d7));_0x228aae[_0x4c0777(0x2d4)](_0x4c0777(0x37b)+_0x178cf9[_0x4c0777(0x391)]+'\x20group(s)'),await _0x2d96f6(_0x16362a,_0x394c8a,_0x228aae[_0x4c0777(0x50b)]('\x0a'));const _0x2a3084={};return _0x2a3084[_0x4c0777(0x3ae)]=!![],_0x2a3084;}if(_0x49826d===_0x4c0777(0x228)){try{await _0x2d96f6(_0x16362a,_0x394c8a,_0x4c0777(0x556));const _0x385170=await _0x4e2b85(_0x394c8a);if(!_0x178cf9['includes'](_0x394c8a))_0x178cf9[_0x4c0777(0x2d4)](_0x394c8a);let _0x576c88=![];const _0x4c32cd=_0x38c091(_0x394c8a);_0x4c32cd[_0x4c0777(0x4c2)](_0x4dcc95)&&(_0x4babbc[_0x4c0777(0x1d6)](_0x394c8a,'welcome',!![]),_0x4babbc['setSetting'](_0x394c8a,_0x4c0777(0x274),!![]),_0x4babbc['setSetting'](_0x394c8a,_0x4c0777(0x1fb),!![]),_0x576c88=!![]);await _0x4babbc['saveSettings']();const _0x7269ee=_0xc36663(_0x394c8a),_0x1c9d58=_0x7269ee[_0x4c0777(0x391)]>0x0?_0x4c0777(0x3f5)+_0x7269ee['join'](',\x20'):_0x4c0777(0x541),_0x559aa3=_0x385170?_0x4c0777(0x558)+_0x385170[_0x4c0777(0x312)]:'',_0x55959b=_0x385170?'✅\x20'+_0x385170[_0x4c0777(0x284)]:'✅\x20'+_0x387243(_0x394c8a),_0x4fea31=_0x576c88?_0x4c0777(0x26d):'\x0a⏸️\x20owner\x20không\x20phải\x20admin';await _0x2d96f6(_0x16362a,_0x394c8a,_0x55959b+_0x4c0777(0x3e2)+_0x394c8a+'\x0a'+_0x1c9d58+(_0x559aa3?'\x0a'+_0x559aa3:'')+_0x4fea31+_0x4c0777(0x25f)),_0x217106();}catch(_0x2ebe62){_0x2e3201[_0x4c0777(0x2cc)](_0x4c0777(0x499)+_0x4bda3d+_0x4c0777(0x3e8)+_0x2ebe62['message']),await _0x2d96f6(_0x16362a,_0x394c8a,_0x4c0777(0x46c)+_0x394c8a+'\x0a⚠️\x20Lỗi:\x20'+_0x2ebe62[_0x4c0777(0x337)]);}const _0x544b40={};return _0x544b40['handled']=!![],_0x544b40;}if(_0x49826d===_0x4c0777(0x4b8)){await _0x45fa55(_0x16362a,_0x394c8a,!![],_0x394c8a);const _0x2089fa={};return _0x2089fa[_0x4c0777(0x3ae)]=!![],_0x2089fa;}if(_0x49826d===_0x4c0777(0x540)){_0x4babbc[_0x4c0777(0x1d6)](_0x394c8a,_0x4c0777(0x358),!![]),await _0x4babbc[_0x4c0777(0x306)](),await _0x2d96f6(_0x16362a,_0x394c8a,_0x4c0777(0x459));const _0x5e6dde={};return _0x5e6dde[_0x4c0777(0x3ae)]=!![],_0x5e6dde;}if(_0x49826d===_0x4c0777(0x1ad)){_0x4babbc[_0x4c0777(0x1d6)](_0x394c8a,_0x4c0777(0x358),![]),await _0x4babbc[_0x4c0777(0x306)](),await _0x2d96f6(_0x16362a,_0x394c8a,'✅\x20Silent\x20mode:\x20TẮT');const _0x3cd67d={};return _0x3cd67d[_0x4c0777(0x3ae)]=!![],_0x3cd67d;}if(_0x49826d==='welcome-on'){_0x4babbc['setSetting'](_0x394c8a,'welcome',!![]),await _0x4babbc['saveSettings'](),await _0x2d96f6(_0x16362a,_0x394c8a,_0x4c0777(0x479));const _0x57de23={};return _0x57de23[_0x4c0777(0x3ae)]=!![],_0x57de23;}if(_0x49826d===_0x4c0777(0x339)){_0x4babbc[_0x4c0777(0x1d6)](_0x394c8a,'welcome',![]),await _0x4babbc[_0x4c0777(0x306)](),await _0x2d96f6(_0x16362a,_0x394c8a,_0x4c0777(0x478));const _0x7b1b49={};return _0x7b1b49[_0x4c0777(0x3ae)]=!![],_0x7b1b49;}if(_0x49826d===_0x4c0777(0x3a6)){_0x4babbc[_0x4c0777(0x1d6)](_0x394c8a,_0x4c0777(0x1fb),!![]),await _0x4babbc['saveSettings'](),await _0x2d96f6(_0x16362a,_0x394c8a,_0x4c0777(0x237));const _0x1cfd97={};return _0x1cfd97[_0x4c0777(0x3ae)]=!![],_0x1cfd97;}if(_0x49826d===_0x4c0777(0x2ae)){_0x4babbc[_0x4c0777(0x1d6)](_0x394c8a,_0x4c0777(0x1fb),![]),await _0x4babbc[_0x4c0777(0x306)](),await _0x2d96f6(_0x16362a,_0x394c8a,_0x4c0777(0x423));const _0xdc4d90={};return _0xdc4d90['handled']=!![],_0xdc4d90;}if(_0x49826d===_0x4c0777(0x548)){const _0x4aecf5=_0x4babbc[_0x4c0777(0x408)](_0x394c8a,_0x4c0777(0x433),![]),_0x9f7d6d=_0x4babbc[_0x4c0777(0x408)](_0x394c8a,'silent',!![]),_0x34ed02=_0x4babbc[_0x4c0777(0x408)](_0x394c8a,_0x4c0777(0x283),!![]),_0x5dc83e=_0x4babbc[_0x4c0777(0x408)](_0x394c8a,_0x4c0777(0x1fb),![]);await _0x2d96f6(_0x16362a,_0x394c8a,_0x4c0777(0x390)+(_0x4aecf5?_0x4c0777(0x2fd):_0x4c0777(0x493))+_0x4c0777(0x32c)+(_0x9f7d6d?_0x4c0777(0x501):_0x4c0777(0x493))+_0x4c0777(0x1da)+(_0x34ed02?_0x4c0777(0x501):_0x4c0777(0x493))+_0x4c0777(0x4a2)+(_0x5dc83e?_0x4c0777(0x501):_0x4c0777(0x493)));const _0x35af5a={};return _0x35af5a[_0x4c0777(0x3ae)]=!![],_0x35af5a;}await _0x2d96f6(_0x16362a,_0x394c8a,'⚠️\x20Lệnh\x20'+_0x4bda3d+_0x4c0777(0x2f2)+_0x49826d+'\x20không\x20hợp\x20lệ.\x0aGõ\x20'+_0x4bda3d+_0x4c0777(0x250));const _0x44e709={};return _0x44e709['handled']=!![],_0x44e709;}if(_0x323a09===_0x4c0777(0x51e)){const _0x58436e={};_0x58436e['handled']=!![];if(!_0x156206(_0x1ed137,_0x394c8a))return _0x58436e;const _0x255476=(_0x40a9cd||_0x15d318[_0x4c0777(0x50b)]('\x20'))[_0x4c0777(0x224)](/\s{2,}/g,'\x20')[_0x4c0777(0x2b0)]();_0x255476&&(_0x4babbc[_0x4c0777(0x2e7)](_0x394c8a,_0x4c0777(0x3d4),_0x2df70c,_0x4c0777(0x3c4),_0x255476),await _0x4babbc['saveViolations'](),await _0x51b682(_0x394c8a,_0x4c0777(0x405),'|\x20'+_0xbbfd8b()+_0x4c0777(0x44d)+_0x2df70c+_0x4c0777(0x44d)+_0x255476+'\x20|'));await _0x952fb5();const {warnCount:_0x228055,vioCount:_0x399c48}=await _0x2e51b1(_0x394c8a),_0x4b0ddb=_0x255476?_0x4c0777(0x27d)+_0x255476:'';await _0x2d96f6(_0x16362a,_0x394c8a,_0x4c0777(0x216)+_0x4b0ddb+_0x4c0777(0x2ff)+_0x56912(_0x394c8a)+_0x4c0777(0x4c7)+_0x228055+_0x4c0777(0x463)+_0x399c48+'\x20vi\x20phạm\x20ghi\x20nhận');const _0x5e3250={};return _0x5e3250[_0x4c0777(0x3ae)]=!![],_0x5e3250;}const _0x15431b={};return _0x15431b[_0x4c0777(0x3ae)]=!![],_0x15431b;}const _0x762203=isMessageMentioningBot(_0x4e1730,_0x21e0be);if(_0x762203){_0x2e3201[_0x4c0777(0x313)](_0x4c0777(0x1e7)+_0x2df70c+_0x4c0777(0x532)+_0x394c8a+':\x20'+_0x378f1e['slice'](0x0,0x50)),await _0x51b682(_0x394c8a,_0x4c0777(0x2b5),'|\x20'+_0xbbfd8b()+_0x4c0777(0x44d)+_0x2df70c+'\x20|\x20'+_0x378f1e['slice'](0x0,0x50)+'\x20|');_0x4babbc['getSetting'](_0x394c8a,_0x4c0777(0x1fb),![])&&await _0x52d649(_0x394c8a,_0x2df70c,_0x378f1e);const _0x1ac456=/\b(file|pdf|ảnh|hình\s*ảnh|tài\s*liệu|doc|docx|xlsx?|excel|video|mp4|zip|rar|link|tải|download|attachment|đính\s*kèm|xem\s*file|đọc\s*file)\b/i;if(_0x1ac456[_0x4c0777(0x488)](_0x378f1e)){const _0x34e79f=_0x4c0777(0x3ac);if(_0x4e1730[_0x4c0777(0x520)]!==undefined)_0x4e1730['body']=_0x378f1e+_0x34e79f;if(_0x4e1730['content']!==undefined)_0x4e1730['content']=_0x378f1e+_0x34e79f;_0x2e3201['info'](_0x4c0777(0x1ba)+_0x394c8a);}const _0x1f0a8f=_0x378f1e[_0x4c0777(0x47e)]();if(/(?:ai.*warn|warn.*ai|danh.*s[áa]ch.*warn|list.*warn|ai.*b[ịi].*c[ảa]nh.*c[áa]o)/i[_0x4c0777(0x488)](_0x1f0a8f)){const _0x344e0b=_0x4babbc[_0x4c0777(0x4e1)](_0x394c8a),_0x50cb8a=Object[_0x4c0777(0x3ab)](_0x344e0b);if(!_0x50cb8a[_0x4c0777(0x391)])await _0x2d96f6(_0x16362a,_0x394c8a,_0x4c0777(0x41e));else{const _0x317e20=['⚠️\x20DANH\x20SÁCH\x20WARN\x0a━━━━━━━━━━━━━━━━━━'];for(const [_0x30dd99,_0x4bb629]of _0x50cb8a){const _0x11267e=_0x4bb629[_0x4bb629[_0x4c0777(0x391)]-0x1],_0x1343fb=(_0x11267e[_0x4c0777(0x284)]||_0x30dd99)['replace'](/^@/,'');_0x317e20['push']('•\x20'+_0x1343fb+_0x4c0777(0x50a)+_0x4bb629[_0x4c0777(0x391)]+_0x4c0777(0x2de)+(_0x11267e['reason']||'—'));}await _0x2d96f6(_0x16362a,_0x394c8a,_0x317e20[_0x4c0777(0x50b)]('\x0a'));}const _0x2a610d={};return _0x2a610d['handled']=!![],_0x2a610d;}if(/(?:vi.*ph[ạa]m|violation|spam.*g[ầa]n)/i[_0x4c0777(0x488)](_0x1f0a8f)){const _0x6cabb8=_0x4babbc[_0x4c0777(0x3bf)](_0x394c8a),_0x57a34c=[];for(const [_0x547f38,_0x5c2401]of Object['entries'](_0x6cabb8)){if(_0x547f38==='admin-note')continue;for(const _0x3e52a9 of _0x5c2401)_0x57a34c[_0x4c0777(0x2d4)](_0x3e52a9);}if(!_0x57a34c['length'])await _0x2d96f6(_0x16362a,_0x394c8a,_0x4c0777(0x38b));else{_0x57a34c[_0x4c0777(0x4b4)]((_0x162ba9,_0x3db971)=>(_0x3db971['ts']||'')[_0x4c0777(0x1df)](_0x162ba9['ts']||''));const _0xe95dd9=[_0x4c0777(0x393)+_0x57a34c[_0x4c0777(0x391)]+_0x4c0777(0x54d)];for(const _0x2b301c of _0x57a34c[_0x4c0777(0x303)](0x0,0x5)){const _0x30caa0=(_0x2b301c[_0x4c0777(0x284)]||'?')[_0x4c0777(0x224)](/^@/,'');_0xe95dd9[_0x4c0777(0x2d4)]('•\x20'+_0x30caa0+_0x4c0777(0x50a)+_0x2b301c[_0x4c0777(0x446)]+_0x4c0777(0x44d)+(_0x2b301c[_0x4c0777(0x2dc)]||'')[_0x4c0777(0x303)](0x0,0x1e));}await _0x2d96f6(_0x16362a,_0x394c8a,_0xe95dd9['join']('\x0a'));}const _0xc5f36a={};return _0xc5f36a[_0x4c0777(0x3ae)]=!![],_0xc5f36a;}if(/(?:admin.*l[àa].*ai|ai.*l[àa].*admin)/i[_0x4c0777(0x488)](_0x1f0a8f)){const _0x2f828f=_0xc36663(_0x394c8a);_0x2f828f[_0x4c0777(0x391)]>0x0?await _0x2d96f6(_0x16362a,_0x394c8a,_0x4c0777(0x1c7)+_0x2f828f['map'](_0x54431c=>'•\x20'+_0x54431c)[_0x4c0777(0x50b)]('\x0a')):await _0x2d96f6(_0x16362a,_0x394c8a,_0x4c0777(0x31d));const _0x5691a3={};return _0x5691a3['handled']=!![],_0x5691a3;}_0x2e3201[_0x4c0777(0x313)](_0x4c0777(0x385)+_0x378f1e[_0x4c0777(0x303)](0x0,0x50));return;}const _0x8bcad7=_0x7b70ff[_0x394c8a]?.[_0x4c0777(0x498)]||_0x38c091(_0x394c8a)||[],_0x654562=_0x7b70ff[_0x394c8a]?.[_0x4c0777(0x48e)],_0x422db1=_0x4dcc95&&(_0x8bcad7[_0x4c0777(0x53e)](String)[_0x4c0777(0x4c2)](_0x4dcc95)||String(_0x654562||'')===_0x4dcc95),_0x53595b=_0x4babbc['getSetting'](_0x394c8a,_0x4c0777(0x358),!![]);if(_0x53595b){if(_0x422db1){const _0x57d34c=_0x5e577b['check'](_0x1ed137,_0x378f1e);_0x57d34c&&(_0x4babbc['addViolation'](_0x394c8a,_0x1ed137,_0x2df70c,_0x57d34c,_0x378f1e),await _0x4babbc['saveViolations'](),await _0x51b682(_0x394c8a,_0x4c0777(0x279),'|\x20'+_0xbbfd8b()+_0x4c0777(0x44d)+_0x2df70c+_0x4c0777(0x44d)+_0x57d34c+_0x4c0777(0x44d)+_0x378f1e[_0x4c0777(0x303)](0x0,0x28)+'\x20|'),_0x2e3201[_0x4c0777(0x313)](_0x4c0777(0x3a8)+_0x57d34c+_0x4c0777(0x49c)+_0x2df70c));}_0x4babbc[_0x4c0777(0x408)](_0x394c8a,_0x4c0777(0x1fb),![])&&await _0x52d649(_0x394c8a,_0x2df70c,_0x378f1e);const _0x450fb2={};return _0x450fb2[_0x4c0777(0x3ae)]=!![],_0x450fb2;}if(_0x422db1){const _0x39c3ee=_0x5e577b['check'](_0x1ed137,_0x378f1e);if(_0x39c3ee){_0x4babbc['addViolation'](_0x394c8a,_0x1ed137,_0x2df70c,_0x39c3ee,_0x378f1e),await _0x4babbc[_0x4c0777(0x311)](),await _0x51b682(_0x394c8a,_0x4c0777(0x279),'|\x20'+_0xbbfd8b()+_0x4c0777(0x44d)+_0x2df70c+_0x4c0777(0x44d)+_0x39c3ee+_0x4c0777(0x44d)+_0x378f1e[_0x4c0777(0x303)](0x0,0x28)+'\x20|'),_0x2e3201[_0x4c0777(0x313)](_0x4c0777(0x439)+_0x39c3ee+_0x4c0777(0x41b)+_0x2df70c+_0x4c0777(0x369)+_0x378f1e[_0x4c0777(0x303)](0x0,0x3c)+'\x22');const _0xb47bcf={};return _0xb47bcf[_0x4c0777(0x3ae)]=!![],_0xb47bcf;}}_0x4babbc['getSetting'](_0x394c8a,_0x4c0777(0x1fb),![])&&await _0x52d649(_0x394c8a,_0x2df70c,_0x378f1e);return;},_0x26d348);const _0x5120b8=globalThis['__zaloModAdminClaims']??new Map();globalThis[_0x1d4a50(0x440)]=_0x5120b8,_0xae8d94['on']('before_model_resolve',async(_0x219245,_0x35a0b3)=>{const _0x20f6ca=_0x1d4a50;if(_0x35a0b3?.[_0x20f6ca(0x2d0)]!==_0x20f6ca(0x22f)&&_0x35a0b3?.[_0x20f6ca(0x1eb)]!==_0x20f6ca(0x22f))return;const _0x5b9662=String(_0x35a0b3?.[_0x20f6ca(0x47f)]||''),_0x338f8d=_0x5b9662['startsWith'](_0x20f6ca(0x1fa))?_0x5b9662[_0x20f6ca(0x224)](/^group:/,''):'';if(_0x338f8d&&typeof _0x219245?.[_0x20f6ca(0x1cf)]===_0x20f6ca(0x365)){const _0x2335c8=_0x422703(_0x338f8d);_0x2335c8&&!_0x219245[_0x20f6ca(0x1cf)][_0x20f6ca(0x4c2)]('[GROUP\x20MODE\x20CONTEXT]')&&(_0x219245[_0x20f6ca(0x1cf)]=_0x2335c8+'\x0a\x0a'+_0x219245[_0x20f6ca(0x1cf)]);}let _0x2c190c='';if(_0x219245&&Array[_0x20f6ca(0x36a)](_0x219245[_0x20f6ca(0x456)])&&_0x219245[_0x20f6ca(0x456)][_0x20f6ca(0x391)]>0x0){const _0x4be94a=_0x219245[_0x20f6ca(0x456)][_0x219245[_0x20f6ca(0x456)][_0x20f6ca(0x391)]-0x1];_0x4be94a&&_0x4be94a[_0x20f6ca(0x37f)]===_0x20f6ca(0x2cd)&&(_0x2c190c=String(_0x4be94a[_0x20f6ca(0x3db)]||''));}let _0x65c781=_0x2c190c[_0x20f6ca(0x47e)]()[_0x20f6ca(0x224)](/['’]/g,'')[_0x20f6ca(0x2b0)]();const _0x1b69b8=_0x4bda3d+_0x20f6ca(0x4bb);let _0x49bb38=_0x65c781===_0x20f6ca(0x426)||_0x65c781===_0x1b69b8;if(!_0x49bb38&&_0x219245&&typeof _0x219245[_0x20f6ca(0x1cf)]==='string'){const _0x2754d2=_0x219245[_0x20f6ca(0x1cf)]['toLowerCase']()['replace'](/['’]/g,'')[_0x20f6ca(0x2b0)](),_0xc608c9=new RegExp(_0x20f6ca(0x437)+_0x1b69b8[_0x20f6ca(0x224)](/[-\/\\^$*+?.()|[\]{}]/g,_0x20f6ca(0x4fc))+_0x20f6ca(0x418),'i');_0xc608c9[_0x20f6ca(0x488)](_0x2754d2)&&(_0x49bb38=!![]);}if(!_0x49bb38)return;const _0x493ab0=_0x35a0b3?.['sessionKey']||_0x20f6ca(0x268),_0x469250=String(_0x35a0b3?.['senderId']||'');_0x2e3201[_0x20f6ca(0x313)](_0x20f6ca(0x517)+_0x469250+_0x20f6ca(0x515)+_0x493ab0),_0x5120b8[_0x20f6ca(0x230)](_0x493ab0,{'senderId':_0x469250,'ts':Date['now']()});}),_0xae8d94['on'](_0x1d4a50(0x4ac),async(_0x52af51,_0x442dc9)=>{const _0x353ab1=_0x1d4a50;if(_0x442dc9?.[_0x353ab1(0x2d0)]!=='zalouser'&&_0x442dc9?.[_0x353ab1(0x1eb)]!==_0x353ab1(0x22f))return;const _0xe8274d=_0x442dc9?.[_0x353ab1(0x4a9)]||_0x353ab1(0x268),_0x3c642b=_0x5120b8[_0x353ab1(0x271)](_0xe8274d);if(!_0x3c642b||Date[_0x353ab1(0x362)]()-_0x3c642b['ts']>0xea60){_0x5120b8[_0x353ab1(0x22b)](_0xe8274d);return;}_0x5120b8['delete'](_0xe8274d);const {senderId:_0x3b2885}=_0x3c642b;_0x2e3201['info']('[openclaw-zalo-mod]\x20[ADMIN-FALLBACK]\x20intercepting\x20reply\x20for\x20'+_0x3b2885);try{if(!_0x4dcc95){const _0x56b1d7={};_0x56b1d7[_0x353ab1(0x298)]=_0x3b2885;const _0x45cacc=await _patchOpenclawConfig(_openclawHome,_0x56b1d7,_0x2e3201,!![]);_0x45cacc&&(_0x4dcc95=_0x3b2885,_0x2b5ac4['add'](_0x3b2885)),await _0x5b1757(_0x442dc9,_0x3b2885,_0x45cacc?_0x353ab1(0x4a4)+_0x3b2885:_0x353ab1(0x2c5)+_0x3b2885);}else await _0x5b1757(_0x442dc9,_0x3b2885,_0x353ab1(0x2b1)+_0x4dcc95);}catch(_0x501e47){_0x2e3201['error'](_0x353ab1(0x36d)+_0x501e47[_0x353ab1(0x337)]);}const _0x3f94a5={};return _0x3f94a5['handled']=!![],_0x3f94a5;}),_0x10ec1c(),_0x2e3201['info'](_0x1d4a50(0x3e7)+_0xb2b223+_0x1d4a50(0x2a0)+_0x4bda3d+_0x1d4a50(0x351)+(_0x4dcc95||_0x1d4a50(0x2d7))+'\x20groups='+_0x178cf9[_0x1d4a50(0x391)]+_0x1d4a50(0x383)+Object[_0x1d4a50(0x34e)](_0x7b70ff)[_0x1d4a50(0x391)]);}});export default plugin;
+/**
+ * openclaw-zalo-mod — Zero-Token Zalo Group Moderation Plugin
+ * ─────────────────────────────────────────────────────────────
+ * Hook vào before_dispatch của zalouser channel.
+ * Xử lý slash commands + anti-spam tức thì, 0 token.
+ * @mention → để lọt lên LLM agent bình thường.
+ * Tin thường → block hoàn toàn (silent).
+ *
+ * v2.1.0: Watcher optimization — skip poll for welcome-off groups.
+ *   Groups with welcome disabled are completely skipped during polling,
+ *   saving Zalo API calls. Welcome setting check moved before API call.
+ *
+ * v1.2.0: Polling-based member watcher + /groupid command.
+ *   OpenClaw zalouser channel does NOT expose system events (join/leave)
+ *   to plugins. Workaround: poll group member list via OpenClaw internal
+ *   listZaloGroupMembers API, diff with previous snapshot.
+ *
+ * @author tuanminhhole
+ * @version 2.8.11
+ */
+
+import fs from 'node:fs/promises';
+import { chmodSync, readdirSync, statSync, existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import http from 'node:http';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { definePluginEntry } from 'openclaw/plugin-sdk/plugin-entry';
+import crypto from 'node:crypto';
+import os from 'node:os';
+import { exec } from 'node:child_process';
+import { promisify } from 'node:util';
+
+
+// ── Plugin directory (for data storage) ──────────────────────
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// ── Auto-config helpers ──────────────────────────────────────
+// Resolve true OPENCLAW_HOME by walking up from __dirname to find the folder containing openclaw.json
+let _openclawHome = __dirname;
+while (true) {
+  if (existsSync(path.join(_openclawHome, 'openclaw.json'))) {
+    break;
+  }
+  const parent = path.dirname(_openclawHome);
+  if (parent === _openclawHome) {
+    // Fallback if openclaw.json is not found (e.g. legacy/custom setup)
+    _openclawHome = path.resolve(__dirname, '..', '..');
+    const _homeBasename = path.basename(_openclawHome);
+    if (_homeBasename === 'npm' || _homeBasename === 'node_modules' || _homeBasename.startsWith('openclaw-')) {
+      _openclawHome = path.resolve(_openclawHome, '..');
+      if (['npm', 'node_modules'].includes(path.basename(_openclawHome)) || path.basename(_openclawHome).startsWith('openclaw-')) {
+        _openclawHome = path.resolve(_openclawHome, '..');
+      }
+    }
+    break;
+  }
+  _openclawHome = parent;
+}
+
+/**
+ * Read bot name from IDENTITY.md in workspace dir.
+ * Parses `**Tên:** BotName` pattern.
+ */
+async function _readBotNameFromIdentity(workspaceDir) {
+  try {
+    const identityPath = path.join(workspaceDir, 'IDENTITY.md');
+    const content = await fs.readFile(identityPath, 'utf8');
+    const match = content.match(/\*\*Tên:\*\*\s*(.+)/);
+    return match ? match[1].trim() : null;
+  } catch { return null; }
+}
+
+/**
+ * Scan sessions.json for group sessions.
+ * Returns array of { groupId, groupName } from session keys like:
+ *   "agent:{agentId}:zalouser:group:{groupId}" with origin.label = groupName
+ */
+async function _scanGroupsFromSessions(openclawHome, agentId) {
+  const groups = [];
+  // Try multiple possible agent IDs
+  const agentIds = agentId ? [agentId] : [];
+  // Also scan agents/ dir for any agent
+  try {
+    const agentsDir = path.join(openclawHome, 'agents');
+    const entries = await fs.readdir(agentsDir, { withFileTypes: true });
+    for (const e of entries) {
+      if (e.isDirectory() && !agentIds.includes(e.name)) agentIds.push(e.name);
+    }
+  } catch { /* no agents dir */ }
+
+  for (const aid of agentIds) {
+    const sessPath = path.join(openclawHome, 'agents', aid, 'sessions', 'sessions.json');
+    try {
+      const raw = await fs.readFile(sessPath, 'utf8');
+      const sessions = JSON.parse(raw);
+      for (const [key, val] of Object.entries(sessions)) {
+        const m = key.match(/:zalouser:group:(\d+)$/);
+        if (m && val.origin?.label) {
+          const gId = m[1];
+          if (!groups.some(g => g.groupId === gId)) {
+            groups.push({ groupId: gId, groupName: String(val.origin.label) });
+          }
+        }
+      }
+    } catch { /* no sessions file for this agent */ }
+  }
+  return groups;
+}
+
+/**
+ * Auto-patch openclaw.json — merge discovered config into plugins.entries.zalo-mod.config.
+ * Only sets values that are currently empty/default.
+ * Returns true if file was modified.
+ */
+async function _patchOpenclawConfig(openclawHome, patch, logger, force = false) {
+  const configPath = path.join(openclawHome, 'openclaw.json');
+  try {
+    const raw = await fs.readFile(configPath, 'utf8');
+    const config = JSON.parse(raw);
+    config.plugins = config.plugins || {};
+    config.plugins.entries = config.plugins.entries || {};
+    let changed = false;
+
+    const legacyEntry = config.plugins.entries[PACKAGE_ID];
+    if (legacyEntry) {
+      const currentEntry = config.plugins.entries[PLUGIN_ID] || { enabled: true };
+      currentEntry.enabled = currentEntry.enabled !== false;
+      currentEntry.config = { ...(legacyEntry.config || {}), ...(currentEntry.config || {}) };
+      config.plugins.entries[PLUGIN_ID] = currentEntry;
+      delete config.plugins.entries[PACKAGE_ID];
+      changed = true;
+    }
+
+    if (Array.isArray(config.plugins.allow) && config.plugins.allow.includes(PACKAGE_ID)) {
+      config.plugins.allow = config.plugins.allow.filter((id) => id !== PACKAGE_ID);
+      if (!config.plugins.allow.includes(PLUGIN_ID)) config.plugins.allow.push(PLUGIN_ID);
+      changed = true;
+    }
+
+    config.plugins.entries[PLUGIN_ID] = config.plugins.entries[PLUGIN_ID] || { enabled: true };
+    const entry = config.plugins.entries[PLUGIN_ID];
+    entry.hooks = { ...(entry.hooks || {}), allowConversationAccess: true };
+    const existing = entry.config || {};
+    changed = true;
+
+    for (const [key, val] of Object.entries(patch)) {
+      if (val == null) continue;
+      const cur = existing[key];
+      const isEmpty = cur == null || cur === '' || (Array.isArray(cur) && cur.length === 0);
+      if (force || isEmpty) {
+        existing[key] = val;
+        changed = true;
+      }
+    }
+
+    // Auto-provision bindings: ensure zalouser channel is bound to an agent
+    const agentId = config.agents?.list?.[0]?.id;
+    if (agentId && !Array.isArray(config.bindings)) {
+      config.bindings = [{ agentId, match: { channel: 'zalouser' } }];
+      changed = true;
+      if (logger) logger.info(`[openclaw-zalo-mod] auto-added binding: zalouser → ${agentId}`);
+    } else if (agentId && Array.isArray(config.bindings)) {
+      const hasZalo = config.bindings.some(b => b.match?.channel === 'zalouser');
+      if (!hasZalo) {
+        config.bindings.push({ agentId, match: { channel: 'zalouser' } });
+        changed = true;
+        if (logger) logger.info(`[openclaw-zalo-mod] auto-added binding: zalouser → ${agentId}`);
+      }
+    }
+
+    // Auto-provision groups config: enable all groups with no mention required
+    if (config.channels?.zalouser && !config.channels.zalouser.groups) {
+      config.channels.zalouser.groups = { '*': { enabled: true, requireMention: false } };
+      changed = true;
+      if (logger) logger.info(`[openclaw-zalo-mod] auto-added groups config: all groups enabled`);
+    }
+
+    if (changed) {
+      config.plugins.entries[PLUGIN_ID].config = existing;
+      await fs.writeFile(configPath, JSON.stringify(config, null, 2) + '\n', 'utf8');
+      if (logger) logger.info(`[openclaw-zalo-mod] auto-patched openclaw.json config`);
+    }
+    return changed;
+  } catch (e) {
+    if (logger) logger.warn(`[openclaw-zalo-mod] auto-patch config failed: ${e.message}`);
+    return false;
+  }
+}
+
+// ── Constants ────────────────────────────────────────────────
+const PLUGIN_ID = 'zalo-mod';
+const PACKAGE_ID = 'openclaw-zalo-mod';
+
+const SPAM_LINK_RE = /bit\.ly\/|tinyurl\.com\/|t\.ly\/|rb\.gy\/|cutt\.ly\/|\?ref=|\?aff=|kiếm tiền|miễn phí|nhận quà|t\.me\/joinchat\//i;
+const EMOJI_FLOOD_RE = /^[\u{1F300}-\u{1FAFF}\s]{5,}$/u;
+
+// ── Helpers ──────────────────────────────────────────────────
+function foldText(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
+async function safeReadJson(filePath) {
+  try {
+    const raw = await fs.readFile(filePath, 'utf8');
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+async function safeWriteJson(filePath, data) {
+  try {
+    await fs.mkdir(path.dirname(filePath), { recursive: true });
+    await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf8');
+  } catch (e) {
+    // best effort
+  }
+}
+
+function nowIso() {
+  return new Date().toISOString();
+}
+
+// ── Store ────────────────────────────────────────────────────
+function createStore(dataDir) {
+  const violationsPath = path.join(dataDir, 'violations.json');
+  const warnedPath = path.join(dataDir, 'warned.json');
+  const settingsPath = path.join(dataDir, 'settings.json');
+
+  let violations = {};
+  let warned = {};
+  let settings = {};
+
+  return {
+    async load() {
+      violations = (await safeReadJson(violationsPath)) || {};
+      warned = (await safeReadJson(warnedPath)) || {};
+      settings = (await safeReadJson(settingsPath)) || {};
+    },
+    async saveViolations() { await safeWriteJson(violationsPath, violations); },
+    async saveWarned()     { await safeWriteJson(warnedPath, warned); },
+    async saveSettings()   { await safeWriteJson(settingsPath, settings); },
+
+    // Violations
+    addViolation(groupId, userId, userName, type, preview) {
+      const g = String(groupId);
+      const u = String(userId);
+      violations[g] = violations[g] || {};
+      violations[g][u] = violations[g][u] || [];
+      violations[g][u].push({ type, preview: String(preview || '').slice(0, 60), name: userName, ts: nowIso() });
+    },
+    getViolations(groupId) {
+      return violations[String(groupId)] || {};
+    },
+
+    // Warned
+    addWarn(groupId, userId, userName, reason) {
+      const g = String(groupId);
+      const u = String(userId);
+      warned[g] = warned[g] || {};
+      warned[g][u] = warned[g][u] || [];
+      warned[g][u].push({ reason, name: userName, ts: nowIso() });
+    },
+    getWarned(groupId) {
+      return warned[String(groupId)] || {};
+    },
+    getWarnCount(groupId, userId) {
+      return (warned[String(groupId)]?.[String(userId)] || []).length;
+    },
+    getAllWarned() { return warned; },
+    getAllViolations() { return violations; },
+
+    // Settings
+    getSetting(groupId, key, def) {
+      return settings[String(groupId)]?.[key] ?? def;
+    },
+    setSetting(groupId, key, value) {
+      const g = String(groupId);
+      settings[g] = settings[g] || {};
+      settings[g][key] = value;
+    },
+  };
+}
+
+// ── Spam Tracker ─────────────────────────────────────────────
+function createSpamTracker(repeatN, windowMs) {
+  const cache = new Map();
+
+  return {
+    check(userId, msg) {
+      const now = Date.now();
+      const key = String(userId);
+      const history = (cache.get(key) || []).filter((e) => now - e.ts < windowMs);
+      history.push({ msg: String(msg || '').trim(), ts: now });
+      cache.set(key, history);
+
+      const same = history.filter((e) => e.msg === String(msg).trim());
+      if (same.length >= repeatN) return 'repeat';
+      if (EMOJI_FLOOD_RE.test(String(msg))) return 'emoji_flood';
+      if (SPAM_LINK_RE.test(String(msg))) return 'spam_link';
+      return null;
+    },
+  };
+}
+
+// ── Template Builders ────────────────────────────────────────
+function buildNoiQuy(groupName, botName, cmdPrefix) {
+  return `📋 NỘI QUY — ${groupName}
+━━━━━━━━━━━━━━━━━━
+
+1️⃣ Hỏi thoải mái - ai cũng từng là người mới
+2️⃣ Biết gì chia sẻ nấy - văn hoá cho đi là nhận lại
+3️⃣ Tôn trọng nhau - không toxic, không chê trình độ gây war
+4️⃣ Không spam - quảng cáo
+5️⃣ Tôn trọng thời gian — nói rõ vấn đề
+
+⚠️ Mức xử lý:
+• Lần 1: Nhắc
+• Lần 2: Warn
+• Lần 3: Kick
+
+📌 Hỏi thêm: @${botName} [câu hỏi]`;
+}
+
+function buildMenu(botName, cmdPrefix) {
+  return `🤖 ${botName.toUpperCase()} — MENU LỆNH
+━━━━━━━━━━━━━━━━━━
+
+📋 Thông tin
+  ${cmdPrefix}noi-quy   — Xem nội quy nhóm
+  ${cmdPrefix}menu   — Menu lệnh này
+  ${cmdPrefix}huong-dan    — Hướng dẫn dùng bot
+
+
+💬 Hỏi đáp
+  @${botName} [câu hỏi] — Hỏi bot bất kỳ điều gì
+
+🔧 Admin (chỉ admin dùng được)
+  ${cmdPrefix}mute                    — Tắt bot hoàn toàn
+  ${cmdPrefix}unmute                  — Bật lại bot
+  ${cmdPrefix}warn @name [lý do]  — Cảnh cáo member
+  ${cmdPrefix}note [text]           — Ghi chú admin
+  ${cmdPrefix}report                  — Báo cáo vi phạm
+  ${cmdPrefix}memory                  — Lưu memory digest
+
+👑 Owner (chỉ chủ bot)
+  ${cmdPrefix}rules                 — Cấu hình bot
+
+━━━━━━━━━━━━━━━━━━
+💡 Tip: Tag @${botName} để hỏi thêm!`;
+}
+
+function buildHuongDan(botName, cmdPrefix) {
+  return `📖 HƯỚNG DẪN SỬ DỤNG BOT ${botName.toUpperCase()}
+━━━━━━━━━━━━━━━━━━
+
+👋 ${botName} là trợ lý AI của nhóm này.
+
+🗣️ Cách giao tiếp:
+  • Tag trực tiếp: @${botName} [câu hỏi bất kỳ]
+  • Gõ lệnh: /[tên lệnh]
+
+📌 Ví dụ:
+  @${botName} giải thích quy trình XYZ
+  ${cmdPrefix}noi-quy → xem nội quy
+  ${cmdPrefix}menu → xem tất cả lệnh
+
+⚠️ Lưu ý:
+  • Bot KHÔNG tự reply tin thường — cần @tag hoặc gõ lệnh
+  • Lệnh admin: ${cmdPrefix}report và ${cmdPrefix}warn (chỉ admin dùng được)
+
+━━━━━━━━━━━━━━━━━━
+❓ Cần hỗ trợ thêm → @${botName}`;
+}
+
+function buildReport(groupId, allViolations, allWarned) {
+  const lines = [`📊 BÁO CÁO GROUP`, `🕐 ${nowIso().slice(0, 16).replace('T', ' ')}`];
+
+  // Filter violations for this group
+  let hasVio = false;
+  for (const [uid, list] of Object.entries(allViolations)) {
+    if (!list.length || uid === 'admin-note') continue; // skip admin notes
+    if (!hasVio) { lines.push('\n📌 Vi phạm ghi nhận:'); hasVio = true; }
+    const last = list[list.length - 1];
+    lines.push(`  - ${(last.name || uid).replace(/^@/, '')}: ${last.type}, ${list.length} lần, lần cuối ${last.ts.slice(0, 10)}`);
+  }
+  if (!hasVio) lines.push('\n✅ Không có vi phạm mới');
+
+  // Filter warns for this group
+  let hasWarn = false;
+  for (const [uid, list] of Object.entries(allWarned)) {
+    if (!list.length) continue;
+    if (!hasWarn) { lines.push('\n⚠️ Đã warn:'); hasWarn = true; }
+    const last = list[list.length - 1];
+    lines.push(`  - ${(last.name || uid).replace(/^@/, '')}: ${list.length} lần`);
+  }
+  // Show admin notes if any
+  const noteList = allViolations['admin-note'];
+  if (noteList && noteList.length) {
+    lines.push('\n📝 Admin notes:');
+    for (const n of noteList) {
+      lines.push(`  - ${(n.ts || '').slice(0, 16).replace('T', ' ')}: ${n.preview || '—'}`);
+    }
+  }
+
+  return lines.join('\n');
+}
+
+function buildWelcome(memberName,  botName, cmdPrefix) {
+  return `👋 Chào mừng ${memberName} vào nhóm!
+📋 ${cmdPrefix}noi-quy để xem nội quy
+📖 ${cmdPrefix}menu để xem lệnh
+💬 @${botName} nếu cần hỏi bot`;
+}
+
+
+// ── isMention ────────────────────────────────────────────────
+function isMessageMentioningBot(event, botNames) {
+  // IMPORTANT: Zalo strips @mention from event.content, use event.body
+  const content = String(event.body || event.content || '').toLowerCase();
+
+  // Dynamic config resolution to prevent RAM lag
+  let searchNames = botNames;
+  try {
+    const configPath = path.join(_openclawHome, 'openclaw.json');
+    if (fs.existsSync(configPath)) {
+      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      const liveCfg = config?.plugins?.entries?.[PLUGIN_ID]?.config || config?.plugins?.entries?.[PACKAGE_ID]?.config || {};
+      const liveName = String(liveCfg.botName || '').trim();
+      const liveZaloNames = (liveCfg.zaloDisplayNames || []).map(String);
+      if (liveName) {
+        searchNames = [liveName, ...liveZaloNames].filter(Boolean);
+      }
+    }
+  } catch (e) {}
+
+  // Check all known bot names/aliases
+  for (const raw of searchNames) {
+    const name = String(raw || '').toLowerCase().trim();
+    if (!name) continue;
+    const folded = foldText(name);
+    if (content.includes(`@${name}`) || content.includes(`@${folded}`)) return true;
+  }
+  // OpenClaw native mention flag
+  if (event.wasMentioned === true) return true;
+  // Zalo mention metadata (if available)
+  if (Array.isArray(event.mentions) && event.mentions.length > 0) return true;
+  return false;
+}
+
+// ── Plugin Entry ─────────────────────────────────────────────
+const plugin = definePluginEntry({
+  id: PLUGIN_ID,
+  name: 'Zalo Mod',
+  description: 'Zero-token Zalo group moderation — slash commands, anti-spam, warn system, memory integration.',
+  // Note: do NOT set kind:'runtime' — it was deprecated in v2026.5.x
+  // (PluginKind only accepts 'memory'|'context-engine'). Plugin loads correctly without it.
+
+  register(api) {
+    const logger = api.logger;
+
+    // Auto-patch zalouser on disk to expose shared API instance
+    try {
+      const distCandidates = [
+        path.join(_openclawHome, 'npm', 'node_modules', '@openclaw', 'zalouser', 'dist'),
+        path.join(_openclawHome, 'extensions', 'zalouser', 'dist'),
+        path.join(_openclawHome, 'extensions', 'zalouser'),
+        '/usr/local/lib/node_modules/@openclaw/zalouser/dist',
+      ];
+
+      // Dynamically find npm project workspaces (e.g. openclaw-zalouser-xxxxx)
+      const projectsDir = path.join(_openclawHome, 'npm', 'projects');
+      if (existsSync(projectsDir)) {
+        try {
+          for (const projectDir of readdirSync(projectsDir)) {
+            const candidateDist = path.join(projectsDir, projectDir, 'node_modules', '@openclaw', 'zalouser', 'dist');
+            if (existsSync(candidateDist)) {
+              distCandidates.push(candidateDist);
+            }
+          }
+        } catch (_) {}
+      }
+
+      for (const zalouserDist of distCandidates) {
+        if (existsSync(zalouserDist)) {
+          for (const file of readdirSync(zalouserDist)) {
+            if (file.startsWith('zalo-js-') && file.endsWith('.js')) {
+              const p = path.join(zalouserDist, file);
+              let content = readFileSync(p, 'utf8');
+              if (content.includes('const apiByProfile = /* @__PURE__ */ new Map();') && 
+                  !content.includes('globalThis.__zcaApiByProfile = apiByProfile;')) {
+                content = content.replace(
+                  'const apiByProfile = /* @__PURE__ */ new Map();', 
+                  'const apiByProfile = /* @__PURE__ */ new Map();\nglobalThis.__zcaApiByProfile = apiByProfile;'
+                );
+                writeFileSync(p, content, 'utf8');
+                logger.info(`[openclaw-zalo-mod] auto-patched zalouser export in ${file} at ${zalouserDist}`);
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      logger.warn(`[openclaw-zalo-mod] failed to auto-patch zalouser export: ${e.message}`);
+    }
+
+    if (globalThis.__zcaApiByProfile) {
+      logger.info('[openclaw-zalo-mod] detected shared ZCA API map from zalouser runtime');
+    } else {
+      logger.info('[openclaw-zalo-mod] shared ZCA API map not exposed by zalouser yet');
+    }
+
+    // ── Auto-fix 777 permissions (Windows bind-mount issue) ─────────────────
+    // OpenClaw gateway blocks world-writable plugins (Windows bind-mount gives 0777).
+    // Fix proactively using pure Node.js fs — safe for ClawHub publish (no child_process).
+    try {
+      chmodSync(__dirname, 0o755);
+      for (const f of readdirSync(__dirname)) {
+        try {
+          const p = path.join(__dirname, f);
+          const st = statSync(p);
+          chmodSync(p, st.isDirectory() ? 0o755 : 0o644);
+        } catch (_) {}
+      }
+    } catch (_) { /* non-blocking — ok on non-Linux */ }
+
+    const cfg = api.config;
+
+    // Plugin config: read from api.pluginConfig (OpenClaw SDK) or fallback
+    const pluginCfg = api.pluginConfig || cfg?.plugins?.entries?.[PLUGIN_ID]?.config || cfg?.plugins?.entries?.[PACKAGE_ID]?.config || {};
+
+    // Data dir — store JSON data outside the extensions folder to avoid hot-reloads
+    const dataDir = path.join(_openclawHome, 'plugins-data', PLUGIN_ID);
+    try { if (!existsSync(dataDir)) mkdirSync(dataDir, { recursive: true }); } catch (e) {}
+
+    const groupNamesFile = path.join(dataDir, 'group-names.json');
+    let _rawGroupNames = {};
+    try {
+      if (existsSync(groupNamesFile)) {
+        _rawGroupNames = JSON.parse(readFileSync(groupNamesFile, 'utf8'));
+      } else {
+        // Migration from openclaw.json to separate group-names.json
+        _rawGroupNames = pluginCfg.groupNames || {};
+        writeFileSync(groupNamesFile, JSON.stringify(_rawGroupNames, null, 2), 'utf8');
+      }
+    } catch (e) {
+      _rawGroupNames = pluginCfg.groupNames || {};
+    }
+
+    async function saveGroupNames(namesObj) {
+      try {
+        await fs.writeFile(groupNamesFile, JSON.stringify(namesObj, null, 2) + '\n', 'utf8');
+        _rawGroupNames = namesObj; // update in-memory reference
+      } catch (e) {}
+    }
+
+    // ── groupNames: source of truth cho danh sách groups đang quản lý ──
+    // Format mới: { groupId: { name, admins, creatorId } }
+    const groupNames = {};
+    for (const [gId, val] of Object.entries(_rawGroupNames)) {
+      if (typeof val === 'string') {
+        groupNames[gId] = { name: val, admins: [], creatorId: '' };
+      } else if (val && typeof val === 'object') {
+        groupNames[gId] = { name: val.name || '', admins: val.admins || [], creatorId: val.creatorId || '' };
+      }
+    }
+    // watchGroupIds được derive từ groupNames keys — không cần config riêng
+    const watchGroupIds = Object.keys(groupNames).filter(Boolean);
+
+    // ── Synchronous botName detection (first-load fix) ──────────
+    // When installed via ClawHub, pluginCfg.botName is empty on first load.
+    // Detect from multiple sources before falling back to 'Bot':
+    let _detectedBotName = pluginCfg.botName || '';
+    let _detectedBotId = '';
+    try {
+      const _credPath = path.join(_openclawHome, 'credentials', 'zalouser', 'credentials.json');
+      if (fs.existsSync(_credPath)) {
+        const _cred = JSON.parse(fs.readFileSync(_credPath, 'utf8'));
+        if (_cred.displayName) _detectedBotName = _cred.displayName;
+        if (_cred.uid || _cred.userId || _cred.id) {
+          _detectedBotId = String(_cred.uid || _cred.userId || _cred.id);
+        }
+        if (!_detectedBotId && Array.isArray(_cred.cookie)) {
+          const zpsid = _cred.cookie.find(c => c.key === 'zpsid');
+          if (zpsid && zpsid.value) {
+            const parts = zpsid.value.split('.');
+            if (parts[1] && /^\d+$/.test(parts[1])) {
+              _detectedBotId = parts[1];
+            }
+          }
+          if (!_detectedBotId) {
+            const zpw_sek = _cred.cookie.find(c => c.key === 'zpw_sek');
+            if (zpw_sek && zpw_sek.value) {
+              const parts = zpw_sek.value.split('.');
+              if (parts[1] && /^\d+$/.test(parts[1])) {
+                _detectedBotId = parts[1];
+              }
+            }
+          }
+        }
+      }
+    } catch (e) { /* ok */ }
+
+    const botName       = String(_detectedBotName || 'Bot');
+    const zaloNames     = (pluginCfg.zaloDisplayNames || []).map(String);
+    const botNames      = [botName, ...zaloNames].filter(Boolean);
+    const pfx = String(pluginCfg.slashPrefix || botName).toLowerCase().replace(/[^a-z0-9]/g, '');
+    const cmdPrefix = '/' + (pfx || 'bot') + '-';
+    let ownerId       = String(pluginCfg.ownerId || '');  // Zalo ID chủ nhân bot
+    // adminIds: derive từ ownerId — không cần config riêng
+    // (per-group admins lưu trong groupNames[gId].admins và settings.json)
+    const adminIds = new Set(ownerId ? [ownerId] : []);
+    const allowedDmUsers = new Set((pluginCfg.allowedDmUsers || []).map(String)); // DM whitelist
+    const welcomeEnabled = pluginCfg.welcomeEnabled !== false;
+    const spamRepeatN   = Number(pluginCfg.spamRepeatN || 5);
+    const spamWindowMs  = Number(pluginCfg.spamWindowSeconds || 300) * 1000;
+    const welcomePollSec = Number(pluginCfg.welcomePollSeconds || 60);
+
+    /** Tra tên group theo ID — dùng groupNames map, fallback 'Nhóm' */
+    function getGroupName(gId) {
+      const plain = String(gId || '').replace(/^group:/, '');
+      return groupNames[plain]?.name || 'Nhóm';
+    }
+
+
+    // Workspace + Memory dir — resolve from agent config or OPENCLAW_HOME
+    const _agentWorkspace = cfg?.agents?.list?.[0]?.workspace;
+    const _defaultWorkspace = cfg?.agents?.defaults?.workspace;
+    const workspaceDir = String(
+      _agentWorkspace
+        ? path.resolve(_openclawHome, '..', _agentWorkspace)  // relative to project root
+        : _defaultWorkspace || path.join(_openclawHome, 'workspace')
+    );
+
+    // Memory dir — per-group: skills/memory/zalo-groups/{group-slug}/
+    function _slugify(name) {
+      return (name || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'default-group';
+    }
+    /** Trả về memory dir cho 1 group cụ thể */
+    function getMemoryDir(groupId) {
+      const plain = String(groupId || '').replace(/^group:/, '');
+      const slug = pluginCfg.memoryGroupSlug || _slugify(getGroupName(plain) || 'nhom-' + plain.slice(-6));
+      return path.join(workspaceDir, 'skills/memory/zalo-groups', slug);
+    }
+    /** Trả về slug cho 1 group */
+    function getMemorySlug(groupId) {
+      const plain = String(groupId || '').replace(/^group:/, '');
+      return pluginCfg.memoryGroupSlug || _slugify(getGroupName(plain) || 'nhom-' + plain.slice(-6));
+    }
+
+    const store       = createStore(dataDir);
+    const spamTracker = createSpamTracker(spamRepeatN, spamWindowMs);
+
+
+
+    const execAsync = promisify(exec);
+
+    function resolveUpgradeFlowPath() {
+      const candidates = [
+        pluginCfg.upgradeFlowPath,
+        process.env.OPENCLAW_UPGRADE_FLOW,
+        path.join(__dirname, 'upgrade', 'flow.js'),
+        path.join(workspaceDir, 'skills', 'upgrade-flow', 'flow.js'),
+        path.join(_openclawHome, 'workspace-bot', 'skills', 'upgrade-flow', 'flow.js'),
+        path.join(_openclawHome, 'workspace', 'skills', 'upgrade-flow', 'flow.js'),
+        'e:\\mkt\\.openclaw\\workspace-bot\\skills\\upgrade-flow\\flow.js',
+        '/root/project/.openclaw/workspace-bot/upgrade/flow.js',
+      ].filter(Boolean).map((x) => path.resolve(String(x)));
+      const found = candidates.find((x) => existsSync(x));
+      if (found) return found;
+      throw new Error(`upgrade-flow/flow.js not found. Set pluginCfg.upgradeFlowPath or OPENCLAW_UPGRADE_FLOW. Tried: ${candidates.join(', ')}`);
+    }
+
+    function shellQuoteArg(arg) {
+      return `"${String(arg).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+    }
+
+    async function runFlowCommand(cmd, args = []) {
+      const flowJsPath = resolveUpgradeFlowPath();
+      const escapedArgs = args.map(shellQuoteArg).join(' ');
+      const commandLine = `node ${shellQuoteArg(flowJsPath)} ${cmd} ${escapedArgs}`;
+      
+      try {
+        const { stdout } = await execAsync(commandLine, { encoding: 'buffer' });
+        const stdoutStr = stdout.toString('utf8');
+        const lines = stdoutStr.trim().split('\n');
+        for (let i = lines.length - 1; i >= 0; i--) {
+          const line = lines[i].trim();
+          if (line.startsWith('{') && line.endsWith('}')) {
+            return JSON.parse(line);
+          }
+        }
+        throw new Error('No JSON output from flow.js');
+      } catch (err) {
+        logger.error(`[openclaw-zalo-mod] runFlowCommand error: ${err.message}`);
+        throw err;
+      }
+    }
+
+    function getDeviceId() {
+      const platform = os.platform();
+      const hostname = os.hostname();
+      const cpus = os.cpus().map(c => c.model).join(',');
+      const hash = crypto.createHash('md5').update(`${platform}-${hostname}-${cpus}`).digest('hex');
+      return hash.slice(0, 16).toUpperCase();
+    }
+
+    function getLicenseStatus() {
+      if (!store) return { isPro: false, plan: 'free', expiry: null, deviceId: getDeviceId() };
+      const license = store.getSetting('global', 'license') || {};
+      
+      // Expiry check
+      if (license.valid && license.expiry) {
+        const expDate = new Date(license.expiry);
+        const now = new Date();
+        if (now > expDate) {
+          license.valid = false;
+          store.setSetting('global', 'license', license);
+          store.saveSettings().catch(() => {});
+        }
+      }
+
+      if (license.valid) {
+        return { 
+          isPro: true, 
+          plan: license.plan || 'personal', 
+          expiry: license.expiry, 
+          deviceId: license.deviceId || getDeviceId(),
+          key: license.key
+        };
+      }
+      return { isPro: false, plan: 'free', expiry: null, deviceId: getDeviceId() };
+    }
+
+    const MKT_PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA6HwQYBdTBe+3qxakm9Kx
+JJ97AwdtuffI9IwvYUV/Bh+98F4G7i59R77QcHosPPuKhKWANMvyixt372W7srUO
+mu0IFtsABmZYmQuLkiikKQe4uytNvM3UQU3Mf0rDflPWwqiefJBa7Os0XcsAHni6
+StVJ5uUDTnury+4wi0Qhz+230eoST68RIN9j7o3a9AiqMhNE/VDLkacBlhUarUwv
+STWGdi7mvsItSVUa1z5+ExEIj5X2jgQGYUJhuEuNVcbdfaN5GzZHCUxMTuLrIl52
+Wg7ZOUU1mGXUBFzvY43Yblx2YjwXQOmB3yrbNMphSsYOQGuaCq5cTIeh2bV6Vhki
+PQIDAQAB
+-----END PUBLIC KEY-----`;
+
+    async function verifyLicenseKey(key) {
+      if (!key) return { valid: false, error: 'Key is empty' };
+      
+      const deviceId = getDeviceId();
+      
+      // 1. Local Dev Keys for Testing
+      if (key.startsWith('DEV-OP-') && key.length > 12) {
+        return { valid: true, plan: 'personal', expiry: '2099-12-31', deviceId };
+      }
+      if (key.startsWith('DEV-TEAM-') && key.length > 12) {
+        return { valid: true, plan: 'team', expiry: '2099-12-31', deviceId };
+      }
+      if (key.startsWith('DEV-LIFETIME-') && key.length > 12) {
+        return { valid: true, plan: 'lifetime', expiry: '2099-12-31', deviceId };
+      }
+
+      // 2. RSA Asymmetric Offline Verification
+      // Format: ZALOMKT-[PLAN]-[EXPIRY_YYYYMMDD]-[RSA_SIGNATURE_BASE64]
+      if (key.startsWith('ZALOMKT-')) {
+        try {
+          const parts = key.split('-');
+          if (parts.length >= 4) {
+            const plan = parts[1].toLowerCase();
+            const rawExpiry = parts[2]; // YYYYMMDD
+            const expiry = `${rawExpiry.slice(0, 4)}-${rawExpiry.slice(4, 6)}-${rawExpiry.slice(6, 8)}`;
+            
+            // Signature Base64 may contain '-' symbols (url-safe base64), join the rest
+            const signature = parts.slice(3).join('-');
+            
+            const dataToVerify = `${deviceId}:${plan}:${expiry}`;
+            
+            const verifier = crypto.createVerify('sha256');
+            verifier.update(dataToVerify);
+            const isValid = verifier.verify(MKT_PUBLIC_KEY, signature, 'base64');
+            
+            if (isValid) {
+              return { valid: true, plan, expiry, deviceId };
+            }
+          }
+        } catch (err) {
+          // RSA validation failed or threw, fallback to Online API
+        }
+      }
+
+      // 3. Fallback Online API Verification (compatibility with old bot keys)
+      const urls = [
+        `http://mkt-ai:20789/api/license/verify`,
+        `http://127.0.0.1:20789/api/license/verify`
+      ];
+
+      for (const url of urls) {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 3000);
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ key, deviceId }),
+            signal: controller.signal
+          });
+          clearTimeout(timeoutId);
+          if (res.ok) {
+            const data = await res.json().catch(() => ({}));
+            if (data && data.valid) {
+              return { valid: true, plan: data.plan || 'personal', expiry: data.expiry, deviceId };
+            }
+          }
+        } catch (e) {
+          // continue
+        }
+      }
+
+      return { valid: false, error: 'Key kích hoạt không hợp lệ cho thiết bị này!' };
+    }
+
+    let storeLoaded = false;
+    async function ensureStore() {
+      if (!storeLoaded) {
+        await store.load();
+        storeLoaded = true;
+      }
+    }
+
+    // Force reload store from disk (for /memory, /report)
+    async function reloadStore() {
+      await store.load();
+      storeLoaded = true;
+    }
+
+    // ── Auto-bootstrap workspace files on first load ─────────
+    // Creates SKILL.md + memory INDEX.md if they don't exist.
+    // This runs automatically so ClawHub installs work without manual setup.js.
+    async function bootstrapWorkspaceFiles() {
+      try {
+        // 1. Create skills/zalo-group-admin/SKILL.md
+        const skillDir = path.join(workspaceDir, 'skills', 'zalo-group-admin');
+        const skillMdPath = path.join(skillDir, 'SKILL.md');
+        try {
+          await fs.access(skillMdPath);
+        } catch {
+          // File doesn't exist — create it
+          await fs.mkdir(skillDir, { recursive: true });
+          const skillContent = [
+            '---',
+            'name: Zalo Group Admin',
+            'slug: zalo-group-admin',
+            'version: 1.2.0',
+            `description: Quy tắc reply và quản lý group Zalo — ưu tiên ngắn gọn, súc tích.`,
+            '---',
+            '',
+            '# Zalo Group Admin 💬',
+            '',
+            '## Khi nào dùng skill này',
+            '',
+            'Khi `chat_id` chứa `group:` → Bot đang ở trong Zalo group. Áp dụng toàn bộ quy tắc bên dưới.',
+            '',
+            '---',
+            '',
+            '## ⚡ NGUYÊN TẮC SỐ 1 — NGẮN GỌN LÀ ĐẶC QUYỀN CỦA GROUP',
+            '',
+            '> Trong group chat, **ngắn gọn = tôn trọng**. AI nói dài = spam group.',
+            '',
+            '### Giới hạn cứng (KHÔNG vi phạm):',
+            '- **Tối đa 5 dòng** mỗi reply trong group',
+            '- **KHÔNG dùng markdown headers** (`##`, `###`) — Zalo không render',
+            '- **KHÔNG dùng bullet list dài** — tối đa 3 bullets',
+            '- **KHÔNG dùng bold italic** (`**text**`) — Zalo không render',
+            '- **Chỉ 1 câu hỏi nếu cần làm rõ**',
+            '',
+            '---',
+            '',
+            `## 📖 Đọc Group Memory Trước Khi Reply`,
+            '',
+            `Khi @mention trong group:`,
+            `1. Đọc memory dir tương ứng trong ~/skills/memory/zalo-groups/`,
+            '2. Kiểm tra `chat-highlights.md` xem context gần nhất',
+            '3. Nếu user từng mention trước → reference lại, không hỏi lại',
+            '',
+            `**Path:** \`~/skills/memory/zalo-groups/\``,
+            '',
+            '---',
+            '',
+            '## 🎯 Xưng Hô Trong Group',
+            '',
+            '- Với **member thường**: xưng "mình", gọi "bác" hoặc tên',
+            '- Với **câu hỏi kỹ thuật**: trả lời thẳng, không giải thích quá nhiều',
+            '- Với **câu hỏi mơ hồ**: hỏi 1 câu làm rõ — chỉ 1 câu thôi',
+            '',
+            '---',
+            '',
+            '## 📝 Ghi Memory Sau Reply',
+            '',
+            'Sau mỗi @mention được xử lý:',
+            '```',
+            `~/skills/memory/zalo-groups/*/chat-highlights.md`,
+            '```',
+            'Format: `| YYYY-MM-DD HH:MM | {tên user} | {tóm tắt 1 dòng} |`',
+            '',
+            '---',
+            '',
+            '## 📋 DANH SÁCH SLASH COMMANDS ĐẦY ĐỦ',
+            '',
+            '> Tất cả commands xử lý bởi plugin `openclaw-zalo-mod` — bot KHÔNG cần reply.',
+            `> Prefix lệnh: \`${cmdPrefix}\` (theo tên bot)`,
+            '',
+            '### 👤 Mọi người (trong group)',
+            '',
+            '| Command | Mô tả |',
+            '|---------|-------|',
+            `| \`${cmdPrefix}noi-quy\` | Xem nội quy nhóm |`,
+            `| \`${cmdPrefix}menu\` | Danh sách lệnh |`,
+            `| \`${cmdPrefix}huong-dan\` | Hướng dẫn sử dụng bot |`,
+            '',
+            '### 🔧 Admin (trong group)',
+            '',
+            '| Command | Mô tả |',
+            '|---------|-------|',
+            `| \`${cmdPrefix}mute\` | Tắt bot hoàn toàn |`,
+            `| \`${cmdPrefix}unmute\` / \`${cmdPrefix}bat-bot\` | Bật lại bot |`,
+            `| \`${cmdPrefix}warn @name [lý do]\` | Cảnh cáo member |`,
+            `| \`${cmdPrefix}note [text]\` | Ghi chú admin |`,
+            `| \`${cmdPrefix}report\` | Báo cáo vi phạm + warn |`,
+            `| \`${cmdPrefix}memory [note]\` | Lưu memory digest |`,
+            '',
+            '### 👑 Owner — trong group',
+            '',
+            '| Command | Mô tả |',
+            '|---------|-------|',
+            `| \`${cmdPrefix}rules\` | Xem panel sub-lệnh |`,
+            `| \`${cmdPrefix}rules status\` | Cấu hình group hiện tại |`,
+            `| \`${cmdPrefix}rules groupid\` | Thêm group này vào config |`,
+            `| \`${cmdPrefix}rules silent-on\` | Bật silent (chỉ reply khi @tag) |`,
+            `| \`${cmdPrefix}rules silent-off\` | Tắt silent mode |`,
+            `| \`${cmdPrefix}rules welcome-on\` | Bật chào member mới |`,
+            `| \`${cmdPrefix}rules welcome-off\` | Tắt chào member mới |`,
+            `| \`${cmdPrefix}rules tracking-on\` | Bật ghi lịch sử chat |`,
+            `| \`${cmdPrefix}rules tracking-off\` | Tắt ghi lịch sử chat |`,
+            '',
+            '### 🔐 Owner — qua DM',
+            '',
+            '| Command | Mô tả |',
+            '|---------|-------|',
+            `| \`${cmdPrefix}rules mute-list\` | Trạng thái mute tất cả groups |`,
+            `| \`${cmdPrefix}rules mute <groupId> on/off\` | Mute/unmute group cụ thể |`,
+            `| \`${cmdPrefix}rules mute all on/off\` | Mute/unmute tất cả |`,
+            `| \`${cmdPrefix}rules silent-list\` | Trạng thái silent tất cả groups |`,
+            `| \`${cmdPrefix}rules silent <groupId> on/off\` | Silent group cụ thể |`,
+            `| \`${cmdPrefix}rules silent all on/off\` | Silent tất cả |`,
+            `| \`${cmdPrefix}rules welcome-list\` | Trạng thái welcome tất cả |`,
+            `| \`${cmdPrefix}rules welcome <groupId> on/off\` | Welcome group cụ thể |`,
+            `| \`${cmdPrefix}rules welcome all on/off\` | Welcome tất cả |`,
+            `| \`${cmdPrefix}rules tracking-list\` | Trạng thái tracking tất cả |`,
+            `| \`${cmdPrefix}rules tracking <groupId> on/off\` | Tracking group cụ thể |`,
+            `| \`${cmdPrefix}rules tracking all on/off\` | Tracking tất cả |`,
+            `| \`${cmdPrefix}rules follow-list\` | Theo dõi memory per-group |`,
+            `| \`${cmdPrefix}rules follow <groupId> on/off\` | Follow group cụ thể |`,
+            `| \`${cmdPrefix}rules follow all on/off\` | Follow tất cả |`,
+            `| \`${cmdPrefix}rules dm-list\` | DM whitelist |`,
+            `| \`${cmdPrefix}rules dm-add <tên>\` | Thêm vào DM whitelist |`,
+            `| \`${cmdPrefix}rules dm-remove <tên>\` | Xóa khỏi DM whitelist |`,
+            `| \`${cmdPrefix}rules groupid-list\` | Danh sách tất cả groups |`,
+            `| \`${cmdPrefix}rules groupid-add <groupId>\` | Thêm group từ xa |`,
+            `| \`${cmdPrefix}ownerid\` | Xem/đặt owner ID |`,
+            '',
+            '---',
+            '',
+            '## 🔇 Mute vs Silent',
+            '',
+            '| | Mute | Silent |',
+            '|--|------|--------|',
+            '| Bot im lặng | Hoàn toàn | Chỉ không tự reply |',
+            '| Slash hoạt động | ❌ (chỉ /unmute) | ✅ |',
+            '| @mention | ❌ | ✅ |',
+            '| Welcome | ❌ | ✅ |',
+
+            '',
+          ].join('\n');
+          await fs.writeFile(skillMdPath, skillContent, 'utf8');
+          logger.info('[openclaw-zalo-mod] auto-created skills/zalo-group-admin/SKILL.md');
+        }
+
+        // 2. Create memory INDEX.md cho mỗi group đang follow
+        for (const gId of watchGroupIds) {
+          const isFollowed = store.getSetting(gId, 'follow', true);
+          if (!isFollowed) continue;
+          const mDir = getMemoryDir(gId);
+          const indexMdPath = path.join(mDir, 'INDEX.md');
+          try {
+            await fs.access(indexMdPath);
+          } catch {
+            await fs.mkdir(mDir, { recursive: true });
+            const indexContent = [
+              `# ${getGroupName(gId)} — Memory`,
+              '',
+              '> Auto-generated by openclaw-zalo-mod plugin. Plugin sẽ tự cập nhật khi có events.',
+              '',
+              '## Files',
+              '- `chat-highlights.md` — Log @mention và tương tác quan trọng',
+              '- `members.md` — Danh sách member đã warn',
+              '- `violations.md` — Log vi phạm (spam, link, emoji flood)',
+              '- `admin-notes.md` — Ghi chú admin (/note)',
+              '- `chat-log.md` — Lịch sử chat nhóm (khi tracking bật)',
+              '',
+            ].join('\n');
+            await fs.writeFile(indexMdPath, indexContent, 'utf8');
+            logger.info(`[openclaw-zalo-mod] auto-created memory dir for ${getGroupName(gId)} (${gId})`);
+          }
+        }
+
+        // 3. Create data dir for plugin storage
+        await fs.mkdir(dataDir, { recursive: true });
+
+        // 4. Auto-detect & patch config if empty (ClawHub install flow)
+        const configNeedsPatch = !pluginCfg.botName || Object.keys(groupNames).length === 0;
+        if (configNeedsPatch) {
+          const patch = {};
+
+          // 4a. Write detected botName to config so it is saved
+          if (botName && botName !== 'Bot') {
+            patch.botName = botName;
+            patch.zaloDisplayNames = [botName];
+            logger.info(`[openclaw-zalo-mod] auto-saving botName="${botName}" to config`);
+          }
+
+          // 4b. Scan session data for groups
+          const agentId = cfg?.agents?.list?.[0]?.id;
+          const groups = await _scanGroupsFromSessions(_openclawHome, agentId);
+          if (groups.length > 0) {
+            // Build groupNames map: mỗi group có object {name, admins, creatorId}
+            const existingNames = pluginCfg.groupNames || {};
+            const namesMap = { ...existingNames };
+            for (const g of groups) {
+              if (!namesMap[g.groupId]) {
+                namesMap[g.groupId] = { name: g.groupName, admins: [], creatorId: '' };
+              } else if (typeof namesMap[g.groupId] === 'string') {
+                namesMap[g.groupId] = { name: namesMap[g.groupId], admins: [], creatorId: '' };
+              }
+            }
+            patch.groupNames = namesMap;
+            logger.info(`[openclaw-zalo-mod] auto-detected ${groups.length} group(s) from sessions: ${groups.map(g => g.groupName).join(', ')}`);
+          } else {
+            logger.info('[openclaw-zalo-mod] no group sessions found yet — user should chat in a group then run /groupid');
+          }
+
+          if (Object.keys(patch).length > 0) {
+            await _patchOpenclawConfig(_openclawHome, patch, logger);
+          }
+        }
+      } catch (e) {
+        logger.warn(`[openclaw-zalo-mod] bootstrap workspace files failed: ${e.message}`);
+      }
+    }
+
+    // Fire-and-forget bootstrap (don't block plugin registration)
+    bootstrapWorkspaceFiles();
+
+    // ── Memory Sync Helpers ──────────────────────────────────
+    function nowShort() {
+      return new Date().toISOString().slice(0, 16).replace('T', ' ');
+    }
+
+    async function appendToMemoryFile(groupId, filename, line) {
+      try {
+        const mDir = getMemoryDir(groupId);
+        const filePath = path.join(mDir, filename);
+        await fs.mkdir(mDir, { recursive: true });
+        await fs.appendFile(filePath, line + '\n', 'utf8');
+      } catch (e) {
+        logger.warn(`[openclaw-zalo-mod] memory append failed (${filename}): ${e.message}`);
+      }
+    }
+
+    // ── Chat Tracking — lịch sử chat thông minh ──────────────
+    const _trackingDedup = new Set();
+    const DEDUP_MAX = 500;
+    const CHAT_LOG_MAX_BYTES = 200 * 1024; // 200KB
+    const CHAT_CONTENT_MAX = 200; // ký tự/dòng
+    let _lastLogDate = ''; // cache ngày cuối ghi log
+
+    function chatFingerprint(senderId, content) {
+      const raw = `${senderId}:${String(content).slice(0, 60)}`;
+      let h = 0;
+      for (let i = 0; i < raw.length; i++) {
+        h = ((h << 5) - h + raw.charCodeAt(i)) | 0;
+      }
+      return String(h);
+    }
+
+    function isTrackingDuplicate(fp) {
+      if (_trackingDedup.has(fp)) return true;
+      _trackingDedup.add(fp);
+      if (_trackingDedup.size > DEDUP_MAX) {
+        const first = _trackingDedup.values().next().value;
+        _trackingDedup.delete(first);
+      }
+      return false;
+    }
+
+    async function appendChatLog(groupId, senderName, content) {
+      try {
+        // 1. Dedup check
+        const fp = chatFingerprint(String(groupId) + senderName, content);
+        if (isTrackingDuplicate(fp)) return;
+
+        const mDir = getMemoryDir(groupId);
+        const logPath = path.join(mDir, 'chat-log.md');
+        await fs.mkdir(mDir, { recursive: true });
+
+        // 2. Rotate nếu file > 200KB
+        try {
+          const stat = await fs.stat(logPath);
+          if (stat.size > CHAT_LOG_MAX_BYTES) {
+            const today = new Date().toISOString().slice(0, 10);
+            const bakPath = path.join(mDir, `chat-log-${today}.md.bak`);
+            await fs.rename(logPath, bakPath);
+            logger.info(`[openclaw-zalo-mod] chat-log rotated → ${bakPath}`);
+          }
+        } catch { /* file chưa tồn tại — OK */ }
+
+        // 3. Ngày mới → thêm date header
+        const today = new Date().toISOString().slice(0, 10);
+        let prefix = '';
+        if (_lastLogDate !== today) {
+          // Kiểm tra file có tồn tại + nội dung không
+          let needHeader = true;
+          try {
+            const existing = await fs.readFile(logPath, 'utf8');
+            if (existing.includes(`## ${today}`)) needHeader = false;
+          } catch { /* file chưa có */ }
+          if (needHeader) {
+            prefix = `\n## ${today}\n\n| Giờ | Người gửi | Nội dung |\n|-----|-----------|----------|\n`;
+          }
+          _lastLogDate = today;
+        }
+
+        // 4. Append dòng
+        const time = new Date().toISOString().slice(11, 16); // HH:MM
+        const safeContent = String(content).replace(/\|/g, '│').replace(/\n/g, ' ').slice(0, CHAT_CONTENT_MAX);
+        const safeName = String(senderName).replace(/\|/g, '│').slice(0, 30);
+        const line = `| ${time} | ${safeName} | ${safeContent} |`;
+
+        await fs.appendFile(logPath, prefix + line + '\n', 'utf8');
+      } catch (e) {
+        logger.warn(`[openclaw-zalo-mod] chat-log append failed: ${e.message}`);
+      }
+    }
+
+    // Smart group lookup — match groupId with/without "group:" prefix, merge duplicate userIds
+    function getStoreDataForGroup(allData, gId) {
+      const plain = String(gId).replace(/^group:/, '');
+      const merged = {};
+      for (const [key, users] of Object.entries(allData)) {
+        const keyPlain = String(key).replace(/^group:/, '');
+        if (keyPlain !== plain) continue;
+        for (const [uid, list] of Object.entries(users)) {
+          const normUid = String(uid).replace(/^@/, '');
+          merged[normUid] = merged[normUid] || [];
+          merged[normUid].push(...list);
+        }
+      }
+      return merged;
+    }
+
+    async function writeMemoryDigest(gId) {
+      try {
+        const warns = getStoreDataForGroup(store.getAllWarned(), gId);
+        const violations = getStoreDataForGroup(store.getAllViolations(), gId);
+
+        // Overwrite members.md with full warn digest
+        const memberLines = [
+          `# ${getGroupName(gId)} — Members & Warn Log\n`,
+          '> **Cập nhật:** ' + nowShort() + ' bởi /memory command\n',
+          '## Members Đã Warn\n',
+          '| Tên | Số warn | Lý do gần nhất | Lần cuối |',
+          '|-----|---------|-----------------|----------|',
+        ];
+        let totalWarns = 0;
+        for (const [uid, list] of Object.entries(warns)) {
+          if (!list.length) continue;
+          totalWarns++;
+          list.sort((a, b) => (b.ts || '').localeCompare(a.ts || ''));
+          const last = list[0];
+          memberLines.push(`| ${(last.name || uid).replace(/^@/, '')} | ${list.length} | ${last.reason || '—'} | ${(last.ts || '').slice(0, 10)} |`);
+        }
+        if (!totalWarns) memberLines.push('| — | — | — | — |');
+        await fs.writeFile(path.join(getMemoryDir(gId), 'members.md'), memberLines.join('\n') + '\n', 'utf8');
+
+        // Overwrite violations.md with full log
+        const vioLines = [
+          `# ${getGroupName(gId)} — Vi Phạm\n`,
+          '> **Cập nhật:** ' + nowShort() + ' bởi /memory command\n',
+          '## Log Vi Phạm\n',
+          '| Thời gian | Member | Loại | Preview |',
+          '|-----------|--------|------|---------|',
+        ];
+        let totalVio = 0;
+        for (const [uid, list] of Object.entries(violations)) {
+          if (uid === 'admin-note') continue; // skip admin notes from violation count
+          for (const v of list) {
+            totalVio++;
+            vioLines.push(`| ${(v.ts || '').slice(0, 16).replace('T', ' ')} | ${(v.name || uid).replace(/^@/, '')} | ${v.type} | ${(v.preview || '').slice(0, 40)} |`);
+          }
+        }
+        if (!totalVio) vioLines.push('| — | — | — | — |');
+        await fs.writeFile(path.join(getMemoryDir(gId), 'violations.md'), vioLines.join('\n') + '\n', 'utf8');
+
+        logger.info(`[openclaw-zalo-mod] memory digest — warns=${totalWarns}, violations=${totalVio} for group=${gId}`);
+        return { warnCount: totalWarns, vioCount: totalVio };
+      } catch (e) {
+        logger.warn(`[openclaw-zalo-mod] writeMemoryDigest failed: ${e.message}`);
+        return { warnCount: 0, vioCount: 0 };
+      }
+    }
+
+    // ── Zalo session (loaded once) ────────────────────────────
+    let _zaloCookies = null;
+    let _zaloImei = '';
+
+    async function loadZaloSession() {
+      if (_zaloCookies) return _zaloCookies;
+      try {
+        const credPath = path.join(
+          String(cfg?.agents?.defaults?.workspace || '/mnt/d/SecondBrain/.openclaw/workspace'),
+          '../credentials/zalouser/credentials.json'
+        );
+        const raw = await safeReadJson(credPath);
+        if (!raw) return null;
+        const cookies = raw.cookie || [];
+        const get = (key, domain) => {
+          const matches = cookies.filter(c => c.key === key);
+          if (domain) {
+            const pref = matches.find(c => (c.domain || '').includes(domain));
+            if (pref) return pref.value;
+          }
+          return matches[0]?.value || '';
+        };
+        _zaloImei = raw.imei || '';
+        _zaloCookies = {
+          zpsid:   get('zpsid', 'zalo.me'),
+          zpw_sek: get('zpw_sek', 'chat.zalo.me'),
+        };
+        logger.info(`[openclaw-zalo-mod] Zalo session loaded (imei=${_zaloImei.slice(0, 8)}...)`);
+        return _zaloCookies;
+      } catch (e) {
+        logger.warn(`[openclaw-zalo-mod] loadZaloSession failed: ${String(e)}`);
+        return null;
+      }
+    }
+
+    // ── Zalouser send API — dynamic path resolution ──────────
+    // @openclaw/zalouser installed at: {OPENCLAW_HOME}/npm/node_modules/@openclaw/zalouser/
+    let _zalouserSendApi = null;
+    let _zalouserSendApiUnavailable = false;
+
+    async function _loadZalouserSendApi() {
+      if (_zalouserSendApi) return _zalouserSendApi;
+      if (_zalouserSendApiUnavailable) return null;
+      const candidates = [
+        // Preferred: co-located npm dir (standard OpenClaw Docker setup)
+        path.join(_openclawHome, 'npm/node_modules/@openclaw/zalouser/dist/test-api.js'),
+        // Extension directory (OpenClaw plugins install setup)
+        path.join(_openclawHome, 'extensions/zalouser/dist/test-api.js'),
+        path.join(_openclawHome, 'extensions/zalouser/test-api.js'),
+        // Fallback: system npm
+        '/usr/local/lib/node_modules/@openclaw/zalouser/dist/test-api.js',
+        // Legacy: old openclaw path
+        '/usr/local/lib/node_modules/openclaw/dist/extensions/zalouser/test-api.js',
+      ];
+
+      // Dynamically find npm project workspaces (e.g. openclaw-zalouser-xxxxx)
+      const projectsDir = path.join(_openclawHome, 'npm', 'projects');
+      if (existsSync(projectsDir)) {
+        try {
+          for (const projectDir of readdirSync(projectsDir)) {
+            const candidateTestApi = path.join(projectsDir, projectDir, 'node_modules', '@openclaw', 'zalouser', 'dist', 'test-api.js');
+            if (existsSync(candidateTestApi)) {
+              candidates.unshift(candidateTestApi); // Prioritize this candidate
+            }
+          }
+        } catch (_) {}
+      }
+
+      for (const p of candidates) {
+        try {
+          const url = p.startsWith('/') ? `file://${p}` : `file:///${p.replace(/\\/g, '/')}`;
+          _zalouserSendApi = await import(url);
+          logger.info(`[openclaw-zalo-mod] zalouser send API loaded: ${p}`);
+          return _zalouserSendApi;
+        } catch { /* try next */ }
+      }
+      logger.warn('[openclaw-zalo-mod] zalouser send API not found — DM/group messages disabled.');
+      _zalouserSendApiUnavailable = true;
+      return null;
+    }
+
+    // Helper: send reply natively via OpenClaw Zalouser API
+    async function sendGroupMsg(ctx, groupId, text) {
+      if (!groupId || !text) return;
+      const profile = ctx?.accountId || 'default';
+      logger.info(`[openclaw-zalo-mod] sendGroupMsg → threadId=${groupId}, profile=${profile}, textLen=${text.length}`);
+      try {
+        const api = await _loadZalouserSendApi();
+        if (!api?.sendMessageZalouser) { logger.warn('[openclaw-zalo-mod] sendGroupMsg skipped — API unavailable'); return; }
+        const result = await api.sendMessageZalouser(String(groupId), String(text), {
+          isGroup: true,
+          profile,
+          textMode: 'markdown'
+        });
+        if (result && !result.ok) {
+          logger.error(`[openclaw-zalo-mod] Native Zalo send failed: ${result.error}`);
+        } else {
+          logger.info(`[openclaw-zalo-mod] Native message delivered to group ${groupId}`);
+        }
+      } catch (err) {
+        logger.error(`[openclaw-zalo-mod] Native Zalo send exception: ${err.message}`);
+      }
+    }
+
+    // Helper: send DM (non-group) via Zalouser API
+    async function sendDmMsg(ctx, userId, text, imageUrl = null) {
+      if (!userId || (!text && !imageUrl)) return;
+      const profile = ctx?.accountId || 'default';
+      try {
+        const api = await _loadZalouserSendApi();
+        if (!api?.sendMessageZalouser) { logger.warn('[openclaw-zalo-mod] sendDmMsg skipped — API unavailable'); return; }
+        const opts = {
+          isGroup: false,
+          profile,
+          textMode: 'markdown'
+        };
+        if (imageUrl) {
+          opts.mediaUrl = imageUrl;
+        }
+        await api.sendMessageZalouser(String(userId), String(text || ''), opts);
+      } catch (err) {
+        logger.error(`[openclaw-zalo-mod] DM send failed to ${userId}: ${err.message}`);
+      }
+    }
+
+    function isAdmin(senderId, groupId) {
+      if (String(senderId) === ownerId) return true;
+      if (adminIds.has(String(senderId))) return true;
+      // Check per-group admins (từ ZCA sync)
+      if (groupId) {
+        const gAdmins = groupNames[groupId]?.admins || getGroupAdmins(groupId);
+        if (gAdmins.includes(String(senderId))) return true;
+      }
+      return false;
+    }
+
+    // ── Member Directory — persistent name↔ID mapping ────────
+    const memberDirPath = path.join(dataDir, 'group-members.json');
+    let _memberDir = {}; // { groupId: { userId: displayName, ... }, ... }
+
+    async function loadMemberDir() {
+      try {
+        const raw = await fs.readFile(memberDirPath, 'utf8');
+        _memberDir = JSON.parse(raw) || {};
+      } catch { _memberDir = {}; }
+    }
+
+    async function saveMemberDir() {
+      try {
+        await fs.mkdir(dataDir, { recursive: true });
+        await fs.writeFile(memberDirPath, JSON.stringify(_memberDir, null, 2), 'utf8');
+      } catch (e) {
+        logger.warn(`[openclaw-zalo-mod] save member-dir failed: ${e.message}`);
+      }
+    }
+
+    /** Cập nhật member directory cho 1 group từ kết quả poll */
+    function updateMemberDir(groupId, members) {
+      if (!Array.isArray(members)) return;
+      if (!_memberDir[groupId]) _memberDir[groupId] = {};
+      for (const m of members) {
+        if (m.id) _memberDir[groupId][m.id] = m.name || _memberDir[groupId][m.id] || m.id;
+      }
+    }
+
+    /** Tìm userId theo tên hiển thị (tìm trong tất cả groups) */
+    function findUserByName(nameQuery) {
+      const q = nameQuery.toLowerCase().trim();
+      const results = [];
+      for (const [gId, members] of Object.entries(_memberDir)) {
+        for (const [uid, name] of Object.entries(members)) {
+          if (String(name).toLowerCase().includes(q)) {
+            results.push({ userId: uid, name, groupId: gId });
+          }
+        }
+      }
+      // Dedupe by userId
+      const seen = new Set();
+      return results.filter(r => { if (seen.has(r.userId)) return false; seen.add(r.userId); return true; });
+    }
+
+    // Load member directory on startup
+    loadMemberDir();
+
+    // ── Member Watcher — polling-based welcome ─────────────────
+    // OpenClaw zalouser channel ONLY forwards text messages to before_dispatch.
+    // System events (member join/leave) are silently filtered — they never reach plugins.
+    // Workaround: poll group member list via OpenClaw internal API, diff with previous snapshot.
+    //
+    // IMPORTANT: Use globalThis to persist state across gateway hot-reloads.
+    // OpenClaw may re-register() the plugin in the SAME Node.js process,
+    // creating new local vars but leaving old setInterval timers running.
+    // globalThis ensures: (1) only ONE watcher runs, (2) dedup survives hot-reload.
+    const _G = globalThis.__zaloModWatcher = globalThis.__zaloModWatcher || {
+      memberSnapshots: new Map(),   // groupId → Set<userId>
+      welcomedDedup: new Set(),     // "groupId:userId"
+      watcherTimer: null,
+      initTimer: null,
+      zaloApiModule: null,
+    };
+
+    let _watcherApiUnavailable = false;  // flag: API đã confirmed không khả dụng
+    let _pollFailCounts = {};            // groupId → consecutive fail count
+
+    async function loadZaloApi() {
+      if (_G.zaloApiModule) return _G.zaloApiModule;
+      if (_watcherApiUnavailable) return null;  // đã biết không có, không thử nữa
+
+      // Thử nhiều path — tùy phiên bản OpenClaw
+      const paths = [
+        // Preferred: npm dir
+        `file://${path.join(_openclawHome, 'npm/node_modules/@openclaw/zalouser/dist/test-api.js').replace(/\\/g, '/')}`,
+        'file:///usr/local/lib/node_modules/@openclaw/zalouser/dist/test-api.js',
+        'file:///usr/local/lib/node_modules/openclaw/dist/extensions/zalouser/test-api.js',
+      ];
+      for (const p of paths) {
+        try {
+          _G.zaloApiModule = await import(p);
+          return _G.zaloApiModule;
+        } catch { /* thử path tiếp theo */ }
+      }
+      // Tất cả path fail
+      logger.warn(`[openclaw-zalo-mod] [WATCHER] zalouser API not available — member watcher disabled. Restart gateway nếu vừa cài xong OpenClaw.`);
+      _watcherApiUnavailable = true;
+      return null;
+    }
+
+    async function pollGroupMembers(groupId) {
+      const failKey = String(groupId);
+      try {
+        const api = await loadZaloApi();
+        if (!api?.listZaloGroupMembers) return null;
+
+        const members = await api.listZaloGroupMembers('default', String(groupId));
+        if (!Array.isArray(members)) return null;
+
+        // Reset fail count khi thành công
+        _pollFailCounts[failKey] = 0;
+        return members.map(m => ({
+          id: String(m.userId || m.id || ''),
+          name: String(m.displayName || m.name || m.zaloName || ''),
+        })).filter(m => m.id);
+      } catch (e) {
+        _pollFailCounts[failKey] = (_pollFailCounts[failKey] || 0) + 1;
+        // Chỉ log khi fail >= 3 lần liên tiếp (Zalo rate-limit tạm thời là bình thường)
+        if (_pollFailCounts[failKey] >= 3 && (_pollFailCounts[failKey] === 3 || _pollFailCounts[failKey] % 10 === 0)) {
+          logger.warn(`[openclaw-zalo-mod] [WATCHER] poll failed for group ${groupId} (x${_pollFailCounts[failKey]}): ${e.message}`);
+        }
+        return null;
+      }
+    }
+
+    // ── Group Admin tracking via direct ZCA API ──────────────────
+    // OpenClaw wrapper strips creatorId/adminIds from getGroupInfo response.
+    // Solution: use withZaloApi from zalouser to safely access the active API instance without breaking cipher keys.
+    
+    async function getSafeZaloApi() {
+      // 1. Ưu tiên: Tái sử dụng Zalo API instance đang chạy từ `@openclaw/zalouser` để tránh dual-login (nếu có)
+      const activeApi = globalThis.__zcaApiByProfile?.get('default');
+      if (activeApi) {
+        logger.info('[openclaw-zalo-mod] ⚡ Reusing active Zalo API instance from @openclaw/zalouser');
+        return async function withZaloApiShim(profile, operation) {
+          return await operation(activeApi);
+        };
+      }
+
+      // 2. Fallback: Trigger zalouser ensureApi() via checkZaloAuthenticated
+      //    Populate the SAME apiByProfile Map. NO separate zalo.login()
+      //    to avoid dual-login breaking cipher keys.
+      try {
+        const testApi = await _loadZalouserSendApi();
+        if (testApi) {
+          if (testApi.checkZaloAuthenticated) {
+            logger.info('[openclaw-zalo-mod] triggering zalouser ensureApi via checkZaloAuthenticated...');
+            const isAuth = await testApi.checkZaloAuthenticated('default');
+            if (isAuth) {
+              // ensureApi populated apiByProfile -> get from globalThis
+              const freshApi = globalThis.__zcaApiByProfile?.get('default');
+              if (freshApi) {
+                logger.info('[openclaw-zalo-mod] Zalo API restored via ensureApi, reusing shared session');
+                return async function withZaloApiShim(profile, operation) {
+                  return await operation(freshApi);
+                };
+              }
+            }
+            logger.warn('[openclaw-zalo-mod] checkZaloAuthenticated returned false or API not populated');
+          } else {
+            logger.warn('[openclaw-zalo-mod] test-api.js missing checkZaloAuthenticated');
+          }
+        }
+      } catch (e) {
+        logger.warn(`[openclaw-zalo-mod] fallback ensureApi failed: ${e.message}`);
+      }
+
+      // 3. No API available
+      logger.warn('[openclaw-zalo-mod] ZCA API unavailable. Zalouser login required. Admin features disabled.');
+      return null;
+    }
+
+    function _invalidateZcaApi() {
+      // No-op: we no longer manage a separate zca-js instance
+    }
+
+    /**
+     * Gọi ZCA getGroupInfo trực tiếp → trả { creatorId, adminIds, totalMember, name }
+     */
+    async function fetchGroupAdminsFromZCA(groupId) {
+      try {
+        const withZaloApi = await getSafeZaloApi();
+        if (!withZaloApi) return null;
+
+        return await withZaloApi('default', async (api) => {
+          const result = await api.getGroupInfo(String(groupId));
+          const info = result?.gridInfoMap?.[String(groupId)];
+          if (!info) return null;
+          return {
+            creatorId: info.creatorId || null,
+            adminIds: Array.isArray(info.adminIds) ? info.adminIds : [],
+            totalMember: extractGroupMemberCount(info, 0),
+            name: info.name || '',
+          };
+        });
+      } catch (e) {
+        logger.warn(`[openclaw-zalo-mod] fetchGroupAdminsFromZCA failed for ${groupId}: ${e.message}`);
+        return null;
+      }
+    }
+
+    // Lưu admin vào settings.json (merge từ ZCA + manual)
+    function getGroupAdmins(groupId) {
+      return store.getSetting(groupId, 'groupAdmins', []);
+    }
+    function addGroupAdmin(groupId, userId) {
+      const admins = getGroupAdmins(groupId);
+      if (!admins.includes(String(userId))) {
+        admins.push(String(userId));
+        store.setSetting(groupId, 'groupAdmins', admins);
+      }
+    }
+    function getGroupAdminNames(groupId) {
+      const admins = getGroupAdmins(groupId);
+      return admins.map(id => _memberDir[groupId]?.[id] || id);
+    }
+
+    /**
+     * Sync group admins từ ZCA API → settings.json + groupNames config
+     * Gọi khi /groupid-add hoặc ${cmdPrefix}rules groupid
+     */
+    async function syncGroupAdminsFromZCA(groupId) {
+      const zcaInfo = await fetchGroupAdminsFromZCA(groupId);
+      if (!zcaInfo) return null;
+      // Merge: creatorId + adminIds → groupAdmins
+      const allAdmins = new Set(getGroupAdmins(groupId));
+      if (zcaInfo.creatorId) allAdmins.add(String(zcaInfo.creatorId));
+      for (const id of zcaInfo.adminIds) allAdmins.add(String(id));
+      const adminList = [...allAdmins];
+      // Update settings.json (per-group)
+      store.setSetting(groupId, 'groupAdmins', adminList);
+      store.setSetting(groupId, 'creatorId', zcaInfo.creatorId);
+      await store.saveSettings();
+      // Update in-memory groupNames + persist to openclaw.json
+      if (groupNames[groupId]) {
+        groupNames[groupId].admins = adminList;
+        groupNames[groupId].creatorId = zcaInfo.creatorId || '';
+        if (zcaInfo.name) groupNames[groupId].name = zcaInfo.name;
+      } else {
+        groupNames[groupId] = { name: zcaInfo.name || '', admins: adminList, creatorId: zcaInfo.creatorId || '' };
+      }
+      // Persist groupNames to group-names.json
+      const mergedNames = { ..._rawGroupNames };
+      mergedNames[groupId] = groupNames[groupId];
+      await saveGroupNames(mergedNames);
+      logger.info(`[openclaw-zalo-mod] synced admins for group ${groupId}: creator=${zcaInfo.creatorId}, admins=${adminList.join(',')}, members=${zcaInfo.totalMember}`);
+      return zcaInfo;
+    }
+
+    async function checkForNewMembers(groupId) {
+      // Skip poll entirely if welcome is disabled for this group — saves API calls
+      const welcomeOn = store.getSetting(groupId, 'welcome', true);
+      if (!welcomeOn) return;
+
+      const members = await pollGroupMembers(groupId);
+      if (!members) return;
+
+      // Cập nhật member directory (persistent)
+      updateMemberDir(groupId, members);
+      saveMemberDir(); // fire-and-forget
+
+      const currentIds = new Set(members.map(m => m.id));
+      const prevIds = _G.memberSnapshots.get(groupId);
+
+      if (!prevIds) {
+        // First poll — just save snapshot, don't welcome everyone
+        _G.memberSnapshots.set(groupId, currentIds);
+        logger.info(`[openclaw-zalo-mod] [WATCHER] initial snapshot for group ${groupId}: ${currentIds.size} members (member-dir updated)`);
+        return;
+      }
+
+      // Find new members (in current but not in previous)
+      const newMembers = members.filter(m => !prevIds.has(m.id));
+      // Update snapshot
+      _G.memberSnapshots.set(groupId, currentIds);
+
+      if (newMembers.length === 0) return;
+
+      // Dedup: skip members already welcomed recently (survives hot-reloads via globalThis)
+      const dedupKey = (gId, mId) => `${gId}:${mId}`;
+      const toWelcome = newMembers.filter(m => !_G.welcomedDedup.has(dedupKey(groupId, m.id)));
+      if (toWelcome.length === 0) {
+        logger.info(`[openclaw-zalo-mod] [WATCHER] ${newMembers.length} new member(s) detected but all already welcomed (dedup)`);
+        return;
+      }
+
+      logger.info(`[openclaw-zalo-mod] [WATCHER] ${toWelcome.length} new member(s) in group ${groupId}: ${toWelcome.map(m => m.name || m.id).join(', ')}`);
+
+
+      // Send welcome for new members (batch — don't spam if many join at once)
+      for (const member of toWelcome.slice(0, 5)) {
+        const memberName = member.name || 'bạn';
+        // Mark as welcomed FIRST (before sending) to prevent race condition
+        // where a concurrent poll also tries to welcome the same member
+        _G.welcomedDedup.add(dedupKey(groupId, member.id));
+        setTimeout(() => _G.welcomedDedup.delete(dedupKey(groupId, member.id)), 3600000);
+        try {
+          await sendGroupMsg({ accountId: 'default' }, groupId, buildWelcome(memberName,  botName, cmdPrefix));
+          await appendToMemoryFile(groupId, 'chat-highlights.md', `| ${nowShort()} | SYSTEM | Welcome: ${memberName} joined (detected by watcher) |`);
+          logger.info(`[openclaw-zalo-mod] [WATCHER] welcome sent for ${memberName} in group ${groupId}`);
+        } catch (e) {
+          logger.error(`[openclaw-zalo-mod] [WATCHER] welcome send failed for ${memberName}: ${e.message}`);
+        }
+        // Small delay between messages to avoid rate limiting
+        await new Promise(r => setTimeout(r, 2000));
+      }
+      if (toWelcome.length > 5) {
+        await sendGroupMsg({ accountId: 'default' }, groupId,
+          `👋 Và ${toWelcome.length - 5} bạn mới nữa — chào mừng tất cả! 🎉\n/noi-quy để xem nội quy nhóm.`
+        );
+      }
+    }
+
+    function startMemberWatcher() {
+      if (!welcomeEnabled || watchGroupIds.length === 0) {
+        if (watchGroupIds.length === 0) {
+          logger.info(`[openclaw-zalo-mod] [WATCHER] no watchGroupIds configured — welcome watcher disabled`);
+        }
+        return;
+      }
+
+      // CRITICAL: Clear any existing timer from previous register() hot-reload
+      if (_G.watcherTimer) {
+        clearInterval(_G.watcherTimer);
+        _G.watcherTimer = null;
+        logger.info(`[openclaw-zalo-mod] [WATCHER] cleared previous watcher timer (hot-reload detected)`);
+      }
+      if (_G.initTimer) {
+        clearTimeout(_G.initTimer);
+        _G.initTimer = null;
+      }
+
+      const intervalMs = Math.max(welcomePollSec, 30) * 1000; // min 30s to avoid Zalo rate limits
+
+      // Initial snapshot after a delay (let zalouser fully connect first)
+      _G.initTimer = setTimeout(async () => {
+        _G.initTimer = null;
+        await ensureStore();
+
+        // Filter: only poll groups where welcome is ON
+        const activeGroups = watchGroupIds.filter(gId => store.getSetting(gId, 'welcome', true));
+        const skippedGroups = watchGroupIds.filter(gId => !store.getSetting(gId, 'welcome', true));
+        logger.info(`[openclaw-zalo-mod] [WATCHER] starting member watcher — polling ${activeGroups.length}/${watchGroupIds.length} group(s), poll every ${intervalMs/1000}s`);
+        if (activeGroups.length > 0) logger.info(`[openclaw-zalo-mod] [WATCHER] active: ${activeGroups.map(g => getGroupName(g)).join(', ')}`);
+        if (skippedGroups.length > 0) logger.info(`[openclaw-zalo-mod] [WATCHER] skipped (welcome off): ${skippedGroups.map(g => getGroupName(g)).join(', ')}`);
+
+        for (const gId of activeGroups) {
+          await checkForNewMembers(gId);
+          // Delay 3s giữa mỗi group — tránh Zalo rate limit
+          if (activeGroups.length > 1) await new Promise(r => setTimeout(r, 3000));
+        }
+        // Then start periodic polling
+        _G.watcherTimer = setInterval(async () => {
+          for (const gId of watchGroupIds) {
+            try {
+              await checkForNewMembers(gId);
+            } catch (e) {
+              logger.warn(`[openclaw-zalo-mod] [WATCHER] poll error for ${gId}: ${e.message}`);
+            }
+            // Delay 3s giữa mỗi group (only between actual polls)
+            if (watchGroupIds.length > 1) await new Promise(r => setTimeout(r, 1000));
+          }
+        }, intervalMs);
+        if (_G.watcherTimer && _G.watcherTimer.unref) _G.watcherTimer.unref();
+      }, 30000); // 30s delay for zalouser to connect
+      if (_G.initTimer && _G.initTimer.unref) _G.initTimer.unref();
+    }
+
+    async function processGroupidAddAll(ctx, targetId, isGroupTarget, currentGroupId) {
+      const sendMsg = isGroupTarget ? (m) => sendGroupMsg(ctx, targetId, m) : (m) => sendDmMsg(ctx, targetId, m);
+      try {
+        await sendMsg('🔍 Đang đồng bộ danh sách nhóm từ ZCA...');
+
+        const withZaloApi = await getSafeZaloApi();
+        if (!withZaloApi) throw new Error('Không thể khởi tạo ZCA API');
+
+        const { groupIds, infoMap } = await withZaloApi('default', async (api) => {
+          const gidsSet = new Set();
+          
+          function extractIds(res) {
+            if (!res) return [];
+            const ids = new Set();
+            function traverse(obj) {
+              if (!obj) return;
+              if (typeof obj === 'string') {
+                const clean = obj.replace(/^group:/, '').trim();
+                if (/^\d+$/.test(clean)) ids.add(clean);
+              } else if (typeof obj === 'number') {
+                ids.add(String(obj));
+              } else if (Array.isArray(obj)) {
+                for (const item of obj) traverse(item);
+              } else if (typeof obj === 'object') {
+                if (obj.gridVerMap) traverse(Object.keys(obj.gridVerMap));
+                if (obj.gridInfoMap) traverse(Object.keys(obj.gridInfoMap));
+                if (obj.listLocalId) traverse(obj.listLocalId);
+                if (obj.listId) traverse(obj.listId);
+                for (const [key, val] of Object.entries(obj)) {
+                  const cleanKey = key.replace(/^group:/, '').trim();
+                  if (/^\d+$/.test(cleanKey)) ids.add(cleanKey);
+                  traverse(val);
+                }
+              }
+            }
+            traverse(res);
+            return [...ids];
+          }
+
+          // 1. Quét danh sách nhóm đang hoạt động (active list)
+          try {
+            const allGroups = await api.getAllGroups();
+            extractIds(allGroups).forEach(id => gidsSet.add(id));
+          } catch (e) {
+            logger.warn(`[openclaw-zalo-mod] getAllGroups failed: ${e.message}`);
+          }
+
+          // 2. Quét các nhóm được Ghim lên đầu trang (Pinned)
+          try {
+            if (typeof api.getPinConversations === 'function') {
+              const pins = await api.getPinConversations();
+              extractIds(pins).forEach(id => gidsSet.add(id));
+            }
+          } catch (e) {
+            logger.warn(`[openclaw-zalo-mod] getPinConversations failed: ${e.message}`);
+          }
+
+          // 3. Quét các nhóm bị Ẩn bằng mã PIN (Hidden)
+          try {
+            if (typeof api.getHiddenConversations === 'function') {
+              const hiddens = await api.getHiddenConversations();
+              extractIds(hiddens).forEach(id => gidsSet.add(id));
+            }
+          } catch (e) {
+            logger.warn(`[openclaw-zalo-mod] getHiddenConversations failed: ${e.message}`);
+          }
+
+          // 4. Quét các nhóm cũ trong Kho lưu trữ (Archived)
+          try {
+            if (typeof api.getArchivedChatList === 'function') {
+              const archived = await api.getArchivedChatList();
+              extractIds(archived).forEach(id => gidsSet.add(id));
+            }
+          } catch (e) {
+            logger.warn(`[openclaw-zalo-mod] getArchivedChatList failed: ${e.message}`);
+          }
+
+          // 5. Quét toàn bộ nhóm trong các Danh mục Phân loại (Labels)
+          try {
+            if (typeof api.getLabels === 'function') {
+              const labels = await api.getLabels();
+              extractIds(labels).forEach(id => gidsSet.add(id));
+            }
+          } catch (e) {
+            logger.warn(`[openclaw-zalo-mod] getLabels failed: ${e.message}`);
+          }
+
+          const gids = [...gidsSet];
+
+          if (currentGroupId && !gids.includes(currentGroupId)) {
+            gids.push(currentGroupId);
+          }
+
+          // Lấy thông tin hàng loạt (tối ưu hóa API)
+          let infoMapMerged = {};
+          if (gids.length > 0) {
+            try {
+              const infoResult = await api.getGroupInfo(gids);
+              infoMapMerged = infoResult?.gridInfoMap || {};
+            } catch (e) {
+              logger.warn(`[openclaw-zalo-mod] getGroupInfo failed: ${e.message}`);
+            }
+          }
+          return { groupIds: gids, infoMap: infoMapMerged };
+        });
+
+        const mergedNames = { ..._rawGroupNames };
+        const results = [];
+        let autoEnabled = 0;
+
+        for (const gId of groupIds) {
+          const zcaInfo = infoMap[gId];
+          if (!zcaInfo) {
+            results.push(`⚠️ ${mergedNames[gId]?.name || gId}\n   ID: ${gId} | Không lấy được info từ ZCA`);
+            continue;
+          }
+
+          if (!mergedNames[gId] || typeof mergedNames[gId] === 'string') {
+            mergedNames[gId] = { name: zcaInfo.name || (typeof mergedNames[gId] === 'string' ? mergedNames[gId] : ''), admins: [], creatorId: '' };
+          }
+
+          const allAdmins = new Set(mergedNames[gId].admins || []);
+          if (zcaInfo.creatorId) allAdmins.add(String(zcaInfo.creatorId));
+          if (Array.isArray(zcaInfo.adminIds)) {
+            for (const id of zcaInfo.adminIds) allAdmins.add(String(id));
+          }
+          mergedNames[gId].admins = [...allAdmins];
+          mergedNames[gId].creatorId = zcaInfo.creatorId || '';
+          if (zcaInfo.name) mergedNames[gId].name = zcaInfo.name;
+
+          store.setSetting(gId, 'groupAdmins', [...allAdmins]);
+          store.setSetting(gId, 'creatorId', zcaInfo.creatorId);
+
+          const ownerIsAdmin = allAdmins.has(ownerId);
+          if (ownerIsAdmin) {
+            store.setSetting(gId, 'welcome', true);
+            store.setSetting(gId, 'follow', true);
+            store.setSetting(gId, 'tracking', true);
+            autoEnabled++;
+            results.push(`✅ ${mergedNames[gId].name}\n   ID: ${gId} | 👥 ${zcaInfo.totalMember || '?'} | 🎉 welcome+follow BẬT`);
+          } else {
+            results.push(`⬜ ${mergedNames[gId].name}\n   ID: ${gId} | 👥 ${zcaInfo.totalMember || '?'} | ⏸️ owner không phải admin`);
+          }
+        }
+
+        await saveGroupNames(mergedNames);
+        const patch = {};
+        if (!pluginCfg.botName || pluginCfg.botName === 'Bot') {
+          const detectedName = await _readBotNameFromIdentity(workspaceDir);
+          if (detectedName) {
+            patch.botName = detectedName;
+            patch.zaloDisplayNames = [detectedName];
+          }
+        }
+
+        if (Object.keys(patch).length > 0) {
+          await _patchOpenclawConfig(_openclawHome, patch, logger, true);
+        }
+        await store.saveSettings();
+        _invalidateZcaApi(); // Thoát ZCA ngay sau batch để tránh chiếm dụng socket
+
+        for (const [gId, entry] of Object.entries(mergedNames)) {
+          groupNames[gId] = entry;
+          if (!watchGroupIds.includes(gId)) watchGroupIds.push(gId);
+        }
+
+        const report = [
+          `📡 ĐỒNG BỘ ZCA HOÀN TẤT`,
+          `━━━━━━━━━━━━━━━━━━`,
+          ...results,
+          ``,
+          `📊 Tổng: ${groupIds.length} groups`,
+          `🎉 Auto-enabled: ${autoEnabled} groups (owner là admin)`,
+          `🔄 Restart gateway để áp dụng.`
+        ].join('\n');
+        await sendMsg(report);
+      } catch (e) {
+        logger.warn(`[openclaw-zalo-mod] rules groupid-add-all failed: ${e.message}`);
+        await sendMsg(`⚠️ Lỗi quét groups từ ZCA: ${e.message}`);
+        _invalidateZcaApi();
+      }
+    }
+
+    // ── Owner DM Command Handler ──────────────────────────────
+    async function handleOwnerDm(content, senderId, ctx, cmdPrefix) {
+      const slashMatch = content.match(/^(\/[a-z][a-z0-9-]*)(.*)$/i);
+      if (!slashMatch) return null; // không phải lệnh → forward LLM
+
+      const rawCommand = slashMatch[1].toLowerCase();
+      if (!rawCommand.startsWith(cmdPrefix)) return null;
+      const command = '/' + rawCommand.slice(cmdPrefix.length);
+      const cmdArgs = slashMatch[2].trim();
+      const args = cmdArgs ? cmdArgs.split(/\s+/) : [];
+
+      if (command !== '/rules') return null; // chỉ xử lý /rules
+
+      const sub = args[0]?.toLowerCase();
+      if (!sub) {
+        await sendDmMsg(ctx, senderId,
+          `🔐 OWNER PANEL — ${cmdPrefix}rules\n━━━━━━━━━━━━━━━━━━\n\n🔇 Mute (tắt bot hoàn toàn):\n  ${cmdPrefix}rules mute-list\n  ${cmdPrefix}rules mute <groupId> on/off\n  ${cmdPrefix}rules mute all on/off\n\n🔕 Silent Mode (chỉ reply khi tag):\n  ${cmdPrefix}rules silent-list\n  ${cmdPrefix}rules silent <groupId> on/off\n  ${cmdPrefix}rules silent all on/off\n\n🎉 Welcome (chào mem mới):\n  ${cmdPrefix}rules welcome-list\n  ${cmdPrefix}rules welcome <groupId> on/off\n  ${cmdPrefix}rules welcome all on/off\n\n📋 Tracking (ghi lịch sử chat):\n  ${cmdPrefix}rules tracking-list\n  ${cmdPrefix}rules tracking <groupId> on/off\n  ${cmdPrefix}rules tracking all on/off\n\n👁️ Follow (theo dõi chat + memory):\n  ${cmdPrefix}rules follow-list\n  ${cmdPrefix}rules follow <groupId> on/off\n  ${cmdPrefix}rules follow all on/off\n\n💬 DM Whitelist:\n  ${cmdPrefix}rules dm-list\n  ${cmdPrefix}rules dm-add <tên member>\n  ${cmdPrefix}rules dm-remove <tên member>\n\n🆔 Group:\n  ${cmdPrefix}rules groupid-list\n  ${cmdPrefix}rules groupid-add <groupId>\n  ${cmdPrefix}rules groupid-add-all\n\n📊 ${cmdPrefix}rules status`
+        );
+        return { handled: true };
+      }
+
+      // ── mute-list: danh sách groups + trạng thái mute
+      if (sub === 'mute-list') {
+        const lines = ['🔇 MUTE PER-GROUP\n━━━━━━━━━━━━━━━━━━'];
+        for (const gId of watchGroupIds) {
+          const name = getGroupName(gId);
+          const muted = store.getSetting(gId, 'muted', false);
+          lines.push(`${muted ? '🔇' : '🔊'} ${name}\n   ID: ${gId} | ${muted ? 'MUTED' : 'Active'}`);
+        }
+        if (watchGroupIds.length === 0) lines.push('⚠️ Chưa có group nào. Dùng /groupid trong group để quét.');
+        await sendDmMsg(ctx, senderId, lines.join('\n'));
+        return { handled: true };
+      }
+
+      // ── mute all on/off
+      if (sub === 'mute' && args[1]?.toLowerCase() === 'all') {
+        const toggle = args[2]?.toLowerCase();
+        if (toggle === 'on' || toggle === 'off') {
+          const val = toggle === 'on';
+          for (const gId of watchGroupIds) { store.setSetting(gId, 'muted', val); }
+          await store.saveSettings();
+          await sendDmMsg(ctx, senderId, `${val ? '🔇' : '🔊'} Mute ${val ? 'BẬT' : 'TẮT'} cho TẤT CẢ ${watchGroupIds.length} groups`);
+        } else {
+          await sendDmMsg(ctx, senderId, '⚠️ Cú pháp: ${cmdPrefix}rules mute all on/off');
+        }
+        return { handled: true };
+      }
+
+      // ── mute <groupId> on/off
+      if (sub === 'mute' && args[1]) {
+        const targetGid = args[1].replace(/^<|>$/g, ''); // strip <>
+        const toggle = args[2]?.toLowerCase();
+        if (toggle === 'on') {
+          store.setSetting(targetGid, 'muted', true);
+          await store.saveSettings();
+          await sendDmMsg(ctx, senderId, `🔇 Mute BẬT cho ${getGroupName(targetGid)} (${targetGid})\nBot sẽ im lặng hoàn toàn trong group này.`);
+        } else if (toggle === 'off') {
+          store.setSetting(targetGid, 'muted', false);
+          await store.saveSettings();
+          await sendDmMsg(ctx, senderId, `🔊 Mute TẮT cho ${getGroupName(targetGid)} (${targetGid})\nBot hoạt động bình thường trở lại.`);
+        } else {
+          await sendDmMsg(ctx, senderId, '⚠️ Cú pháp: ${cmdPrefix}rules mute <groupId> on/off');
+        }
+        return { handled: true };
+      }
+
+      
+      // ── silent-list
+      if (sub === 'silent-list') {
+        const lines = ['🔕 SILENT MODE PER-GROUP\n━━━━━━━━━━━━━━━━━━'];
+        for (const gId of watchGroupIds) {
+          const name = getGroupName(gId);
+          const silent = store.getSetting(gId, 'silent', true);
+          lines.push(`${silent ? '🔕' : '🔊'} ${name}\n   ID: ${gId} | ${silent ? 'BẬT' : 'TẮT'}`);
+        }
+        if (watchGroupIds.length === 0) lines.push('⚠️ Chưa có group nào.');
+        await sendDmMsg(ctx, senderId, lines.join('\n'));
+        return { handled: true };
+      }
+
+      // ── silent all on/off
+      if (sub === 'silent' && args[1]?.toLowerCase() === 'all') {
+        const toggle = args[2]?.toLowerCase();
+        if (toggle === 'on' || toggle === 'off') {
+          const val = toggle === 'on';
+          for (const gId of watchGroupIds) { store.setSetting(gId, 'silent', val); }
+          await store.saveSettings();
+          await sendDmMsg(ctx, senderId, `${val ? '🔕' : '🔊'} Silent mode ${val ? 'BẬT' : 'TẮT'} cho TẤT CẢ ${watchGroupIds.length} groups`);
+        } else {
+          await sendDmMsg(ctx, senderId, '⚠️ Cú pháp: ${cmdPrefix}rules silent all on/off');
+        }
+        return { handled: true };
+      }
+
+      // ── silent <groupId> on/off
+      if (sub === 'silent' && args[1]) {
+        const targetGid = args[1].replace(/^<|>$/g, '');
+        const toggle = args[2]?.toLowerCase();
+        if (toggle === 'on') {
+          store.setSetting(targetGid, 'silent', true);
+          await store.saveSettings();
+          await sendDmMsg(ctx, senderId, `🔕 Silent mode BẬT cho ${getGroupName(targetGid)} (${targetGid})`);
+        } else if (toggle === 'off') {
+          store.setSetting(targetGid, 'silent', false);
+          await store.saveSettings();
+          await sendDmMsg(ctx, senderId, `🔊 Silent mode TẮT cho ${getGroupName(targetGid)} (${targetGid})`);
+        } else {
+          await sendDmMsg(ctx, senderId, '⚠️ Cú pháp: ${cmdPrefix}rules silent <groupId> on/off');
+        }
+        return { handled: true };
+      }
+
+      // ── welcome-list: danh sách groups + trạng thái welcome
+      if (sub === 'welcome-list') {
+        const lines = ['🎉 WELCOME PER-GROUP\n━━━━━━━━━━━━━━━━━━'];
+        for (const gId of watchGroupIds) {
+          const name = getGroupName(gId);
+          const on = store.getSetting(gId, 'welcome', true);
+          const memberCount = _memberDir[gId] ? Object.keys(_memberDir[gId]).length : '?';
+          lines.push(`${on ? '✅' : '❌'} ${name}\n   ID: ${gId} | Members: ${memberCount}`);
+        }
+        if (watchGroupIds.length === 0) lines.push('⚠️ Chưa có group nào. Dùng /groupid trong group để quét.');
+        await sendDmMsg(ctx, senderId, lines.join('\n'));
+        return { handled: true };
+      }
+
+      // ── welcome all on/off
+      if (sub === 'welcome' && args[1]?.toLowerCase() === 'all') {
+        const toggle = args[2]?.toLowerCase();
+        if (toggle === 'on' || toggle === 'off') {
+          const val = toggle === 'on';
+          for (const gId of watchGroupIds) { store.setSetting(gId, 'welcome', val); }
+          await store.saveSettings();
+          await sendDmMsg(ctx, senderId, `${val ? '🎉' : '🔕'} Welcome ${val ? 'BẬT' : 'TẮT'} cho TẤT CẢ ${watchGroupIds.length} groups`);
+        } else {
+          await sendDmMsg(ctx, senderId, '⚠️ Cú pháp: ${cmdPrefix}rules welcome all on/off');
+        }
+        return { handled: true };
+      }
+
+      // ── welcome <groupId> on/off
+      if (sub === 'welcome' && args[1]) {
+        const targetGid = args[1].replace(/^<|>$/g, ''); // strip <>
+        const toggle = args[2]?.toLowerCase();
+        if (toggle === 'on') {
+          store.setSetting(targetGid, 'welcome', true);
+          await store.saveSettings();
+          await sendDmMsg(ctx, senderId, `✅ Welcome BẬT cho ${getGroupName(targetGid)} (${targetGid})`);
+        } else if (toggle === 'off') {
+          store.setSetting(targetGid, 'welcome', false);
+          await store.saveSettings();
+          await sendDmMsg(ctx, senderId, `✅ Welcome TẮT cho ${getGroupName(targetGid)} (${targetGid})`);
+        } else {
+          await sendDmMsg(ctx, senderId, '⚠️ Cú pháp: ${cmdPrefix}rules welcome <groupId> on/off');
+        }
+        return { handled: true };
+      }
+
+      
+      // ── tracking-list
+      if (sub === 'tracking-list') {
+        const lines = ['📋 TRACKING PER-GROUP\n━━━━━━━━━━━━━━━━━━'];
+        for (const gId of watchGroupIds) {
+          const name = getGroupName(gId);
+          const tracking = store.getSetting(gId, 'tracking', false);
+          lines.push(`${tracking ? '✅' : '❌'} ${name}\n   ID: ${gId} | Tracking: ${tracking ? 'BẬT' : 'TẮT'}`);
+        }
+        if (watchGroupIds.length === 0) lines.push('⚠️ Chưa có group nào.');
+        await sendDmMsg(ctx, senderId, lines.join('\n'));
+        return { handled: true };
+      }
+
+      // ── tracking all on/off
+      if (sub === 'tracking' && args[1]?.toLowerCase() === 'all') {
+        const toggle = args[2]?.toLowerCase();
+        if (toggle === 'on' || toggle === 'off') {
+          const val = toggle === 'on';
+          for (const gId of watchGroupIds) { store.setSetting(gId, 'tracking', val); }
+          await store.saveSettings();
+          await sendDmMsg(ctx, senderId, `${val ? '✅' : '❌'} Tracking ${val ? 'BẬT' : 'TẮT'} cho TẤT CẢ ${watchGroupIds.length} groups`);
+        } else {
+          await sendDmMsg(ctx, senderId, '⚠️ Cú pháp: ${cmdPrefix}rules tracking all on/off');
+        }
+        return { handled: true };
+      }
+
+      // ── tracking <groupId> on/off
+      if (sub === 'tracking' && args[1]) {
+        const targetGid = args[1].replace(/^<|>$/g, '');
+        const toggle = args[2]?.toLowerCase();
+        if (toggle === 'on') {
+          store.setSetting(targetGid, 'tracking', true);
+          await store.saveSettings();
+          await sendDmMsg(ctx, senderId, `✅ Tracking BẬT cho ${getGroupName(targetGid)} (${targetGid})`);
+        } else if (toggle === 'off') {
+          store.setSetting(targetGid, 'tracking', false);
+          await store.saveSettings();
+          await sendDmMsg(ctx, senderId, `✅ Tracking TẮT cho ${getGroupName(targetGid)} (${targetGid})`);
+        } else {
+          await sendDmMsg(ctx, senderId, '⚠️ Cú pháp: ${cmdPrefix}rules tracking <groupId> on/off');
+        }
+        return { handled: true };
+      }
+
+      // ── dm-list: danh sách users được DM
+      if (sub === 'dm-list') {
+        if (allowedDmUsers.size === 0) {
+          await sendDmMsg(ctx, senderId, '💬 DM Whitelist: TRỐNG\n\nTất cả mọi người đều có thể DM bot.\nDùng ${cmdPrefix}rules dm-add <tên> để giới hạn.');
+        } else {
+          const lines = [`💬 DM WHITELIST (${allowedDmUsers.size} users)\n━━━━━━━━━━━━━━━━━━`];
+          for (const uid of allowedDmUsers) {
+            // Tìm tên từ member directory
+            let name = uid;
+            for (const members of Object.values(_memberDir)) {
+              if (members[uid]) { name = members[uid]; break; }
+            }
+            lines.push(`• ${name} (${uid})`);
+          }
+          lines.push('\n👑 Owner luôn được phép DM.');
+          await sendDmMsg(ctx, senderId, lines.join('\n'));
+        }
+        return { handled: true };
+      }
+
+      // ── dm-add <tên member>
+      if (sub === 'dm-add' && args.slice(1).length > 0) {
+        const nameQuery = args.slice(1).join(' ');
+        const matches = findUserByName(nameQuery);
+        if (matches.length === 0) {
+          await sendDmMsg(ctx, senderId, `❌ Không tìm thấy member tên "${nameQuery}" trong danh sách.\nDùng ${cmdPrefix}rules welcome-list để kiểm tra member directory.`);
+        } else if (matches.length === 1) {
+          const m = matches[0];
+          allowedDmUsers.add(m.userId);
+          // Lưu vào config
+          await _patchOpenclawConfig(_openclawHome, {
+            allowedDmUsers: [...allowedDmUsers]
+          }, logger, true);
+          await sendDmMsg(ctx, senderId, `✅ Đã thêm ${m.name} (${m.userId}) vào DM whitelist.`);
+        } else {
+          const lines = [`⚠️ Tìm thấy ${matches.length} kết quả cho "${nameQuery}":`];
+          for (const m of matches.slice(0, 10)) {
+            lines.push(`• ${m.name} — ID: ${m.userId} (${getGroupName(m.groupId)})`);
+          }
+          lines.push('\nVui lòng cung cấp tên chính xác hơn.');
+          await sendDmMsg(ctx, senderId, lines.join('\n'));
+        }
+        return { handled: true };
+      }
+
+      // ── dm-remove <tên member>
+      if (sub === 'dm-remove' && args.slice(1).length > 0) {
+        const nameQuery = args.slice(1).join(' ');
+        const matches = findUserByName(nameQuery).filter(m => allowedDmUsers.has(m.userId));
+        if (matches.length === 0) {
+          await sendDmMsg(ctx, senderId, `❌ Không tìm thấy "${nameQuery}" trong DM whitelist.`);
+        } else if (matches.length === 1) {
+          const m = matches[0];
+          allowedDmUsers.delete(m.userId);
+          await _patchOpenclawConfig(_openclawHome, {
+            allowedDmUsers: [...allowedDmUsers]
+          }, logger, true);
+          await sendDmMsg(ctx, senderId, `✅ Đã xóa ${m.name} (${m.userId}) khỏi DM whitelist.`);
+        } else {
+          const lines = [`⚠️ Tìm thấy ${matches.length} kết quả trong whitelist:`];
+          for (const m of matches.slice(0, 10)) {
+            lines.push(`• ${m.name} — ID: ${m.userId}`);
+          }
+          lines.push('\nVui lòng cung cấp tên chính xác hơn.');
+          await sendDmMsg(ctx, senderId, lines.join('\n'));
+        }
+        return { handled: true };
+      }
+
+      // ── follow-list: danh sách groups + trạng thái follow (theo dõi)
+      if (sub === 'follow-list') {
+        const lines = ['👁️ FOLLOW PER-GROUP (theo dõi chat + memory)\n━━━━━━━━━━━━━━━━━━'];
+        for (const gId of watchGroupIds) {
+          const name = getGroupName(gId);
+          const on = store.getSetting(gId, 'follow', true);
+          const tracking = store.getSetting(gId, 'tracking', false);
+          lines.push(`${on ? '✅' : '❌'} ${name}\n   ID: ${gId} | Tracking: ${tracking ? 'BẬT' : 'TẮT'}`);
+        }
+        if (watchGroupIds.length === 0) lines.push('⚠️ Chưa có group nào.');
+        lines.push('\n💡 Follow = lưu memory + chat-log cho group đó.');
+        await sendDmMsg(ctx, senderId, lines.join('\n'));
+        return { handled: true };
+      }
+
+      // ── follow all on/off
+      if (sub === 'follow' && args[1]?.toLowerCase() === 'all') {
+        const toggle = args[2]?.toLowerCase();
+        if (toggle === 'on' || toggle === 'off') {
+          const val = toggle === 'on';
+          for (const gId of watchGroupIds) {
+            store.setSetting(gId, 'follow', val);
+            store.setSetting(gId, 'tracking', val);
+          }
+          await store.saveSettings();
+          await sendDmMsg(ctx, senderId, `${val ? '👁️' : '🚫'} Follow ${val ? 'BẬT' : 'TẮT'} cho TẤT CẢ ${watchGroupIds.length} groups`);
+        } else {
+          await sendDmMsg(ctx, senderId, '⚠️ Cú pháp: ${cmdPrefix}rules follow all on/off');
+        }
+        return { handled: true };
+      }
+
+      // ── follow <groupId> on/off
+      if (sub === 'follow' && args[1]) {
+        const targetGid = args[1].replace(/^<|>$/g, ''); // strip <>
+        const toggle = args[2]?.toLowerCase();
+        if (toggle === 'on') {
+          store.setSetting(targetGid, 'follow', true);
+          store.setSetting(targetGid, 'tracking', true); // follow bật = tracking bật
+          await store.saveSettings();
+          // Bootstrap memory dir ngay lập tức
+          const mDir = getMemoryDir(targetGid);
+          try {
+            await fs.mkdir(mDir, { recursive: true });
+            const idxPath = path.join(mDir, 'INDEX.md');
+            try { await fs.access(idxPath); } catch {
+              const indexContent = [
+                `# ${getGroupName(targetGid)} \u2014 Memory`, '',
+                '> Auto-generated by openclaw-zalo-mod plugin.', '',
+                '## Files',
+                '- `chat-log.md` \u2014 L\u1ecbch s\u1eed chat nh\u00f3m',
+                '- `chat-highlights.md` \u2014 @mention quan tr\u1ecdng',
+                '- `members.md` \u2014 Warn log',
+                '- `violations.md` \u2014 Vi ph\u1ea1m', '',
+              ].join('\n');
+              await fs.writeFile(idxPath, indexContent, 'utf8');
+            }
+          } catch { /* ok */ }
+          await sendDmMsg(ctx, senderId, `✅ Follow BẬT cho ${getGroupName(targetGid)} (${targetGid})\n📁 Memory: ${getMemorySlug(targetGid)}/`);
+        } else if (toggle === 'off') {
+          store.setSetting(targetGid, 'follow', false);
+          store.setSetting(targetGid, 'tracking', false);
+          await store.saveSettings();
+          await sendDmMsg(ctx, senderId, `✅ Follow TẮT cho ${getGroupName(targetGid)} (${targetGid})`);
+        } else {
+          await sendDmMsg(ctx, senderId, '⚠️ Cú pháp: ${cmdPrefix}rules follow <groupId> on/off');
+        }
+        return { handled: true };
+      }
+
+      // ── status: tổng quan
+      if (sub === 'status') {
+        const mutedOn = watchGroupIds.filter(gId => store.getSetting(gId, 'muted', false)).length;
+        const welcomeOn = watchGroupIds.filter(gId => store.getSetting(gId, 'welcome', true)).length;
+        const followOn = watchGroupIds.filter(gId => store.getSetting(gId, 'follow', true)).length;
+        const totalMembers = Object.values(_memberDir).reduce((sum, m) => sum + Object.keys(m).length, 0);
+        await sendDmMsg(ctx, senderId,
+          `🔐 OWNER STATUS\n━━━━━━━━━━━━━━━━━━\n📡 Groups: ${watchGroupIds.length}\n🔇 Muted: ${mutedOn} group(s)\n🎉 Welcome: ${welcomeOn} bật\n👁️ Follow: ${followOn} bật\n👥 Members tracked: ${totalMembers}\n💬 DM whitelist: ${allowedDmUsers.size === 0 ? 'Tất cả' : allowedDmUsers.size + ' users'}\n🤖 Bot: ${botName}`
+        );
+        return { handled: true };
+      }
+
+      // ── groupid-list: liệt kê tất cả groups
+      if (sub === 'groupid-list') {
+        const lines = ['🆔 DANH SÁCH GROUPS\n━━━━━━━━━━━━━━━━━━'];
+        for (const gId of watchGroupIds) {
+          const name = getGroupName(gId);
+          const muted = store.getSetting(gId, 'muted', false);
+          lines.push(`${muted ? '🔇' : '🔊'} ${name}\n   ID: ${gId}`);
+        }
+        if (watchGroupIds.length === 0) lines.push('⚠️ Chưa có group nào. Gõ ${cmdPrefix}rules groupid trong group để thêm.');
+        lines.push(`\n📊 Tổng: ${watchGroupIds.length} group(s)`);
+        await sendDmMsg(ctx, senderId, lines.join('\n'));
+        return { handled: true };
+      }
+
+      // ── groupid-add-all: quét tất cả groups từ session
+      if (sub === 'groupid-add-all') {
+        await processGroupidAddAll(ctx, senderId, false, null);
+        return { handled: true };
+      }
+
+      // ── groupid-add <groupId>: thêm group bằng ID từ DM
+      if (sub === 'groupid-add' && args[1]) {
+        const targetGid = args[1].replace(/^<|>$/g, ''); // strip <>
+        const gName = args.slice(2).join(' ') || `Group ${targetGid.slice(-6)}`;
+        const newEntry = { name: gName, admins: [], creatorId: '' };
+        // Merge vào groupNames hiện tại
+        const mergedNames = { ..._rawGroupNames, [targetGid]: newEntry };
+        const isNew = !_rawGroupNames[targetGid];
+        await saveGroupNames(mergedNames);
+        if (isNew) {
+          if (!watchGroupIds.includes(targetGid)) watchGroupIds.push(targetGid);
+          groupNames[targetGid] = newEntry;
+        }
+        // Sync admins từ ZCA API (creatorId + adminIds)
+        const zcaInfo = await syncGroupAdminsFromZCA(targetGid);
+        const adminNames = getGroupAdminNames(targetGid);
+        const adminLine = adminNames.length > 0
+          ? `👑 Admins: ${adminNames.join(', ')}`
+          : '👑 Admin: chưa sync được (ZCA unavailable)';
+        const memberLine = zcaInfo ? `👥 Members: ${zcaInfo.totalMember}` : '';
+        _invalidateZcaApi(); // Hủy ZCA session ngay sau khi dùng xong
+        if (isNew) {
+          await sendDmMsg(ctx, senderId, `✅ Đã thêm group: ${zcaInfo?.name || gName}\n🆔 ID: ${targetGid}\n${adminLine}${memberLine ? '\n' + memberLine : ''}\n🔄 Restart gateway để áp dụng.`);
+        } else {
+          await sendDmMsg(ctx, senderId, `ℹ️ Group đã có trong config rồi.\n🆔 ID: ${targetGid}\n${adminLine}${memberLine ? '\n' + memberLine : ''}`);
+        }
+        return { handled: true };
+      }
+      if (sub === 'groupid-add' && !args[1]) {
+        await sendDmMsg(ctx, senderId, '⚠️ Cú pháp: ${cmdPrefix}rules groupid-add <groupId>');
+        return { handled: true };
+      }
+
+      return null; // lệnh ${cmdPrefix}rules không nhận ra → forward LLM
+    }
+
+    function _legacyDataFile(name) {
+      return path.join(__dirname, 'data', name);
+    }
+
+    async function readPluginDataJson(name) {
+      return (await safeReadJson(path.join(dataDir, name))) || (await safeReadJson(_legacyDataFile(name))) || {};
+    }
+
+    async function writePluginDataJson(name, data) {
+      await safeWriteJson(path.join(dataDir, name), data);
+    }
+
+    async function appendDashboardAudit(entry) {
+      const file = path.join(dataDir, 'dashboard-audit.json');
+      const list = Array.isArray(await safeReadJson(file)) ? await safeReadJson(file) : [];
+      list.unshift({ ts: nowIso(), ...entry });
+      await safeWriteJson(file, list.slice(0, 300));
+    }
+
+    function normalizeMembersInput(value) {
+      if (Array.isArray(value)) return value.map(String).filter(Boolean);
+      return String(value || '').split(/[,\s]+/).map(s => s.trim()).filter(Boolean);
+    }
+
+    function normalizeModeSlug(value) {
+      return String(value || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 40);
+    }
+
+    function getGroupCustomModes(groupId) {
+      const list = store.getSetting(groupId, 'customModes', []);
+      if (!Array.isArray(list)) return [];
+      return list.map(item => {
+        const slug = normalizeModeSlug(item?.slug || item?.label);
+        if (!slug) return null;
+        return {
+          slug,
+          label: String(item?.label || slug),
+          skill: String(item?.skill || '').trim(),
+          description: String(item?.description || '').trim(),
+          enabled: item?.enabled !== false,
+        };
+      }).filter(Boolean);
+    }
+
+    function setGroupCustomModes(groupId, modes) {
+      store.setSetting(groupId, 'customModes', modes);
+    }
+
+    function upsertGroupCustomMode(groupId, payload = {}) {
+      const slug = normalizeModeSlug(payload.slug || payload.label);
+      const label = String(payload.label || slug).trim();
+      const skill = String(payload.skill || '').trim();
+      const description = String(payload.description || '').trim();
+      if (!groupId || !slug || !label) throw new Error('groupId, slug, and label are required');
+      if (!skill) throw new Error('skill is required');
+      const modes = getGroupCustomModes(groupId);
+      const next = { slug, label, skill, description, enabled: payload.enabled !== false };
+      const index = modes.findIndex(item => item.slug === slug);
+      if (index >= 0) modes[index] = next;
+      else modes.push(next);
+      setGroupCustomModes(groupId, modes);
+      return next;
+    }
+
+    function toggleGroupCustomMode(groupId, slug, enabled) {
+      const normalized = normalizeModeSlug(slug);
+      const modes = getGroupCustomModes(groupId);
+      const index = modes.findIndex(item => item.slug === normalized);
+      if (index < 0) throw new Error(`Custom mode "${slug}" not found`);
+      modes[index].enabled = !!enabled;
+      setGroupCustomModes(groupId, modes);
+      return modes[index];
+    }
+
+    function deleteGroupCustomMode(groupId, slug) {
+      const normalized = normalizeModeSlug(slug);
+      const modes = getGroupCustomModes(groupId);
+      const next = modes.filter(item => item.slug !== normalized);
+      if (next.length === modes.length) throw new Error(`Custom mode "${slug}" not found`);
+      setGroupCustomModes(groupId, next);
+      return { slug: normalized, removed: true };
+    }
+
+    function buildActiveModePrompt(groupId) {
+      const activeModes = getGroupCustomModes(groupId).filter(item => item.enabled);
+      if (!activeModes.length) return '';
+      const lines = activeModes.map(item => `- ${item.label} (/bot-${item.slug}-on|off) -> skill: ${item.skill}${item.description ? ` -> ${item.description}` : ''}`);
+      return `[GROUP MODE CONTEXT]\nActive custom modes for this group:\n${lines.join('\n')}\nUse these modes as operating instructions when they are relevant.`;
+    }
+
+    const excludedDashboardGroups = new Set([
+      // Không hardcode exclude — tất cả groups từ ZCA đều hiển thị
+    ]);
+
+    function groupDedupeKey(name) {
+      return String(name || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, ' ')
+        .trim();
+    }
+
+    function groupQualityScore(group) {
+      return (Number(group.memberCount || 0) * 10)
+        + (Array.isArray(group.admins) ? group.admins.length * 3 : 0)
+        + (group.creatorId ? 2 : 0);
+    }
+
+
+    function extractGroupMemberCount(info, cached = 0) {
+      const direct = [info?.totalMember, info?.memberCount, info?.totalMembers, info?.userCount, info?.memCount, info?.currentMems]
+        .map(Number)
+        .find(value => Number.isFinite(value) && value > 0);
+      if (direct) return direct;
+      const maps = [info?.memVerMap, info?.membersMap, info?.memberMap, info?.participantsMap];
+      for (const map of maps) if (map && typeof map === 'object') {
+        const count = Object.keys(map).length;
+        if (count > 0) return count;
+      }
+      const arrays = [info?.memVerList, info?.members, info?.memberIds, info?.userIds, info?.participants];
+      for (const list of arrays) if (Array.isArray(list) && list.length) return list.length;
+      return Number(cached || 0) || 0;
+    }
+
+    function pendingListFromResult(pending) {
+      const direct = Array.isArray(pending?.members) ? pending.members
+        : Array.isArray(pending?.pendingMembers) ? pending.pendingMembers
+        : Array.isArray(pending?.data) ? pending.data
+        : Array.isArray(pending?.list) ? pending.list
+        : Array.isArray(pending) ? pending
+        : null;
+      if (direct) return direct;
+      const seen = new Set();
+      const out = [];
+      const stack = [pending];
+      while (stack.length) {
+        const cur = stack.pop();
+        if (!cur || typeof cur !== 'object') continue;
+        if (Array.isArray(cur)) {
+          for (const item of cur) stack.push(item);
+          continue;
+        }
+        const uid = cur.userId || cur.uid || cur.id;
+        if (uid != null) {
+          const key = String(uid);
+          if (!seen.has(key)) {
+            seen.add(key);
+            out.push(cur);
+          }
+        }
+        for (const value of Object.values(cur)) stack.push(value);
+      }
+      return out;
+    }
+
+    function collectProfileNames(payload, seed = {}) {
+      const out = { ...seed };
+      const seen = new Set();
+      const stack = [payload];
+      while (stack.length) {
+        const cur = stack.pop();
+        if (!cur) continue;
+        if (Array.isArray(cur)) {
+          for (const item of cur) stack.push(item);
+          continue;
+        }
+        if (typeof cur !== 'object') continue;
+        if (seen.has(cur)) continue;
+        seen.add(cur);
+        const id = cur.userId || cur.uid || cur.id || cur.user_id;
+        const name = cur.name || cur.displayName || cur.userName || cur.fullName || cur.dName || cur.zaloName;
+        if (id != null && name) out[String(id).replace(/_0$/, '')] = String(name);
+        for (const [key, value] of Object.entries(cur)) {
+          if (value && typeof value === 'object') {
+            if (!Array.isArray(value) && /^\d+$/.test(String(key))) {
+              const nestedName = value.name || value.displayName || value.userName || value.fullName || value.dName || value.zaloName;
+              if (nestedName) out[String(key).replace(/_0$/, '')] = String(nestedName);
+            }
+            stack.push(value);
+          }
+        }
+      }
+      return out;
+    }
+
+    function chunkArray(list, size = 200) {
+      const out = [];
+      for (let i = 0; i < list.length; i += size) out.push(list.slice(i, i + size));
+      return out;
+    }
+
+    function extractMemberIdsFromGroupInfo(info) {
+      const ids = new Set();
+      const add = (value) => {
+        if (value == null) return;
+        const s = String(value).replace(/_0$/, '');
+        if (/^\d+$/.test(s)) ids.add(s);
+      };
+      const arrays = [info?.memVerList, info?.memberIds, info?.userIds, info?.participants];
+      for (const list of arrays) if (Array.isArray(list)) for (const item of list) add(item?.id || item?.userId || item?.uid || item);
+      const maps = [info?.memVerMap, info?.membersMap, info?.memberMap, info?.participantsMap];
+      for (const map of maps) if (map && typeof map === 'object') for (const key of Object.keys(map)) add(key);
+      return [...ids];
+    }
+
+    async function scanGroupMembers(groupId, zaloApi) {
+      const rawInfo = await zaloApi.getGroupInfo(groupId);
+      const info = rawInfo?.gridInfoMap?.[String(groupId)] || rawInfo?.gridInfoMap?.[groupId] || rawInfo || {};
+      const ids = extractMemberIdsFromGroupInfo(info);
+      const names = {};
+      if (ids.length) {
+        for (const batch of chunkArray(ids, 200)) {
+          try {
+            const detail = await zaloApi.getGroupMembersInfo(batch);
+            Object.assign(names, collectProfileNames(detail, names));
+          } catch (_) {}
+          const missing = batch.filter(id => !names[id]);
+          if (missing.length) {
+            try {
+              const profiles = await zaloApi.getUserInfo(missing);
+              Object.assign(names, collectProfileNames(profiles, names));
+            } catch (_) {}
+          }
+        }
+      }
+      const members = ids.map(id => ({ id, name: names[id] || _memberDir[groupId]?.[id] || id }));
+      updateMemberDir(groupId, members);
+      await saveMemberDir();
+      store.setSetting(groupId, 'memberCount', members.length || extractGroupMemberCount(info, store.getSetting(groupId, 'memberCount', 0)));
+      await store.saveSettings();
+      return { count: members.length, groupId, members };
+    }
+
+    async function enrichPendingResult(groupId, pendingRaw) {
+      const list = pendingListFromResult(pendingRaw);
+      if (!list.length) return { raw: pendingRaw, list: [] };
+      const memberCache = _memberDir[groupId] || {};
+      const ids = [...new Set(list.map(item => String(item?.userId || item?.uid || item?.id || item || '')).filter(Boolean))];
+      let names = { ...memberCache };
+      try {
+        const withZaloApi = await getSafeZaloApi();
+        if (withZaloApi) {
+          await withZaloApi('default', async (zaloApi) => {
+            try {
+              const details = await zaloApi.getGroupMembersInfo(ids);
+              names = collectProfileNames(details, names);
+            } catch (_) {}
+            const missing = ids.filter(id => !names[id]);
+            if (missing.length) {
+              try {
+                const profiles = await zaloApi.getUserInfo(missing);
+                names = collectProfileNames(profiles, names);
+              } catch (_) {}
+            }
+          });
+        }
+      } catch (_) {}
+      return {
+        raw: pendingRaw,
+        list: list.map(item => {
+          const id = String(item?.userId || item?.uid || item?.id || item || '');
+          return {
+            ...item,
+            id,
+            name: names[id] || item?.name || item?.displayName || item?.userName || id,
+          };
+        }),
+      };
+    }
+
+    async function buildDashboardState() {
+      await reloadStore();
+      const memberDir = await readPluginDataJson('group-members.json');
+      const settingsRaw = await readPluginDataJson('settings.json');
+      const warnedRaw = await readPluginDataJson('warned.json');
+      const violationsRaw = await readPluginDataJson('violations.json');
+      const audit = Array.isArray(await safeReadJson(path.join(dataDir, 'dashboard-audit.json')))
+        ? await safeReadJson(path.join(dataDir, 'dashboard-audit.json'))
+        : [];
+
+      const rawGroups = [];
+      let settingsChanged = false;
+
+      for (const [groupId, info] of Object.entries(groupNames)) {
+        if (excludedDashboardGroups.has(String(groupId))) continue;
+        const settings = settingsRaw[groupId] || {};
+        const membersObj = memberDir[groupId] || {};
+        const cachedMemberCount = Number(settings.memberCount || settings.totalMember || 0);
+        const warnedCount = Object.values(warnedRaw[groupId] || {}).reduce((sum, list) => sum + (Array.isArray(list) ? list.length : 0), 0);
+        const violationCount = Object.values(violationsRaw[groupId] || {}).reduce((sum, list) => sum + (Array.isArray(list) ? list.length : 0), 0);
+        const memberCount = Object.keys(membersObj).length || cachedMemberCount;
+
+        let creatorId = settings.creatorId || info?.creatorId || '';
+        let admins = settings.groupAdmins || info?.admins || [];
+
+        // Dynamic, robust sync: if creatorId is missing, pull it immediately from Zalo ZCA API
+        if (!creatorId || admins.length === 0) {
+          try {
+            const zcaInfo = await fetchGroupAdminsFromZCA(groupId);
+            if (zcaInfo) {
+              creatorId = zcaInfo.creatorId || '';
+              admins = zcaInfo.adminIds || [];
+              if (!settingsRaw[groupId]) settingsRaw[groupId] = {};
+              settingsRaw[groupId].creatorId = creatorId;
+              settingsRaw[groupId].groupAdmins = admins;
+              settingsChanged = true;
+
+              if (groupNames[groupId]) {
+                groupNames[groupId].creatorId = creatorId;
+                groupNames[groupId].admins = admins;
+              }
+            }
+          } catch (e) {
+            logger.warn(`[openclaw-zalo-mod] Dynamic admin sync failed for group ${groupId}: ${e.message}`);
+          }
+        }
+
+        rawGroups.push({
+          groupId,
+          name: info?.name || settings.name || `Group ${groupId.slice(-6)}`,
+          admins,
+          creatorId,
+          inviteLink: settings.inviteLink || info?.inviteLink || info?.link || '',
+          pendingCount: Number(settings.pendingCount || 0),
+          memberCount,
+          isMemberCountCached: Object.keys(membersObj).length === 0 && cachedMemberCount > 0,
+          warnedCount,
+          violationCount,
+          settings: {
+            muted: !!settings.muted,
+            silent: settings.silent !== false,
+            welcome: settings.welcome !== false,
+            tracking: !!settings.tracking,
+            follow: settings.follow !== false,
+            pendingAuto: !!settings.pendingAuto,
+          },
+          customModes: getGroupCustomModes(groupId),
+        });
+      }
+
+      if (settingsChanged) {
+        await writePluginDataJson('settings.json', settingsRaw);
+      }
+
+      const byName = new Map();
+      for (const group of rawGroups) {
+        const key = groupDedupeKey(group.name);
+        if (!key) {
+          byName.set(`id:${group.groupId}`, group);
+          continue;
+        }
+        const existing = byName.get(key);
+        if (!existing || groupQualityScore(group) > groupQualityScore(existing)) byName.set(key, group);
+      }
+      const groups = [...byName.values()];
+
+      // Read version from package.json dynamically
+      let currentVersion = '2.8.7';
+      try {
+        const pkg = JSON.parse(readFileSync(path.join(__dirname, 'package.json'), 'utf8'));
+        if (pkg.version) currentVersion = pkg.version;
+      } catch (_) {}
+
+      let ownId = _detectedBotId || null;
+      try {
+        const withZaloApi = await getSafeZaloApi();
+        if (withZaloApi) {
+          const apiOwnId = await withZaloApi('default', async (zaloApi) => {
+            if (typeof zaloApi.getOwnId === 'function') {
+              const id = await zaloApi.getOwnId().catch(() => null);
+              if (id) return id;
+            }
+            if (typeof zaloApi.fetchAccountInfo === 'function') {
+              const acc = await zaloApi.fetchAccountInfo().catch(() => null);
+              if (acc?.userId || acc?.uid) return String(acc.userId || acc.uid);
+            }
+            return null;
+          });
+          if (apiOwnId) ownId = apiOwnId;
+        }
+      } catch (_) {}
+
+      let ownerDisplayName = null;
+      let ownerAvatarUrl = null;
+      try {
+        if (ownerId) {
+          for (const members of Object.values(memberDir)) {
+            if (members?.[ownerId]) {
+              const mData = members[ownerId];
+              ownerDisplayName = typeof mData === 'string' ? mData : mData.name || mData.displayName;
+              break;
+            }
+          }
+          if (!ownerDisplayName) {
+            const withZaloApi = await getSafeZaloApi();
+            if (withZaloApi) {
+              const profile = await withZaloApi('default', async (zaloApi) => {
+                return await zaloApi.getUserInfo(ownerId).catch(() => null);
+              });
+              if (profile) {
+                ownerDisplayName = profile.displayName || profile.name;
+                ownerAvatarUrl = profile.avatar || profile.avatarUrl;
+              }
+            }
+          }
+        }
+      } catch (e) {
+        logger.error('[openclaw-zalo-mod] Error fetching owner profile: ' + e.message);
+      }
+
+      // Background member profiles caching and synchronization logic
+      const cacheRaw = await readPluginDataJson('zalo-profiles-cache.json');
+      const cache = cacheRaw && typeof cacheRaw === 'object' && !Array.isArray(cacheRaw) ? cacheRaw : {};
+      
+      let syncQueueAdded = false;
+      for (const [gId, membersObj] of Object.entries(memberDir)) {
+        if (excludedDashboardGroups.has(String(gId))) continue;
+        if (membersObj && typeof membersObj === 'object') {
+          for (const userId of Object.keys(membersObj)) {
+            const cleanId = String(userId).replace(/_0$/, '');
+            if (!cache[cleanId] || !cache[cleanId].displayName) {
+              profileSyncQueue.add(cleanId);
+              syncQueueAdded = true;
+            }
+          }
+        }
+      }
+      
+      if (syncQueueAdded && typeof startProfileSyncJob === 'function') {
+        startProfileSyncJob();
+      }
+
+      return {
+        ok: true,
+        pluginVersion: currentVersion,
+        license: getLicenseStatus(),
+        bot: {
+          name: botName,
+          cmdPrefix,
+          ownerId,
+          botUserId: ownId,
+          ownerName: ownerDisplayName || ownerId || 'Owner',
+          ownerAvatar: ownerAvatarUrl || '',
+          groups: groups.length,
+          dashboardPort: Number(pluginCfg.dashboardPort || 19790),
+          cachedProfiles: cache, // Send profile database directly to client!
+        },
+        groups,
+        members: memberDir,
+        settings: settingsRaw,
+        audit: audit.slice(0, 50),
+        totals: {
+          groups: groups.length,
+          members: groups.reduce((sum, g) => sum + g.memberCount, 0),
+          warnings: groups.reduce((sum, g) => sum + g.warnedCount, 0),
+          violations: groups.reduce((sum, g) => sum + g.violationCount, 0),
+        },
+      };
+    }
+
+    const LICENSE_SERVER_URL = String(pluginCfg.licenseServerUrl || process.env.ZALO_MOD_LICENSE_SERVER || 'https://zalo-mod-server-262289343328.asia-east1.run.app').replace(/\/$/, '');
+
+    function getDeviceFingerprint() {
+      return {
+        platform: os.platform(),
+        arch: os.arch(),
+        hostname: os.hostname(),
+        node: process.version,
+      };
+    }
+
+    async function licenseServerFetch(pathname, options = {}) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), Number(pluginCfg.licenseServerTimeoutMs || 10000));
+      try {
+        const res = await fetch(`${LICENSE_SERVER_URL}${pathname}`, {
+          ...options,
+          headers: { 'content-type': 'application/json', ...(options.headers || {}) },
+          signal: controller.signal,
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || data.ok === false) throw new Error(data.error || `HTTP ${res.status}`);
+        return data;
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    }
+
+    function decodeEntitlementPayload(proof) {
+      try {
+        const encoded = String(proof || '').split('.')[0];
+        if (!encoded) return null;
+        return JSON.parse(Buffer.from(encoded, 'base64url').toString('utf8'));
+      } catch (_) { return null; }
+    }
+
+    async function activateEntitlement({ orderId, licenseKey }) {
+      const deviceId = getDeviceId();
+      const result = await licenseServerFetch('/v1/activations', {
+        method: 'POST',
+        body: JSON.stringify({ orderId, licenseKey, deviceId, fingerprint: getDeviceFingerprint() }),
+      });
+      const payload = result.payload || decodeEntitlementPayload(result.entitlement);
+      if (payload) {
+        store.setSetting('global', 'license', {
+          valid: true,
+          plan: payload.plan || result.license?.plan || 'personal',
+          expiry: result.license?.expiry || payload.licenseExpiry,
+          deviceId,
+          key: result.license?.key || licenseKey || '',
+          orderId: payload.orderId || orderId || '',
+          entitlement: result.entitlement,
+          entitlementPayload: payload,
+          entitlementExp: payload.exp || null,
+        });
+        await store.saveSettings();
+      }
+      return { valid: true, ...result, plan: payload?.plan, expiry: result.license?.expiry || payload?.licenseExpiry, deviceId };
+    }
+
+    async function refreshEntitlementIfNeeded(force = false) {
+      const license = store.getSetting('global', 'license') || {};
+      const payload = license.entitlementPayload || decodeEntitlementPayload(license.entitlement);
+      if (!license.orderId || !license.valid) return false;
+      const now = Math.floor(Date.now() / 1000);
+      if (!force && payload?.exp && payload.exp - now > 3600) return true;
+      try {
+        const refreshed = await licenseServerFetch('/v1/entitlements/refresh', {
+          method: 'POST',
+          body: JSON.stringify({ orderId: license.orderId, deviceId: getDeviceId() }),
+        });
+        const nextPayload = refreshed.payload || decodeEntitlementPayload(refreshed.entitlement);
+        store.setSetting('global', 'license', {
+          ...license,
+          valid: true,
+          entitlement: refreshed.entitlement,
+          entitlementPayload: nextPayload,
+          entitlementExp: nextPayload?.exp || null,
+        });
+        await store.saveSettings();
+        return true;
+      } catch (e) {
+        logger.warn('[openclaw-zalo-mod] entitlement refresh failed: ' + e.message);
+        return false;
+      }
+    }
+
+    async function cancelCurrentPayment(orderId) {
+      if (!orderId) return false;
+      try {
+        await licenseServerFetch(`/v1/orders/${encodeURIComponent(orderId)}/cancel`, { method: 'POST' });
+        return true;
+      } catch (e) {
+        logger.warn('[openclaw-zalo-mod] cancel payment failed: ' + e.message);
+        return false;
+      }
+    }
+
+    async function runDashboardZcaAction(action, payload) {
+      const withZaloApi = await getSafeZaloApi();
+      if (!withZaloApi) throw new Error('ZCA API unavailable. Check zalouser credentials and zca-js install.');
+
+      return await withZaloApi('default', async (zaloApi) => {
+        const groupId = String(payload.groupId || '').trim();
+        const userId = String(payload.userId || '').trim();
+        const members = normalizeMembersInput(payload.members || payload.userIds || userId);
+
+        if (action === 'sync-groups') {
+          // ── Chỉ dùng getAllGroups() — API chính xác trả về ĐÚNG group IDs ──
+          const allGroups = await zaloApi.getAllGroups();
+          // gridVerMap keys = group IDs thật, gridInfoMap cũng chứa group IDs
+          const idsFromVer = Object.keys(allGroups?.gridVerMap || {});
+          const idsFromInfo = Object.keys(allGroups?.gridInfoMap || {});
+          const ids = [...new Set([...idsFromVer, ...idsFromInfo])];
+          const infoResult = ids.length ? await zaloApi.getGroupInfo(ids) : null;
+          const infoMap = infoResult?.gridInfoMap || {};
+          // Bắt đầu với map rỗng — chỉ giữ groups mà ZCA API xác nhận
+          const merged = {};
+          for (const gId of ids) {
+            if (excludedDashboardGroups.has(String(gId))) continue;
+            const z = infoMap[gId] || {};
+            merged[gId] = {
+              name: z.name || groupNames[gId]?.name || `Group ${gId.slice(-6)}`,
+              admins: Array.isArray(z.adminIds) ? z.adminIds.map(String) : (groupNames[gId]?.admins || []),
+              creatorId: z.creatorId ? String(z.creatorId) : (groupNames[gId]?.creatorId || ''),
+              inviteLink: z.inviteLink || z.link || z.groupLink || z.url || groupNames[gId]?.inviteLink || '',
+            };
+            groupNames[gId] = merged[gId];
+            if (!watchGroupIds.includes(gId)) watchGroupIds.push(gId);
+            if (merged[gId].admins?.length) store.setSetting(gId, 'groupAdmins', merged[gId].admins);
+            if (merged[gId].creatorId) store.setSetting(gId, 'creatorId', merged[gId].creatorId);
+            if (merged[gId].inviteLink) store.setSetting(gId, 'inviteLink', merged[gId].inviteLink);
+            store.setSetting(gId, 'memberCount', extractGroupMemberCount(z, store.getSetting(gId, 'memberCount', 0)));
+            if (z.pendingCount != null) store.setSetting(gId, 'pendingCount', Number(z.pendingCount) || 0);
+            if (!store.getSetting(gId, 'memberCount', 0)) {
+              try {
+                const fresh = await fetchGroupAdminsFromZCA(gId);
+                if (fresh?.totalMember) store.setSetting(gId, 'memberCount', Number(fresh.totalMember) || 0);
+                if (fresh?.creatorId) store.setSetting(gId, 'creatorId', String(fresh.creatorId));
+                if (Array.isArray(fresh?.adminIds) && fresh.adminIds.length) store.setSetting(gId, 'groupAdmins', fresh.adminIds.map(String));
+              } catch (_) {}
+            }
+          }
+          for (const gId of ids.slice(0, 30)) {
+            try {
+              const pending = await zaloApi.getPendingGroupMembers(gId);
+              const list = pendingListFromResult(pending);
+              store.setSetting(gId, 'pendingCount', list.length);
+            } catch (_) {}
+          }
+          await saveGroupNames(merged);
+          await store.saveSettings();
+
+          // Also sync botName if missing or default (case-insensitive check for default values like 'bot', 'Bot', 'OpenClaw Bot')
+          const patch = {};
+          const currentBotName = String(pluginCfg.botName || '').trim();
+          const isDefaultBotName = !currentBotName || 
+            ['bot', 'botname', 'openclaw bot', 'openclaw-bot'].includes(currentBotName.toLowerCase()) ||
+            currentBotName.includes('**Mkt**'); // Also override if it contains the corrupted markdown name
+
+          if (isDefaultBotName) {
+            let detectedName = null;
+            try {
+              if (typeof zaloApi.fetchAccountInfo === 'function') {
+                const acc = await zaloApi.fetchAccountInfo();
+                const profileObj = acc?.profile || acc;
+                if (profileObj && profileObj.displayName) {
+                  detectedName = profileObj.displayName;
+                } else if (profileObj && profileObj.zaloName) {
+                  detectedName = profileObj.zaloName;
+                } else if (profileObj && profileObj.name) {
+                  detectedName = profileObj.name;
+                }
+              }
+              
+              if (!detectedName && typeof zaloApi.getOwnId === 'function') {
+                const ownId = await zaloApi.getOwnId();
+                if (ownId) {
+                  const uinfo = await zaloApi.getUserInfo(ownId);
+                  const profileObj = uinfo?.changed_profiles?.[ownId] || uinfo?.[ownId] || uinfo;
+                  if (profileObj && profileObj.displayName) {
+                    detectedName = profileObj.displayName;
+                  } else if (profileObj && profileObj.zaloName) {
+                    detectedName = profileObj.zaloName;
+                  } else if (profileObj && profileObj.name) {
+                    detectedName = profileObj.name;
+                  }
+                }
+              }
+            } catch (err) {
+              logger.warn('[openclaw-zalo-mod] failed to fetch Zalo profile name via API: ' + err.message);
+            }
+
+            if (detectedName) {
+              patch.botName = detectedName;
+              patch.zaloDisplayNames = [detectedName];
+              logger.info('[openclaw-zalo-mod] Synced bot name via Zalo API: "' + detectedName + '"');
+            }
+          }
+          if (Object.keys(patch).length > 0) {
+            await _patchOpenclawConfig(_openclawHome, patch, logger, true);
+          }
+
+          // Reset in-memory groupNames và watchGroupIds — chỉ giữ groups từ ZCA
+          for (const oldId of Object.keys(groupNames)) {
+            if (!merged[oldId]) delete groupNames[oldId];
+          }
+          watchGroupIds.length = 0;
+          for (const [gId, entry] of Object.entries(merged)) {
+            groupNames[gId] = entry;
+            watchGroupIds.push(gId);
+          }
+
+          return { imported: ids.length };
+        }
+
+        if (!groupId && ['get-group-info', 'get-pending', 'get-blocked', 'review-pending', 'remove-user', 'block-member', 'unblock-member'].includes(action)) {
+          throw new Error('groupId is required');
+        }
+
+        if (action === 'get-group-info') return await zaloApi.getGroupInfo(groupId);
+        if (action === 'scan-members') return await scanGroupMembers(groupId, zaloApi);
+        if (action === 'leave-group') return await zaloApi.leaveGroup(groupId, !!payload.silent);
+        if (action === 'get-pending') return await zaloApi.getPendingGroupMembers(groupId);
+        if (action === 'get-blocked') return await zaloApi.getGroupBlockedMember(groupId);
+        if (action === 'review-pending') {
+          return await zaloApi.reviewPendingMemberRequest({ members, isApprove: payload.approve !== false }, groupId);
+        }
+        if (action === 'remove-user') return await zaloApi.removeUserFromGroup(groupId, members.length > 1 ? members : members[0]);
+        if (action === 'block-member') return await zaloApi.addGroupBlockedMember(members.length > 1 ? members : members[0], groupId);
+        if (action === 'unblock-member') return await zaloApi.removeGroupBlockedMember(members.length > 1 ? members : members[0], groupId);
+        if (action === 'accept-friend') return await zaloApi.acceptFriendRequest(userId);
+        if (action === 'reject-friend') return await zaloApi.rejectFriendRequest(userId);
+        if (action === 'send-friend-request') {
+          const friendMessage = String(payload.message || '').trim();
+          try {
+            return await zaloApi.sendFriendRequest(friendMessage, userId);
+          } catch (error) {
+            const errMsg = String(error?.message || error || '');
+            if (friendMessage && /(tham s? kh?ng h?p l?|invalid parameter|parameter is invalid|bad request)/i.test(errMsg)) {
+              return await zaloApi.sendFriendRequest('', userId);
+            }
+            throw error;
+          }
+        }
+        if (action === 'get-friends') return await zaloApi.getAllFriends();
+        if (action === 'get-user-info') {
+          const target = payload.userIds || payload.userId || userId;
+          return await zaloApi.getUserInfo(target);
+        }
+
+        throw new Error(`Unsupported ZCA action: ${action}`);
+      });
+    }
+
+    async function runDashboardAction(action, payload = {}) {
+      if (action === 'create-payment') {
+        const planId = String(payload.planId || '').trim();
+        if (!planId) throw new Error('planId is required');
+        const deviceId = getDeviceId();
+        try {
+          const result = await licenseServerFetch('/v1/orders', {
+            method: 'POST',
+            body: JSON.stringify({ planId, deviceId }),
+          });
+          const order = result.order || {};
+          
+          let cleanPlanName = order.planName;
+          try {
+            const plansData = JSON.parse(readFileSync(path.join(__dirname, 'upgrade', 'plans.json'), 'utf8'));
+            const matchedPlan = plansData.plans?.find(p => p.id === planId);
+            if (matchedPlan) cleanPlanName = matchedPlan.name;
+          } catch (e) {
+            logger.warn('[openclaw-zalo-mod] Failed to read plans.json for name fallback: ' + e.message);
+          }
+
+          return {
+            ok: true,
+            order: {
+              ...order,
+              planName: cleanPlanName || order.planName || '---',
+              orderId: order.orderId,
+              qrUrl: order.qrUrl || '',
+              bankName: order.bankName || order.bank_info?.bank || 'MB Bank',
+              accountNo: order.accountNo || order.bank_info?.account_number || '0962794917',
+              accountName: order.accountName || order.bank_info?.account_name || 'HO LE MINH TUAN',
+              memo: order.memo || order.payment_note || '',
+            },
+          };
+        } catch (serverErr) {
+          logger.warn('[openclaw-zalo-mod] license server create-payment failed, fallback local: ' + serverErr.message);
+          const result = await runFlowCommand('create-order', [deviceId, planId, 'dashboard', 'Dashboard']);
+          if (result?.ok && result.order) {
+            const order = result.order;
+            return {
+              ...result,
+              order: {
+                ...order,
+                orderId: order.orderId || result.orderId,
+                qrUrl: order.qrUrl || order.qr?.qrUrl || result.paymentMessage?.qrUrl || '',
+                bankName: order.bankName || order.qr?.bankInfo?.bank || order.bank || '',
+                accountNo: order.accountNo || order.qr?.bankInfo?.account_number || order.account_number || '',
+                accountName: order.accountName || order.qr?.bankInfo?.account_name || order.account_name || '',
+                memo: order.memo || order.qr?.paymentNote || '',
+              },
+            };
+          }
+          return result;
+        }
+      }
+
+      if (action === 'check-payment-status') {
+        const orderId = String(payload.orderId || '').trim();
+        try {
+          const checkResult = await licenseServerFetch(`/v1/orders/${encodeURIComponent(orderId)}`);
+          if (checkResult.paid || checkResult.key) {
+            await activateEntitlement({ orderId, licenseKey: checkResult.key });
+          }
+          return checkResult;
+        } catch (serverErr) {
+          logger.warn('[openclaw-zalo-mod] license server check-payment failed, fallback local: ' + serverErr.message);
+          const checkResult = await runFlowCommand('check-payment', [orderId]);
+          if (checkResult.paid && checkResult.key) {
+            const verifyResult = await verifyLicenseKey(checkResult.key);
+            if (verifyResult.valid) {
+              store.setSetting('global', 'license', {
+                valid: true,
+                plan: verifyResult.plan,
+                expiry: verifyResult.expiry,
+                deviceId: verifyResult.deviceId,
+                key: checkResult.key
+              });
+              await store.saveSettings();
+            }
+          }
+          return checkResult;
+        }
+      }
+
+      if (action === 'activate-license') {
+        const key = String(payload.key || '').trim();
+        try {
+          return await activateEntitlement({ licenseKey: key, orderId: payload.orderId });
+        } catch (serverErr) {
+          const result = await verifyLicenseKey(key);
+          if (result.valid) {
+            store.setSetting('global', 'license', {
+              valid: true,
+              plan: result.plan,
+              expiry: result.expiry,
+              deviceId: result.deviceId,
+              key
+            });
+            await store.saveSettings();
+          }
+          return result;
+        }
+      }
+
+      if (action === 'cancel-payment') {
+        const orderId = String(payload.orderId || '').trim();
+        const result = await cancelCurrentPayment(orderId);
+        return { ok: result, orderId };
+      }
+
+      // Check if Pro/Premium license is required for this action
+      const freeActions = [
+        'sync-groups',       // Sync Account — essential setup action
+        'toggle-setting',    // Already free (handled separately below)
+        'create-payment',    // Cho phép tạo payment ở bản Free
+        'check-payment-status', // Cho phép kiểm tra trạng thái ở bản Free
+      ];
+      const proActions = [
+        'bulk-toggle-setting',
+        'upsert-custom-mode',
+        'toggle-custom-mode',
+        'delete-custom-mode',
+        
+        // ZCA actions
+        'enrich-pending',
+        'approve-pending',
+        'reject-pending',
+        'kick-member',
+        'block-member',
+        'unblock-member',
+        'invite-member',
+        'get-group-info',
+        'get-user-info'
+      ];
+      
+      if (proActions.includes(action) && !freeActions.includes(action)) {
+        const lic = getLicenseStatus();
+        if (!lic.isPro) {
+          throw new Error('Chức năng này chỉ dành cho tài khoản PRO. Vui lòng nâng cấp!');
+        }
+      }
+
+      if (action === 'toggle-setting') {
+        const groupId = String(payload.groupId || '').trim();
+        const key = String(payload.key || '').trim();
+        if (!groupId || !['muted', 'silent', 'welcome', 'tracking', 'follow', 'pendingAuto'].includes(key)) {
+          throw new Error('Invalid setting payload');
+        }
+        store.setSetting(groupId, key, !!payload.value);
+        await store.saveSettings();
+        return { groupId, key, value: !!payload.value };
+      }
+
+      if (action === 'bulk-toggle-setting') {
+        const groupIds = Array.isArray(payload.groupIds) ? payload.groupIds.map(String).filter(Boolean) : [];
+        const key = String(payload.key || '').trim();
+        if (!groupIds.length || !['muted', 'silent', 'welcome', 'tracking', 'follow', 'pendingAuto'].includes(key)) {
+          throw new Error('Invalid bulk setting payload');
+        }
+        for (const groupId of groupIds) store.setSetting(groupId, key, !!payload.value);
+        await store.saveSettings();
+        return { key, value: !!payload.value, count: groupIds.length };
+      }
+
+      if (action === 'upsert-custom-mode') {
+        const groupId = String(payload.groupId || '').trim();
+        const mode = upsertGroupCustomMode(groupId, payload);
+        await store.saveSettings();
+        return { groupId, mode };
+      }
+
+      if (action === 'toggle-custom-mode') {
+        const groupId = String(payload.groupId || '').trim();
+        const slug = String(payload.slug || '').trim();
+        const mode = toggleGroupCustomMode(groupId, slug, payload.enabled !== false);
+        await store.saveSettings();
+        return { groupId, mode };
+      }
+
+      if (action === 'delete-custom-mode') {
+        const groupId = String(payload.groupId || '').trim();
+        const slug = String(payload.slug || '').trim();
+        const result = deleteGroupCustomMode(groupId, slug);
+        await store.saveSettings();
+        return { groupId, ...result };
+      }
+
+      if (action === 'group-detail') {
+        const groupId = String(payload.groupId || '').trim();
+        if (!groupId) throw new Error('groupId is required');
+        const settingsRaw = await readPluginDataJson('settings.json');
+        const memberDir = await readPluginDataJson('group-members.json');
+        const settings = settingsRaw[groupId] || {};
+        let zcaInfo = null;
+        let pending = null;
+        try { zcaInfo = await runDashboardZcaAction('get-group-info', { groupId }); } catch (_) {}
+        try {
+          const pendingRaw = await runDashboardZcaAction('get-pending', { groupId });
+          pending = await enrichPendingResult(groupId, pendingRaw);
+          store.setSetting(groupId, 'pendingCount', pending.list.length);
+          await store.saveSettings();
+        } catch (_) {}
+        return {
+          groupId,
+          name: groupNames[groupId]?.name || settings.name || `Group ${groupId.slice(-6)}`,
+          memberCount: Object.keys(memberDir[groupId] || {}).length || Number(settings.memberCount || settings.totalMember || 0),
+          pendingCount: Number(settings.pendingCount || 0),
+          admins: settings.groupAdmins || groupNames[groupId]?.admins || [],
+          creatorId: settings.creatorId || groupNames[groupId]?.creatorId || '',
+          inviteLink: settings.inviteLink || groupNames[groupId]?.inviteLink || '',
+          settings: {
+            muted: !!settings.muted,
+            silent: settings.silent !== false,
+            welcome: settings.welcome !== false,
+            tracking: !!settings.tracking,
+            follow: settings.follow !== false,
+            pendingAuto: !!settings.pendingAuto,
+          },
+          customModes: getGroupCustomModes(groupId),
+          zcaInfo,
+          pending,
+        };
+      }
+
+      if (action === 'get-pending') {
+        const groupId = String(payload.groupId || '').trim();
+        const result = await runDashboardZcaAction(action, payload);
+        const enriched = await enrichPendingResult(groupId, result);
+        const list = enriched.list;
+        if (groupId) {
+          store.setSetting(groupId, 'pendingCount', list.length);
+          await store.saveSettings();
+        }
+        return enriched;
+      }
+
+      if (action === 'send-message') {
+        const targetId = String(payload.targetId || payload.groupId || payload.userId || '').trim();
+        const text = String(payload.text || '').trim();
+        if (!targetId || !text) throw new Error('targetId and text are required');
+        if (payload.targetType === 'user') await sendDmMsg({ accountId: 'default' }, targetId, text);
+        else await sendGroupMsg({ accountId: 'default' }, targetId, text);
+        return { sent: true, targetId };
+      }
+
+      return await runDashboardZcaAction(action, payload);
+    }
+
+    function parseDashboardBody(req) {
+      return new Promise((resolve, reject) => {
+        let raw = '';
+        req.on('data', chunk => {
+          raw += chunk;
+          if (raw.length > 1024 * 1024) reject(new Error('Request body too large'));
+        });
+        req.on('end', () => {
+          try { resolve(raw ? JSON.parse(raw) : {}); } catch (e) { reject(e); }
+        });
+        req.on('error', reject);
+      });
+    }
+
+    function sendDashboardJson(res, status, data) {
+      const body = JSON.stringify(data, null, 2);
+      res.writeHead(status, {
+        'content-type': 'application/json; charset=utf-8',
+        'cache-control': 'no-store',
+      });
+      res.end(body, 'utf8');
+    }
+
+    const profileSyncQueue = new Set();
+    let isProfileSyncing = false;
+
+    async function startProfileSyncJob() {
+      if (isProfileSyncing) return;
+      isProfileSyncing = true;
+      
+      logger.info('[openclaw-zalo-mod] Started background member profiles sync job with queue size: ' + profileSyncQueue.size);
+
+      setInterval(async () => {
+        if (profileSyncQueue.size === 0) return;
+
+        const userId = profileSyncQueue.values().next().value;
+        profileSyncQueue.delete(userId);
+
+        try {
+          const cleanId = String(userId).replace(/_0$/, '');
+          const cacheRaw = await readPluginDataJson('zalo-profiles-cache.json');
+          const cache = cacheRaw && typeof cacheRaw === 'object' && !Array.isArray(cacheRaw) ? cacheRaw : {};
+          if (cache[cleanId] && cache[cleanId].displayName) {
+            return;
+          }
+
+          const withZaloApi = await getSafeZaloApi();
+          if (!withZaloApi) return;
+
+          const rawProfile = await withZaloApi('default', async (zaloApi) => {
+            return await zaloApi.getUserInfo(cleanId).catch(() => null);
+          });
+
+          if (rawProfile) {
+            let foundProfile = null;
+            const extract = (obj) => {
+              if (foundProfile || !obj || typeof obj !== 'object') return;
+              if (Array.isArray(obj)) {
+                for (const item of obj) {
+                  extract(item);
+                  if (foundProfile) return;
+                }
+                return;
+              }
+              const id = String(obj.userId || obj.uid || obj.id || obj.user_id || '').replace(/_0$/, '');
+              const name = obj.displayName || obj.zaloName || obj.name || obj.userName || obj.fullName;
+              if (id === cleanId && name) {
+                foundProfile = obj;
+                return;
+              }
+              for (const val of Object.values(obj)) {
+                if (val && typeof val === 'object') {
+                  extract(val);
+                  if (foundProfile) return;
+                }
+              }
+            };
+            extract(rawProfile);
+
+            if (foundProfile) {
+              const name = foundProfile.displayName || foundProfile.zaloName || foundProfile.name || foundProfile.userName || foundProfile.fullName || '';
+              cache[cleanId] = {
+                userId: cleanId,
+                displayName: name,
+                avatar: foundProfile.avatar || foundProfile.avatarUrl || foundProfile.avatar_url || '',
+                sdob: foundProfile.sdob || '',
+                phoneNumber: foundProfile.phoneNumber || foundProfile.phone || ''
+              };
+              await writePluginDataJson('zalo-profiles-cache.json', cache);
+              logger.info(`[openclaw-zalo-mod] Background synced profile for user ${cleanId}: ${name}`);
+            } else {
+              logger.warn(`[openclaw-zalo-mod] Sync profile parser could not find user ${cleanId} in response`);
+            }
+          }
+        } catch (e) {
+          logger.warn(`[openclaw-zalo-mod] Background sync failed for user ${userId}: ${e.message}`);
+        }
+      }, 8000);
+    }
+
+    function startDashboardServer() {
+      if (pluginCfg.dashboardEnabled === false) return;
+      const host = String(pluginCfg.dashboardHost || '0.0.0.0');
+      const port = Number(pluginCfg.dashboardPort || 19790);
+      const token = String(pluginCfg.dashboardToken || cfg?.gateway?.auth?.token || ownerId || 'openclaw-zalo-mod');
+      const key = '__openclawZaloModDashboard';
+      const existing = globalThis[key];
+      if (existing?.server) {
+        try { existing.server.close(); } catch (_) {}
+      }
+
+      const dashboardFile = path.join(__dirname, 'index.html');
+      const donateQrFile = path.join(__dirname, 'bvbank.jpg');
+      const logoFile = path.join(__dirname, 'logo.png');
+      const server = http.createServer(async (req, res) => {
+        try {
+          res.setHeader('Access-Control-Allow-Origin', '*');
+          res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+          res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Zalo-Dashboard-Token');
+          if (req.method === 'OPTIONS') {
+            res.writeHead(204);
+            res.end();
+            return;
+          }
+          const url = new URL(req.url || '/', `http://${host}:${port}`);
+          if (req.method === 'GET' && (url.pathname === '/' || url.pathname === '/dashboard')) {
+            let html = existsSync(dashboardFile)
+              ? readFileSync(dashboardFile, 'utf8')
+              : '<!doctype html><meta charset="utf-8"><title>Zalo Dashboard</title><h1>Zalo Dashboard file missing</h1>';
+            html = html.replace('</head>', `<script>window.ZALO_DASHBOARD_TOKEN=${JSON.stringify(token)};</script></head>`);
+            res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' });
+            res.end(html, 'utf8');
+            return;
+          }
+
+          if (req.method === 'GET' && url.pathname === '/dashboard.css') {
+            const cssFile = path.join(__dirname, 'dashboard.css');
+            if (existsSync(cssFile)) {
+              res.writeHead(200, { 'content-type': 'text/css; charset=utf-8', 'cache-control': 'no-store' });
+              res.end(readFileSync(cssFile, 'utf8'), 'utf8');
+            } else {
+              res.writeHead(404, { 'content-type': 'text/plain' });
+              res.end('CSS file not found');
+            }
+            return;
+          }
+
+          if (req.method === 'GET' && url.pathname === '/dashboard.js') {
+            const jsFile = path.join(__dirname, 'dashboard.js');
+            if (existsSync(jsFile)) {
+              res.writeHead(200, { 'content-type': 'application/javascript; charset=utf-8', 'cache-control': 'no-store' });
+              res.end(readFileSync(jsFile, 'utf8'), 'utf8');
+            } else {
+              res.writeHead(404, { 'content-type': 'text/plain' });
+              res.end('JS file not found');
+            }
+            return;
+          }
+
+          if (req.method === 'GET' && (url.pathname === '/assets/bvbank.jpg' || url.pathname === '/bvbank.jpg')) {
+            if (!existsSync(donateQrFile)) {
+              sendDashboardJson(res, 404, { ok: false, error: 'Donate QR not found' });
+              return;
+            }
+            res.writeHead(200, {
+              'content-type': 'image/jpeg',
+              'cache-control': 'public, max-age=3600',
+            });
+            res.end(readFileSync(donateQrFile));
+            return;
+          }
+
+          if (req.method === 'GET' && (url.pathname === '/assets/logo.png' || url.pathname === '/logo.png' || url.pathname === '/favicon.ico')) {
+            if (!existsSync(logoFile)) {
+              sendDashboardJson(res, 404, { ok: false, error: 'Logo not found' });
+              return;
+            }
+            res.writeHead(200, {
+              'content-type': 'image/png',
+              'cache-control': 'public, max-age=3600',
+            });
+            res.end(readFileSync(logoFile));
+            return;
+          }
+
+          if (url.pathname.startsWith('/api/')) {
+            const auth = req.headers.authorization || '';
+            const headerToken = auth.startsWith('Bearer ') ? auth.slice(7) : req.headers['x-zalo-dashboard-token'];
+            if (String(headerToken || '') !== token) {
+              sendDashboardJson(res, 401, { ok: false, error: 'Unauthorized dashboard token' });
+              return;
+            }
+          }
+
+          if (req.method === 'GET' && url.pathname === '/api/state') {
+            sendDashboardJson(res, 200, await buildDashboardState());
+            return;
+          }
+
+          if (req.method === 'POST' && url.pathname === '/api/action') {
+            const body = await parseDashboardBody(req);
+            const action = String(body.action || '').trim();
+            if (!action) throw new Error('action is required');
+            const result = await runDashboardAction(action, body.payload || {});
+            await appendDashboardAudit({ action, payload: body.payload || {}, ok: true });
+            sendDashboardJson(res, 200, { ok: true, result, state: await buildDashboardState() });
+            return;
+          }
+
+          sendDashboardJson(res, 404, { ok: false, error: 'Not found' });
+        } catch (e) {
+          logger.warn(`[openclaw-zalo-mod] dashboard error: ${e.message}`);
+          try { await appendDashboardAudit({ action: 'error', ok: false, error: e.message }); } catch (_) {}
+          sendDashboardJson(res, 500, { ok: false, error: e.message });
+        }
+      });
+
+      server.listen(port, host, () => {
+        logger.info(`[openclaw-zalo-mod] dashboard listening at http://${host}:${port}/dashboard`);
+      });
+      globalThis[key] = { server, port, host };
+    }
+
+    startDashboardServer();
+
+    // ── Event: before_dispatch (main hook) ───────────────────
+    api.on('before_dispatch', async (event, ctx) => {
+      // 1. Chỉ bắt event từ Zalo
+      console.log('[ZALO-MOD-DEBUG] ctx:', JSON.stringify(ctx||{})); console.log('[ZALO-MOD-DEBUG] body:', event?.body); if (ctx?.channelId !== 'zalouser' && ctx?.channel !== 'zalouser') { console.log('[ZALO-MOD-DEBUG] ignored! channelId:', ctx?.channelId); return; }
+      
+      // NOTE: Zalo strips @mention from event.content but keeps it in event.body
+      const content = String(event?.body || event?.content || '').trim();
+
+      await ensureStore();
+
+      // NOTE: Welcome detection is handled by the member watcher (polling-based).
+      // OpenClaw zalouser channel does NOT pass system events (join/leave) to plugins.
+      // NOTE: Sticker/image/file messages in groups are silently dropped by zalouser channel core
+      // — they never reach before_dispatch. Only text messages are forwarded.
+
+      if (!content) return { handled: true }; // empty content — skip
+
+      // ── Sticker/media detection ──────────────────────────────
+      // Zalo sends stickers as JSON: {"id":21532,"catId":10306,"type":7}
+      // Transform to human-readable so agent doesn't try parsing raw JSON
+      try {
+        const parsed = JSON.parse(content);
+        if (parsed && typeof parsed === 'object' && parsed.id && parsed.catId && parsed.type) {
+          event.body = '[Sticker]';
+          if (event.content) event.content = '[Sticker]';
+        }
+      } catch (_) { /* not JSON, normal text — continue */ }
+
+      const rawConvId = String(ctx.conversationId || event.conversationId || '');
+      const isGroupMsg = rawConvId.startsWith('group:');
+      const senderId  = String(ctx.senderId || event.senderId || '');
+      const senderName = String(event.senderName || senderId);
+
+
+
+      // Packaging Gating: Skip automated moderation / anti-spam / commands for Free users
+      // LOẠI TRỪ: Cho phép chủ nhân bot (owner) chạy các lệnh cấu hình hoặc kích hoạt bản quyền kể cả khi đang ở gói Free
+      const lic = getLicenseStatus();
+      if (!lic.isPro) {
+        const bodyContent = String(event?.body || event?.content || '').trim();
+        const lcBody = bodyContent.toLowerCase();
+        
+        const isActivationCmd = lcBody.startsWith(`${cmdPrefix}active-key`) || lcBody.startsWith(`${cmdPrefix}kich-hoat`);
+        const cleanLc = lcBody.replace(/['’]/g, '');
+        const isClaimOwnerCmd = lcBody.startsWith(`${cmdPrefix}ownerid`) || cleanLc === 'im admin' || cleanLc === 'iam admin' || cleanLc === 'i am admin';
+        const isOwnerRulesCmd = ownerId && senderId === ownerId && (lcBody.startsWith(`${cmdPrefix}rules`) || lcBody.startsWith(`${cmdPrefix}mute`) || lcBody.startsWith(`${cmdPrefix}unmute`));
+        
+        const isExempted = isActivationCmd || isClaimOwnerCmd || isOwnerRulesCmd;
+
+        // [LOẠI BỎ CHẶN LỆNH THỦ CÔNG CHO PLAN FREE]
+        // Cho phép chạy slash commands thủ công trên Zalo chat ở gói Free.
+        // Chỉ giới hạn các chức năng tương ứng trên giao diện Zalo-Mod Web UI.
+        /*
+        if (bodyContent.startsWith('/') && bodyContent.length > 1 && !isExempted) {
+          await sendGroupMsg(ctx, isGroupMsg ? rawConvId : senderId, '⚠️ Chức năng này chỉ dành cho tài khoản PRO. Vui lòng nâng cấp!');
+          return { handled: true };
+        }
+        */
+        // NOTE: Do NOT return early here for non-command messages.
+        // Free users still need @mention detection and silent mode check below.
+      }
+
+      // ── DM Flow — Owner config + whitelist gating ──────────
+      if (!isGroupMsg) {
+        // /ownerid — intercept from ANY DM user (before owner gate)
+        // Allows first user to claim ownership when ownerId is empty
+        const lcContent = content.toLowerCase().trim();
+        const cleanLc = lcContent.replace(/['’]/g, '');
+        const ownerIdMatch = lcContent === `${cmdPrefix}ownerid` || cleanLc === "im admin" || cleanLc === "iam admin" || cleanLc === "i am admin";
+        if (ownerIdMatch) {
+          if (!ownerId) {
+            // Chưa có owner → auto-claim sender
+            const patch = { ownerId: senderId };
+            const patched = await _patchOpenclawConfig(_openclawHome, patch, logger, true);
+            if (patched) {
+              ownerId = senderId;
+              adminIds.add(senderId);
+              await sendDmMsg(ctx, senderId,
+                `✅ Đã đăng ký bạn làm Owner!\n👑 Owner ID: ${senderId}\n🔄 Restart gateway để áp dụng.`
+              );
+            } else {
+              await sendDmMsg(ctx, senderId,
+                `⚠️ Không thể ghi config. Thêm thủ công:\n"ownerId": "${senderId}"\nvào plugins.entries.${PLUGIN_ID}.config`
+              );
+            }
+          } else {
+            // Đã có owner → trả về info
+            await sendDmMsg(ctx, senderId, `👑 Owner ID của bot là:\n\n${ownerId}`);
+          }
+          return { handled: true };
+        }
+
+        // Owner DM → config commands hoặc forward LLM
+        if (ownerId && senderId === ownerId) {
+          const ownerResult = await handleOwnerDm(content, senderId, ctx, cmdPrefix);
+          if (ownerResult) return ownerResult;
+          return; // forward to LLM
+        }
+
+        // Allowed user → forward to LLM
+        if (allowedDmUsers.size === 0 || allowedDmUsers.has(senderId)) return;
+
+        // Không nằm trong whitelist → block im lặng
+        logger.info(`[openclaw-zalo-mod] DM blocked from ${senderName} (${senderId}) — not in allowedDmUsers`);
+        return { handled: true };
+      }
+
+      const groupId = rawConvId.replace(/^group:/, '');
+
+      // ── MUTE CHECK — first gate, before everything else ───
+      const isMuted = store.getSetting(groupId, 'muted', false);
+      if (isMuted) {
+        // Only allow /unmute from admin to pass through
+        const unmuteMatch = content.match(new RegExp(`^${cmdPrefix}(unmute|bat-bot)$`, "i"));
+        if (unmuteMatch && isAdmin(senderId, groupId)) {
+          store.setSetting(groupId, 'muted', false);
+          await store.saveSettings();
+          logger.info(`[openclaw-zalo-mod] group ${groupId} UNMUTED by ${senderName}`);
+          await sendGroupMsg(ctx, groupId, '🔊 Bot đã bật lại trong group này!');
+          return { handled: true };
+        }
+        // Muted → ignore everything silently
+        return { handled: true };
+      }
+
+      // ── Extract slash command from anywhere in message ─────
+      // Support: "/command args" AND "@BotName text /command args"
+      const slashMatch = content.match(/(?:^|\s)(\/[a-z][a-z0-9-]*)(.*)$/i);
+      if (slashMatch) {
+        const rawCommand = slashMatch[1].toLowerCase();
+        // Slash command thuộc bot khác (prefix không match) → chặn, không để LLM reply
+        // (tránh trường hợp 2 bot cùng group: /williams-noi-quy lọt vào Mkt và LLM của Mkt trả lời)
+        if (!rawCommand.startsWith(cmdPrefix)) return { handled: true };
+        const command = '/' + rawCommand.slice(cmdPrefix.length);
+        const cmdArgs = slashMatch[2].trim();
+        const args    = cmdArgs ? cmdArgs.split(/\s+/) : [];
+        // Text before the slash command (e.g. "@Bot mai 5h @Mkt đi đá banh /note" → "mai 5h @Mkt đi đá banh")
+        const botMentionRe = new RegExp(botNames.map(n => '@' + n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'), 'gi');
+        const textBefore = content.slice(0, slashMatch.index + (slashMatch[0].startsWith(' ') ? 1 : 0)).trim()
+          .replace(botMentionRe, '').replace(/\s{2,}/g, ' ').trim(); // strip only bot @mentions
+
+        // /noi-quy (nội quy)
+        if (command === '/noi-quy') {
+          await sendGroupMsg(ctx, groupId, buildNoiQuy(getGroupName(groupId), botName, cmdPrefix));
+          return { handled: true };
+        }
+
+        // /mute — admin only: tắt bot hoàn toàn trong group
+        if (command === '/mute' || command === '/tat-bot') {
+          if (!isAdmin(senderId, groupId)) return { handled: true };
+          store.setSetting(groupId, 'muted', true);
+          await store.saveSettings();
+          logger.info(`[openclaw-zalo-mod] group ${groupId} MUTED by ${senderName}`);
+          await sendGroupMsg(ctx, groupId, `🔇 Bot đã tắt trong group này.\nGõ ${cmdPrefix}unmute để bật lại.`);
+          return { handled: true };
+        }
+
+        // /unmute — admin only: bật lại bot (also handled in mute gate above, but kept here for non-muted state)
+        if (command === '/unmute' || command === '/bat-bot') {
+          if (!isAdmin(senderId, groupId)) return { handled: true };
+          store.setSetting(groupId, 'muted', false);
+          await store.saveSettings();
+          await sendGroupMsg(ctx, groupId, '🔊 Bot đang hoạt động bình thường!');
+          return { handled: true };
+        }
+
+        // /menu | /huong-dan
+        if (command === '/menu') {
+          let menu = buildMenu(botName, cmdPrefix);
+          // Nếu sender là owner → hiện thêm owner commands
+          if (ownerId && senderId === ownerId) {
+            menu += `\n\n👑 OWNER (DM riêng với bot):\n  ${cmdPrefix}rules groupid-list\n  ${cmdPrefix}rules groupid-add <groupId> [tên]\n  ${cmdPrefix}rules — Panel cấu hình\n  ${cmdPrefix}rules status — Tổng quan`;
+          }
+          await sendGroupMsg(ctx, groupId, menu);
+          return { handled: true };
+        }
+        if (command === '/huong-dan') {
+          await sendGroupMsg(ctx, groupId, buildHuongDan(botName, cmdPrefix));
+          return { handled: true };
+        }
+
+        const customModeMatch = command.match(/^\/bot-([a-z0-9-]+)-(on|off)$/i);
+        if (customModeMatch) {
+          if (!isAdmin(senderId, groupId)) return { handled: true };
+          const [, slug, state] = customModeMatch;
+          try {
+            const mode = toggleGroupCustomMode(groupId, slug, state === 'on');
+            await store.saveSettings();
+            await sendGroupMsg(ctx, groupId, `✅ ${mode.label}: ${state === 'on' ? 'BẬT' : 'TẮT'}\n🧠 Skill: ${mode.skill}`);
+          } catch (e) {
+            await sendGroupMsg(ctx, groupId, `⚠️ ${e.message}`);
+          }
+          return { handled: true };
+        }
+
+
+        // /report — admin only
+        if (command === '/report') {
+          if (!isAdmin(senderId, groupId)) return { handled: true };
+          await reloadStore();
+          const vio = getStoreDataForGroup(store.getAllViolations(), groupId);
+          const wrn = getStoreDataForGroup(store.getAllWarned(), groupId);
+          const text = buildReport(groupId, vio, wrn);
+          await sendGroupMsg(ctx, groupId, text);
+          return { handled: true };
+        }
+
+        // /warn @name [reason] — admin only
+        if (command === '/warn') {
+          if (!isAdmin(senderId, groupId)) return { handled: true };
+          const targetMentions = (event.mentions || []);
+          // Strip leading @ from args since Zalo body includes @name
+          const rawTarget  = (args[0] || '').replace(/^@/, '');
+          const targetId   = (targetMentions[0]?.uid || rawTarget || '').replace(/^@/, '');
+          const targetName = (targetMentions[0]?.name || rawTarget || targetId).replace(/^@/, '');
+          const reasonArgs = args.slice(1);
+          const reason     = reasonArgs.join(' ').trim() || 'Vui lòng giữ nội dung phù hợp group';
+          if (!targetId) return { handled: true };
+          store.addWarn(groupId, targetId, targetName, reason);
+          await store.saveWarned();
+          const warnCount = store.getWarnCount(groupId, targetId);
+          const kickNote  = warnCount >= 3 ? '\n⛔ Đã warn 3 lần — cân nhắc kick.' : '';
+          // Sync to memory
+          await appendToMemoryFile(groupId, 'members.md', `| ${targetName} | ${warnCount} | ${reason} | ${nowShort()} |`);
+          await appendToMemoryFile(groupId, 'chat-highlights.md', `| ${nowShort()} | Admin | /warn ${targetName}: ${reason} |`);
+          await sendGroupMsg(ctx, groupId,
+            `⚠️ ${targetName} — ${reason}.\nLần tiếp theo admin sẽ xử lý.${kickNote}\n✅ Đã ghi nhận. Lần ${warnCount}.`
+          );
+          return { handled: true };
+        }
+
+        // /note [text] — admin only
+        if (command === '/note') {
+          if (!isAdmin(senderId, groupId)) return { handled: true };
+          const noteText = textBefore || args.join(' ');
+          if (!noteText) return { handled: true };
+          store.addViolation(groupId, 'admin-note', senderName, 'note', noteText);
+          await store.saveViolations();
+          // Sync to memory
+          await appendToMemoryFile(groupId, 'admin-notes.md', `| ${nowShort()} | ${senderName} | ${noteText} |`);
+          await sendGroupMsg(ctx, groupId, `📝 Ghi nhận: ${noteText}`);
+          return { handled: true };
+        }
+
+        // /active-key [key] / /kich-hoat [key] — owner only: kích hoạt key qua chat
+        if (command === '/active-key' || command === '/kich-hoat') {
+          if (!ownerId || senderId !== ownerId) return { handled: true };
+          const key = args[0]?.trim();
+          if (!key) {
+            await sendGroupMsg(ctx, isGroupMsg ? rawConvId : senderId, `⚠️ Vui lòng nhập key. Cú pháp: ${command} [key]`);
+            return { handled: true };
+          }
+          await sendGroupMsg(ctx, isGroupMsg ? rawConvId : senderId, `🔍 Đang xác thực key...`);
+          const result = await verifyLicenseKey(key);
+          if (result.valid) {
+            store.setSetting('global', 'license', {
+              valid: true,
+              plan: result.plan,
+              expiry: result.expiry,
+              deviceId: result.deviceId,
+              key
+            });
+            await store.saveSettings();
+            await sendGroupMsg(ctx, isGroupMsg ? rawConvId : senderId, `✅ Kích hoạt thành công!
+Plan: ${result.plan.toUpperCase()}
+Hạn: ${result.expiry}
+Device ID: ${result.deviceId}`);
+          } else {
+            await sendGroupMsg(ctx, isGroupMsg ? rawConvId : senderId, `❌ Kích hoạt thất bại: ${result.error}`);
+          }
+          return { handled: true };
+        }
+
+        // ${cmdPrefix}rules — owner-only control panel
+        if (command === '/rules') {
+          if (!ownerId || senderId !== ownerId) return { handled: true };
+          const sub = args[0]?.toLowerCase();
+          if (!sub) {
+            await sendGroupMsg(ctx, groupId,
+              `⚙️ ADMIN COMMANDS — ${cmdPrefix}rules\n━━━━━━━━━━━━━━━━━━\n\n🔇 Mute (tắt bot hoàn toàn):\n  /mute   — Tắt bot\n  /unmute — Bật lại\n\n🔕 Silent Mode:\n  ${cmdPrefix}rules silent-on  — Bot chỉ reply khi @tag\n  ${cmdPrefix}rules silent-off — Bot reply mọi tin\n\n🎉 Welcome:\n  ${cmdPrefix}rules welcome-on  — Bật chào member mới\n  ${cmdPrefix}rules welcome-off — Tắt chào\n\n📋 Tracking:\n  ${cmdPrefix}rules tracking-on  — Bật ghi lịch sử chat\n  ${cmdPrefix}rules tracking-off — Tắt ghi lịch sử\n\n🆔 Quản lý ID:\n  ${cmdPrefix}rules groupid\n  ${cmdPrefix}rules groupid-list\n  ${cmdPrefix}rules groupid-add-all\n\n📊 ${cmdPrefix}rules status`
+            );
+            return { handled: true };
+          }
+          if (sub === 'groupid-list') {
+            const lines = ['🆔 DANH SÁCH GROUPS\n━━━━━━━━━━━━━━━━━━'];
+            for (const gId of watchGroupIds) {
+              const name = getGroupName(gId);
+              const muted = store.getSetting(gId, 'muted', false);
+              lines.push(`${muted ? '🔇' : '🔊'} ${name}\n   ID: ${gId}`);
+            }
+            if (watchGroupIds.length === 0) lines.push(`⚠️ Chưa có group nào. Gõ ${cmdPrefix}rules groupid trong group để thêm.`);
+            lines.push(`\n📊 Tổng: ${watchGroupIds.length} group(s)`);
+            await sendGroupMsg(ctx, groupId, lines.join('\n'));
+            return { handled: true };
+          }
+          if (sub === 'groupid') {
+            try {
+              await sendGroupMsg(ctx, groupId, `🔍 Đang cập nhật thông tin group hiện tại...`);
+              const zcaInfo = await syncGroupAdminsFromZCA(groupId);
+              if (!watchGroupIds.includes(groupId)) watchGroupIds.push(groupId);
+              
+              let autoEnabled = false;
+              const allAdmins = getGroupAdmins(groupId);
+              if (allAdmins.includes(ownerId)) {
+                store.setSetting(groupId, 'welcome', true);
+                store.setSetting(groupId, 'follow', true);
+                store.setSetting(groupId, 'tracking', true);
+                autoEnabled = true;
+              }
+              await store.saveSettings();
+
+              const adminNames = getGroupAdminNames(groupId);
+              const adminLine = adminNames.length > 0
+                ? `👑 Admins: ${adminNames.join(', ')}`
+                : '👑 Admin: chưa sync được (ZCA unavailable)';
+              const memberLine = zcaInfo ? `👥 Members: ${zcaInfo.totalMember}` : '';
+              const nameLine = zcaInfo ? `✅ ${zcaInfo.name}` : `✅ ${getGroupName(groupId)}`;
+              const autoLine = autoEnabled ? `\n🎉 welcome+follow BẬT (owner là admin)` : `\n⏸️ owner không phải admin`;
+              
+              await sendGroupMsg(ctx, groupId, `${nameLine}\n🆔 ID: ${groupId}\n${adminLine}${memberLine ? '\n' + memberLine : ''}${autoLine}\n🔄 Restart gateway để áp dụng.`);
+              _invalidateZcaApi();
+            } catch (e) {
+              logger.warn(`[openclaw-zalo-mod] ${cmdPrefix}rules groupid failed: ${e.message}`);
+              await sendGroupMsg(ctx, groupId, `🆔 Group ID: ${groupId}\n⚠️ Lỗi: ${e.message}`);
+            }
+            return { handled: true };
+          }
+          if (sub === 'groupid-add-all') {
+            await processGroupidAddAll(ctx, groupId, true, groupId);
+            return { handled: true };
+          }
+          if (sub === 'silent-on')  { store.setSetting(groupId, 'silent', true);  await store.saveSettings(); await sendGroupMsg(ctx, groupId, '✅ Silent mode: BẬT'); return { handled: true }; }
+          if (sub === 'silent-off') { store.setSetting(groupId, 'silent', false); await store.saveSettings(); await sendGroupMsg(ctx, groupId, '✅ Silent mode: TẮT'); return { handled: true }; }
+          if (sub === 'welcome-on')  { store.setSetting(groupId, 'welcome', true);  await store.saveSettings(); await sendGroupMsg(ctx, groupId, '✅ Welcome: BẬT'); return { handled: true }; }
+          if (sub === 'welcome-off') { store.setSetting(groupId, 'welcome', false); await store.saveSettings(); await sendGroupMsg(ctx, groupId, '✅ Welcome: TẮT'); return { handled: true }; }
+          if (sub === 'tracking-on')  { store.setSetting(groupId, 'tracking', true);  await store.saveSettings(); await sendGroupMsg(ctx, groupId, '✅ Tracking lịch sử chat: BẬT\n📋 Mọi tin nhắn trong group sẽ được ghi vào chat-log.md'); return { handled: true }; }
+          if (sub === 'tracking-off') { store.setSetting(groupId, 'tracking', false); await store.saveSettings(); await sendGroupMsg(ctx, groupId, '✅ Tracking lịch sử chat: TẮT'); return { handled: true }; }
+          if (sub === 'status') {
+            const muted    = store.getSetting(groupId, 'muted', false);
+            const silent   = store.getSetting(groupId, 'silent', true);
+            const welcome  = store.getSetting(groupId, 'welcome', true);
+            const tracking = store.getSetting(groupId, 'tracking', false);
+            await sendGroupMsg(ctx, groupId,
+              `⚙️ CẤU HÌNH BOT\n━━━━━━━━━━━━━━━━━━\n🔇 Mute: ${muted ? 'BẬT (bot im lặng hoàn toàn)' : 'TẮT'}\n🔕 Silent Mode: ${silent ? 'BẬT' : 'TẮT'}\n🎉 Welcome: ${welcome ? 'BẬT' : 'TẮT'}\n📋 Tracking: ${tracking ? 'BẬT' : 'TẮT'}`
+            );
+            return { handled: true };
+          }
+          // Fallback: sub-command không nhận ra → báo lỗi thay vì nuốt im lặng
+          await sendGroupMsg(ctx, groupId, `⚠️ Lệnh ${cmdPrefix}rules ${sub} không hợp lệ.\nGõ ${cmdPrefix}rules để xem danh sách lệnh.`);
+          return { handled: true };
+        }
+
+        // /memory — admin manual digest (optionally with note text)
+        if (command === '/memory') {
+          if (!isAdmin(senderId, groupId)) return { handled: true };
+          const memText = (textBefore || args.join(' ')).replace(/\s{2,}/g, ' ').trim();
+          if (memText) {
+            store.addViolation(groupId, 'admin-note', senderName, 'note', memText);
+            await store.saveViolations();
+            await appendToMemoryFile(groupId, 'admin-notes.md', `| ${nowShort()} | ${senderName} | ${memText} |`);
+          }
+          await reloadStore(); // Fresh read from disk
+          const { warnCount, vioCount } = await writeMemoryDigest(groupId);
+          const extra = memText ? `\n📝 Note: ${memText}` : '';
+          await sendGroupMsg(ctx, groupId,
+            `📝 Đã lưu memory digest!${extra}\n📁 ${getMemorySlug(groupId)}/\n⚠️ ${warnCount} member đã cảnh cáo\n🚫 ${vioCount} vi phạm ghi nhận`
+          );
+          return { handled: true };
+        }
+
+
+        // Unknown slash — block from LLM (prevent error replies)
+        return { handled: true };
+      }
+
+      // ── @Mention check — let through to LLM ──────────────
+      const isMention = isMessageMentioningBot(event, botNames);
+      if (isMention) {
+        // Log mention + sync to memory
+        logger.info(`[openclaw-zalo-mod] @mention from ${senderName} in group ${groupId}: ${content.slice(0, 80)}`);
+        await appendToMemoryFile(groupId, 'chat-highlights.md', `| ${nowShort()} | ${senderName} | ${content.slice(0, 80)} |`);
+
+        // Tracking: ghi cả @mention vào chat-log
+        if (store.getSetting(groupId, 'tracking', false)) {
+          await appendChatLog(groupId, senderName, content);
+        }
+
+        // ── File context injection ─────────────────────────────
+        // OpenClaw zalouser ONLY forwards text to before_dispatch — file types are silently dropped.
+        // When user @mentions bot about a file/image, inject a system note so the LLM
+        // knows to ask for a link instead of hallucinating "chưa thấy file".
+        const FILE_KEYWORDS_RE = /\b(file|pdf|ảnh|hình\s*ảnh|tài\s*liệu|doc|docx|xlsx?|excel|video|mp4|zip|rar|link|tải|download|attachment|đính\s*kèm|xem\s*file|đọc\s*file)\b/i;
+        if (FILE_KEYWORDS_RE.test(content)) {
+          const note = '\n[BOT SYSTEM NOTE: Đây là Group Zalo. File/ảnh đính kèm KHÔNG được forward tới bot trong group — zalouser channel chỉ truyền text. Nếu user đang đề cập tới file, hãy hỏi user: (1) copy+paste link tải về, hoặc (2) paste nội dung text trực tiếp vào chat. KHÔNG nói "gửi file vào đây" vì user đã gửi rồi mà bot không nhận được.]';
+          if (event.body !== undefined) event.body = content + note;
+          if (event.content !== undefined) event.content = content + note;
+          logger.info(`[openclaw-zalo-mod] injected file-context note for @mention in group ${groupId}`);
+        }
+
+
+
+        // ── Auto-answer group management questions locally (0 token) ──
+        const lc = content.toLowerCase();
+
+        // "Ai bị warn" / "warn ai" / "danh sách warn" / "list warn"
+        if (/(?:ai.*warn|warn.*ai|danh.*s[áa]ch.*warn|list.*warn|ai.*b[ịi].*c[ảa]nh.*c[áa]o)/i.test(lc)) {
+          const warns = store.getWarned(groupId);
+          const entries = Object.entries(warns);
+          if (!entries.length) {
+            await sendGroupMsg(ctx, groupId, '✅ Hiện tại chưa có member nào bị warn trong group.');
+          } else {
+            const lines = ['⚠️ DANH SÁCH WARN\n━━━━━━━━━━━━━━━━━━'];
+            for (const [uid, list] of entries) {
+              const last = list[list.length - 1];
+              const name = (last.name || uid).replace(/^@/, '');
+              lines.push(`• ${name} — ${list.length} lần | Lý do: ${last.reason || '—'}`);
+            }
+            await sendGroupMsg(ctx, groupId, lines.join('\n'));
+          }
+          return { handled: true };
+        }
+
+        // "Vi phạm" / "violations" / "spam"
+        if (/(?:vi.*ph[ạa]m|violation|spam.*g[ầa]n)/i.test(lc)) {
+          const violations = store.getViolations(groupId);
+          const allVio = [];
+          for (const [uid, list] of Object.entries(violations)) {
+            if (uid === 'admin-note') continue; // skip admin notes
+            for (const v of list) allVio.push(v);
+          }
+          if (!allVio.length) {
+            await sendGroupMsg(ctx, groupId, '✅ Chưa có vi phạm nào được ghi nhận.');
+          } else {
+            allVio.sort((a, b) => (b.ts || '').localeCompare(a.ts || ''));
+            const lines = [`🚫 VI PHẠM GẦN ĐÂY (${allVio.length} tổng)\n━━━━━━━━━━━━━━━━━━`];
+            for (const v of allVio.slice(0, 5)) {
+              const name = (v.name || '?').replace(/^@/, '');
+              lines.push(`• ${name} — ${v.type} | ${(v.preview || '').slice(0, 30)}`);
+            }
+            await sendGroupMsg(ctx, groupId, lines.join('\n'));
+          }
+          return { handled: true };
+        }
+
+        // "admin" / "ai là admin"
+        if (/(?:admin.*l[àa].*ai|ai.*l[àa].*admin)/i.test(lc)) {
+          const admins = getGroupAdminNames(groupId);
+          if (admins.length > 0) {
+            await sendGroupMsg(ctx, groupId, `👑 Admin group này:\n${admins.map(n => `• ${n}`).join('\n')}`);
+          } else {
+            await sendGroupMsg(ctx, groupId, '👑 Chưa ghi nhận admin nào. Người tạo group gõ ${cmdPrefix}rules groupid để đăng ký.');
+          }
+          return { handled: true };
+        }
+
+        // For all other @mention questions → forward to LLM
+        logger.info(`[openclaw-zalo-mod] forwarding to LLM: ${content.slice(0, 80)}`);
+        return; // undefined = let LLM handle
+      }
+
+      // ── Admin check for violation logging ──────────────────
+      const gAdmins = groupNames[groupId]?.admins || getGroupAdmins(groupId) || [];
+      const creatorId = groupNames[groupId]?.creatorId;
+      const isBotOrOwnerAdmin = ownerId && (gAdmins.map(String).includes(ownerId) || String(creatorId || '') === ownerId);
+
+      // ── Silent mode check ─────────────────────────────────
+      const silentMode = store.getSetting(groupId, 'silent', true);
+      if (silentMode) {
+        // Anti-spam detect silently even in silent mode (only for managed groups where bot/owner is admin)
+        if (isBotOrOwnerAdmin) {
+          const spamType = spamTracker.check(senderId, content);
+          if (spamType) {
+            store.addViolation(groupId, senderId, senderName, spamType, content);
+            await store.saveViolations();
+            // Sync to memory
+            await appendToMemoryFile(groupId, 'violations.md', `| ${nowShort()} | ${senderName} | ${spamType} | ${content.slice(0, 40)} |`);
+            logger.info(`[openclaw-zalo-mod] spam detected: ${spamType} from ${senderName}`);
+          }
+        }
+        // Tracking: ghi lịch sử chat (kể cả silent mode)
+        if (store.getSetting(groupId, 'tracking', false)) {
+          await appendChatLog(groupId, senderName, content);
+        }
+        return { handled: true }; // silent — don't forward to LLM
+      }
+
+      // Non-silent mode: still anti-spam detect (only for managed groups where bot/owner is admin)
+      if (isBotOrOwnerAdmin) {
+        const spamType = spamTracker.check(senderId, content);
+        if (spamType) {
+          store.addViolation(groupId, senderId, senderName, spamType, content);
+          await store.saveViolations();
+          // Sync to memory
+          await appendToMemoryFile(groupId, 'violations.md', `| ${nowShort()} | ${senderName} | ${spamType} | ${content.slice(0, 40)} |`);
+          logger.info(`[openclaw-zalo-mod] ❌ BLOCKED by anti-spam: type=${spamType} sender=${senderName} msg="${content.slice(0, 60)}"`);
+          return { handled: true }; // spam always silently blocked
+        }
+      }
+
+      // Tracking: ghi lịch sử chat (non-silent, non-mention)
+      if (store.getSetting(groupId, 'tracking', false)) {
+        await appendChatLog(groupId, senderName, content);
+      }
+
+      // Non-mention, non-slash, non-spam, non-silent → let LLM decide
+      return;
+    }, { priority: 300 }); // priority 300 = runs before relay plugin (200)
+
+    // ── Fallback: before_model_resolve + before_agent_reply ─────────────
+    // OpenClaw v2026.5.x: runtime plugins cannot register gateway-level hooks.
+    // before_dispatch is not fired for runtime plugins. Use agent-session hooks.
+    const _adminClaims = globalThis.__zaloModAdminClaims ?? new Map();
+    globalThis.__zaloModAdminClaims = _adminClaims;
+
+    api.on('before_model_resolve', async (event, ctx) => {
+      if (ctx?.channelId !== 'zalouser' && ctx?.channel !== 'zalouser') return;
+      const conversationId = String(ctx?.conversationId || '');
+      const groupId = conversationId.startsWith('group:') ? conversationId.replace(/^group:/, '') : '';
+      if (groupId && typeof event?.prompt === 'string') {
+        const modePrompt = buildActiveModePrompt(groupId);
+        if (modePrompt && !event.prompt.includes('[GROUP MODE CONTEXT]')) {
+          event.prompt = `${modePrompt}\n\n${event.prompt}`;
+        }
+      }
+      let userMsg = '';
+      if (event && Array.isArray(event.messages) && event.messages.length > 0) {
+        const lastMsg = event.messages[event.messages.length - 1];
+        if (lastMsg && lastMsg.role === 'user') {
+          userMsg = String(lastMsg.content || '');
+        }
+      }
+      let lc = userMsg.toLowerCase().replace(/['’]/g, '').trim();
+      const ownerCmd = cmdPrefix + 'ownerid';
+      
+      let matched = (lc === 'im admin' || lc === ownerCmd);
+      if (!matched && event && typeof event.prompt === 'string') {
+        const promptLc = event.prompt.toLowerCase().replace(/['’]/g, '').trim();
+        const re = new RegExp(`(?:im admin|${ownerCmd.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')})\\s*$`, 'i');
+        if (re.test(promptLc)) {
+          matched = true;
+        }
+      }
+      
+      if (!matched) return;
+      const sKey = ctx?.sessionKey || 'default';
+      const sId = String(ctx?.senderId || '');
+      logger.info('[openclaw-zalo-mod] [ADMIN-FALLBACK] im admin from ' + sId + ' sKey=' + sKey);
+      _adminClaims.set(sKey, { senderId: sId, ts: Date.now() });
+    });
+
+    api.on('before_agent_reply', async (event, ctx) => {
+      if (ctx?.channelId !== 'zalouser' && ctx?.channel !== 'zalouser') return;
+      const sKey = ctx?.sessionKey || 'default';
+      const claim = _adminClaims.get(sKey);
+      if (!claim || Date.now() - claim.ts > 60000) { _adminClaims.delete(sKey); return; }
+      _adminClaims.delete(sKey);
+      const { senderId } = claim;
+      logger.info('[openclaw-zalo-mod] [ADMIN-FALLBACK] intercepting reply for ' + senderId);
+      try {
+        if (!ownerId) {
+          const patched = await _patchOpenclawConfig(_openclawHome, { ownerId: senderId }, logger, true);
+          if (patched) {
+            ownerId = senderId;
+            adminIds.add(senderId);
+          }
+          await sendDmMsg(ctx, senderId, patched
+            ? 'Sếp đã được đăng ký làm Owner! Owner ID: ' + senderId
+            : 'Không thể ghi config. ownerId: ' + senderId);
+        } else {
+          await sendDmMsg(ctx, senderId, 'Owner ID của bot: ' + ownerId);
+        }
+      } catch (e) { logger.error('[openclaw-zalo-mod] [ADMIN-FALLBACK] error: ' + e.message); }
+      return { handled: true };
+    });
+    // Start member watcher for welcome messages
+    startMemberWatcher();
+
+    logger.info(`[openclaw-zalo-mod] loaded — bot="${botName}" prefix="${cmdPrefix}" owner=${ownerId || 'none'} groups=${watchGroupIds.length} groupNames=${Object.keys(groupNames).length}`);
+  },
+});
+
+export default plugin;
+

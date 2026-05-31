@@ -226,25 +226,6 @@ Cấu hình trong `openclaw.json`:
 
 ---
 
-## 🔄 Release Workflow (Tự động xáo trộn bảo mật & Publish)
-
-Để bảo vệ các tính năng Pro, mã nguồn Javascript phân phối trên ClawHub sẽ tự động được xáo trộn (obfuscate) bằng quy trình build chuyên nghiệp:
-
-```powershell
-# 1. Phát triển, sửa code trong D:\openclaw-zalo-mod\index.js
-# 2. Cập nhật CHANGELOG.md với các tính năng mới
-# 3. Chạy bump-version để cập nhật phiên bản (ví dụ: 2.5.4)
-node bump-version.js
-# 4. Commit sạch lên Git (Thư mục docs/ và code nhạy cảm bị ignore tự động)
-git add .
-git commit -m "chore: release vX.X.X"
-git push
-# 5. Chạy script Premium Build & Publish tự động xáo trộn và đẩy lên ClawHub
-node build-and-publish.js
-```
-
----
-
 ## 📄 License
 
 MIT — see [LICENSE](./LICENSE)

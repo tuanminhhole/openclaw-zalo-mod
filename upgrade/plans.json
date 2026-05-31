@@ -3,8 +3,8 @@
     {
       "id": "personal-monthly",
       "planGroup": "personal",
-      "name": "Gói Cá nhân — Tháng",
-      "nameShort": "Cá nhân (Tháng)",
+      "name": "Personal - Monthly",
+      "nameShort": "Personal Monthly",
       "totalPrice": 99000,
       "priceLabel": "99.000đ/tháng",
       "durationMonths": 1,
@@ -13,8 +13,8 @@
     {
       "id": "personal-yearly",
       "planGroup": "personal",
-      "name": "Gói Cá nhân — Năm",
-      "nameShort": "Cá nhân (Năm)",
+      "name": "Personal - Yearly",
+      "nameShort": "Personal Yearly",
       "totalPrice": 990000,
       "priceLabel": "990.000đ/12 tháng",
       "priceNote": "tiết kiệm 198.000đ",
@@ -24,8 +24,8 @@
     {
       "id": "team-monthly",
       "planGroup": "team",
-      "name": "Gói Team — Tháng",
-      "nameShort": "Team (Tháng)",
+      "name": "Team - Monthly",
+      "nameShort": "Team Monthly",
       "totalPrice": 299000,
       "priceLabel": "299.000đ/tháng",
       "durationMonths": 1,
@@ -34,8 +34,8 @@
     {
       "id": "team-yearly",
       "planGroup": "team",
-      "name": "Gói Team — Năm",
-      "nameShort": "Team (Năm)",
+      "name": "Team - Yearly",
+      "nameShort": "Team Yearly",
       "totalPrice": 2990000,
       "priceLabel": "2.990.000đ/12 tháng",
       "priceNote": "tiết kiệm 598.000đ",
@@ -45,7 +45,7 @@
     {
       "id": "lifetime",
       "planGroup": "lifetime",
-      "name": "Gói Lifetime",
+      "name": "Lifetime Plan",
       "nameShort": "Lifetime",
       "totalPrice": 5000000,
       "priceLabel": "5.000.000đ (trọn đời)",

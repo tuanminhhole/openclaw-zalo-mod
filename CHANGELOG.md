@@ -1,3 +1,18 @@
+## [2.9.1] - 2026-06-01
+
+### Fixed
+
+- **Critical: Fix dual-login destroying cipher keys.** Removed `checkZaloAuthenticated` fallback from `getSafeZaloApi()`. This function called `ensureApi()` → `zalo.login()` which created new cipher keys, breaking the existing bot session and disconnecting the bot. Now only reuses shared API from `globalThis.__zcaApiByProfile`.
+- Removed dead code: `loadZaloSession()`, `_zaloCookies`, `_zaloImei` (directly reading credentials was redundant and risky).
+
+### Changed
+
+- **Config separated from openclaw.json.** All plugin config now lives in `plugins-data/zalo-mod/config.json`. Only 4 keys remain in openclaw.json configSchema: `botName`, `zaloDisplayNames`, `ownerId`, `dashboardPort`. Auto-migration on first load.
+- **groupNames no longer written to openclaw.json.** `group-names.json` in plugin-data is the sole source of truth (migration was already in place, this removes the write-back).
+- `_patchOpenclawConfig()` now filters keys: only allowed keys go to openclaw.json, overflow goes to config.json. Non-allowed keys are cleaned from openclaw.json on patch.
+- `allowedDmUsers` changes now save to `config.json` directly via `savePluginConfig()`.
+
+
 ## [2.7.8] - 2026-05-27
 
 ### Fixed

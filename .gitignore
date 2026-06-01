@@ -1,5 +1,6 @@
 node_modules/
 *.log
+index.original.js
 .DS_Store
 .env
 .agent/

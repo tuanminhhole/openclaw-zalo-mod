@@ -1,4 +1,4 @@
-## [2.9.1] - 2026-06-01
+## [2.9.2] - 2026-06-01
 
 ### Fixed
 
@@ -9,8 +9,9 @@
 
 - **Config separated from openclaw.json.** All plugin config now lives in `plugins-data/zalo-mod/config.json`. Only 4 keys remain in openclaw.json configSchema: `botName`, `zaloDisplayNames`, `ownerId`, `dashboardPort`. Auto-migration on first load.
 - **groupNames no longer written to openclaw.json.** `group-names.json` in plugin-data is the sole source of truth (migration was already in place, this removes the write-back).
-- `_patchOpenclawConfig()` now filters keys: only allowed keys go to openclaw.json, overflow goes to config.json. Non-allowed keys are cleaned from openclaw.json on patch.
+- `_patchOpenclawConfig()` now filters keys: only allowed keys go to openclaw.json, overflow goes to config.json.
 - `allowedDmUsers` changes now save to `config.json` directly via `savePluginConfig()`.
+- **Fix config migration losing botName/ownerId/zaloDisplayNames.** Previous version's `additionalProperties: false` in configSchema caused OpenClaw SDK to strip existing config before plugin could migrate them. Changed to `additionalProperties: true`. Migration now reads directly from openclaw.json file (bypassing SDK schema stripping) and auto-recovers empty config.json.
 
 
 ## [2.7.8] - 2026-05-27

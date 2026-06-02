@@ -1,3 +1,8 @@
+## [2.9.3] - 2026-06-03
+
+### Changed
+- Compatibility adjustments and minor maintenance updates.
+
 ## [2.9.2] - 2026-06-01
 
 ### Fixed

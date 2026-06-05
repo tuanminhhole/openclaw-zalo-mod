@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="vi">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -7,45 +8,95 @@
   <link rel="icon" type="image/png" sizes="32x32" href="./logo.png?v=20260515">
   <link rel="shortcut icon" href="./logo.png?v=20260515">
   <link rel="apple-touch-icon" href="./logo.png?v=20260515">
-  <link rel="stylesheet" href="/dashboard.css">
-  <script src="/dashboard.js" defer></script>
+  <link rel="stylesheet" href="./dashboard.css?v=20260605a">
+  <script src="./dashboard.js?v=20260605a" defer></script>
 </head>
+
 <body>
   <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
   <div class="app">
     <aside class="sidebar" aria-label="Điều hướng chính">
       <div class="brand">
         <div class="brand-mark" aria-hidden="true">
-          <img src="./logo.png" alt="OpenClaw logo" onerror="this.style.display='none'; this.parentElement.classList.add('is-fallback')">
+          <img src="./logo.png" alt="OpenClaw logo"
+            onerror="this.style.display='none'; this.parentElement.classList.add('is-fallback')">
         </div>
-        <div>
+        <div class="brand-text">
           <h1>Zalo Owner</h1>
           <p>Quản trị Bot Zalo</p>
         </div>
+        <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" aria-label="Collapse sidebar" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
       </div>
       <nav class="nav" data-nav>
-        <button class="active" data-section="overview"><svg viewBox="0 0 24 24" fill="none"><path d="M4 13h6V4H4v9Zm10 7h6V4h-6v16ZM4 20h6v-4H4v4Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span class="nav-label">Tổng quan</span></button>
-        <button data-section="groups"><svg viewBox="0 0 24 24" fill="none"><path d="M16 11a4 4 0 1 0-8 0m8 0a4 4 0 1 1-8 0m8 0h3a3 3 0 0 1 3 3v3M8 11H5a3 3 0 0 0-3 3v3m5 3v-2a5 5 0 0 1 10 0v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="nav-label">Nhóm</span></button>
-        <button data-section="members"><svg viewBox="0 0 24 24" fill="none"><path d="M15 8a4 4 0 1 1-8 0 4 4 0 0 1 8 0Zm-12 13a8 8 0 0 1 16 0m0-13h3m-1.5-1.5v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="nav-label">Thành viên</span></button>
-        <button data-section="friends"><svg viewBox="0 0 24 24" fill="none"><path d="M8 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm8 10v-2a6 6 0 0 0-12 0v2m15-9v6m3-3h-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="nav-label">Bạn bè</span></button>
-        <button data-section="messages"><svg viewBox="0 0 24 24" fill="none"><path d="M21 12a8 8 0 0 1-8 8H6l-4 2 1.4-4.2A8 8 0 1 1 21 12Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span class="nav-label">Tin nhắn</span></button>
-        <button data-section="api"><svg viewBox="0 0 24 24" fill="none"><path d="M8 8 4 12l4 4m8-8 4 4-4 4M14 4l-4 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="nav-label">Danh mục API</span></button>
-        <button data-section="upgrade"><svg viewBox="0 0 24 24" fill="none"><path d="m12 3 2.7 5.5 6 .9-4.3 4.2 1 5.9L12 16.6l-5.4 2.9 1-5.9L3.3 9.4l6-.9L12 3Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span class="nav-label">Nâng cấp</span></button>
-        <button data-section="danger"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3 2 21h20L12 3Zm0 7v4m0 3h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="nav-label">Khu nguy hiểm</span></button>
+        <button class="active" data-section="overview"><svg viewBox="0 0 24 24" fill="none">
+            <path d="M4 13h6V4H4v9Zm10 7h6V4h-6v16ZM4 20h6v-4H4v4Z" stroke="currentColor" stroke-width="2"
+              stroke-linejoin="round" />
+          </svg><span class="nav-label">Tổng quan</span></button>
+        <button data-section="groups"><svg viewBox="0 0 24 24" fill="none">
+            <path
+              d="M16 11a4 4 0 1 0-8 0m8 0a4 4 0 1 1-8 0m8 0h3a3 3 0 0 1 3 3v3M8 11H5a3 3 0 0 0-3 3v3m5 3v-2a5 5 0 0 1 10 0v2"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg><span class="nav-label">Nhóm</span></button>
+        <button data-section="members"><svg viewBox="0 0 24 24" fill="none">
+            <path d="M15 8a4 4 0 1 1-8 0 4 4 0 0 1 8 0Zm-12 13a8 8 0 0 1 16 0m0-13h3m-1.5-1.5v3" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" />
+          </svg><span class="nav-label">Thành viên</span></button>
+        <button data-section="friends"><svg viewBox="0 0 24 24" fill="none">
+            <path d="M8 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm8 10v-2a6 6 0 0 0-12 0v2m15-9v6m3-3h-6" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" />
+          </svg><span class="nav-label">Bạn bè</span></button>
+        <button data-section="messages"><svg viewBox="0 0 24 24" fill="none">
+            <path d="M21 12a8 8 0 0 1-8 8H6l-4 2 1.4-4.2A8 8 0 1 1 21 12Z" stroke="currentColor" stroke-width="2"
+              stroke-linejoin="round" />
+          </svg><span class="nav-label">Tin nhắn</span></button>
+        <button data-section="upgrade"><svg viewBox="0 0 24 24" fill="none">
+            <path d="m12 3 2.7 5.5 6 .9-4.3 4.2 1 5.9L12 16.6l-5.4 2.9 1-5.9L3.3 9.4l6-.9L12 3Z" stroke="currentColor"
+              stroke-width="2" stroke-linejoin="round" />
+          </svg><span class="nav-label">Nâng cấp</span></button>
+        <button data-section="danger"><svg viewBox="0 0 24 24" fill="none">
+            <path d="M12 3 2 21h20L12 3Zm0 7v4m0 3h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round" />
+          </svg><span class="nav-label">Khu nguy hiểm</span></button>
       </nav>
       <div class="sidebar-footer">
         <div class="sidebar-card">
           <strong>Chế độ vận hành</strong>
-          <span>Dashboard gọi API thật khi ZCA khả dụng. Action rủi ro cao luôn cần xác nhận và được ghi audit log.</span>
+          <span>Dashboard gọi API thật khi ZCA khả dụng. Action rủi ro cao luôn cần xác nhận và được ghi audit
+            log.</span>
         </div>
         <div class="plugin-meta">
-          <strong>zalo-mod <span id="pluginVersion">v2.9.3</span></strong>
+          <strong>zalo-mod <span id="pluginVersion">v2.9.5</span></strong>
           <span>Được làm ❤️ bởi tuanminhole</span>
           <div class="socials" aria-label="Author links">
-            <a href="https://www.facebook.com/holeminhtuan.it/" target="_blank" rel="noreferrer" aria-label="Facebook"><svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 22v-8h2.7l.4-3.1h-3.1V8.9c0-.9.3-1.5 1.6-1.5h1.7V4.6c-.3 0-1.3-.1-2.5-.1-2.5 0-4.2 1.5-4.2 4.3v2.1H7.3V14h2.8v8h3.4Z"/></svg></a>
-            <a href="https://t.me/holeminhtuan_it" target="_blank" rel="noreferrer" aria-label="Telegram"><svg class="icon" viewBox="0 0 24 24" fill="none"><path d="m21 4-3.2 16.1c-.2.9-.8 1.1-1.6.7l-4.8-3.6-2.3 2.2c-.3.3-.5.5-1 .5l.4-5 9-8.1c.4-.4-.1-.6-.6-.3L5.7 13.5.9 12c-.9-.3-.9-.9.2-1.3L19.8 3.5c.8-.3 1.5.2 1.2.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></a>
-            <a href="https://zalo.me/0962794917" target="_blank" rel="noreferrer" aria-label="Zalo"><svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M5.5 6.5h13v8.2c0 2.1-1.7 3.8-3.8 3.8H10l-3.8 2v-2A3.7 3.7 0 0 1 2 14.8V10c0-1.9 1.6-3.5 3.5-3.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M7 10h4l-4 4h4m2-4v4m2-4h2.2c.8 0 1.3.5 1.3 1.2 0 .5-.3.9-.8 1.1l1.1 1.7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
-            <a href="https://github.com/tuanminhhole/openclaw-zalo-mod" target="_blank" rel="noreferrer" aria-label="GitHub"><svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-3.2 19.5c.5.1.7-.2.7-.5v-1.8c-2.8.6-3.4-1.2-3.4-1.2-.5-1.1-1.1-1.4-1.1-1.4-.9-.6.1-.6.1-.6 1 .1 1.6 1.1 1.6 1.1.9 1.6 2.4 1.1 2.9.8.1-.7.4-1.1.7-1.4-2.2-.3-4.6-1.1-4.6-4.9 0-1.1.4-2 1-2.7-.1-.3-.5-1.3.1-2.7 0 0 .9-.3 2.8 1a9.4 9.4 0 0 1 5 0c1.9-1.3 2.8-1 2.8-1 .6 1.4.2 2.4.1 2.7.7.7 1 1.6 1 2.7 0 3.8-2.3 4.6-4.6 4.9.4.3.8 1 .8 2v2.9c0 .3.2.6.8.5A10 10 0 0 0 12 2Z"/></svg></a>
+            <a href="https://www.facebook.com/holeminhtuan.it/" target="_blank" rel="noreferrer"
+              aria-label="Facebook"><svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+                <path
+                  d="M13.5 22v-8h2.7l.4-3.1h-3.1V8.9c0-.9.3-1.5 1.6-1.5h1.7V4.6c-.3 0-1.3-.1-2.5-.1-2.5 0-4.2 1.5-4.2 4.3v2.1H7.3V14h2.8v8h3.4Z" />
+              </svg></a>
+            <a href="https://t.me/holeminhtuan_it" target="_blank" rel="noreferrer" aria-label="Telegram"><svg
+                class="icon" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="m21 4-3.2 16.1c-.2.9-.8 1.1-1.6.7l-4.8-3.6-2.3 2.2c-.3.3-.5.5-1 .5l.4-5 9-8.1c.4-.4-.1-.6-.6-.3L5.7 13.5.9 12c-.9-.3-.9-.9.2-1.3L19.8 3.5c.8-.3 1.5.2 1.2.5Z"
+                  stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
+              </svg></a>
+            <a href="https://zalo.me/0962794917" target="_blank" rel="noreferrer" aria-label="Zalo"><svg class="icon"
+                viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M5.5 6.5h13v8.2c0 2.1-1.7 3.8-3.8 3.8H10l-3.8 2v-2A3.7 3.7 0 0 1 2 14.8V10c0-1.9 1.6-3.5 3.5-3.5Z"
+                  stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
+                <path d="M7 10h4l-4 4h4m2-4v4m2-4h2.2c.8 0 1.3.5 1.3 1.2 0 .5-.3.9-.8 1.1l1.1 1.7" stroke="currentColor"
+                  stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+              </svg></a>
+            <a href="https://github.com/tuanminhhole/openclaw-zalo-mod" target="_blank" rel="noreferrer"
+              aria-label="GitHub"><svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+                <path
+                  d="M12 2a10 10 0 0 0-3.2 19.5c.5.1.7-.2.7-.5v-1.8c-2.8.6-3.4-1.2-3.4-1.2-.5-1.1-1.1-1.4-1.1-1.4-.9-.6.1-.6.1-.6 1 .1 1.6 1.1 1.6 1.1.9 1.6 2.4 1.1 2.9.8.1-.7.4-1.1.7-1.4-2.2-.3-4.6-1.1-4.6-4.9 0-1.1.4-2 1-2.7-.1-.3-.5-1.3.1-2.7 0 0 .9-.3 2.8 1a9.4 9.4 0 0 1 5 0c1.9-1.3 2.8-1 2.8-1 .6 1.4.2 2.4.1 2.7.7.7 1 1.6 1 2.7 0 3.8-2.3 4.6-4.6 4.9.4.3.8 1 .8 2v2.9c0 .3.2.6.8.5A10 10 0 0 0 12 2Z" />
+              </svg></a>
           </div>
         </div>
       </div>
@@ -53,26 +104,82 @@
     <main>
       <header class="topbar">
         <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle menu" type="button">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="6" x2="20" y2="6"></line><line x1="4" y1="18" x2="20" y2="18"></line></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="4" y1="12" x2="20" y2="12"></line>
+            <line x1="4" y1="6" x2="20" y2="6"></line>
+            <line x1="4" y1="18" x2="20" y2="18"></line>
+          </svg>
         </button>
         <div class="search">
-          <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="m21 21-4.3-4.3M10.8 18a7.2 7.2 0 1 1 0-14.4 7.2 7.2 0 0 1 0 14.4Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <svg class="icon" viewBox="0 0 24 24" fill="none">
+            <path d="m21 21-4.3-4.3M10.8 18a7.2 7.2 0 1 1 0-14.4 7.2 7.2 0 0 1 0 14.4Z" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" />
+          </svg>
           <input id="search" type="search" placeholder="Tìm group, member, userId, API...">
         </div>
+        <div id="topbarBotFilter" style="margin-right: 12px; display: inline-flex; align-items: center;"></div>
         <div id="headerLicenseBadge" class="header-license-badge" onclick="setSection('upgrade')"></div>
-        <div class="theme-toggle" id="themeToggle" role="group" aria-label="Toggle theme">
-          <button class="theme-choice active" type="button" data-theme-choice="light"><svg class="icon theme-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 13px; height: 13px; margin-right: 4px; display: inline-block; vertical-align: middle;"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path></svg>Light</button>
-          <button class="theme-choice" type="button" data-theme-choice="dark"><svg class="icon theme-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 13px; height: 13px; margin-right: 4px; display: inline-block; vertical-align: middle;"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>Dark</button>
+        <button class="theme-toggle-btn" id="themeToggle" type="button" aria-label="Toggle theme">
+          <svg class="icon theme-icon moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+          </svg>
+          <svg class="icon theme-icon sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+          </svg>
+        </button>
+        <div class="lang-toggle-switch" id="langToggle" role="group" aria-label="Đổi ngôn ngữ">
+          <span class="lang-slider-knob"></span>
+          <span class="lang-flag-option" id="langVi">
+            <svg viewBox="0 0 30 20" width="18" height="12">
+              <rect width="30" height="20" fill="#da251d"/>
+              <polygon points="15,4 16.2,8.3 20.3,8.3 17,10.8 18.2,15.1 15,12.5 11.8,15.1 13,10.8 9.7,8.3 13.8,8.3" fill="#ffff00"/>
+            </svg>
+          </span>
+          <span class="lang-flag-option" id="langEn">
+            <svg viewBox="0 0 30 20" width="18" height="12">
+              <rect width="30" height="20" fill="#ffffff"/>
+              <rect width="30" height="1.54" fill="#b22234"/>
+              <rect y="3.08" width="30" height="1.54" fill="#b22234"/>
+              <rect y="6.15" width="30" height="1.54" fill="#b22234"/>
+              <rect y="9.23" width="30" height="1.54" fill="#b22234"/>
+              <rect y="12.3" width="30" height="1.54" fill="#b22234"/>
+              <rect y="15.38" width="30" height="1.54" fill="#b22234"/>
+              <rect y="18.46" width="30" height="1.54" fill="#b22234"/>
+              <rect width="12" height="10.77" fill="#3c3b6e"/>
+              <circle cx="2.5" cy="2" r="0.4" fill="#fff"/>
+              <circle cx="5.5" cy="2" r="0.4" fill="#fff"/>
+              <circle cx="8.5" cy="2" r="0.4" fill="#fff"/>
+              <circle cx="4" cy="3.5" r="0.4" fill="#fff"/>
+              <circle cx="7" cy="3.5" r="0.4" fill="#fff"/>
+              <circle cx="2.5" cy="5" r="0.4" fill="#fff"/>
+              <circle cx="5.5" cy="5" r="0.4" fill="#fff"/>
+              <circle cx="8.5" cy="5" r="0.4" fill="#fff"/>
+              <circle cx="4" cy="6.5" r="0.4" fill="#fff"/>
+              <circle cx="7" cy="6.5" r="0.4" fill="#fff"/>
+              <circle cx="2.5" cy="8" r="0.4" fill="#fff"/>
+              <circle cx="5.5" cy="8" r="0.4" fill="#fff"/>
+              <circle cx="8.5" cy="8" r="0.4" fill="#fff"/>
+              <circle cx="4" cy="9.5" r="0.4" fill="#fff"/>
+              <circle cx="7" cy="9.5" r="0.4" fill="#fff"/>
+            </svg>
+          </span>
         </div>
-        <div class="lang-toggle" id="langToggle" role="group" aria-label="Đổi ngôn ngữ" aria-pressed="false">
-          <svg class="icon lang-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; color: var(--muted); margin-left: 6px;"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
-          <span class="lang-switch"><span id="langVi">VI</span><span id="langEn">EN</span></span>
-        </div>
-        <div class="owner-pill">
+        <div class="owner-pill" id="ownerPill">
           <div class="avatar">K</div>
           <div class="owner-text">
             <strong id="ownerName">Owner</strong>
             <small id="ownerRole">Owner</small>
+          </div>
+          <div class="owner-dropdown" id="ownerDropdown">
+            <div class="owner-dropdown-item">
+              <span class="label" data-i18n="dropdownPlanLabel">Gói:</span>
+              <span class="value" id="dropdownPlan">FREE</span>
+            </div>
+            <div class="owner-dropdown-item">
+              <span class="label" data-i18n="dropdownExpiryLabel">Hạn dùng:</span>
+              <span class="value" id="dropdownExpiry">-</span>
+            </div>
           </div>
         </div>
       </header>
@@ -80,27 +187,54 @@
         <div class="page-head">
           <div>
             <h2>Tổng quan vận hành</h2>
-            <p>Theo dõi group, pending member, friend request và các action quan trọng trong một màn hình gọn cho owner.</p>
+            <p>Theo dõi group, pending member, friend request và các action quan trọng trong một màn hình gọn cho owner.
+            </p>
           </div>
           <div class="actions">
-            <button class="btn" data-action="sync"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 0 1-14.8 4.2M4 12A8 8 0 0 1 18.8 7.8M20 5v5h-5M4 19v-5h5"/></svg>Sync Account</button>
-            <button class="btn" data-action="open-upgrade"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; margin-right: 6px; vertical-align: middle;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>Nâng cấp</button>
-            <button class="btn primary" data-action="open-api"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; margin-right: 6px; vertical-align: middle;"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>Danh mục API</button>
+            <button class="btn" data-action="sync"><svg class="icon" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 12a8 8 0 0 1-14.8 4.2M4 12A8 8 0 0 1 18.8 7.8M20 5v5h-5M4 19v-5h5" />
+              </svg>Sync Account</button>
+            <button class="btn" data-action="open-upgrade"><svg class="icon" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                style="width: 14px; height: 14px; margin-right: 6px; vertical-align: middle;">
+                <polygon
+                  points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
+                </polygon>
+              </svg>Nâng cấp</button>
           </div>
         </div>
+
         <div class="free-mode-banner">
           <div>
             <span class="free-pill">Free Mode</span>
             <h3>Bạn vẫn dùng được UI miễn phí. Nâng cấp để mở khóa điều khiển nâng cao.</h3>
             <p>Thanh toán qua Zalo bot → nhận key → nhập key để kích hoạt.</p>
           </div>
-          <button class="btn primary" type="button" data-action="open-upgrade"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; margin-right: 6px; vertical-align: middle;"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>Xem bảng giá</button>
+          <button class="btn primary" type="button" data-action="open-upgrade"><svg class="icon" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+              style="width: 14px; height: 14px; margin-right: 6px; vertical-align: middle;">
+              <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+              <line x1="7" y1="7" x2="7.01" y2="7"></line>
+            </svg>Xem bảng giá</button>
         </div>
         <div class="grid stats">
-          <div class="card metric"><span>Nhóm quản lý</span><strong><span class="shimmer-placeholder" style="width: 45px; height: 28px; margin: 4px 0;"></span></strong><div class="trend"><span class="shimmer-placeholder" style="width: 100px; height: 14px;"></span></div></div>
-          <div class="card metric"><span>Member đang chờ duyệt</span><strong><span class="shimmer-placeholder" style="width: 45px; height: 28px; margin: 4px 0;"></span></strong><div class="trend"><span class="shimmer-placeholder" style="width: 120px; height: 14px;"></span></div></div>
-          <div class="card metric"><span>Friend requests</span><strong><span class="shimmer-placeholder" style="width: 45px; height: 28px; margin: 4px 0;"></span></strong><div class="trend"><span class="shimmer-placeholder" style="width: 90px; height: 14px;"></span></div></div>
-          <div class="card metric"><span>Action rủi ro cao</span><strong><span class="shimmer-placeholder" style="width: 45px; height: 28px; margin: 4px 0;"></span></strong><div class="trend"><span class="shimmer-placeholder" style="width: 110px; height: 14px;"></span></div></div>
+          <div class="card metric"><span>Nhóm quản lý</span><strong><span class="shimmer-placeholder"
+                style="width: 45px; height: 28px; margin: 4px 0;"></span></strong>
+            <div class="trend"><span class="shimmer-placeholder" style="width: 100px; height: 14px;"></span></div>
+          </div>
+          <div class="card metric"><span>Member đang chờ duyệt</span><strong><span class="shimmer-placeholder"
+                style="width: 45px; height: 28px; margin: 4px 0;"></span></strong>
+            <div class="trend"><span class="shimmer-placeholder" style="width: 120px; height: 14px;"></span></div>
+          </div>
+          <div class="card metric"><span>Friend requests</span><strong><span class="shimmer-placeholder"
+                style="width: 45px; height: 28px; margin: 4px 0;"></span></strong>
+            <div class="trend"><span class="shimmer-placeholder" style="width: 90px; height: 14px;"></span></div>
+          </div>
+          <div class="card metric"><span>Action rủi ro cao</span><strong><span class="shimmer-placeholder"
+                style="width: 45px; height: 28px; margin: 4px 0;"></span></strong>
+            <div class="trend"><span class="shimmer-placeholder" style="width: 110px; height: 14px;"></span></div>
+          </div>
         </div>
         <div class="layout">
           <div class="card">
@@ -113,28 +247,72 @@
             </div>
             <div class="table-wrap">
               <table>
-                <thead><tr><th>Group</th><th>Thành viên</th><th>Cảnh báo</th><th>Mode</th><th>Action</th></tr></thead>
+                <thead>
+                  <tr>
+                    <th>Group</th>
+                    <th>Thành viên</th>
+                    <th>Cảnh báo</th>
+                    <th>Mode</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
                 <tbody>
                   <tr>
-                    <td><div class="shimmer-placeholder" style="width: 140px; height: 16px; margin-bottom: 4px;"></div><br><div class="shimmer-placeholder" style="width: 85px; height: 12px;"></div></td>
-                    <td><div class="shimmer-placeholder" style="width: 35px; height: 16px;"></div></td>
-                    <td><div class="shimmer-placeholder" style="width: 75px; height: 20px; border-radius: 20px;"></div></td>
-                    <td><div class="shimmer-placeholder" style="width: 60px; height: 20px; border-radius: 20px;"></div></td>
-                    <td><div class="shimmer-placeholder" style="width: 65px; height: 26px; border-radius: 6px;"></div></td>
+                    <td>
+                      <div class="shimmer-placeholder" style="width: 140px; height: 16px; margin-bottom: 4px;"></div>
+                      <br>
+                      <div class="shimmer-placeholder" style="width: 85px; height: 12px;"></div>
+                    </td>
+                    <td>
+                      <div class="shimmer-placeholder" style="width: 35px; height: 16px;"></div>
+                    </td>
+                    <td>
+                      <div class="shimmer-placeholder" style="width: 75px; height: 20px; border-radius: 20px;"></div>
+                    </td>
+                    <td>
+                      <div class="shimmer-placeholder" style="width: 60px; height: 20px; border-radius: 20px;"></div>
+                    </td>
+                    <td>
+                      <div class="shimmer-placeholder" style="width: 65px; height: 26px; border-radius: 6px;"></div>
+                    </td>
                   </tr>
                   <tr>
-                    <td><div class="shimmer-placeholder" style="width: 120px; height: 16px; margin-bottom: 4px;"></div><br><div class="shimmer-placeholder" style="width: 95px; height: 12px;"></div></td>
-                    <td><div class="shimmer-placeholder" style="width: 35px; height: 16px;"></div></td>
-                    <td><div class="shimmer-placeholder" style="width: 75px; height: 20px; border-radius: 20px;"></div></td>
-                    <td><div class="shimmer-placeholder" style="width: 60px; height: 20px; border-radius: 20px;"></div></td>
-                    <td><div class="shimmer-placeholder" style="width: 65px; height: 26px; border-radius: 6px;"></div></td>
+                    <td>
+                      <div class="shimmer-placeholder" style="width: 120px; height: 16px; margin-bottom: 4px;"></div>
+                      <br>
+                      <div class="shimmer-placeholder" style="width: 95px; height: 12px;"></div>
+                    </td>
+                    <td>
+                      <div class="shimmer-placeholder" style="width: 35px; height: 16px;"></div>
+                    </td>
+                    <td>
+                      <div class="shimmer-placeholder" style="width: 75px; height: 20px; border-radius: 20px;"></div>
+                    </td>
+                    <td>
+                      <div class="shimmer-placeholder" style="width: 60px; height: 20px; border-radius: 20px;"></div>
+                    </td>
+                    <td>
+                      <div class="shimmer-placeholder" style="width: 65px; height: 26px; border-radius: 6px;"></div>
+                    </td>
                   </tr>
                   <tr>
-                    <td><div class="shimmer-placeholder" style="width: 150px; height: 16px; margin-bottom: 4px;"></div><br><div class="shimmer-placeholder" style="width: 90px; height: 12px;"></div></td>
-                    <td><div class="shimmer-placeholder" style="width: 35px; height: 16px;"></div></td>
-                    <td><div class="shimmer-placeholder" style="width: 75px; height: 20px; border-radius: 20px;"></div></td>
-                    <td><div class="shimmer-placeholder" style="width: 60px; height: 20px; border-radius: 20px;"></div></td>
-                    <td><div class="shimmer-placeholder" style="width: 65px; height: 26px; border-radius: 6px;"></div></td>
+                    <td>
+                      <div class="shimmer-placeholder" style="width: 150px; height: 16px; margin-bottom: 4px;"></div>
+                      <br>
+                      <div class="shimmer-placeholder" style="width: 90px; height: 12px;"></div>
+                    </td>
+                    <td>
+                      <div class="shimmer-placeholder" style="width: 35px; height: 16px;"></div>
+                    </td>
+                    <td>
+                      <div class="shimmer-placeholder" style="width: 75px; height: 20px; border-radius: 20px;"></div>
+                    </td>
+                    <td>
+                      <div class="shimmer-placeholder" style="width: 60px; height: 20px; border-radius: 20px;"></div>
+                    </td>
+                    <td>
+                      <div class="shimmer-placeholder" style="width: 65px; height: 26px; border-radius: 6px;"></div>
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -181,13 +359,19 @@
           </div>
           <div class="actions">
             <button class="btn" data-action="sync">Import session</button>
-            <button class="btn primary" type="button" disabled title="Create group sẽ được bật sau khi thêm form member bắt buộc">Create group</button>
+            <button class="btn primary" type="button" disabled
+              title="Create group sẽ được bật sau khi thêm form member bắt buộc">Create group</button>
           </div>
         </div>
         <div class="card">
-          <div class="panel-head">
-            <div class="segmented">
-              <button class="active" data-group-filter="all">All</button><button data-group-filter="silent">Silent</button><button data-group-filter="welcome">Welcome</button><button data-group-filter="muted">Muted</button><button data-group-filter="spam">Spam watch</button>
+          <div class="panel-head" style="flex-wrap: wrap; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+              <div class="segmented">
+                <button class="active" data-group-filter="all">All</button><button
+                  data-group-filter="silent">Silent</button><button data-group-filter="welcome">Welcome</button><button
+                  data-group-filter="muted">Muted</button><button data-group-filter="spam">Spam</button>
+              </div>
+              <div id="groupBotFilters" class="bot-filters-container"></div>
             </div>
             <div class="bulk-bar">
               <strong id="bulkCount">0 group selected</strong>
@@ -196,11 +380,36 @@
           </div>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Group</th><th>Approval</th><th>Features</th><th>Smart modes</th></tr></thead>
+              <thead>
+                <tr>
+                  <th>Group</th>
+                  <th>Approval</th>
+                  <th>Features</th>
+                  <th>Smart modes</th>
+                </tr>
+              </thead>
               <tbody>
-                <tr><td><strong>OpenClaw Zalo Setup</strong><small>1,284 members · 18 pending</small></td><td>1 owner · 6 admins</td><td><span class="status on">Enabled</span></td><td>Silent, Welcome, Tracking</td><td><button class="btn">Settings</button></td></tr>
-                <tr><td><strong>AI Automation VN</strong><small>846 members · 9 pending</small></td><td>1 owner · 3 admins</td><td><span class="status off">Disabled</span></td><td>Welcome</td><td><button class="btn">Settings</button></td></tr>
-                <tr><td><strong>Support Docker VPS</strong><small>392 members · 0 pending</small></td><td>1 owner · 2 admins</td><td><span class="status on">Enabled</span></td><td>Spam watch</td><td><button class="btn">Settings</button></td></tr>
+                <tr>
+                  <td><strong>OpenClaw Zalo Setup</strong><small>1,284 members · 18 pending</small></td>
+                  <td>1 owner · 6 admins</td>
+                  <td><span class="status on">Enabled</span></td>
+                  <td>Silent, Welcome, Tracking</td>
+                  <td><button class="btn">Settings</button></td>
+                </tr>
+                <tr>
+                  <td><strong>AI Automation VN</strong><small>846 members · 9 pending</small></td>
+                  <td>1 owner · 3 admins</td>
+                  <td><span class="status off">Disabled</span></td>
+                  <td>Welcome</td>
+                  <td><button class="btn">Settings</button></td>
+                </tr>
+                <tr>
+                  <td><strong>Support Docker VPS</strong><small>392 members · 0 pending</small></td>
+                  <td>1 owner · 2 admins</td>
+                  <td><span class="status on">Enabled</span></td>
+                  <td>Spam</td>
+                  <td><button class="btn">Settings</button></td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -216,19 +425,26 @@
         <div style="width: 100%; margin-top: 14px;">
           <div class="card" style="padding: 16px;">
             <!-- Consolidated Toolbar: Merge Chọn nhóm and Bulk Bar to 1 Row -->
-            <div class="members-toolbar" style="border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 16px;">
-              <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; width: 100%;">
+            <div class="members-toolbar"
+              style="border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 16px;">
+              <div
+                style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; width: 100%;">
                 <!-- Group Select (Left side) -->
-                <div style="display: flex; align-items: center; gap: 12px; flex: 0 0 450px; position: relative;">
-                  <span style="font-weight: 600; color: var(--text-muted); font-size: 13px; white-space: nowrap;">Chọn nhóm:</span>
-                  <div class="custom-select-container" id="membersGroupSelectContainer" style="flex: 1; max-width: 370px;">
+                <div class="members-group-select" style="position: relative;">
+                  <span style="font-weight: 600; color: var(--text-muted); font-size: 13px; white-space: nowrap;">Chọn
+                    nhóm:</span>
+                  <div id="memberBotFilters" class="bot-filters-container"></div>
+                  <div class="custom-select-container" id="membersGroupSelectContainer">
                     <div class="custom-select-trigger" id="membersGroupSelectTrigger" style="width: 100%;">
                       <div class="custom-select-trigger-content">
                         <div class="custom-select-avatar" id="selectedGroupAvatar">G</div>
                         <span class="custom-select-name" id="selectedGroupName">Chọn nhóm...</span>
                         <span class="custom-select-badge" id="selectedGroupBadge">0</span>
                       </div>
-                      <svg class="custom-select-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                      <svg class="custom-select-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                      </svg>
                     </div>
                     <div class="custom-select-dropdown" id="membersGroupSelectDropdown" style="width: 100%;"></div>
                   </div>
@@ -236,37 +452,63 @@
                 </div>
 
                 <!-- Bulk Actions (Right side) -->
-                <div class="bulk-bar" style="display: flex; align-items: center; gap: 12px; border: none; padding: 0; background: transparent; box-shadow: none; margin: 0; flex-wrap: wrap;">
-                  <strong id="memberBulkCount" style="font-size: 13px; color: var(--text-muted); white-space: nowrap;">0 member selected</strong>
+                <div class="bulk-bar"
+                  style="display: flex; align-items: center; gap: 12px; border: none; padding: 0; background: transparent; box-shadow: none; margin: 0; flex-wrap: wrap;">
+                  <strong id="memberBulkCount" style="font-size: 13px; color: var(--text-muted); white-space: nowrap;">0
+                    member selected</strong>
                   <div class="bulk-actions" style="display: flex; gap: 8px;">
-                    <button class="btn" type="button" data-select-all-members style="padding: 6px 12px; font-size: 12px; min-height: auto; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;">
-                      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+                    <button class="btn" type="button" data-select-all-members
+                      style="padding: 6px 12px; font-size: 12px; min-height: auto; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;">
+                      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="9 11 12 14 22 4"></polyline>
+                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                      </svg>
                       Select all
                     </button>
-                    <button class="btn" type="button" data-bulk-member-action="friend" style="padding: 6px 12px; font-size: 12px; min-height: auto; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;">
-                      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
-                      Kết bạn hàng loạt
+                    <button class="btn" type="button" data-bulk-member-action="friend"
+                      style="padding: 6px 12px; font-size: 12px; min-height: auto; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;">
+                      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="8.5" cy="7" r="4"></circle>
+                        <line x1="20" y1="8" x2="20" y2="14"></line>
+                        <line x1="23" y1="11" x2="17" y2="11"></line>
+                      </svg>
+                      Kết bạn
                     </button>
-                    <button class="btn" type="button" data-bulk-member-action="message" style="padding: 6px 12px; font-size: 12px; min-height: auto; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;">
-                      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-                      Nhắn tin hàng loạt
+                    <button class="btn" type="button" data-bulk-member-action="message"
+                      style="padding: 6px 12px; font-size: 12px; min-height: auto; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;">
+                      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                      </svg>
+                      Nhắn tin
                     </button>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- Tabs and Configure Table Button (Moved below toolbar) -->
-            <div class="panel-head" style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 16px; padding: 0; border-bottom: none;">
+            <div class="panel-head members-panel-head">
               <div class="segmented" id="membersFilterTabs">
                 <button class="active" data-member-filter="all">All members</button>
                 <button data-member-filter="pending">Pending</button>
                 <button data-member-filter="blocked">Blocked</button>
                 <button data-member-filter="admins">Admins</button>
               </div>
-              <button class="btn" type="button" id="btnConfigureColumns" style="padding: 8px 12px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 8px; height: 36px; min-width: 0;" title="Cấu hình hiển thị cột">
+              <button class="btn" type="button" id="btnConfigureColumns"
+                style="padding: 8px 12px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 8px; height: 36px; min-width: 0;"
+                title="Cấu hình hiển thị cột">
                 <!-- Table Icon -->
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line></svg>
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="9" y1="3" x2="9" y2="21"></line>
+                  <line x1="15" y1="3" x2="15" y2="21"></line>
+                  <line x1="3" y1="9" x2="21" y2="9"></line>
+                  <line x1="3" y1="15" x2="21" y2="15"></line>
+                </svg>
                 <span class="btn-text-lang" data-vi="Cài đặt bảng" data-en="Table settings">Cài đặt bảng</span>
               </button>
             </div>
@@ -289,9 +531,21 @@
           </div>
         </div>
         <div class="grid api-grid">
-          <div class="api-card"><h4>Friend requests</h4><p>Accept hoặc reject lời mời kết bạn bằng `acceptFriendRequest` và `rejectFriendRequest`.</p><button class="btn" data-action="friend-request-by-id">Handle by ID</button></div>
-          <div class="api-card"><h4>Sent requests</h4><p>Theo dõi lời mời đã gửi, thu hồi khi cần bằng `undoFriendRequest`.</p><button class="btn" data-action="friend-request-by-id">Send new</button></div>
-          <div class="api-card"><h4>All friends</h4><p>Search, alias, remove friend và phân nhóm danh bạ.</p><button class="btn" data-action="get-friends">Load friends</button></div>
+          <div class="api-card">
+            <h4>Friend requests</h4>
+            <p>Accept hoặc reject lời mời kết bạn bằng `acceptFriendRequest` và `rejectFriendRequest`.</p><button
+              class="btn" data-action="friend-request-by-id">Handle by ID</button>
+          </div>
+          <div class="api-card">
+            <h4>Sent requests</h4>
+            <p>Theo dõi lời mời đã gửi, thu hồi khi cần bằng `undoFriendRequest`.</p><button class="btn"
+              data-action="friend-request-by-id">Send new</button>
+          </div>
+          <div class="api-card">
+            <h4>All friends</h4>
+            <p>Search, alias, remove friend và phân nhóm danh bạ.</p><button class="btn" data-action="get-friends">Load
+              friends</button>
+          </div>
         </div>
       </section>
       <section class="section" id="messages">
@@ -303,12 +557,20 @@
         </div>
         <div class="layout">
           <div class="card">
-            <div class="panel-head"><div><h3>Composer</h3><p>Gửi tin theo group hoặc user.</p></div></div>
+            <div class="panel-head">
+              <div>
+                <h3>Composer</h3>
+                <p>Gửi tin theo group hoặc user.</p>
+              </div>
+            </div>
             <form class="form">
               <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-                <button type="button" class="btn primary" id="targetTabGroup" onclick="setComposerTargetType('group')" style="flex: 1; padding: 6px; font-size: 13px; font-weight: 600;">Group</button>
-                <button type="button" class="btn" id="targetTabUser" onclick="setComposerTargetType('user')" style="flex: 1; padding: 6px; font-size: 13px; font-weight: 600;">User</button>
-                <button type="button" class="btn" id="targetTabCustom" onclick="setComposerTargetType('custom')" style="flex: 1; padding: 6px; font-size: 13px; font-weight: 600;">Custom ID</button>
+                <button type="button" class="btn primary" id="targetTabGroup" onclick="setComposerTargetType('group')"
+                  style="flex: 1; padding: 6px; font-size: 13px; font-weight: 600;">Group</button>
+                <button type="button" class="btn" id="targetTabUser" onclick="setComposerTargetType('user')"
+                  style="flex: 1; padding: 6px; font-size: 13px; font-weight: 600;">User</button>
+                <button type="button" class="btn" id="targetTabCustom" onclick="setComposerTargetType('custom')"
+                  style="flex: 1; padding: 6px; font-size: 13px; font-weight: 600;">Custom ID</button>
               </div>
               <div id="composerTargetContainer" style="margin-bottom: 12px;">
                 <label><span>Target Group</span>
@@ -317,19 +579,51 @@
                   </select>
                 </label>
               </div>
-              <label><span>Message</span><textarea placeholder="Nhập nội dung cần gửi..." style="min-height: 100px;"></textarea></label>
+              <label><span>Message</span><textarea placeholder="Nhập nội dung cần gửi..."
+                  style="min-height: 100px;"></textarea></label>
               <div class="actions">
-                <button class="btn" type="button" onclick="previewComposerMessage()"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; margin-right: 6px; display: inline-block; vertical-align: middle;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>Preview</button>
-                <button class="btn primary" type="button" data-action="send"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; margin-right: 6px; display: inline-block; vertical-align: middle;"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>Send message</button>
+                <button class="btn" type="button" onclick="previewComposerMessage()"><svg class="icon"
+                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round"
+                    style="width: 14px; height: 14px; margin-right: 6px; display: inline-block; vertical-align: middle;">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>Preview</button>
+                <button class="btn primary" type="button" data-action="send"><svg class="icon" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    style="width: 14px; height: 14px; margin-right: 6px; display: inline-block; vertical-align: middle;">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                  </svg>Send message</button>
               </div>
             </form>
           </div>
           <div class="card">
-            <div class="panel-head"><div><h3>Templates</h3><p>Nội quy, welcome, cảnh báo, maintenance.</p></div></div>
+            <div class="panel-head">
+              <div>
+                <h3>Templates</h3>
+                <p>Nội quy, welcome, cảnh báo, maintenance.</p>
+              </div>
+            </div>
             <div class="list">
-              <div class="item"><div><div class="item-title">Nội quy group</div><div class="item-sub">sendMessage</div></div><button class="btn">Use</button></div>
-              <div class="item"><div><div class="item-title">Cảnh báo spam link</div><div class="item-sub">sendMessage + audit</div></div><button class="btn">Use</button></div>
-              <div class="item"><div><div class="item-title">Thông báo bảo trì bot</div><div class="item-sub">broadcast có rate limit</div></div><button class="btn">Use</button></div>
+              <div class="item">
+                <div>
+                  <div class="item-title">Nội quy group</div>
+                  <div class="item-sub">sendMessage</div>
+                </div><button class="btn">Use</button>
+              </div>
+              <div class="item">
+                <div>
+                  <div class="item-title">Cảnh báo spam link</div>
+                  <div class="item-sub">sendMessage + audit</div>
+                </div><button class="btn">Use</button>
+              </div>
+              <div class="item">
+                <div>
+                  <div class="item-title">Thông báo bảo trì bot</div>
+                  <div class="item-sub">broadcast có rate limit</div>
+                </div><button class="btn">Use</button>
+              </div>
             </div>
           </div>
         </div>
@@ -342,12 +636,42 @@
           </div>
         </div>
         <div class="api-grid">
-          <div class="api-card"><h4>Group info</h4><p>Đọc group, member, pending, blocked, invite link.</p><div class="chips"><span class="chip">getAllGroups</span><span class="chip">getGroupInfo</span><span class="chip">getPendingGroupMembers</span></div></div>
-          <div class="api-card"><h4>Member ops</h4><p>Duyệt, mời, thêm, xóa, block member.</p><div class="chips"><span class="chip">reviewPendingMemberRequest</span><span class="chip">removeUserFromGroup</span><span class="chip">addUserToGroup</span></div></div>
-          <div class="api-card"><h4>Bạn bè</h4><p>Quản lý request, danh bạ, alias, lời mời kết bạn.</p><div class="chips"><span class="chip">acceptFriendRequest</span><span class="chip">sendFriendRequest</span><span class="chip">getAllFriends</span></div></div>
-          <div class="api-card"><h4>Messaging</h4><p>Gửi text, link, sticker, voice, video, forward.</p><div class="chips"><span class="chip">sendMessage</span><span class="chip">sendLink</span><span class="chip">forwardMessage</span></div></div>
-          <div class="api-card"><h4>Engagement</h4><p>Poll, note, reminder cho group.</p><div class="chips"><span class="chip">createPoll</span><span class="chip">createNote</span><span class="chip">createReminder</span></div></div>
-          <div class="api-card"><h4>Settings</h4><p>Mute, pin, hidden, account setting, group setting.</p><div class="chips"><span class="chip">updateGroupSettings</span><span class="chip">setMute</span><span class="chip">updateSettings</span></div></div>
+          <div class="api-card">
+            <h4>Group info</h4>
+            <p>Đọc group, member, pending, blocked, invite link.</p>
+            <div class="chips"><span class="chip">getAllGroups</span><span class="chip">getGroupInfo</span><span
+                class="chip">getPendingGroupMembers</span></div>
+          </div>
+          <div class="api-card">
+            <h4>Member ops</h4>
+            <p>Duyệt, mời, thêm, xóa, block member.</p>
+            <div class="chips"><span class="chip">reviewPendingMemberRequest</span><span
+                class="chip">removeUserFromGroup</span><span class="chip">addUserToGroup</span></div>
+          </div>
+          <div class="api-card">
+            <h4>Bạn bè</h4>
+            <p>Quản lý request, danh bạ, alias, lời mời kết bạn.</p>
+            <div class="chips"><span class="chip">acceptFriendRequest</span><span
+                class="chip">sendFriendRequest</span><span class="chip">getAllFriends</span></div>
+          </div>
+          <div class="api-card">
+            <h4>Messaging</h4>
+            <p>Gửi text, link, sticker, voice, video, forward.</p>
+            <div class="chips"><span class="chip">sendMessage</span><span class="chip">sendLink</span><span
+                class="chip">forwardMessage</span></div>
+          </div>
+          <div class="api-card">
+            <h4>Engagement</h4>
+            <p>Poll, note, reminder cho group.</p>
+            <div class="chips"><span class="chip">createPoll</span><span class="chip">createNote</span><span
+                class="chip">createReminder</span></div>
+          </div>
+          <div class="api-card">
+            <h4>Settings</h4>
+            <p>Mute, pin, hidden, account setting, group setting.</p>
+            <div class="chips"><span class="chip">updateGroupSettings</span><span class="chip">setMute</span><span
+                class="chip">updateSettings</span></div>
+          </div>
         </div>
       </section>
       <section class="section" id="upgrade">
@@ -357,10 +681,12 @@
             <p>Bạn vẫn dùng được UI miễn phí. Nâng cấp để mở khóa điều khiển nâng cao.</p>
           </div>
         </div>
-        <div class="upgrade-note license-box" id="unifiedLicenseBox" style="padding: 24px; border-radius: 12px; background: var(--bg-card); border: 1px solid var(--border); display: flex; flex-direction: column; gap: 16px; width: 100%; max-width: 800px; margin: 0 auto 24px auto; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);">
+        <div class="upgrade-note license-box" id="unifiedLicenseBox"
+          style="padding: 24px; border-radius: 12px; background: var(--bg-card); border: 1px solid var(--border); display: flex; flex-direction: column; gap: 16px; width: 100%; max-width: 800px; margin: 0 auto 24px auto; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);">
           <!-- Premium Shimmer Loader (Static Placeholder before API loads) -->
           <div class="license-info" style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
+            <div
+              style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
               <div>
                 <div class="shimmer-placeholder" style="width: 120px; height: 14px; margin-bottom: 6px;"></div>
                 <div class="shimmer-placeholder" style="width: 180px; height: 22px; border-radius: 20px;"></div>
@@ -379,7 +705,7 @@
             </div>
           </div>
         </div>
-                <div class="pricing-grid">
+        <div class="pricing-grid">
           <article class="plan-card">
             <div class="plan-badge" data-i18n-badge="free">Free</div>
             <h3 data-i18n-title="free">Gói Free</h3>
@@ -389,19 +715,29 @@
             </div>
             <ul class="plan-list">
               <li>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
                 <span data-i18n-feature="free-1">Dùng toàn bộ UI dashboard</span>
               </li>
               <li>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
                 <span data-i18n-feature="free-2">Xem dữ liệu group/member/log</span>
               </li>
               <li>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
                 <span data-i18n-feature="free-3">Giới hạn tính năng điều khiển</span>
               </li>
             </ul>
-            <a class="plan-cta plan-cta--outline" data-i18n-btn="free" href="javascript:handlePricingUpgrade()">Trải nghiệm ngay</a>
+            <a class="plan-cta plan-cta--outline" data-i18n-btn="free" href="javascript:handlePricingUpgrade()">Trải
+              nghiệm ngay</a>
           </article>
 
           <article class="plan-card plan-card--featured">
@@ -413,19 +749,29 @@
             </div>
             <ul class="plan-list">
               <li>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
                 <span data-i18n-feature="personal-1">Mở khóa điều khiển nâng cao</span>
               </li>
               <li>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
                 <span data-i18n-feature="personal-2">Ưu tiên cập nhật tính năng mới</span>
               </li>
               <li>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
                 <span data-i18n-feature="personal-3">Dùng cho 1 owner account</span>
               </li>
             </ul>
-            <a class="plan-cta plan-cta--solid" data-i18n-btn="personal" href="javascript:handlePricingUpgrade('personal')">Nâng cấp Cá nhân</a>
+            <a class="plan-cta plan-cta--solid" data-i18n-btn="personal"
+              href="javascript:handlePricingUpgrade('personal')">Nâng cấp Cá nhân</a>
           </article>
 
           <article class="plan-card">
@@ -437,19 +783,29 @@
             </div>
             <ul class="plan-list">
               <li>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
                 <span data-i18n-feature="team-1">Dành cho nhiều thành viên</span>
               </li>
               <li>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
                 <span data-i18n-feature="team-2">Ưu tiên hỗ trợ nhanh hơn</span>
               </li>
               <li>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
                 <span data-i18n-feature="team-3">Phù hợp team growth/ops</span>
               </li>
             </ul>
-            <a class="plan-cta plan-cta--outline" data-i18n-btn="team" href="javascript:handlePricingUpgrade('team')">Đăng ký Team</a>
+            <a class="plan-cta plan-cta--outline" data-i18n-btn="team"
+              href="javascript:handlePricingUpgrade('team')">Đăng ký Team</a>
           </article>
 
           <article class="plan-card">
@@ -461,19 +817,29 @@
             </div>
             <ul class="plan-list">
               <li>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
                 <span data-i18n-feature="lifetime-1">Sử dụng vĩnh viễn trọn đời</span>
               </li>
               <li>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
                 <span data-i18n-feature="lifetime-2">Kích hoạt theo chính sách plugin</span>
               </li>
               <li>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
                 <span data-i18n-feature="lifetime-3">Phù hợp sử dụng lâu dài ổn định</span>
               </li>
             </ul>
-            <a class="plan-cta plan-cta--outline" data-i18n-btn="lifetime" href="javascript:handlePricingUpgrade('lifetime')">Mua Lifetime</a>
+            <a class="plan-cta plan-cta--outline" data-i18n-btn="lifetime"
+              href="javascript:handlePricingUpgrade('lifetime')">Mua Lifetime</a>
           </article>
         </div>
       </section>
@@ -485,9 +851,21 @@
           </div>
         </div>
         <div class="grid api-grid">
-          <div class="api-card"><h4>Disperse group</h4><p>Giải tán group bằng `disperseGroup`. Chỉ cho owner, bắt nhập lại groupId.</p><button class="btn danger" disabled title="Chưa bật để tránh thao tác phá hủy group">Locked</button></div>
-          <div class="api-card"><h4>Change owner</h4><p>Chuyển owner group bằng `changeGroupOwner`. Cần xác nhận userId đích.</p><button class="btn danger" disabled title="Chưa bật để tránh chuyển nhầm owner">Locked</button></div>
-          <div class="api-card"><h4>Delete chat/message</h4><p>Xóa chat hoặc message bằng `deleteChat`, `deleteMessage`, `undo`.</p><button class="btn danger" disabled title="Chưa bật để tránh mất dữ liệu">Locked</button></div>
+          <div class="api-card">
+            <h4>Disperse group</h4>
+            <p>Giải tán group bằng `disperseGroup`. Chỉ cho owner, bắt nhập lại groupId.</p><button class="btn danger"
+              disabled title="Chưa bật để tránh thao tác phá hủy group">Locked</button>
+          </div>
+          <div class="api-card">
+            <h4>Change owner</h4>
+            <p>Chuyển owner group bằng `changeGroupOwner`. Cần xác nhận userId đích.</p><button class="btn danger"
+              disabled title="Chưa bật để tránh chuyển nhầm owner">Locked</button>
+          </div>
+          <div class="api-card">
+            <h4>Delete chat/message</h4>
+            <p>Xóa chat hoặc message bằng `deleteChat`, `deleteMessage`, `undo`.</p><button class="btn danger" disabled
+              title="Chưa bật để tránh mất dữ liệu">Locked</button>
+          </div>
         </div>
       </section>
       <footer class="site-footer">
@@ -495,10 +873,20 @@
           <p class="footer-copyright" style="margin: 0; font-size: 11px; opacity: 0.6;">
             Copyright © 2026 <strong>Được làm ❤️ bởi tuanminhole</strong>. Phát hành theo MIT.
           </p>
-          <p class="footer-donate-text" style="margin: 0; font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 4px; flex-wrap: wrap; justify-content: center;">
-            <span>Nếu công cụ này giúp ích cho bạn, hãy mời mình một ly cà phê nhé! <span class="heart-emoji">❤️</span></span>
+          <p class="footer-donate-text"
+            style="margin: 0; font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 4px; flex-wrap: wrap; justify-content: center;">
+            <span>Nếu công cụ này giúp ích cho bạn, hãy mời mình một ly cà phê nhé! <span
+                class="heart-emoji">❤️</span></span>
             <button class="btn-donate" type="button" onclick="openDonateModal()">
-              <svg class="donate-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px; vertical-align: middle;"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg>
+              <svg class="donate-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round"
+                style="width: 12px; height: 12px; vertical-align: middle;">
+                <path d="M18 8h1a4 4 0 0 1 0 8h-1"></path>
+                <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path>
+                <line x1="6" y1="1" x2="6" y2="4"></line>
+                <line x1="10" y1="1" x2="10" y2="4"></line>
+                <line x1="14" y1="1" x2="14" y2="4"></line>
+              </svg>
               <span>Mời Cafe</span>
             </button>
           </p>
@@ -507,24 +895,61 @@
     </main>
   </div>
   <nav class="bottom-nav" data-bottom-nav aria-label="Mobile navigation">
-    <button class="active" data-section="overview" aria-label="Overview"><svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M4 13h6V4H4v9Zm10 7h6V4h-6v16ZM4 20h6v-4H4v4Z" stroke="currentColor" stroke-width="2"/></svg><span>Home</span></button>
-    <button data-section="groups" aria-label="Nhóm"><svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M16 11a4 4 0 1 0-8 0m8 0a4 4 0 1 1-8 0m8 0h3a3 3 0 0 1 3 3v3M8 11H5a3 3 0 0 0-3 3v3m5 3v-2a5 5 0 0 1 10 0v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>Nhóm</span></button>
-    <button data-section="members" aria-label="Thành viên"><svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M15 8a4 4 0 1 1-8 0 4 4 0 0 1 8 0Zm-12 13a8 8 0 0 1 16 0m0-13h3m-1.5-1.5v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>Thành viên</span></button>
-    <button data-section="messages" aria-label="Tin nhắn"><svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M21 12a8 8 0 0 1-8 8H6l-4 2 1.4-4.2A8 8 0 1 1 21 12Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span>Inbox</span></button>
-    <button type="button" data-open-menu aria-label="Open more menu"><svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M12 5.5a1.5 1.5 0 1 0 0 .01V5.5Zm0 5a1.5 1.5 0 1 0 0 .01v-.01Zm0 5a1.5 1.5 0 1 0 0 .01v-.01Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>More</span></button>
+    <button class="active" data-section="overview" aria-label="Overview"><svg class="icon" viewBox="0 0 24 24"
+        fill="none">
+        <path d="M4 13h6V4H4v9Zm10 7h6V4h-6v16ZM4 20h6v-4H4v4Z" stroke="currentColor" stroke-width="2" />
+      </svg><span>Home</span></button>
+    <button data-section="groups" aria-label="Nhóm"><svg class="icon" viewBox="0 0 24 24" fill="none">
+        <path
+          d="M16 11a4 4 0 1 0-8 0m8 0a4 4 0 1 1-8 0m8 0h3a3 3 0 0 1 3 3v3M8 11H5a3 3 0 0 0-3 3v3m5 3v-2a5 5 0 0 1 10 0v2"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+      </svg><span>Nhóm</span></button>
+    <button data-section="members" aria-label="Thành viên"><svg class="icon" viewBox="0 0 24 24" fill="none">
+        <path d="M15 8a4 4 0 1 1-8 0 4 4 0 0 1 8 0Zm-12 13a8 8 0 0 1 16 0m0-13h3m-1.5-1.5v3" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" />
+      </svg><span>Thành viên</span></button>
+    <button data-section="messages" aria-label="Tin nhắn"><svg class="icon" viewBox="0 0 24 24" fill="none">
+        <path d="M21 12a8 8 0 0 1-8 8H6l-4 2 1.4-4.2A8 8 0 1 1 21 12Z" stroke="currentColor" stroke-width="2"
+          stroke-linejoin="round" />
+      </svg><span>Inbox</span></button>
+    <button type="button" data-open-menu aria-label="Open more menu"><svg class="icon" viewBox="0 0 24 24" fill="none">
+        <path d="M12 5.5a1.5 1.5 0 1 0 0 .01V5.5Zm0 5a1.5 1.5 0 1 0 0 .01v-.01Zm0 5a1.5 1.5 0 1 0 0 .01v-.01Z"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+      </svg><span>More</span></button>
   </nav>
   <div class="drawer-backdrop" data-close-drawer></div>
   <div class="drawer" role="dialog" aria-modal="true" aria-label="Menu mobile">
     <div class="grabber"></div>
     <nav class="nav" data-drawer-nav>
-      <button class="active" data-section="overview"><span class="nav-label">Tổng quan</span></button>
-      <button data-section="groups"><span class="nav-label">Nhóm</span></button>
-      <button data-section="members"><span class="nav-label">Thành viên</span></button>
-      <button data-section="friends"><span class="nav-label">Bạn bè</span></button>
-      <button data-section="messages"><span class="nav-label">Tin nhắn</span></button>
-      <button data-section="api"><span class="nav-label">Danh mục API</span></button>
-      <button data-section="upgrade"><span class="nav-label">Nâng cấp</span></button>
-      <button data-section="danger"><span class="nav-label">Khu nguy hiểm</span></button>
+      <button class="active" data-section="overview"><svg viewBox="0 0 24 24" fill="none">
+          <path d="M4 13h6V4H4v9Zm10 7h6V4h-6v16ZM4 20h6v-4H4v4Z" stroke="currentColor" stroke-width="2"
+            stroke-linejoin="round" />
+        </svg><span class="nav-label">Tổng quan</span></button>
+      <button data-section="groups"><svg viewBox="0 0 24 24" fill="none">
+          <path
+            d="M16 11a4 4 0 1 0-8 0m8 0a4 4 0 1 1-8 0m8 0h3a3 3 0 0 1 3 3v3M8 11H5a3 3 0 0 0-3 3v3m5 3v-2a5 5 0 0 1 10 0v2"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+        </svg><span class="nav-label">Nhóm</span></button>
+      <button data-section="members"><svg viewBox="0 0 24 24" fill="none">
+          <path d="M15 8a4 4 0 1 1-8 0 4 4 0 0 1 8 0Zm-12 13a8 8 0 0 1 16 0m0-13h3m-1.5-1.5v3" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" />
+        </svg><span class="nav-label">Thành viên</span></button>
+      <button data-section="friends"><svg viewBox="0 0 24 24" fill="none">
+          <path d="M8 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm8 10v-2a6 6 0 0 0-12 0v2m15-9v6m3-3h-6" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" />
+        </svg><span class="nav-label">Bạn bè</span></button>
+      <button data-section="messages"><svg viewBox="0 0 24 24" fill="none">
+          <path d="M21 12a8 8 0 0 1-8 8H6l-4 2 1.4-4.2A8 8 0 1 1 21 12Z" stroke="currentColor" stroke-width="2"
+            stroke-linejoin="round" />
+        </svg><span class="nav-label">Tin nhắn</span></button>
+      <button data-section="upgrade"><svg viewBox="0 0 24 24" fill="none">
+          <path d="m12 3 2.7 5.5 6 .9-4.3 4.2 1 5.9L12 16.6l-5.4 2.9 1-5.9L3.3 9.4l6-.9L12 3Z" stroke="currentColor"
+            stroke-width="2" stroke-linejoin="round" />
+        </svg><span class="nav-label">Nâng cấp</span></button>
+      <button data-section="danger"><svg viewBox="0 0 24 24" fill="none">
+          <path d="M12 3 2 21h20L12 3Zm0 7v4m0 3h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" />
+        </svg><span class="nav-label">Khu nguy hiểm</span></button>
     </nav>
   </div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -542,4 +967,5 @@
     </div>
   </div>
 </body>
+
 </html>

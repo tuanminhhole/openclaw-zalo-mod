@@ -1,3 +1,11 @@
+## [2.9.5] - 2026-06-05
+
+### Fixed
+- **Fix Zalo Send API resolution**: Added support for container path mapping (`_openclawHome/.openclaw`) inside `index.js` to locate `@openclaw/zalouser`'s `test-api.js` correctly.
+- **Fix synchronous fs calls type error**: Replaced `fs.existsSync` and `fs.readFileSync` with `existsSync` and `readFileSync` (from `node:fs`) to fix crash when loading credentials.
+- **Permissions**: Proactively set permissions to `755` using pure node `chmod` to satisfy gateway world-writable plugin block constraints.
+- **UI & CSS Refinements**: Fixed horizontal overflow, sticky mobile header, centered bottom navigation bar, and hidden slider knob on the language switcher flags.
+
 ## [2.9.3] - 2026-06-03
 
 ### Changed

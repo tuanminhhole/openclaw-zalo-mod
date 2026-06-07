@@ -10,7 +10,7 @@ const modalBody = document.getElementById('modalBody');
 const modalCancel = document.getElementById('modalCancel');
 const modalConfirm = document.getElementById('modalConfirm');
 const token = window.ZALO_DASHBOARD_TOKEN || '';
-const pluginVersion = '2.9.5';
+const pluginVersion = '2.10.0';
 let state = null;
 let activeGroupId = '';
 let lang = localStorage.getItem('zaloDashboardLang') || 'vi';
@@ -1200,6 +1200,71 @@ function renderState() {
       }
     } else {
       topbarBotFilter.innerHTML = '';
+    }
+  }
+
+  // Render mobile/tablet sub-topbar bot filter
+  const mobileBotFilterBar = document.getElementById('mobileBotFilterBar');
+  if (mobileBotFilterBar) {
+    if (state.bots && state.bots.length > 1) {
+      const allBotsText = t('Tất cả bot', 'All bots');
+      const allActive = selectedBotFilter === 'all';
+      
+      let pillsHtml = `
+        <div class="bot-pill ${allActive ? 'active' : ''}" data-mobile-profile="all">
+          <div class="bot-pill-avatar">🤖</div>
+          <span>${allBotsText}</span>
+        </div>
+      `;
+      
+      state.bots.forEach(bot => {
+        const isActive = selectedBotFilter === bot.profile;
+        const initials = getBotInitials(bot);
+        const theme = getBotTheme(bot);
+        const cachedProfile = bot.userId ? (state.bot?.cachedProfiles?.[bot.userId] || (cachedFriends || []).find(f => String(f.userId) === String(bot.userId))) : null;
+        const avatarUrl = bot.avatar || cachedProfile?.avatar || cachedProfile?.avatarUrl || '';
+        
+        const avatarContentHtml = avatarUrl
+          ? `<img src="${esc(avatarUrl)}" alt="${esc(bot.name)}" onerror="const p=this.parentElement; this.remove(); if(p)p.textContent='${esc(initials)}'">`
+          : esc(initials);
+          
+        pillsHtml += `
+          <div class="bot-pill ${isActive ? 'active' : ''}" data-mobile-profile="${esc(bot.profile)}">
+            <div class="bot-pill-avatar" style="background: ${theme.gradient};">
+              ${avatarContentHtml}
+            </div>
+            <span>${esc(repairText(bot.name))}</span>
+          </div>
+        `;
+      });
+      
+      mobileBotFilterBar.innerHTML = pillsHtml;
+      
+      // Bind click handlers
+      mobileBotFilterBar.querySelectorAll('[data-mobile-profile]').forEach(pill => {
+        pill.addEventListener('click', event => {
+          const profile = event.currentTarget.dataset.mobileProfile;
+          selectedBotFilter = profile;
+          selectedGroupBotFilter = profile;
+          selectedMemberBotFilter = profile;
+          currentMembersPage = 1;
+          
+          // Sync with other dropdowns/select elements
+          const nativeSelect = document.getElementById('topbarBotSelect');
+          if (nativeSelect) nativeSelect.value = profile;
+          const groupSelect = document.getElementById('groupBotSelect');
+          if (groupSelect) groupSelect.value = profile;
+          const memberSelect = document.getElementById('memberBotSelect');
+          if (memberSelect) memberSelect.value = profile;
+          
+          renderState();
+        });
+      });
+      
+      document.body.classList.toggle('has-sub-topbar', window.innerWidth <= 991);
+    } else {
+      mobileBotFilterBar.innerHTML = '';
+      document.body.classList.remove('has-sub-topbar');
     }
   }
 
@@ -3270,3 +3335,12 @@ if (openMenuBtn && drawerBackdrop && drawerElement) {
 
 applyI18n();
 loadState().catch(error => showToast(error.message, 'error'));
+
+// Responsive sub-topbar padding-top resize listener
+window.addEventListener('resize', () => {
+  if (state && state.bots && state.bots.length > 1) {
+    document.body.classList.toggle('has-sub-topbar', window.innerWidth <= 991);
+  } else {
+    document.body.classList.remove('has-sub-topbar');
+  }
+});

@@ -1,4 +1,19 @@
+## [2.10.0] - 2026-06-05
+
+### Added
+- **Chế độ Multi-Bot (Multi-Bot Support)**: Hỗ trợ cấu hình và quản lý độc lập nhiều tài khoản Zalo cùng lúc thông qua thuộc tính `bots` trong `config.json`. Tự động ánh xạ profile và tải ảnh đại diện tương ứng từ Zalo API.
+- **Cải tiến UI/UX hiện đại & Tối ưu trên Mobile/Tablet**:
+  - Thêm thanh lọc bot phụ (`#mobileBotFilterBar`) hiển thị dạng trượt ngang trên mobile/tablet.
+  - Sử dụng các Bot Pills trực quan chứa avatar hoặc ký tự viết tắt của bot với gradient màu sắc.
+  - Tự động thay đổi padding thông qua lớp `.has-sub-topbar` trên `body` để tránh đè lấp giao diện khi cuộn trang hoặc resize.
+- **Cải tiến logic xử lý lệnh Slash**:
+  - Cô lập tiền tố lệnh (`prefix isolation`): Khi nhiều bot cùng ở chung nhóm, nếu lệnh slash không khớp với tiền tố riêng (`cmdPrefix`) của bot, plugin sẽ tự động chặn hoàn toàn (`{ handled: true }`) thay vì gửi lên LLM, tránh tình trạng phản hồi trùng lặp hoặc sai bot.
+  - Hỗ trợ trích xuất và xử lý lệnh linh hoạt hơn từ bất kỳ vị trí nào trong nội dung tin nhắn.
+- **Cập nhật File Cấu hình (Config Separation)**:
+  - Tách cấu hình tối giản trong `openclaw.json` (chỉ chứa 4 khóa được cấp phép) và cấu hình chi tiết (chứa cài đặt nâng cao và danh sách `bots`) trong `config.json` để tránh bị gateway quét xóa.
+
 ## [2.9.5] - 2026-06-05
+
 
 ### Fixed
 - **Fix Zalo Send API resolution**: Added support for container path mapping (`_openclawHome/.openclaw`) inside `index.js` to locate `@openclaw/zalouser`'s `test-api.js` correctly.

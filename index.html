@@ -54,6 +54,10 @@
             <path d="M21 12a8 8 0 0 1-8 8H6l-4 2 1.4-4.2A8 8 0 1 1 21 12Z" stroke="currentColor" stroke-width="2"
               stroke-linejoin="round" />
           </svg><span class="nav-label">Tin nhắn</span></button>
+        <button data-section="templates"><svg viewBox="0 0 24 24" fill="none">
+            <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M14 2v6h6M16 13H8m8 4H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg><span class="nav-label">Lệnh & Rules</span></button>
         <button data-section="upgrade"><svg viewBox="0 0 24 24" fill="none">
             <path d="m12 3 2.7 5.5 6 .9-4.3 4.2 1 5.9L12 16.6l-5.4 2.9 1-5.9L3.3 9.4l6-.9L12 3Z" stroke="currentColor"
               stroke-width="2" stroke-linejoin="round" />
@@ -70,7 +74,7 @@
             log.</span>
         </div>
         <div class="plugin-meta">
-          <strong>zalo-mod <span id="pluginVersion">v2.10.1</span></strong>
+          <strong>zalo-mod <span id="pluginVersion">v2.11.0</span></strong>
           <span>Được làm ❤️ bởi tuanminhole</span>
           <div class="socials" aria-label="Author links">
             <a href="https://www.facebook.com/holeminhtuan.it/" target="_blank" rel="noreferrer"
@@ -869,6 +873,69 @@
           </div>
         </div>
       </section>
+      <section class="section" id="templates">
+        <div class="page-head">
+          <div>
+            <h2>Quản lý Lệnh & Rules</h2>
+            <p>Tùy chỉnh nội dung phản hồi của bot cho các lệnh slash commands.</p>
+          </div>
+        </div>
+        
+        <div class="templates-layout">
+          <!-- Cột bên trái: Selector -->
+          <div class="templates-sidebar card">
+            <div class="template-item active" data-template-key="noi-quy">
+              <div class="template-item-icon">📋</div>
+              <div class="template-item-meta">
+                <strong>Nội quy nhóm</strong>
+                <span>noi-quy.txt</span>
+              </div>
+            </div>
+            <div class="template-item" data-template-key="huong-dan">
+              <div class="template-item-icon">📖</div>
+              <div class="template-item-meta">
+                <strong>Hướng dẫn dùng bot</strong>
+                <span>huong-dan.txt</span>
+              </div>
+            </div>
+            <div class="template-item" data-template-key="menu">
+              <div class="template-item-icon">🤖</div>
+              <div class="template-item-meta">
+                <strong>Menu lệnh</strong>
+                <span>menu.txt</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Cột bên phải: Editor -->
+          <div class="templates-editor card">
+            <div class="editor-head">
+              <h4 id="current-template-title">Nội quy nhóm</h4>
+              <span class="file-badge" id="current-template-file">noi-quy.txt</span>
+            </div>
+            <div class="editor-body">
+              <textarea id="template-textarea" spellcheck="false" placeholder="Nhập nội dung template..."></textarea>
+            </div>
+            
+            <!-- Bảng cheatsheet biến -->
+            <div class="cheatsheet">
+              <h5 style="margin: 0 0 10px; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em;">Biến có thể sử dụng (Click để chèn):</h5>
+              <div class="variable-tags">
+                <span class="var-tag" title="Tên nhóm chat Zalo" data-var="{groupName}"><code>{groupName}</code> - Tên nhóm</span>
+                <span class="var-tag" title="Tên bot" data-var="{botName}"><code>{botName}</code> - Tên bot</span>
+                <span class="var-tag" title="Tên bot viết hoa" data-var="{BOTNAME}"><code>{BOTNAME}</code> - Tên bot viết hoa</span>
+                <span class="var-tag" title="Prefix lệnh (ví dụ /williams-)" data-var="{cmdPrefix}"><code>{cmdPrefix}</code> - Prefix lệnh</span>
+                <span class="var-tag var-menu-only" title="Danh sách slash commands chế độ tính năng" data-var="{customModes}" style="display: none;"><code>{customModes}</code> - Chế độ tính năng</span>
+              </div>
+            </div>
+            
+            <div class="editor-foot">
+              <button class="btn" type="button" id="btn-preview-template">Xem trước</button>
+              <button class="btn primary" type="button" id="btn-save-template">Lưu cấu hình</button>
+            </div>
+          </div>
+        </div>
+      </section>
       <footer class="site-footer">
         <div class="footer-content" style="width: 100%;">
           <p class="footer-copyright" style="margin: 0; font-size: 11px; opacity: 0.6;">
@@ -913,6 +980,10 @@
         <path d="M21 12a8 8 0 0 1-8 8H6l-4 2 1.4-4.2A8 8 0 1 1 21 12Z" stroke="currentColor" stroke-width="2"
           stroke-linejoin="round" />
       </svg><span>Inbox</span></button>
+    <button data-section="templates" aria-label="Lệnh & Rules"><svg class="icon" viewBox="0 0 24 24" fill="none">
+        <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M14 2v6h6M16 13H8m8 4H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg><span>Rules</span></button>
     <button type="button" data-open-menu aria-label="Open more menu"><svg class="icon" viewBox="0 0 24 24" fill="none">
         <path d="M12 5.5a1.5 1.5 0 1 0 0 .01V5.5Zm0 5a1.5 1.5 0 1 0 0 .01v-.01Zm0 5a1.5 1.5 0 1 0 0 .01v-.01Z"
           stroke="currentColor" stroke-width="2" stroke-linecap="round" />
@@ -943,6 +1014,10 @@
           <path d="M21 12a8 8 0 0 1-8 8H6l-4 2 1.4-4.2A8 8 0 1 1 21 12Z" stroke="currentColor" stroke-width="2"
             stroke-linejoin="round" />
         </svg><span class="nav-label">Tin nhắn</span></button>
+      <button data-section="templates"><svg viewBox="0 0 24 24" fill="none">
+          <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M14 2v6h6M16 13H8m8 4H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg><span class="nav-label">Lệnh & Rules</span></button>
       <button data-section="upgrade"><svg viewBox="0 0 24 24" fill="none">
           <path d="m12 3 2.7 5.5 6 .9-4.3 4.2 1 5.9L12 16.6l-5.4 2.9 1-5.9L3.3 9.4l6-.9L12 3Z" stroke="currentColor"
             stroke-width="2" stroke-linejoin="round" />
@@ -964,6 +1039,18 @@
       <div class="modal-foot">
         <button class="btn" type="button" id="modalCancel">Hủy</button>
         <button class="btn primary" type="button" id="modalConfirm">OK</button>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop" id="previewModalBackdrop" role="dialog" aria-modal="true" aria-labelledby="previewModalTitle">
+    <div class="modal">
+      <div class="modal-head">
+        <h3 id="previewModalTitle">Xem trước</h3>
+        <p id="previewModalDesc">Bản xem trước giả lập tin nhắn trên ứng dụng Zalo</p>
+      </div>
+      <div class="modal-body" id="previewModalBody" style="background: var(--surface-2); font-family: monospace; white-space: pre-wrap; padding: 16px; border-radius: 8px; border: 1px solid var(--line); font-size: 13px; line-height: 1.5; max-height: 380px; overflow-y: auto;"></div>
+      <div class="modal-foot">
+        <button class="btn primary" type="button" id="previewModalClose">Đóng</button>
       </div>
     </div>
   </div>

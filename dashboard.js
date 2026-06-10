@@ -10,7 +10,7 @@ const modalBody = document.getElementById('modalBody');
 const modalCancel = document.getElementById('modalCancel');
 const modalConfirm = document.getElementById('modalConfirm');
 const token = window.ZALO_DASHBOARD_TOKEN || '';
-const pluginVersion = '2.10.1';
+const pluginVersion = '2.11.0';
 let state = null;
 let activeGroupId = '';
 let lang = localStorage.getItem('zaloDashboardLang') || 'vi';
@@ -300,6 +300,7 @@ function applyI18n() {
     ['Thành viên', 'Members'],
     ['Bạn bè', 'Friends'],
     ['Tin nhắn', 'Messages'],
+    ['Lệnh & Rules', 'Rules & Cmds'],
     ['Nâng cấp', 'Upgrade'],
     ['Khu nguy hiểm', 'Danger Zone'],
   ]);
@@ -309,8 +310,17 @@ function applyI18n() {
     ['Thành viên', 'Members'],
     ['Bạn bè', 'Friends'],
     ['Tin nhắn', 'Messages'],
+    ['Lệnh & Rules', 'Rules & Cmds'],
     ['Nâng cấp', 'Upgrade'],
     ['Khu nguy hiểm', 'Danger Zone'],
+  ]);
+  setAllText('[data-bottom-nav] button > span', [
+    ['Trang chủ', 'Home'],
+    ['Nhóm', 'Groups'],
+    ['Thành viên', 'Members'],
+    ['Tin nhắn', 'Inbox'],
+    ['Lệnh & Rules', 'Rules'],
+    ['Thêm', 'More'],
   ]);
   setText('.sidebar-card strong', 'Chế độ vận hành', 'Operation mode');
   setText('.sidebar-card span', 'Dashboard gọi API thật khi ZCA khả dụng. Action rủi ro cao luôn cần xác nhận và được ghi audit log.', 'The dashboard calls real APIs when ZCA is available. High-risk actions require confirmation and are written to the audit log.');
@@ -1342,6 +1352,7 @@ function renderState() {
   updateBulkBar();
   renderLicense();
   renderComposerTargets();
+  renderTemplates();
 }
 function countPendingHint() {
   return state.groups.reduce((sum, group) => sum + (group.pendingCount || 0), 0);
@@ -3333,7 +3344,152 @@ if (openMenuBtn && drawerBackdrop && drawerElement) {
   }
 }
 
+// ── Templates Management ─────────────────────────────────────
+let activeTemplateKey = 'noi-quy';
+
+function renderTemplates() {
+  if (!state || !state.templates) return;
+  
+  // 1. Update left pane active class
+  document.querySelectorAll('#templates .template-item').forEach(item => {
+    const key = item.dataset.templateKey;
+    item.classList.toggle('active', key === activeTemplateKey);
+  });
+  
+  // 2. Update editor headers
+  const titleEl = document.getElementById('current-template-title');
+  const fileEl = document.getElementById('current-template-file');
+  
+  const titles = {
+    'noi-quy': t('Nội quy nhóm', 'Group Rules'),
+    'huong-dan': t('Hướng dẫn dùng bot', 'Bot Manual'),
+    'menu': t('Menu lệnh', 'Slash Commands Menu')
+  };
+  
+  titleEl.textContent = titles[activeTemplateKey] || activeTemplateKey;
+  fileEl.textContent = `${activeTemplateKey}.txt`;
+  
+  // 3. Set text content
+  const textarea = document.getElementById('template-textarea');
+  textarea.value = state.templates[activeTemplateKey] || '';
+  
+  // 4. Custom modes only shown for menu
+  const menuOnlyVars = document.querySelectorAll('#templates .var-menu-only');
+  menuOnlyVars.forEach(el => {
+    el.style.display = (activeTemplateKey === 'menu') ? 'inline-flex' : 'none';
+  });
+}
+
+function initTemplatesEditor() {
+  // Bind left sidebar select
+  document.querySelectorAll('#templates .template-item').forEach(item => {
+    item.addEventListener('click', () => {
+      activeTemplateKey = item.dataset.templateKey;
+      renderTemplates();
+    });
+  });
+  
+  // Bind cheatsheet tags click to insert at cursor
+  document.querySelectorAll('#templates .var-tag').forEach(tag => {
+    tag.addEventListener('click', () => {
+      const varText = tag.dataset.var;
+      const textarea = document.getElementById('template-textarea');
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const text = textarea.value;
+      textarea.value = text.substring(0, start) + varText + text.substring(end);
+      textarea.focus();
+      textarea.selectionStart = textarea.selectionEnd = start + varText.length;
+    });
+  });
+  
+  // Bind save button
+  const saveBtn = document.getElementById('btn-save-template');
+  if (saveBtn) {
+    saveBtn.addEventListener('click', async () => {
+      const textarea = document.getElementById('template-textarea');
+      const content = textarea.value;
+      
+      setButtonLoading(saveBtn, true);
+      try {
+        const res = await api('/api/action', {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'save-templates',
+            payload: { key: activeTemplateKey, content }
+          })
+        });
+        if (res.ok) {
+          showToast(t('Lưu cấu hình thành công!', 'Template saved successfully!'), 'success');
+          // Update in local state object too
+          state.templates[activeTemplateKey] = content;
+          renderTemplates();
+        } else {
+          showToast(res.error || t('Có lỗi xảy ra!', 'An error occurred!'), 'error');
+        }
+      } catch (e) {
+        showToast(e.message, 'error');
+      } finally {
+        setButtonLoading(saveBtn, false);
+      }
+    });
+  }
+  
+  // Bind preview button
+  const previewBtn = document.getElementById('btn-preview-template');
+  const previewModal = document.getElementById('previewModalBackdrop');
+  const previewBody = document.getElementById('previewModalBody');
+  
+  if (previewBtn && previewModal && previewBody) {
+    previewBtn.addEventListener('click', () => {
+      const textarea = document.getElementById('template-textarea');
+      let text = textarea.value;
+      
+      // Replace dummy variables
+      const dummyVars = {
+        groupName: t('Nhóm Cứu Hộ Thế Giới 🌍', 'World Rescue Group 🌍'),
+        botName: state.bot?.name || 'Mkt Bot',
+        BOTNAME: String(state.bot?.name || 'Mkt Bot').toUpperCase(),
+        cmdPrefix: state.bot?.cmdPrefix || '/bot-'
+      };
+      
+      for (const [k, v] of Object.entries(dummyVars)) {
+        text = text.replace(new RegExp(`\\{${k}\\}`, 'g'), v);
+      }
+      
+      // If it is menu, mock the custom modes
+      if (activeTemplateKey === 'menu') {
+        const dummyModesText = [
+          t('🧩 Chế độ (Custom Modes):', '🧩 Custom Modes:'),
+          `  ${dummyVars.cmdPrefix}bot-tieng-anh-on   — ${t('Bật Luyện tiếng Anh', 'Enable English Practice')}`,
+          `  ${dummyVars.cmdPrefix}bot-tieng-anh-off  — ${t('Tắt Luyện tiếng Anh', 'Disable English Practice')}`,
+          `  ${dummyVars.cmdPrefix}bot-nhac-nho-on    — ${t('Bật Nhắc nhở', 'Enable Reminders')}`,
+          `  ${dummyVars.cmdPrefix}bot-nhac-nho-off   — ${t('Tắt Nhắc nhở', 'Disable Reminders')}`
+        ].join('\n');
+        
+        if (text.includes('{customModes}')) {
+          text = text.replace(/\{customModes\}/g, dummyModesText);
+        } else {
+          text += '\n\n' + dummyModesText;
+        }
+      }
+      
+      previewBody.textContent = text;
+      previewModal.classList.add('open');
+    });
+  }
+  
+  // Bind preview close
+  const previewClose = document.getElementById('previewModalClose');
+  if (previewClose && previewModal) {
+    previewClose.addEventListener('click', () => {
+      previewModal.classList.remove('open');
+    });
+  }
+}
+
 applyI18n();
+initTemplatesEditor();
 loadState().catch(error => showToast(error.message, 'error'));
 
 // Responsive sub-topbar padding-top resize listener

@@ -1,4 +1,18 @@
+## [2.11.1] - 2026-06-13
+
+### Fixed
+- **Sửa lỗi đa ngôn ngữ giao diện (i18n)**: Dịch thuật toàn bộ giao diện và placeholder/modal trong tab Facebook Crawler và tab Rules & Cmds (Quản lý Lệnh & Rules).
+- **Sửa lỗi crash khi load trang (Temporal Dead Zone)**: Sửa lỗi tham chiếu sớm đối với biến `fbState` bằng cách đổi khai báo từ `let` sang `var`.
+- **Sửa lỗi liệt tab Facebook Crawler**: Bổ sung hàm global `window.switchUtilTab` bị thiếu để chuyển đổi mượt mà giữa các tab phụ (Filter Conditions, Cron Scheduler, Report Targets, v.v.).
+- **Khôi phục cảnh báo Cookie**: Hiện lại khung hiển thị cảnh báo bảo mật khuyên dùng tài khoản phụ và tuyên bố miễn trừ trách nhiệm trong tab Facebook Cookies.
+
+## [2.11.0] - 2026-06-13
+
+### Added
+- **Trình chỉnh sửa templates slash command (Rules & Cmds Editor)**: Thêm giao diện quản lý và chỉnh sửa trực quan các mẫu lệnh slash command như nội quy, hướng dẫn, menu trực tiếp từ dashboard.
+
 ## [2.10.0] - 2026-06-05
+
 
 ### Added
 - **Chế độ Multi-Bot (Multi-Bot Support)**: Hỗ trợ cấu hình và quản lý độc lập nhiều tài khoản Zalo cùng lúc thông qua thuộc tính `bots` trong `config.json`. Tự động ánh xạ profile và tải ảnh đại diện tương ứng từ Zalo API.

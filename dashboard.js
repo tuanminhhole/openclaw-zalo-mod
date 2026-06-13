@@ -10,7 +10,7 @@ const modalBody = document.getElementById('modalBody');
 const modalCancel = document.getElementById('modalCancel');
 const modalConfirm = document.getElementById('modalConfirm');
 const token = window.ZALO_DASHBOARD_TOKEN || '';
-const pluginVersion = '2.11.0';
+const pluginVersion = '2.11.1';
 let state = null;
 let activeGroupId = '';
 let lang = localStorage.getItem('zaloDashboardLang') || 'vi';
@@ -253,6 +253,12 @@ function setText(selector, vi, en) {
     }
   }
 }
+function setHtml(selector, vi, en) {
+  const node = document.querySelector(selector);
+  if (node) {
+    node.innerHTML = t(vi, en);
+  }
+}
 function setAllText(selector, pairs) {
   document.querySelectorAll(selector).forEach((node, index) => {
     const pair = pairs[index];
@@ -301,6 +307,8 @@ function applyI18n() {
     ['Bạn bè', 'Friends'],
     ['Tin nhắn', 'Messages'],
     ['Lệnh & Rules', 'Rules & Cmds'],
+    ['Tiện ích', 'Utilities'],
+    ['Facebook Crawler', 'Facebook Crawler'],
     ['Nâng cấp', 'Upgrade'],
     ['Khu nguy hiểm', 'Danger Zone'],
   ]);
@@ -311,6 +319,7 @@ function applyI18n() {
     ['Bạn bè', 'Friends'],
     ['Tin nhắn', 'Messages'],
     ['Lệnh & Rules', 'Rules & Cmds'],
+    ['Facebook Crawler', 'Facebook Crawler'],
     ['Nâng cấp', 'Upgrade'],
     ['Khu nguy hiểm', 'Danger Zone'],
   ]);
@@ -469,7 +478,147 @@ function applyI18n() {
   setText('[data-i18n-feature="lifetime-3"]', 'Phù hợp sử dụng lâu dài ổn định', 'Best for long-term stable use');
   setText('[data-i18n-btn="lifetime"]', 'Mua Lifetime', 'Buy Lifetime');
 
-  setAllText('[data-i18n-period="month"]', [['/tháng', '/month']]);
+    setAllText('[data-i18n-period="month"]', [['/tháng', '/month']]);
+
+  // --- Facebook Crawler Tab Translations ---
+  setText('[data-i18n="fbTitle"]', 'Facebook Crawler', 'Facebook Crawler');
+  setText('[data-i18n="fbDesc"]', 'Quản lý group Facebook, điều kiện lọc, lịch quét tự động và mẫu báo cáo.', 'Manage Facebook groups, filter conditions, automatic cron scheduler, and report template.');
+  setText('[data-i18n="fbProfileLabel"]', 'Profile (Agent ID):', 'Profile (Agent ID):');
+  setText('#btnFbRefresh', 'Làm mới', 'Refresh');
+  setText('#btnFbRunAll', 'Quét tất cả', 'Crawl All');
+
+  // Tabs
+  setText('[data-i18n-tab="targets"]', 'Plugin Targets', 'Plugin Targets');
+  setText('[data-i18n-tab="filters"]', 'Filter Conditions', 'Filter Conditions');
+  setText('[data-i18n-tab="cron"]', 'Cron Scheduler', 'Cron Scheduler');
+  setText('[data-i18n-tab="notify"]', 'Nhóm nhận báo cáo', 'Report Targets');
+  setText('[data-i18n-tab="template"]', 'Report Template', 'Report Template');
+  setText('[data-i18n-tab="cookies"]', 'Facebook Cookies', 'Facebook Cookies');
+
+  // Cookies panel
+  setText('[data-i18n="fbCookiesTitle"]', 'Cấu hình Cookies đăng nhập', 'Configure Login Cookies');
+  setText('[data-i18n="fbCookiesDesc"]', 'Cookies giúp giả lập trạng thái đăng nhập để cuộn cào tin không giới hạn trong các Group.', 'Cookies help simulate login status to crawl posts without limits in Groups.');
+  setText('[data-i18n="fbCookiesBtnChooseFile"]', '📂 Chọn file JSON', '📂 Choose JSON File');
+  setText('#btnFbSaveCookies', 'Lưu & Áp dụng', 'Save & Apply');
+  setHtml('[data-i18n="fbCookieWarningTitle"]', 'Cảnh báo bảo mật:', 'Security Warning:');
+  setHtml('[data-i18n="fbCookieWarningText"]', 'Vui lòng <strong>không sử dụng tài khoản Facebook chính (acc chính)</strong> để lấy cookie. Hãy sử dụng tài khoản phụ (clone) để tránh rủi ro bị checkpoint hoặc khóa tài khoản. Chúng tôi hoàn toàn miễn trừ trách nhiệm đối với bất kỳ rủi ro nào liên quan đến tài khoản Facebook của bạn.', 'Please <strong>do not use your main Facebook account (main acc)</strong> to get cookies. Use a secondary account (clone) to avoid checkpoint or account lock risks. We are completely exempt from any liability regarding your Facebook accounts.');
+  setHtml('[data-i18n="fbCookiesHint"]', '💡 Mẹo: Sử dụng extension Chrome như <strong>Get Cookie</strong> hoặc <strong>J2TEAM Cookie</strong> để xuất file cookie dạng JSON.', '💡 Tip: Use a Chrome extension like <strong>Get Cookie</strong> or <strong>J2TEAM Cookie</strong> to export cookies as a JSON file.');
+  setText('[data-i18n="fbCookiesStatusLabel"]', 'Trạng thái hoạt động:', 'Operating Status:');
+  setText('#btnFbClearCookies', '🗑️ Xóa Cookie', '🗑️ Clear Cookie');
+
+  // Targets panel
+  setText('[data-i18n="fbTargetsTitle"]', 'Danh sách Group Facebook', 'Facebook Group List');
+  setText('[data-i18n="fbTargetsDesc"]', 'Thêm URL group FB cần quét. Hệ thống sẽ tự phân batch theo lịch cron.', 'Add Facebook group URLs to crawl. The system will automatically batch them by cron schedule.');
+  setText('[data-i18n="fbTargetsBtnDownload"]', 'Tải mẫu CSV', 'Download CSV Sample');
+  setText('[data-i18n="fbTargetsBtnImport"]', 'Import CSV/Excel', 'Import CSV/Excel');
+  setText('[data-i18n="fbTargetsLabelShortKey"]', 'Key ngắn', 'Short Key');
+  setText('[data-i18n="fbTargetsLabelDisplayName"]', 'Tên hiển thị', 'Display Name');
+  setText('[data-i18n="fbTargetsLabelGroupUrl"]', 'URL Group Facebook', 'Facebook Group URL');
+  setText('[data-i18n="fbTargetsLabelKeywords"]', 'Từ khoá xe (cách bằng ;)', 'Vehicle Keywords (separated by ;)');
+  setText('[data-i18n="fbTargetsBtnAdd"]', 'Thêm Group', 'Add Group');
+  setText('[data-i18n="fbTargetsThKey"]', 'Key', 'Key');
+  setText('[data-i18n="fbTargetsThGroupName"]', 'Tên Group', 'Group Name');
+  setText('[data-i18n="fbTargetsThUrl"]', 'URL', 'URL');
+  setText('[data-i18n="fbTargetsThKeywords"]', 'Từ khoá xe', 'Vehicle Keywords');
+  setText('[data-i18n="fbTargetsThDelete"]', 'Xóa', 'Delete');
+  setText('[data-i18n="fbTargetsEmptyRow"]', 'Chưa có group nào. Thêm group hoặc import file CSV.', 'No groups yet. Add a group or import a CSV file.');
+  setText('[data-i18n="fbTargetsBtnSave"]', 'Lưu danh sách', 'Save List');
+
+  // Filters panel
+  setText('[data-i18n="fbFiltersTitle"]', 'Điều kiện lọc bài viết', 'Post Filter Conditions');
+  setText('[data-i18n="fbFiltersDesc"]', 'Từ khoá bắt buộc, từ khoá chặn, khu vực và dữ liệu trích xuất tự động.', 'Required keywords, block keywords, regions, and auto-extracted data.');
+  setText('[data-i18n="fbFiltersBtnSave"]', 'Lưu điều kiện', 'Save Conditions');
+  setHtml('[data-i18n="fbFiltersAiTitle"]', '<span class="util-dot util-dot-purple"></span>Phân loại & Kiểm duyệt bằng AI', '<span class="util-dot util-dot-purple"></span>AI Classification & Moderation');
+  setText('[data-i18n="fbFiltersAiProductDesc"]', 'Nhu cầu sản phẩm cần AI kiểm duyệt (Mô tả chi tiết sản phẩm/nhu cầu)', 'Product requirement for AI moderation (Detailed product/need description)');
+  setText('[data-i18n="fbFiltersAiHint"]', '💡 AI sẽ dùng mô tả này để tự động phân loại đúng bài viết theo nhu cầu của bạn. Nếu để trống, hệ thống sẽ tự động dùng "Từ khoá bắt buộc" ở dưới để đối chiếu.', '💡 AI will use this description to automatically classify posts matching your needs. If empty, the system will fallback to "Required keywords" below.');
+  setHtml('[data-i18n="fbFiltersRequireKeywords"]', '<span class="util-dot util-dot-green"></span>Từ khoá bắt buộc <small>(mỗi từ 1 dòng)</small>', '<span class="util-dot util-dot-green"></span>Required Keywords <small>(one word per line)</small>');
+  setHtml('[data-i18n="fbFiltersBlockKeywords"]', '<span class="util-dot util-dot-red"></span>Từ khoá chặn <small>(mỗi từ 1 dòng)</small>', '<span class="util-dot util-dot-red"></span>Blocked Keywords <small>(one word per line)</small>');
+  setHtml('[data-i18n="fbFiltersLocation"]', '<span class="util-dot util-dot-blue"></span>Khu vực lọc <small>— click chọn tỉnh/thành, để trống = chấp nhận mọi nơi</small>', '<span class="util-dot util-dot-blue"></span>Filter Region <small>— click to select province/city, leave empty = accept all</small>');
+  setText('[data-i18n="fbFiltersBtnClearLocations"]', 'Bỏ chọn tất cả', 'Clear All');
+  setText('[data-i18n="fbFiltersLocationEmpty"]', 'Chưa chọn khu vực nào — hệ thống chấp nhận mọi tỉnh thành', 'No region selected — system accepts all provinces/cities');
+  setHtml('[data-i18n="fbFiltersExtractor"]', '<span class="util-dot util-dot-purple"></span>Trích xuất dữ liệu tự động <small>— bật/tắt trường cần lấy</small>', '<span class="util-dot util-dot-purple"></span>Auto Data Extraction <small>— toggle fields to extract</small>');
+  setText('[data-i18n="fbFiltersExtractorHint"]', 'Hệ thống tự nhận dạng pattern. Không cần nhập regex thủ công.', 'The system automatically detects patterns. No manual regex entry needed.');
+  setHtml('[data-i18n="fbFiltersMaxPosts"]', '<span class="util-dot util-dot-orange"></span>Giới hạn bài mỗi lần quét', '<span class="util-dot util-dot-orange"></span>Post Limit per Crawl');
+  setText('#fbFiltersMaxPostsUnit', 'bài / group · 0 = không giới hạn', 'posts / group · 0 = unlimited');
+
+  // Cron panel
+  setText('[data-i18n="fbCronTitle"]', 'Hẹn lịch quét tự động', 'Schedule Auto Crawl');
+  setText('[data-i18n="fbCronDesc"]', 'Mỗi session quét một batch group theo lịch cron. AI tự đề xuất phân bổ tối ưu.', 'Each session crawls a batch of groups by cron schedule. AI recommends optimal distribution.');
+  setText('[data-i18n="fbCronBtnAi"]', 'AI Đề xuất lịch', 'AI Suggest Schedule');
+  setText('[data-i18n="fbCronBtnSave"]', 'Lưu lịch', 'Save Schedule');
+  setText('[data-i18n="fbCronLabelId"]', 'ID', 'ID');
+  setText('[data-i18n="fbCronLabelTime"]', 'Giờ chạy (VN)', 'Execution Time (VN)');
+  setText('[data-i18n="fbCronLabelFrom"]', 'Group từ', 'Group from');
+  setText('[data-i18n="fbCronLabelTo"]', 'đến', 'to');
+  setText('[data-i18n="fbCronBtnAdd"]', 'Thêm', 'Add');
+  setText('[data-i18n="fbCronThTime"]', 'Giờ chạy (VN)', 'Execution Time (VN)');
+  setText('[data-i18n="fbCronThSlice"]', 'Group slice', 'Group slice');
+  setText('[data-i18n="fbCronThActions"]', 'Thao tác', 'Actions');
+
+  // Notify panel
+  setText('[data-i18n="fbNotifyEyebrow"]', 'REPORT TARGETS', 'REPORT TARGETS');
+  setText('[data-i18n="fbNotifyTitle"]', 'Nhóm nhận báo cáo', 'Report Target Groups');
+  setText('[data-i18n="fbNotifyDesc"]', 'Chọn các nhóm Zalo hoặc người dùng nhận báo cáo kết quả quét tự động.', 'Select Zalo groups or users to receive automatic crawl report notifications.');
+  setText('#btnFbSaveNotify', 'Lưu cấu hình', 'Save Configuration');
+  setText('#fbNotifySubTabGroupBtn', 'Nhóm (Group)', 'Group');
+  setText('#fbNotifySubTabUserBtn', 'Cá nhân (User)', 'User');
+  setText('[data-i18n="thAvatar"]', 'Avatar', 'Avatar');
+  setText('[data-i18n="thGroupName"]', 'Tên nhóm', 'Group Name');
+  setText('[data-i18n="thMemberCount"]', 'Số thành viên', 'Member Count');
+  setText('[data-i18n="thFriendName"]', 'Tên bạn bè', 'Friend Name');
+  setText('[data-i18n="thUserId"]', 'User ID', 'User ID');
+
+  // Template panel
+  setText('[data-i18n="fbTemplateTitle"]', 'Mẫu template báo cáo', 'Report Template');
+  setText('[data-i18n="fbTemplateDesc"]', 'Tuỳ chỉnh định dạng báo cáo kết quả gửi qua Zalo. Template lưu ngoài plugin, không mất khi update.', 'Customize Zalo report format. Template is saved outside the plugin, preserved across updates.');
+  setText('[data-i18n="fbTemplateBtnReset"]', 'Reset mặc định', 'Reset Default');
+  setText('[data-i18n="fbTemplateBtnPreview"]', '👁️ Preview', '👁️ Preview');
+  setText('[data-i18n="fbTemplateBtnSave"]', 'Lưu template', 'Save Template');
+  setText('[data-i18n="fbTemplateVarHint"]', '📌 Biến có thể dùng — click để chèn vào template:', '📌 Available variables — click to insert:');
+  setText('[data-i18n="fbTemplateVarItems"]', '← ds kết quả', '← result list');
+  setHtml('[data-i18n="fbTemplateBottomHint"]', '💡 Dùng <code>*text*</code> để in đậm trong Zalo. Template lưu tại <code>plugins-data/zalo-mod/report-template.txt</code>', '💡 Use <code>*text*</code> for bold formatting in Zalo. Template saved at <code>plugins-data/zalo-mod/report-template.txt</code>');
+
+  // Placeholders
+  setAttr('#fbReportTemplate', 'placeholder', 'Nhập template báo cáo...', 'Enter report template...');
+  setAttr('#fbCookiesTextarea', 'placeholder', 'Dán nội dung JSON Cookie vào đây (ví dụ: [{"domain": ".facebook.com", "name": "c_user", "value": "..."}]) hoặc chọn file tải lên ở trên...', 'Paste JSON Cookie here (e.g., [{"domain": ".facebook.com", "name": "c_user", "value": "..."}]) or choose a file to upload above...');
+  setAttr('#fbAiProductDesc', 'placeholder', 'Ví dụ: robot hút bụi lau nhà Xiaomi, Ecovacs, Dreame, Roborock (thanh lý hoặc tìm mua)', 'e.g., Xiaomi robot vacuum cleaner, Ecovacs, Dreame, Roborock (used or looking to buy)');
+  setAttr('#fbNewGroupKey', 'placeholder', 'vd: nvx', 'e.g., nvx');
+  setAttr('#fbNewGroupName', 'placeholder', 'Yamaha NVX - Mua bán xe', 'Yamaha NVX - Sell/Buy');
+  setAttr('#fbNewGroupUrl', 'placeholder', 'https://www.facebook.com/groups/...', 'https://www.facebook.com/groups/...');
+  setAttr('#fbNewGroupVK', 'placeholder', 'nvx;nvx 155', 'nvx;nvx 155');
+  setAttr('#fbLocationSearch', 'placeholder', 'Tìm tỉnh/thành...', 'Search province/city...');
+  setAttr('#fbNewCronId', 'placeholder', 'A', 'A');
+
+  // --- Rules & Cmds Tab Translations ---
+  setText('#templates .page-head h2', 'Quản lý Lệnh & Rules', 'Manage Rules & Commands');
+  setText('#templates .page-head p', 'Tùy chỉnh nội dung phản hồi của bot cho các lệnh slash commands.', 'Customize bot response content for slash commands.');
+  setText('[data-template-key="noi-quy"] strong', 'Nội quy nhóm', 'Group Rules');
+  setText('[data-template-key="huong-dan"] strong', 'Hướng dẫn dùng bot', 'Bot Manual');
+  setText('[data-template-key="menu"] strong', 'Menu lệnh', 'Slash Commands Menu');
+  setText('#templates .cheatsheet h5', 'Biến có thể sử dụng (Click để chèn):', 'Available Variables (Click to Insert):');
+  setHtml('[data-var="{groupName}"]', '<code>{groupName}</code> - Tên nhóm', '<code>{groupName}</code> - Group name');
+  setAttr('[data-var="{groupName}"]', 'title', 'Tên nhóm chat Zalo', 'Zalo group name');
+  setHtml('[data-var="{botName}"]', '<code>{botName}</code> - Tên bot', '<code>{botName}</code> - Bot name');
+  setAttr('[data-var="{botName}"]', 'title', 'Tên bot', 'Bot name');
+  setHtml('[data-var="{BOTNAME}"]', '<code>{BOTNAME}</code> - Tên bot viết hoa', '<code>{BOTNAME}</code> - Uppercase bot name');
+  setAttr('[data-var="{BOTNAME}"]', 'title', 'Tên bot viết hoa', 'Uppercase bot name');
+  setHtml('[data-var="{cmdPrefix}"]', '<code>{cmdPrefix}</code> - Prefix lệnh', '<code>{cmdPrefix}</code> - Command prefix');
+  setAttr('[data-var="{cmdPrefix}"]', 'title', 'Prefix lệnh (ví dụ /williams-)', 'Command prefix (e.g. /williams-)');
+  setHtml('[data-var="{customModes}"]', '<code>{customModes}</code> - Chế độ tính năng', '<code>{customModes}</code> - Custom modes');
+  setAttr('[data-var="{customModes}"]', 'title', 'Danh sách slash commands chế độ tính năng', 'List of custom modes slash commands');
+  setAttr('#template-textarea', 'placeholder', 'Nhập nội dung template...', 'Enter template content...');
+  setText('#btn-preview-template', 'Xem trước', 'Preview');
+  setText('#btn-save-template', 'Lưu cấu hình', 'Save Configuration');
+
+  // Redraw lists
+  if (typeof fbState !== 'undefined' && fbState) {
+    renderFbGroups();
+    renderFbCronTable();
+    renderFbLocationSelected();
+    renderFbExtractors();
+    renderFbNotifyGroupList();
+    renderFbNotifyUserList();
+  }
 }
 function closeModal(value) {
   modalBackdrop.classList.remove('open');
@@ -3500,3 +3649,1422 @@ window.addEventListener('resize', () => {
     document.body.classList.remove('has-sub-topbar');
   }
 });
+
+// FB CRAWLER MANAGER MODULE
+// ═══════════════════════════════════════════════════════════════════════════
+
+var fbState = null; // { config, reportTemplate, defaultTemplate }
+var fbGroupsList = []; // in-memory group list (pending save)
+var fbCronList = [];   // in-memory cron list (pending save)
+var fbNotifySelectedGroupIds = [];
+var fbNotifySelectedDmUserIds = [];
+
+// Helper to populate profile dropdown select
+function populateFbProfileSelect() {
+  const select = document.getElementById('fbProfileSelect');
+  if (!select) return;
+  const currentVal = select.value;
+  const botsList = (window.state && window.state.bots) ? window.state.bots : [];
+  let optionsHtml = '';
+  if (botsList.length === 0) {
+    optionsHtml = '<option value="default">Default Bot</option>';
+  } else {
+    optionsHtml = botsList.map(bot => {
+      return `<option value="${esc(bot.id)}">${esc(bot.name)} (${esc(bot.id)})</option>`;
+    }).join('');
+  }
+  select.innerHTML = optionsHtml;
+  if (currentVal && Array.from(select.options).some(opt => opt.value === currentVal)) {
+    select.value = currentVal;
+  } else {
+    select.selectedIndex = 0;
+  }
+}
+
+window.fbProfileChanged = async function () {
+  await window.loadFbCrawlerState();
+};
+
+window.fbToggleUseAi = function (val) {
+  const settingsGroup = document.getElementById('fbAiSettingsGroup');
+  if (settingsGroup) {
+    if (val) {
+      settingsGroup.style.opacity = '1';
+      settingsGroup.style.pointerEvents = 'auto';
+    } else {
+      settingsGroup.style.opacity = '0.5';
+      settingsGroup.style.pointerEvents = 'none';
+    }
+  }
+};
+
+// ─── Load state ───────────────────────────────────────────────────────────────
+window.loadFbCrawlerState = async function () {
+  const selectEl = document.getElementById('fbProfileSelect');
+  if (selectEl && selectEl.options.length === 0) {
+    populateFbProfileSelect();
+  }
+  const profile = selectEl ? selectEl.value : 'banxe';
+
+  const bar = document.getElementById('fbCrawlerStatusBar');
+  try {
+    const data = await api('/api/fb-crawler/state?profile=' + encodeURIComponent(profile));
+    fbState = data;
+    fbGroupsList = (data.config?.groups || []).map(g => ({ ...g }));
+    fbCronList = (data.config?.cronSchedule || []).map(s => ({ ...s }));
+
+    // Status bar
+    if (bar) {
+      bar.style.display = 'flex';
+      document.getElementById('fbCrawlerStatusText').textContent =
+        `FB Crawler (${profile}): ${fbGroupsList.length} ${t('nhóm', 'groups')}, ${fbCronList.length} ${t('phiên', 'sessions')} cron`;
+    }
+
+    renderFbGroups();
+    renderFbCronTable();
+    renderFbRules(data.config?.rules || {});
+    renderFbNotify(data.config || {});
+    renderFbTemplate(data.reportTemplate || data.defaultTemplate || '');
+
+    // Render Cookies Status
+    const statusEl = document.getElementById('fbCookiesStatus');
+    const clearBtn = document.getElementById('btnFbClearCookies');
+    const ta = document.getElementById('fbCookiesTextarea');
+    if (statusEl) {
+      if (data.hasCookies) {
+        statusEl.textContent = `${t('Đã nạp Cookies', 'Cookies loaded')} (${data.cookiesCount || 0} ${t('mục', 'items')})`;
+        statusEl.style.color = 'var(--success, #10b981)';
+        if (clearBtn) clearBtn.style.display = 'inline-block';
+      } else {
+        statusEl.textContent = t('Chưa nạp Cookies (Trình duyệt sẽ chạy ẩn danh không đăng nhập)', 'No Cookies loaded (Browser will run in incognito mode without logging in)');
+        statusEl.style.color = 'var(--text-muted)';
+        if (clearBtn) clearBtn.style.display = 'none';
+        if (ta) ta.value = '';
+      }
+    }
+  } catch (e) {
+    if (bar) {
+      bar.style.display = 'flex';
+      document.getElementById('fbCrawlerStatusDot').style.background = '#ef4444';
+      document.getElementById('fbCrawlerStatusText').textContent = t('Lỗi tải FB Crawler: ', 'Error loading FB Crawler: ') + e.message;
+    }
+  }
+};
+
+// ─── PANEL 1: Groups ─────────────────────────────────────────────────────────
+function renderFbGroups() {
+  const tbody = document.getElementById('fbGroupsTbody');
+  const countEl = document.getElementById('fbGroupsCount');
+  if (!tbody) return;
+
+  if (!fbGroupsList.length) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:24px;">${t('Chưa có group nào. Thêm group hoặc import file CSV.', 'No groups yet. Add a group or import a CSV file.')}</td></tr>`;
+    if (countEl) countEl.textContent = '0 groups';
+    return;
+  }
+
+  tbody.innerHTML = fbGroupsList.map((g, i) => `
+    <tr>
+      <td style="color:var(--text-muted);font-size:12px;">${i + 1}</td>
+      <td><code style="font-size:12px;background:var(--bg-hover);padding:2px 6px;border-radius:4px;">${esc(g.key || '')}</code></td>
+      <td style="font-size:13px;">${esc(g.name || '')}</td>
+      <td style="font-size:12px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+        <a href="${esc(g.url)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;" title="${esc(g.url)}">${esc(g.url.replace('https://www.facebook.com/groups/', 'fb.com/groups/'))}</a>
+      </td>
+      <td style="font-size:12px;color:var(--text-muted);">${(g.vehicleKeywords || []).join('; ') || '-'}</td>
+      <td>
+        <button class="btn" type="button" style="padding:3px 8px;font-size:12px;" onclick="fbDeleteGroup(${i})">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:13px;height:13px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6m4-6v6"/></svg>
+        </button>
+      </td>
+    </tr>`).join('');
+
+  if (countEl) countEl.textContent = `${fbGroupsList.length} ${t('nhóm', 'groups')}`;
+}
+
+window.fbAddGroup = function () {
+  const key = document.getElementById('fbNewGroupKey')?.value.trim();
+  const name = document.getElementById('fbNewGroupName')?.value.trim();
+  const url = document.getElementById('fbNewGroupUrl')?.value.trim();
+  const vkStr = document.getElementById('fbNewGroupVK')?.value.trim();
+
+  if (!url || !url.startsWith('http')) {
+    showToast(t('Vui lòng nhập URL group Facebook hợp lệ!', 'Please enter a valid Facebook group URL!'), 'warning'); return;
+  }
+  if (fbGroupsList.some(g => g.url === url)) {
+    showToast(t('Group này đã tồn tại trong danh sách!', 'This group already exists in the list!'), 'warning'); return;
+  }
+
+  const vehicleKeywords = vkStr ? vkStr.split(';').map(s => s.trim()).filter(Boolean) : [];
+  fbGroupsList.push({
+    id: Date.now(),
+    key: key || `grp${fbGroupsList.length + 1}`,
+    name: name || url,
+    url,
+    vehicleKeywords
+  });
+  renderFbGroups();
+
+  // Clear inputs
+  ['fbNewGroupKey', 'fbNewGroupName', 'fbNewGroupUrl', 'fbNewGroupVK'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  showToast(t('Đã thêm group vào danh sách. Nhớ nhấn "Lưu danh sách"!', 'Group added to list. Remember to click "Save list"!'), 'info');
+};
+
+window.fbDeleteGroup = function (index) {
+  fbGroupsList.splice(index, 1);
+  renderFbGroups();
+};
+
+window.fbSaveGroups = async function () {
+  const btn = document.getElementById('btnFbSaveGroups');
+  const profile = document.getElementById('fbProfileSelect') ? document.getElementById('fbProfileSelect').value : 'banxe';
+  setButtonLoading(btn, true);
+  try {
+    const data = await api('/api/fb-crawler/save-groups?profile=' + encodeURIComponent(profile), {
+      method: 'POST',
+      body: JSON.stringify({ groups: fbGroupsList }),
+    });
+    showToast(t('Đã lưu ', 'Saved ') + data.count + t(' groups thành công!', ' groups successfully!'), 'success');
+    await loadFbCrawlerState();
+  } catch (e) {
+    showToast(e.message, 'error');
+  } finally {
+    setButtonLoading(btn, false);
+  }
+};
+
+// ─── Import / Export CSV ──────────────────────────────────────────────────────
+window.fbDownloadSampleExcel = function () {
+  const a = document.createElement('a');
+  a.href = (location.protocol === 'file:' ? 'http://127.0.0.1:19790' : '') + '/api/fb-crawler/sample-excel';
+  a.download = 'fb-groups-sample.csv';
+  const currentToken = token || localStorage.getItem('zaloDashboardToken') || 'openclaw-zalo-mod';
+  // Add auth header via fetch blob
+  api('/api/fb-crawler/sample-excel').then(() => {
+    fetch((location.protocol === 'file:' ? 'http://127.0.0.1:19790' : '') + '/api/fb-crawler/sample-excel', {
+      headers: { 'authorization': `Bearer ${currentToken}` }
+    }).then(r => r.blob()).then(blob => {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'fb-groups-sample.csv';
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    });
+  }).catch(() => {
+    // Fallback: generate client-side
+    // Fallback: generate client-side with semicolon separator (Excel VN compatible)
+    const csvRows = ['sep=;', 'Key;T\u00ean Group;URL;T\u1eeb kho\u00e1 xe (ng\u0103n c\u00e1ch b\u1eb1ng d\u1ea5u c\u00e1ch)', 'nvx;Yamaha NVX - Mua b\u00e1n xe;https://www.facebook.com/groups/example1/;nvx nvx155', 'wave;Honda Wave - Group b\u00e1n xe;https://www.facebook.com/groups/example2/;wave alpha', 'airb;Yamaha Airblade Group;https://www.facebook.com/groups/example3/;airblade airblade155', 'sh;Honda SH - Mua b\u00e1n SH;https://www.facebook.com/groups/example4/;sh sh150 sh160'];
+    const blob = new Blob(['\uFEFF' + csvRows.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'fb-groups-sample.csv';
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  });
+};
+
+window.fbImportExcelFile = async function (input) {
+  const file = input.files[0];
+  if (!file) return;
+  const btn = document.getElementById('btnFbImportExcel');
+  setButtonLoading(btn, true);
+  try {
+    // Read as base64 — works for both CSV and XLSX binary
+    const arrayBuf = await file.arrayBuffer();
+    const uint8 = new Uint8Array(arrayBuf);
+    let binary = '';
+    for (let i = 0; i < uint8.length; i++) binary += String.fromCharCode(uint8[i]);
+    const b64 = btoa(binary);
+    const data = await api('/api/fb-crawler/import-excel', {
+      method: 'POST',
+      body: JSON.stringify({ csvBase64: b64 }),
+    });
+    if (!data.groups || data.groups.length === 0) {
+      showToast(t('Không parse được group nào. Kiểm tra lại định dạng file!', 'No groups parsed. Check the file format!'), 'warning');
+      return;
+    }
+    fbShowImportModal(data.groups);
+  } catch (e) {
+    showToast(t('Lỗi import: ', 'Import error: ') + e.message, 'error');
+  } finally {
+    setButtonLoading(btn, false);
+    input.value = '';
+  }
+};
+
+// ─── Import modal ──────────────────────────────────────────────────────────────
+let fbImportParsedGroups = [];
+let fbImportSelected = new Set();
+
+function fbShowImportModal(groups) {
+  fbImportParsedGroups = groups;
+  fbImportSelected = new Set();
+  const existingUrls = new Set(fbGroupsList.map(function(g) { return g.url; }));
+
+  // Default: select all non-duplicates
+  groups.forEach(function(g, i) {
+    if (!existingUrls.has(g.url)) fbImportSelected.add(i);
+  });
+
+  const rows = groups.map(function(g, i) {
+    const isDup = existingUrls.has(g.url);
+    const checked = fbImportSelected.has(i);
+    const shortUrl = g.url.replace('https://www.facebook.com/groups/', 'fb.com/groups/');
+    const kws = (g.vehicleKeywords || []).join(', ') || '-';
+    return [
+      '<tr class="fb-import-row' + (isDup ? ' dup' : '') + '" data-idx="' + i + '">',
+        '<td style="width:36px;text-align:center;padding:8px 6px">',
+          '<input type="checkbox"' + (checked ? ' checked' : '') + (isDup ? ' title="URL đã tồn tại"' : '') + ' onchange="fbImportToggle(' + i + ',this.checked)">',
+        '</td>',
+        '<td style="width:100px;padding:8px 6px"><code style="font-size:11px;background:var(--bg);border:1px solid var(--line);padding:1px 5px;border-radius:3px">' + esc(g.key) + '</code></td>',
+        '<td style="padding:8px 6px;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px" title="' + esc(g.name) + '">' + esc(g.name) + '</td>',
+        '<td style="padding:8px 6px;font-size:11px;color:var(--muted);max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(g.url) + '">',
+          '<a href="' + esc(g.url) + '" target="_blank" style="color:var(--primary)">' + esc(shortUrl) + '</a>',
+        '</td>',
+        '<td style="padding:8px 6px;font-size:11px;color:var(--muted);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(kws) + '">' + esc(kws) + '</td>',
+        '<td style="padding:8px 6px;width:60px;font-size:11px;color:var(--warning);white-space:nowrap">' + (isDup ? t('⚠ Trùng', '⚠ Duplicate') : '') + '</td>',
+      '</tr>',
+    ].join('');
+  }).join('');
+
+  const dupCount = groups.filter(function(g) { return existingUrls.has(g.url); }).length;
+  const newCount = groups.length - dupCount;
+
+  const body = [
+    '<div style="margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">',
+      '<span style="font-size:13px">',
+        t('Tìm thấy', 'Found') + ' <strong>' + groups.length + '</strong> ' + t('groups', 'groups'),
+        (dupCount ? ' &nbsp;·&nbsp; <span style="color:var(--warning)">' + dupCount + ' ' + t('trùng', 'duplicates') + '</span>' : ''),
+        ' &nbsp;·&nbsp; <span style="color:var(--success)">' + newCount + ' ' + t('mới', 'new') + '</span>',
+      '</span>',
+      '<label style="font-size:13px;display:flex;align-items:center;gap:6px;cursor:pointer">',
+        '<input type="checkbox" id="fbImportSelectAllCb" checked onchange="fbImportSelectAll(this.checked)"> ' + t('Chọn tất cả', 'Select all'),
+      '</label>',
+    '</div>',
+    '<div class="table-wrap" style="max-height:340px;overflow-y:auto;border:1px solid var(--line);border-radius:var(--radius)">',
+      '<table style="width:100%;border-collapse:collapse">',
+        '<thead><tr style="background:var(--surface-2,var(--bg));font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)">',
+          '<th style="width:36px;padding:8px 6px"></th>',
+          '<th style="padding:8px 6px;text-align:left">Key</th>',
+          '<th style="padding:8px 6px;text-align:left">' + t('Tên Group', 'Group Name') + '</th>',
+          '<th style="padding:8px 6px;text-align:left">URL</th>',
+          '<th style="padding:8px 6px;text-align:left">' + t('Từ khóa', 'Keywords') + '</th>',
+          '<th style="width:52px;padding:8px 6px"></th>',
+        '</tr></thead>',
+        '<tbody id="fbImportModalBody">' + rows + '</tbody>',
+      '</table>',
+    '</div>',
+    '<p style="margin:10px 0 0;font-size:12px;color:var(--muted)">' + t('Bỏ tích những group không muốn thêm. Nhấn <strong>Thêm vào danh sách</strong> để xác nhận.', 'Uncheck groups you do not want to add. Press <strong>Add to list</strong> to confirm.') + '</p>',
+  ].join('');
+
+  openModal({
+    title: t('📥 Import Group Facebook', '📥 Import Facebook Groups'),
+    desc: t('Chọn các group muốn thêm vào danh sách quét.', 'Select groups to add to crawl list.'),
+    body: body,
+    confirmText: t('Thêm vào danh sách', 'Add to list'),
+    tone: 'info',
+    large: true,
+  }).then(function(confirmed) {
+    if (confirmed === false) return;
+    fbImportConfirm();
+  });
+}
+
+window.fbImportToggle = function(idx, val) {
+  if (val) { fbImportSelected.add(idx); } else { fbImportSelected.delete(idx); }
+  // Update "select all" checkbox state
+  const cb = document.getElementById('fbImportSelectAllCb');
+  if (cb) {
+    const existingUrls = new Set(fbGroupsList.map(function(g) { return g.url; }));
+    const selectableCount = fbImportParsedGroups.filter(function(g) { return !existingUrls.has(g.url); }).length;
+    cb.checked = fbImportSelected.size === selectableCount;
+  }
+};
+
+window.fbImportSelectAll = function(val) {
+  const existingUrls = new Set(fbGroupsList.map(function(g) { return g.url; }));
+  fbImportParsedGroups.forEach(function(g, i) {
+    if (!existingUrls.has(g.url)) {
+      if (val) { fbImportSelected.add(i); } else { fbImportSelected.delete(i); }
+      const row = document.querySelector('#fbImportModalBody tr[data-idx="' + i + '"] input[type=checkbox]');
+      if (row) row.checked = val;
+    }
+  });
+};
+
+function fbImportConfirm() {
+  const existingUrls = new Set(fbGroupsList.map(function(g) { return g.url; }));
+  let added = 0;
+  Array.from(fbImportSelected).forEach(function(idx) {
+    const g = fbImportParsedGroups[idx];
+    if (g && !existingUrls.has(g.url)) {
+      fbGroupsList.push(Object.assign({}, g, { id: Date.now() + added }));
+      existingUrls.add(g.url);
+      added++;
+    }
+  });
+  renderFbGroups();
+  if (added > 0) {
+    showToast(t('Đã thêm ', 'Added ') + added + t(' group mới! Nhấn "Lưu danh sách" để lưu.', ' new groups! Click "Save list" to save.'), 'success');
+  } else {
+    showToast(t('Không có group mới nào được chọn.', 'No new groups selected.'), 'warning');
+  }
+}
+
+
+// — PANEL 2: Rules — Province pills + Extractor toggles ——————————————————————
+
+// 63 provinces of Vietnam with search keywords
+const FB_PROVINCES = [
+  { id: 'hanoi',      label: 'Hà Nội',         kw: ['hà nội','hanoi','hn'] },
+  { id: 'hcm',        label: 'TP.HCM',          kw: ['hồ chí minh','hcm','sài gòn','saigon','tphcm'] },
+  { id: 'danang',     label: 'Đà Nẵng',         kw: ['đà nẵng','da nang','đn'] },
+  { id: 'haiphong',   label: 'Hải Phòng',       kw: ['hải phòng','hai phong','hp'] },
+  { id: 'cantho',     label: 'Cần Thơ',         kw: ['cần thơ','can tho','ct'] },
+  { id: 'binhduong',  label: 'Bình Dương',      kw: ['bình dương','binh duong','bd','thủ dầu một'] },
+  { id: 'dongnai',    label: 'Đồng Nai',        kw: ['đồng nai','dong nai','dn','biên hòa'] },
+  { id: 'longan',     label: 'Long An',         kw: ['long an','tân an'] },
+  { id: 'angiang',    label: 'An Giang',        kw: ['an giang','long xuyên','châu đốc'] },
+  { id: 'bariavungtau', label: 'BR-Vũng Tàu',  kw: ['bà rịa','vũng tàu','brvt'] },
+  { id: 'bacgiang',   label: 'Bắc Giang',      kw: ['bắc giang','bac giang'] },
+  { id: 'backan',     label: 'Bắc Kạn',        kw: ['bắc kạn','bac kan'] },
+  { id: 'baclieu',    label: 'Bạc Liêu',       kw: ['bạc liêu','bac lieu'] },
+  { id: 'bacninh',    label: 'Bắc Ninh',       kw: ['bắc ninh','bac ninh'] },
+  { id: 'bentre',     label: 'Bến Tre',        kw: ['bến tre','ben tre'] },
+  { id: 'binhdinh',   label: 'Bình Định',      kw: ['bình định','binh dinh','quy nhơn'] },
+  { id: 'binhphuoc',  label: 'Bình Phước',     kw: ['bình phước','binh phuoc','đồng xoài'] },
+  { id: 'binhthuan',  label: 'Bình Thuận',     kw: ['bình thuận','binh thuan','phan thiết'] },
+  { id: 'camau',      label: 'Cà Mau',         kw: ['cà mau','ca mau'] },
+  { id: 'caobang',    label: 'Cao Bằng',       kw: ['cao bằng','cao bang'] },
+  { id: 'daklak',     label: 'Đắk Lắk',       kw: ['đắk lắk','dak lak','buôn ma thuột'] },
+  { id: 'daknong',    label: 'Đắk Nông',       kw: ['đắk nông','dak nong','gia nghĩa'] },
+  { id: 'dienbien',   label: 'Điện Biên',      kw: ['điện biên','dien bien'] },
+  { id: 'gialai',     label: 'Gia Lai',        kw: ['gia lai','pleiku'] },
+  { id: 'hagiang',    label: 'Hà Giang',       kw: ['hà giang','ha giang'] },
+  { id: 'hanam',      label: 'Hà Nam',         kw: ['hà nam','ha nam','phủ lý'] },
+  { id: 'hatinh',     label: 'Hà Tĩnh',        kw: ['hà tĩnh','ha tinh'] },
+  { id: 'haiduong',   label: 'Hải Dương',      kw: ['hải dương','hai duong'] },
+  { id: 'haugiang',   label: 'Hậu Giang',      kw: ['hậu giang','hau giang','vị thanh'] },
+  { id: 'hoabinh',    label: 'Hòa Bình',       kw: ['hòa bình','hoa binh'] },
+  { id: 'hungyen',    label: 'Hưng Yên',       kw: ['hưng yên','hung yen'] },
+  { id: 'khanhhoa',   label: 'Khánh Hòa',      kw: ['khánh hòa','khanh hoa','nha trang'] },
+  { id: 'kiengiang',  label: 'Kiên Giang',     kw: ['kiên giang','kien giang','rạch giá','phú quốc'] },
+  { id: 'kontum',     label: 'Kon Tum',        kw: ['kon tum','kontum'] },
+  { id: 'laichau',    label: 'Lai Châu',       kw: ['lai châu','lai chau'] },
+  { id: 'lamdong',    label: 'Lâm Đồng',       kw: ['lâm đồng','lam dong','đà lạt','dalat'] },
+  { id: 'langson',    label: 'Lạng Sơn',       kw: ['lạng sơn','lang son'] },
+  { id: 'laocai',     label: 'Lào Cai',        kw: ['lào cai','lao cai','sa pa'] },
+  { id: 'namdinh',    label: 'Nam Định',       kw: ['nam định','nam dinh'] },
+  { id: 'nghean',     label: 'Nghệ An',        kw: ['nghệ an','nghe an','vinh'] },
+  { id: 'ninhbinh',   label: 'Ninh Bình',      kw: ['ninh bình','ninh binh'] },
+  { id: 'ninhthuan',  label: 'Ninh Thuận',     kw: ['ninh thuận','ninh thuan','phan rang'] },
+  { id: 'phutho',     label: 'Phú Thọ',        kw: ['phú thọ','phu tho','việt trì'] },
+  { id: 'phuyen',     label: 'Phú Yên',        kw: ['phú yên','phu yen','tuy hòa'] },
+  { id: 'quangbinh',  label: 'Quảng Bình',     kw: ['quảng bình','quang binh','đồng hới'] },
+  { id: 'quangnam',   label: 'Quảng Nam',      kw: ['quảng nam','quang nam','hội an','tam kỳ'] },
+  { id: 'quangngai',  label: 'Quảng Ngãi',     kw: ['quảng ngãi','quang ngai'] },
+  { id: 'quangninh',  label: 'Quảng Ninh',     kw: ['quảng ninh','quang ninh','hạ long','ha long'] },
+  { id: 'quangtri',   label: 'Quảng Trị',      kw: ['quảng trị','quang tri','đông hà'] },
+  { id: 'soctrang',   label: 'Sóc Trăng',      kw: ['sóc trăng','soc trang'] },
+  { id: 'sonla',      label: 'Sơn La',         kw: ['sơn la','son la'] },
+  { id: 'tayninh',    label: 'Tây Ninh',       kw: ['tây ninh','tay ninh'] },
+  { id: 'thaibinh',   label: 'Thái Bình',      kw: ['thái bình','thai binh'] },
+  { id: 'thainguyen', label: 'Thái Nguyên',    kw: ['thái nguyên','thai nguyen'] },
+  { id: 'thanhhoa',   label: 'Thanh Hóa',      kw: ['thanh hóa','thanh hoa'] },
+  { id: 'thuathienhue', label: 'TT-Huế',       kw: ['thừa thiên','huế','hue','thua thien'] },
+  { id: 'tiengiang',  label: 'Tiền Giang',     kw: ['tiền giang','tien giang','mỹ tho'] },
+  { id: 'travinh',    label: 'Trà Vinh',       kw: ['trà vinh','tra vinh'] },
+  { id: 'tuyenquang', label: 'Tuyên Quang',    kw: ['tuyên quang','tuyen quang'] },
+  { id: 'vinhlong',   label: 'Vĩnh Long',      kw: ['vĩnh long','vinh long'] },
+  { id: 'vinhphuc',   label: 'Vĩnh Phúc',      kw: ['vĩnh phúc','vinh phuc','vĩnh yên'] },
+  { id: 'yenbai',     label: 'Yên Bái',        kw: ['yên bái','yen bai'] },
+];
+
+// Pre-built regex extractor presets
+const FB_EXTRACTORS = [
+  { id: 'phone',   name: t('Số điện thoại', 'Phone number'), desc: '0xxxxxxxxx / 0xxxxxxxxxx', pattern: String.raw`(0[35789]\d{8,9})` },
+  { id: 'price',   name: t('Giá bán', 'Price'),       desc: 'xxx triệu / xxxk / xxx đ',  pattern: String.raw`(\d[\d\.,]*\s*(?:tr(?:iệu)?|k|đồng|đ|million|m))` },
+  { id: 'year',    name: t('Năm sản xuất', 'Production year'),  desc: '20xx / 19xx',              pattern: String.raw`(?:năm|sx|đời|model)?\s*(20\d{2}|19\d{2})` },
+  { id: 'address', name: t('Địa chỉ', 'Address'),       desc: t('Phường/Xã, Quận/Huyện', 'Ward/District'),   pattern: String.raw`(?:tại|ở|địa chỉ|khu vực)[:\s]+([^,\n.]{5,60})` },
+  { id: 'color',   name: t('Màu sắc', 'Color'),       desc: t('đen/trắng/đỏ/xanh...', 'black/white/red/blue...'),    pattern: String.raw`(?:màu|color)[:\s]*((?:đen|trắng|đỏ|xanh|vàng|bạc|xám|cam|tím|hồng|nâu)\w*)` },
+];
+
+// State
+let fbSelectedProvinces = new Set();
+let fbExtractorEnabled  = {};
+
+function renderFbProvinces(filter) {
+  filter = filter || '';
+  const grid = document.getElementById('fbProvinceGrid');
+  if (!grid) return;
+  const q = filter.toLowerCase().trim();
+  const visible = FB_PROVINCES.filter(function(p) {
+    return !q || p.label.toLowerCase().includes(q) || p.kw.some(function(k) { return k.includes(q); });
+  });
+  grid.innerHTML = visible.map(function(p) {
+    return '<button type="button" class="util-province-pill' + (fbSelectedProvinces.has(p.id) ? ' selected' : '') + '" data-pid="' + p.id + '" onclick="fbToggleProvince(\'' + p.id + '\')">' + p.label + '</button>';
+  }).join('');
+}
+
+window.fbToggleProvince = function(id) {
+  if (fbSelectedProvinces.has(id)) {
+    fbSelectedProvinces.delete(id);
+  } else {
+    fbSelectedProvinces.add(id);
+  }
+  renderFbProvinces(document.getElementById('fbLocationSearch') ? document.getElementById('fbLocationSearch').value : '');
+  renderFbLocationSelected();
+};
+
+window.fbFilterProvinces = function(q) { renderFbProvinces(q); };
+
+window.fbClearLocations = function() {
+  fbSelectedProvinces.clear();
+  renderFbProvinces(document.getElementById('fbLocationSearch') ? document.getElementById('fbLocationSearch').value : '');
+  renderFbLocationSelected();
+};
+
+function renderFbLocationSelected() {
+  const el = document.getElementById('fbLocationSelected');
+  if (!el) return;
+  if (!fbSelectedProvinces.size) {
+    el.innerHTML = '<span class="util-muted">' + t('Chưa chọn khu vực nào — hệ thống chấp nhận mọi tỉnh thành', 'No region selected — system accepts all provinces/cities') + '</span>';
+    return;
+  }
+  const tags = Array.from(fbSelectedProvinces).map(function(id) {
+    const p = FB_PROVINCES.find(function(x) { return x.id === id; });
+    if (!p) return '';
+    return '<span class="util-selected-tag">' + p.label + '<button type="button" onclick="fbToggleProvince(\'' + id + '\')" title="' + t('Bỏ chọn', 'Remove') + '">&times;</button></span>';
+  }).join('');
+  el.innerHTML = tags;
+}
+
+function renderFbExtractors() {
+  const grid = document.getElementById('fbExtractorGrid');
+  if (!grid) return;
+  grid.innerHTML = FB_EXTRACTORS.map(function(ex) {
+    const active = !!fbExtractorEnabled[ex.id];
+    const shortPat = ex.pattern.length > 28 ? ex.pattern.slice(0, 28) + '…' : ex.pattern;
+    return '<div class="util-extractor-item' + (active ? ' active' : '') + '" id="extractor-row-' + ex.id + '">' +
+      '<div class="util-extractor-info">' +
+        '<span class="util-extractor-name">' + ex.name + '</span>' +
+        '<span class="util-extractor-desc">' + ex.desc + '</span>' +
+      '</div>' +
+      '<code class="util-extractor-code" title="' + ex.pattern + '">' + shortPat + '</code>' +
+      '<label class="util-toggle" title="' + (active ? t('Đang bật', 'Enabled') : t('Đang tắt', 'Disabled')) + '">' +
+        '<input type="checkbox" ' + (active ? 'checked' : '') + ' onchange="fbToggleExtractor(\'' + ex.id + '\', this.checked)">' +
+        '<span class="util-toggle-slider"></span>' +
+      '</label>' +
+    '</div>';
+  }).join('');
+}
+
+window.fbToggleExtractor = function(id, val) {
+  fbExtractorEnabled[id] = val;
+  const row = document.getElementById('extractor-row-' + id);
+  if (row) row.classList.toggle('active', val);
+};
+
+function renderFbRules(rules) {
+  const rk = document.getElementById('fbRequireKeywords');
+  const bk = document.getElementById('fbBlockKeywords');
+  const maxPosts = document.getElementById('fbMaxPosts');
+  const useAi = document.getElementById('fbUseAi');
+  const aiDesc = document.getElementById('fbAiProductDesc');
+
+  if (rk) rk.value = (rules.requireKeywords || []).join('\n');
+  if (bk) bk.value = (rules.blockKeywords || []).join('\n');
+  if (maxPosts) maxPosts.value = rules.maxPosts || '';
+
+  if (useAi) {
+    useAi.checked = rules.useAi !== false;
+    fbToggleUseAi(useAi.checked);
+  }
+  if (aiDesc) aiDesc.value = rules.aiProductDesc || '';
+
+  // Restore selected provinces
+  fbSelectedProvinces.clear();
+  const locObj = rules.locations || {};
+  Object.keys(locObj).forEach(function(id) {
+    if (FB_PROVINCES.find(function(p) { return p.id === id; })) fbSelectedProvinces.add(id);
+  });
+
+  // Restore extractor toggles
+  const reObj = rules.extractRegex || {};
+  fbExtractorEnabled = {};
+  FB_EXTRACTORS.forEach(function(ex) {
+    fbExtractorEnabled[ex.id] = !!reObj[ex.id];
+  });
+
+  renderFbProvinces();
+  renderFbLocationSelected();
+  renderFbExtractors();
+}
+
+window.fbSaveRules = async function() {
+  const btn = document.getElementById('btnFbSaveRules');
+  const profile = document.getElementById('fbProfileSelect') ? document.getElementById('fbProfileSelect').value : 'banxe';
+  setButtonLoading(btn, true);
+  try {
+    const requireKeywords = (document.getElementById('fbRequireKeywords') ? document.getElementById('fbRequireKeywords').value : '')
+      .split('\n').map(function(s) { return s.trim(); }).filter(Boolean);
+    const blockKeywords = (document.getElementById('fbBlockKeywords') ? document.getElementById('fbBlockKeywords').value : '')
+      .split('\n').map(function(s) { return s.trim(); }).filter(Boolean);
+
+    // Build locations from selected provinces
+    const locations = {};
+    fbSelectedProvinces.forEach(function(id) {
+      const p = FB_PROVINCES.find(function(x) { return x.id === id; });
+      if (p) locations[id] = p.kw;
+    });
+
+    // Build extractRegex from enabled toggles
+    const extractRegex = {};
+    FB_EXTRACTORS.forEach(function(ex) {
+      if (fbExtractorEnabled[ex.id]) extractRegex[ex.id] = ex.pattern;
+    });
+
+    const maxPosts = Number(document.getElementById('fbMaxPosts') ? document.getElementById('fbMaxPosts').value : 0);
+    const useAi = document.getElementById('fbUseAi') ? document.getElementById('fbUseAi').checked : true;
+    const aiProductDesc = document.getElementById('fbAiProductDesc') ? document.getElementById('fbAiProductDesc').value.trim() : '';
+
+    await api('/api/fb-crawler/save-rules?profile=' + encodeURIComponent(profile), {
+      method: 'POST',
+      body: JSON.stringify({ requireKeywords, blockKeywords, locations, extractRegex, maxPosts, useAi, aiProductDesc }),
+    });
+    showToast(t('Đã lưu điều kiện lọc thành công!', 'Filter conditions saved successfully!'), 'success');
+  } catch (e) {
+    showToast(e.message, 'error');
+  } finally {
+    setButtonLoading(btn, false);
+  }
+};
+
+
+// ─── PANEL 3: Cron schedule ───────────────────────────────────────────────────
+function renderFbCronTable() {
+  const tbody = document.getElementById('fbCronTbody');
+  if (!tbody) return;
+  if (!fbCronList.length) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:24px;">${t('Chưa có lịch nào. Nhấn "AI Đề xuất lịch" để tự động phân bổ.', 'No schedule yet. Click "AI Suggest Schedule" to auto distribute.')}</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = fbCronList.map((s, i) => {
+    // Parse cron to readable time
+    let readableTime = s.cron;
+    try {
+      const parts = s.cron.split(' ');
+      if (parts.length >= 5) {
+        const [min, hour] = parts;
+        if (!isNaN(parseInt(min)) && !isNaN(parseInt(hour))) {
+          const h = parseInt(hour);
+          const m = parseInt(min);
+          readableTime = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')} ${t('mỗi ngày', 'daily')}`;
+        }
+      }
+    } catch (_) {}
+
+    const slice = Array.isArray(s.groupSlice)
+      ? `${t('Nhóm', 'Group')} ${s.groupSlice[0] + 1} → ${s.groupSlice[1]}`
+      : t('Tất cả', 'All');
+
+    const active = s.enabled !== false;
+
+    return `
+      <tr>
+        <td><code style="background:var(--bg-hover);padding:2px 8px;border-radius:4px;font-weight:700;">${esc(s.id)}</code></td>
+        <td><code style="font-size:12px;">${esc(s.cron)}</code></td>
+        <td style="font-size:13px;">${esc(readableTime)}${s.reason ? `<br><span style="font-size:11px;color:var(--text-muted);">${esc(s.reason)}</span>` : ''}</td>
+        <td style="font-size:13px;">${esc(slice)}</td>
+        <td>
+          <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
+            <!-- Toggle switch (Bật/Tắt) -->
+            <label class="util-toggle" style="margin: 0 4px 0 0;" title="${active ? t('Đang bật', 'Enabled') : t('Đang tắt', 'Disabled')}">
+              <input type="checkbox" ${active ? 'checked' : ''} onchange="fbToggleCronEnabled(${i}, this.checked)">
+              <span class="util-toggle-slider"></span>
+            </label>
+            <!-- Run immediately -->
+            <button class="btn" type="button" style="padding:4px 8px;font-size:12px;min-height:auto;" onclick="fbRunCronImmediately(${i})" title="${t('Chạy ngay', 'Run now')}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:13px;height:13px;color:var(--success, #10b981);"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            </button>
+            <!-- Edit row -->
+            <button class="btn" type="button" style="padding:4px 8px;font-size:12px;min-height:auto;" onclick="fbEditCronRow(${i})" title="${t('Sửa', 'Edit')}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:13px;height:13px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <!-- Delete row -->
+            <button class="btn" type="button" style="padding:4px 8px;font-size:12px;min-height:auto;" onclick="fbDeleteCronRow(${i})" title="${t('Xóa', 'Delete')}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:13px;height:13px;color:var(--danger, #ef4444);"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+            </button>
+          </div>
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+window.fbToggleCronEnabled = async function (index, checked) {
+  if (!fbCronList[index]) return;
+  fbCronList[index].enabled = checked;
+  const profile = document.getElementById('fbProfileSelect') ? document.getElementById('fbProfileSelect').value : 'banxe';
+  try {
+    await api('/api/fb-crawler/save-cron?profile=' + encodeURIComponent(profile), {
+      method: 'POST',
+      body: JSON.stringify({ cronSchedule: fbCronList }),
+    });
+    showToast(t('Đã ', 'Successfully ') + (checked ? t('bật', 'enabled') : t('tắt', 'disabled')) + t(' lịch ', ' schedule ') + fbCronList[index].id + '!', 'success');
+  } catch (e) {
+    showToast('Lỗi: ' + e.message, 'error');
+    // revert
+    fbCronList[index].enabled = !checked;
+    renderFbCronTable();
+  }
+};
+
+window.fbRunCronImmediately = async function (index) {
+  const item = fbCronList[index];
+  if (!item) return;
+  const profile = document.getElementById('fbProfileSelect') ? document.getElementById('fbProfileSelect').value : 'banxe';
+  try {
+    showToast(t('Đang chạy kích hoạt session ', 'Triggering session ') + item.id + t(' trong nền...', ' in background...'), 'info');
+    await api('/api/fb-crawler/run-cron?profile=' + encodeURIComponent(profile), {
+      method: 'POST',
+      body: JSON.stringify({ id: item.id }),
+    });
+    showToast(t('Đã bắt đầu chạy session ', 'Session started: ') + item.id + '!', 'success');
+  } catch (e) {
+    showToast('Lỗi: ' + e.message, 'error');
+  }
+};
+
+window.fbEditCronRow = async function (index) {
+  const item = fbCronList[index];
+  if (!item) return;
+
+  function parseCronToTime(cronStr) {
+    try {
+      const parts = cronStr.split(' ');
+      if (parts.length >= 2) {
+        const [min, hour] = parts;
+        const h = parseInt(hour);
+        const m = parseInt(min);
+        if (!isNaN(h) && !isNaN(m)) {
+          return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+        }
+      }
+    } catch (_) {}
+    return '';
+  }
+
+  const currentVal = parseCronToTime(item.cron) || '12:00';
+  const fromVal = item.groupSlice ? item.groupSlice[0] : '';
+  const toVal = item.groupSlice ? item.groupSlice[1] : '';
+  const reasonVal = item.reason || '';
+
+  const body = `
+    <div style="display:flex; flex-direction:column; gap:12px; padding: 10px 0;">
+      <div class="util-field">
+        <label class="util-label">${t('ID Session', 'Session ID')}</label>
+        <input type="text" id="editCronId" value="${esc(item.id)}" readonly disabled class="util-input" style="opacity: 0.6; cursor: not-allowed;">
+      </div>
+      <div class="util-field">
+        <label class="util-label">${t('Giờ chạy (VN)', 'Execution Time (VN)')}</label>
+        <input type="time" id="editCronTime" value="${esc(currentVal)}" class="util-input" style="height:36px; padding:0 10px;">
+      </div>
+      <div style="display:flex; gap:12px;">
+        <div class="util-field" style="flex:1;">
+          <label class="util-label">${t('Group từ', 'Group from')}</label>
+          <input type="number" id="editCronSliceFrom" value="${esc(fromVal)}" placeholder="0" min="0" class="util-input">
+        </div>
+        <div class="util-field" style="flex:1;">
+          <label class="util-label">${t('đến', 'to')}</label>
+          <input type="number" id="editCronSliceTo" value="${esc(toVal)}" placeholder="5" min="1" class="util-input">
+        </div>
+      </div>
+      <div class="util-field">
+        <label class="util-label">${t('Ghi chú / Lý do (AI hoặc tự nhập)', 'Notes / Reason (AI or manual)')}</label>
+        <input type="text" id="editCronReason" value="${esc(reasonVal)}" placeholder="${t('Nhập ghi chú hoặc lý do quét...', 'Enter notes or reason...')}" class="util-input">
+      </div>
+    </div>
+  `;
+
+  const confirmed = await openModal({
+    title: t('Sửa lịch quét tự động', 'Edit Auto Crawl Schedule'),
+    desc: t('Chỉnh sửa các tham số của session quét.', 'Edit crawl session parameters.'),
+    body,
+    confirmText: t('Cập nhật', 'Update'),
+    tone: 'info'
+  });
+
+  if (confirmed !== false) {
+    const timeVal = document.getElementById('editCronTime')?.value;
+    const from = document.getElementById('editCronSliceFrom')?.value;
+    const to = document.getElementById('editCronSliceTo')?.value;
+    const reason = document.getElementById('editCronReason')?.value.trim();
+
+    if (!timeVal) {
+      showToast(t('Thời gian không được để trống!', 'Time cannot be empty!'), 'warning');
+      return;
+    }
+
+    const [hourStr, minStr] = timeVal.split(':');
+    const hour = parseInt(hourStr);
+    const min = parseInt(minStr);
+    const cron = `${min} ${hour} * * *`;
+
+    fbCronList[index] = {
+      ...fbCronList[index],
+      cron,
+      groupSlice: (from !== '' && to !== '') ? [Number(from), Number(to)] : null,
+      reason: reason || undefined
+    };
+
+    renderFbCronTable();
+    showToast(t('Đã cập nhật lịch. Nhấn "Lưu lịch" để áp dụng vĩnh viễn!', 'Schedule updated. Click "Save Schedule" to apply permanently!'), 'info');
+  }
+};
+
+window.fbRunAllImmediately = async function () {
+  const confirmed = await openModal({
+    title: t('Chạy quét tất cả các Group', 'Crawl All Groups'),
+    desc: t('Bạn có chắc chắn muốn chạy quét toàn bộ các Group Facebook ngay lập tức không? Quá trình sẽ được thực hiện trong nền.', 'Are you sure you want to crawl all Facebook Groups immediately? The process will run in the background.'),
+    confirmText: t('Chạy ngay', 'Run now'),
+    tone: 'warning'
+  });
+  if (confirmed === false) return;
+
+  const btn = document.getElementById('btnFbRunAll');
+  if (btn) setButtonLoading(btn, true);
+  const profile = document.getElementById('fbProfileSelect') ? document.getElementById('fbProfileSelect').value : 'banxe';
+  try {
+    showToast(t('Đang khởi chạy quét tất cả các Group Facebook...', 'Starting crawl for all Facebook Groups...'), 'info');
+    await api('/api/fb-crawler/run-all?profile=' + encodeURIComponent(profile), {
+      method: 'POST'
+    });
+    showToast(t('Đã bắt đầu chạy quét tất cả các Group Facebook!', 'Crawl started for all Facebook Groups!'), 'success');
+  } catch (e) {
+    showToast('Lỗi: ' + e.message, 'error');
+  } finally {
+    if (btn) setButtonLoading(btn, false);
+  }
+};
+
+window.fbAddCronRow = function () {
+  const id = document.getElementById('fbNewCronId')?.value.trim();
+  const timeVal = document.getElementById('fbNewCronTime')?.value;
+  const from = document.getElementById('fbNewCronSliceFrom')?.value;
+  const to = document.getElementById('fbNewCronSliceTo')?.value;
+
+  if (!id || !timeVal) {
+    showToast(t('Cần nhập ID và Giờ chạy!', 'ID and Execution Time are required!'), 'warning'); return;
+  }
+  if (fbCronList.some(s => s.id === id)) {
+    showToast(t('ID "', 'ID "') + id + t('" đã tồn tại!', '" already exists!'), 'warning'); return;
+  }
+
+  const [hourStr, minStr] = timeVal.split(':');
+  const hour = parseInt(hourStr);
+  const min = parseInt(minStr);
+  const cron = `${min} ${hour} * * *`;
+
+  fbCronList.push({
+    id,
+    cron,
+    enabled: true,
+    groupSlice: (from !== '' && to !== '') ? [Number(from), Number(to)] : null,
+  });
+  renderFbCronTable();
+
+  ['fbNewCronId', 'fbNewCronTime', 'fbNewCronSliceFrom', 'fbNewCronSliceTo'].forEach(elId => {
+    const el = document.getElementById(elId);
+    if (el) el.value = '';
+  });
+};
+
+window.fbDeleteCronRow = function (index) {
+  fbCronList.splice(index, 1);
+  renderFbCronTable();
+};
+
+window.fbSaveCron = async function () {
+  const btn = document.getElementById('btnFbSaveCron');
+  const profile = document.getElementById('fbProfileSelect') ? document.getElementById('fbProfileSelect').value : 'banxe';
+  setButtonLoading(btn, true);
+  try {
+    const data = await api('/api/fb-crawler/save-cron?profile=' + encodeURIComponent(profile), {
+      method: 'POST',
+      body: JSON.stringify({ cronSchedule: fbCronList }),
+    });
+    showToast(t('Đã lưu ', 'Saved ') + data.count + t(' lịch cron thành công!', ' cron schedules successfully!'), 'success');
+    await loadFbCrawlerState();
+  } catch (e) {
+    showToast(e.message, 'error');
+  } finally {
+    setButtonLoading(btn, false);
+  }
+};
+
+window.fbAiSuggestCron = async function () {
+  const btn = document.getElementById('btnFbAiCron');
+  const profile = document.getElementById('fbProfileSelect') ? document.getElementById('fbProfileSelect').value : 'banxe';
+  setButtonLoading(btn, true);
+  try {
+    showToast(t('Đang nhờ AI phân bổ lịch quét tối ưu...', 'Asking AI to optimize crawl schedules...'), 'info');
+    const data = await api('/api/fb-crawler/ai-suggest-cron?profile=' + encodeURIComponent(profile), {
+      method: 'POST',
+      body: JSON.stringify({ groups: fbGroupsList }),
+    });
+    const suggestions = data.suggestions || [];
+    if (!suggestions.length) {
+      showToast(t('Không có group nào để phân bổ. Thêm group trước!', 'No groups to distribute. Add groups first!'), 'warning');
+      return;
+    }
+
+    // Show modal with preview
+    const preview = suggestions.map(s => {
+      const slice = Array.isArray(s.groupSlice) ? `${t('Nhóm', 'Group')} ${s.groupSlice[0] + 1}→${s.groupSlice[1]}` : t('Tất cả', 'All');
+      return `<tr>
+        <td><code style="background:var(--bg-hover);padding:2px 6px;border-radius:4px;font-weight:700;">${esc(s.id)}</code></td>
+        <td><code style="font-size:12px;">${esc(s.cron)}</code></td>
+        <td style="font-size:12px;">${esc(slice)}</td>
+        <td style="font-size:11px;color:var(--text-muted);">${esc(s.reason || '')}</td>
+      </tr>`;
+    }).join('');
+
+    const body = `
+      <div style="margin-bottom:12px;font-size:13px;">${t('AI đã phân bổ', 'AI distributed')} <strong>${suggestions.length} ${t('sessions', 'sessions')}</strong> ${t('cho', 'for')} <strong>${data.groupCount} ${t('groups', 'groups')}</strong>.</div>
+      <div class="table-wrap">
+        <table style="font-size:13px;">
+          <thead><tr><th>ID</th><th>Cron</th><th>Batch</th><th>${t('Ghi chú AI', 'AI Notes')}</th></tr></thead>
+          <tbody>${preview}</tbody>
+        </table>
+      </div>
+      <p style="margin-top:12px;font-size:12px;color:var(--text-muted);">t('Nhấn "Áp dụng" để thay thế lịch hiện tại bằng đề xuất này. Bạn có thể sửa lại sau khi áp dụng.', 'Click "Apply" to replace the current schedule with this recommendation. You can edit it after applying.')</p>`;
+
+    const confirmed = await openModal({
+      title: t('✨ AI Đề xuất lịch quét', '✨ AI Suggested Schedule'),
+      desc: t(`Lịch được phân bổ thông minh: 3 lần/ngày, tránh giờ cao điểm, mỗi batch ${Math.ceil(data.groupCount / suggestions.length)} group.`, `Smart scheduling: 3 times/day, avoiding peak hours, each batch containing ${Math.ceil(data.groupCount / suggestions.length)} groups.`),
+      body,
+      confirmText: t('Áp dụng', 'Apply'),
+      tone: 'info'
+    });
+
+    if (confirmed !== false) {
+      fbCronList = suggestions.map(s => ({ ...s, enabled: true }));
+      renderFbCronTable();
+      showToast(t('Đã áp dụng lịch AI. Nhấn "Lưu lịch" để lưu vào config!', 'AI schedule applied. Click "Save Schedule" to save to config!'), 'success');
+    }
+  } catch (e) {
+    showToast('Lỗi AI: ' + e.message, 'error');
+  } finally {
+    setButtonLoading(btn, false);
+  }
+};
+
+window.switchFbNotifySubTab = function(type) {
+  const groupTab = document.getElementById('fbNotifySubTabGroup');
+  const userTab = document.getElementById('fbNotifySubTabUser');
+  const groupBtn = document.getElementById('fbNotifySubTabGroupBtn');
+  const userBtn = document.getElementById('fbNotifySubTabUserBtn');
+  
+  if (type === 'group') {
+    if (groupTab) groupTab.style.display = 'block';
+    if (userTab) userTab.style.display = 'none';
+    if (groupBtn) groupBtn.classList.add('active');
+    if (userBtn) userBtn.classList.remove('active');
+  } else {
+    if (groupTab) groupTab.style.display = 'none';
+    if (userTab) userTab.style.display = 'block';
+    if (groupBtn) groupBtn.classList.remove('active');
+    if (userBtn) userBtn.classList.add('active');
+  }
+};
+
+// Pagination state for report notifications targets
+let fbNotifyGroupPage = 1;
+let fbNotifyUserPage = 1;
+const fbNotifyPageSize = 10;
+
+window.fbNotifyGroupPrevPage = function() {
+  if (fbNotifyGroupPage > 1) {
+    fbNotifyGroupPage--;
+    renderFbNotifyGroupList();
+  }
+};
+
+window.fbNotifyGroupNextPage = function() {
+  const groups = (state && state.groups) ? state.groups : [];
+  const totalPages = Math.ceil(groups.length / fbNotifyPageSize);
+  if (fbNotifyGroupPage < totalPages) {
+    fbNotifyGroupPage++;
+    renderFbNotifyGroupList();
+  }
+};
+
+window.fbNotifyUserPrevPage = function() {
+  if (fbNotifyUserPage > 1) {
+    fbNotifyUserPage--;
+    renderFbNotifyUserList();
+  }
+};
+
+window.fbNotifyUserNextPage = function() {
+  const friends = cachedFriends || [];
+  const totalPages = Math.ceil(friends.length / fbNotifyPageSize);
+  if (fbNotifyUserPage < totalPages) {
+    fbNotifyUserPage++;
+    renderFbNotifyUserList();
+  }
+};
+
+window.fbNotifyGroupSelectionChanged = function(chk) {
+  if (!chk) return;
+  const val = String(chk.value);
+  if (chk.checked) {
+    if (!fbNotifySelectedGroupIds.includes(val)) {
+      fbNotifySelectedGroupIds.push(val);
+    }
+  } else {
+    fbNotifySelectedGroupIds = fbNotifySelectedGroupIds.filter(id => id !== val);
+  }
+  
+  // Update Select All Checkbox state
+  const tbody = document.getElementById('fbNotifyGroupListTbody');
+  if (tbody) {
+    const chks = tbody.querySelectorAll('.fb-notify-group-chk');
+    const allChecked = chks.length > 0 && Array.from(chks).every(c => c.checked);
+    const selectAll = document.getElementById('fbNotifySelectAllGroups');
+    if (selectAll) selectAll.checked = allChecked;
+  }
+};
+
+window.fbNotifyUserSelectionChanged = function(chk) {
+  if (!chk) return;
+  const val = String(chk.value);
+  if (chk.checked) {
+    if (!fbNotifySelectedDmUserIds.includes(val)) {
+      fbNotifySelectedDmUserIds.push(val);
+    }
+  } else {
+    fbNotifySelectedDmUserIds = fbNotifySelectedDmUserIds.filter(id => id !== val);
+  }
+  
+  // Update Select All Checkbox state
+  const tbody = document.getElementById('fbNotifyUserListTbody');
+  if (tbody) {
+    const chks = tbody.querySelectorAll('.fb-notify-user-chk');
+    const allChecked = chks.length > 0 && Array.from(chks).every(c => c.checked);
+    const selectAll = document.getElementById('fbNotifySelectAllUsers');
+    if (selectAll) selectAll.checked = allChecked;
+  }
+};
+
+window.fbToggleSelectAllNotifyGroups = function(master) {
+  const tbody = document.getElementById('fbNotifyGroupListTbody');
+  if (!tbody) return;
+  const chks = tbody.querySelectorAll('.fb-notify-group-chk');
+  chks.forEach(chk => {
+    chk.checked = master.checked;
+    const val = String(chk.value);
+    if (master.checked) {
+      if (!fbNotifySelectedGroupIds.includes(val)) {
+        fbNotifySelectedGroupIds.push(val);
+      }
+    } else {
+      fbNotifySelectedGroupIds = fbNotifySelectedGroupIds.filter(id => id !== val);
+    }
+  });
+};
+
+window.fbToggleSelectAllNotifyUsers = function(master) {
+  const tbody = document.getElementById('fbNotifyUserListTbody');
+  if (!tbody) return;
+  const chks = tbody.querySelectorAll('.fb-notify-user-chk');
+  chks.forEach(chk => {
+    chk.checked = master.checked;
+    const val = String(chk.value);
+    if (master.checked) {
+      if (!fbNotifySelectedDmUserIds.includes(val)) {
+        fbNotifySelectedDmUserIds.push(val);
+      }
+    } else {
+      fbNotifySelectedDmUserIds = fbNotifySelectedDmUserIds.filter(id => id !== val);
+    }
+  });
+};
+
+function renderFbNotifyGroupList() {
+  const groups = (state && state.groups) ? state.groups : [];
+  const tbody = document.getElementById('fbNotifyGroupListTbody');
+  const pagin = document.getElementById('fbNotifyGroupPagination');
+  if (!tbody) return;
+  
+  if (groups.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="4" class="util-empty-row">t('Chưa có thông tin nhóm.', 'No group info.')</td></tr>`;
+    if (pagin) pagin.innerHTML = '';
+    return;
+  }
+  
+  const totalPages = Math.ceil(groups.length / fbNotifyPageSize) || 1;
+  if (fbNotifyGroupPage > totalPages) fbNotifyGroupPage = totalPages;
+  if (fbNotifyGroupPage < 1) fbNotifyGroupPage = 1;
+  
+  const start = (fbNotifyGroupPage - 1) * fbNotifyPageSize;
+  const end = Math.min(start + fbNotifyPageSize, groups.length);
+  const pageGroups = groups.slice(start, end);
+  
+  tbody.innerHTML = pageGroups.map(g => {
+    const isChecked = fbNotifySelectedGroupIds.includes(String(g.groupId));
+    const avatar = avatarMeta(g, g.name);
+    const avatarHtml = avatar.src
+      ? `<img src="${esc(avatar.src)}" alt="${esc(avatar.name)}" onerror="const p=this.parentElement; this.remove(); if(p)p.textContent='${esc(avatar.initials)}'">`
+      : esc(avatar.initials);
+      
+    return `
+      <tr>
+        <td style="text-align: center; vertical-align: middle;">
+          <input type="checkbox" class="fb-notify-group-chk" value="${esc(g.groupId)}" ${isChecked ? 'checked' : ''} onchange="fbNotifyGroupSelectionChanged(this)">
+        </td>
+        <td style="vertical-align: middle;">
+          <div class="custom-select-avatar">${avatarHtml}</div>
+        </td>
+        <td style="font-weight: 500; vertical-align: middle;">${esc(repairText(g.name))}</td>
+        <td style="text-align: right; color: var(--muted); vertical-align: middle;">${g.memberCount} ${t('thành viên', 'members')}</td>
+      </tr>
+    `;
+  }).join('');
+  
+  // Render pagination controls
+  if (pagin) {
+    pagin.className = 'pagination-container';
+    pagin.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-top: 1px solid var(--line); background: var(--surface-2); border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; flex-wrap: wrap; gap: 12px;';
+    pagin.innerHTML = `
+      <div style="font-size: 13px; color: var(--text-muted);">
+        ${t('Hiển thị', 'Showing')} <strong>${start + 1}</strong> - <strong>${end}</strong> ${t('trên', 'of')} <strong>${groups.length}</strong> ${t('nhóm', 'groups')}
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <button class="btn" type="button" onclick="fbNotifyGroupPrevPage()" ${fbNotifyGroupPage === 1 ? 'disabled' : ''} style="padding: 6px 12px; font-size: 13px; min-height: auto; border-radius: 8px;">
+          ${t('Trước', 'Prev')}
+        </button>
+        <span style="font-size: 13px; font-weight: 600; color: var(--text); padding: 0 4px;">
+          ${fbNotifyGroupPage} / ${totalPages}
+        </span>
+        <button class="btn" type="button" onclick="fbNotifyGroupNextPage()" ${fbNotifyGroupPage >= totalPages ? 'disabled' : ''} style="padding: 6px 12px; font-size: 13px; min-height: auto; border-radius: 8px;">
+          ${t('Sau', 'Next')}
+        </button>
+      </div>
+    `;
+  }
+  
+  // Update Select All Groups checkbox for the current page
+  const allChks = tbody.querySelectorAll('.fb-notify-group-chk');
+  const allChecked = allChks.length > 0 && Array.from(allChks).every(chk => chk.checked);
+  const selectAll = document.getElementById('fbNotifySelectAllGroups');
+  if (selectAll) selectAll.checked = allChecked;
+}
+
+function renderFbNotifyUserList() {
+  const friends = cachedFriends || [];
+  const tbody = document.getElementById('fbNotifyUserListTbody');
+  const pagin = document.getElementById('fbNotifyUserPagination');
+  if (!tbody) return;
+  
+  if (friends.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="4" class="util-empty-row">t('Chưa có thông tin bạn bè hoặc đang tải.', 'No friend info or loading.')</td></tr>`;
+    if (pagin) pagin.innerHTML = '';
+    return;
+  }
+  
+  const totalPages = Math.ceil(friends.length / fbNotifyPageSize) || 1;
+  if (fbNotifyUserPage > totalPages) fbNotifyUserPage = totalPages;
+  if (fbNotifyUserPage < 1) fbNotifyUserPage = 1;
+  
+  const start = (fbNotifyUserPage - 1) * fbNotifyPageSize;
+  const end = Math.min(start + fbNotifyPageSize, friends.length);
+  const pageFriends = friends.slice(start, end);
+  
+  tbody.innerHTML = pageFriends.map(f => {
+    const isChecked = fbNotifySelectedDmUserIds.includes(String(f.userId));
+    const avatar = avatarMeta(f, f.displayName);
+    const avatarHtml = avatar.src
+      ? `<img src="${esc(avatar.src)}" alt="${esc(avatar.name)}" onerror="const p=this.parentElement; this.remove(); if(p)p.textContent='${esc(avatar.initials)}'">`
+      : esc(avatar.initials);
+      
+    return `
+      <tr>
+        <td style="text-align: center; vertical-align: middle;">
+          <input type="checkbox" class="fb-notify-user-chk" value="${esc(f.userId)}" ${isChecked ? 'checked' : ''} onchange="fbNotifyUserSelectionChanged(this)">
+        </td>
+        <td style="vertical-align: middle;">
+          <div class="custom-select-avatar">${avatarHtml}</div>
+        </td>
+        <td style="font-weight: 500; vertical-align: middle;">${esc(repairText(f.displayName || f.userId))}</td>
+        <td style="text-align: right; font-family: monospace; color: var(--muted); vertical-align: middle;">${f.userId}</td>
+      </tr>
+    `;
+  }).join('');
+  
+  // Render pagination controls
+  if (pagin) {
+    pagin.className = 'pagination-container';
+    pagin.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-top: 1px solid var(--line); background: var(--surface-2); border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; flex-wrap: wrap; gap: 12px;';
+    pagin.innerHTML = `
+      <div style="font-size: 13px; color: var(--text-muted);">
+        ${t('Hiển thị', 'Showing')} <strong>${start + 1}</strong> - <strong>${end}</strong> ${t('trên', 'of')} <strong>${friends.length}</strong> ${t('bạn bè', 'friends')}
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <button class="btn" type="button" onclick="fbNotifyUserPrevPage()" ${fbNotifyUserPage === 1 ? 'disabled' : ''} style="padding: 6px 12px; font-size: 13px; min-height: auto; border-radius: 8px;">
+          ${t('Trước', 'Prev')}
+        </button>
+        <span style="font-size: 13px; font-weight: 600; color: var(--text); padding: 0 4px;">
+          ${fbNotifyUserPage} / ${totalPages}
+        </span>
+        <button class="btn" type="button" onclick="fbNotifyUserNextPage()" ${fbNotifyUserPage >= totalPages ? 'disabled' : ''} style="padding: 6px 12px; font-size: 13px; min-height: auto; border-radius: 8px;">
+          ${t('Sau', 'Next')}
+        </button>
+      </div>
+    `;
+  }
+  
+  // Update Select All Users checkbox for the current page
+  const allChks = tbody.querySelectorAll('.fb-notify-user-chk');
+  const allChecked = allChks.length > 0 && Array.from(allChks).every(chk => chk.checked);
+  const selectAll = document.getElementById('fbNotifySelectAllUsers');
+  if (selectAll) selectAll.checked = allChecked;
+}
+
+function renderFbNotify(cfg) {
+  const activeId = cfg.notifyConversationId ? String(cfg.notifyConversationId) : '';
+  const ids = activeId.split(',').map(s => s.trim()).filter(Boolean);
+  
+  fbNotifySelectedGroupIds = ids.filter(id => id.startsWith('group:')).map(id => id.replace(/^group:/, ''));
+  fbNotifySelectedDmUserIds = ids.filter(id => !id.startsWith('group:'));
+  
+  fbNotifyGroupPage = 1;
+  fbNotifyUserPage = 1;
+  
+  renderFbNotifyGroupList();
+  renderFbNotifyUserList();
+}
+
+window.fbSaveNotify = async function () {
+  try {
+    const groupParts = fbNotifySelectedGroupIds.map(gid => 'group:' + gid);
+    const userParts = fbNotifySelectedDmUserIds;
+    const combined = [...groupParts, ...userParts];
+    
+    if (combined.length === 0) {
+      showToast(t('Vui lòng chọn ít nhất một nhóm hoặc cá nhân nhận báo cáo!', 'Please select at least one group or user to receive reports!'), 'warning');
+      return;
+    }
+    
+    const notifyConversationId = combined.join(',');
+    const notifyIsGroup = fbNotifySelectedGroupIds.length > 0;
+    const profile = document.getElementById('fbProfileSelect') ? document.getElementById('fbProfileSelect').value : 'banxe';
+    
+    await api('/api/fb-crawler/save-notify?profile=' + encodeURIComponent(profile), {
+      method: 'POST',
+      body: JSON.stringify({
+        notifyConversationId,
+        notifyIsGroup,
+      }),
+    });
+    showToast(t('Đã lưu cấu hình thông báo!', 'Notification configuration saved!'), 'success');
+  } catch (e) {
+    showToast(e.message, 'error');
+  }
+};
+
+
+// ─── PANEL 4: Report Template ─────────────────────────────────────────────────
+function renderFbTemplate(tmpl) {
+  const ta = document.getElementById('fbReportTemplate');
+  if (ta) ta.value = tmpl;
+}
+
+window.fbInsertVar = function (varStr) {
+  const ta = document.getElementById('fbReportTemplate');
+  if (!ta) return;
+  const start = ta.selectionStart;
+  const end = ta.selectionEnd;
+  const text = ta.value;
+  ta.value = text.slice(0, start) + varStr + text.slice(end);
+  ta.selectionStart = ta.selectionEnd = start + varStr.length;
+  ta.focus();
+};
+
+window.fbResetTemplate = async function () {
+  const confirmed = await openModal({
+    title: t('Reset template về mặc định', 'Reset Template to Default'),
+    desc: t('Toàn bộ chỉnh sửa template sẽ bị xoá và khôi phục về mặc định của plugin.', 'All template edits will be cleared and restored to the plugin default.'),
+    confirmText: t('Reset', 'Reset'),
+    danger: true,
+    tone: 'warning'
+  });
+  if (confirmed !== false) {
+    const ta = document.getElementById('fbReportTemplate');
+    if (ta && fbState?.defaultTemplate) ta.value = fbState.defaultTemplate;
+    showToast(t('Đã reset về template mặc định. Nhấn "Lưu template" để áp dụng!', 'Restored to default template. Click "Save Template" to apply!'), 'info');
+  }
+};
+
+window.fbSaveTemplate = async function () {
+  const btn = document.getElementById('btnFbSaveTemplate');
+  const tmpl = document.getElementById('fbReportTemplate')?.value || '';
+  if (!tmpl.trim()) {
+    showToast(t('Template không được để trống!', 'Template cannot be empty!'), 'warning'); return;
+  }
+  const profile = document.getElementById('fbProfileSelect') ? document.getElementById('fbProfileSelect').value : 'banxe';
+  setButtonLoading(btn, true);
+  try {
+    await api('/api/fb-crawler/save-template?profile=' + encodeURIComponent(profile), {
+      method: 'POST',
+      body: JSON.stringify({ template: tmpl }),
+    });
+    showToast(t('Đã lưu template báo cáo! Lần quét tiếp theo sẽ dùng template mới.', 'Report template saved! The next crawl will use the new template.'), 'success');
+  } catch (e) {
+    showToast(e.message, 'error');
+  } finally {
+    setButtonLoading(btn, false);
+  }
+};
+
+window.fbPreviewTemplate = function () {
+  const tmpl = document.getElementById('fbReportTemplate')?.value || '';
+  const sampleItems = `"🏍️ *Yamaha NVX 155 2022*\\n👤 uid: 1234567890\\n📍 " + t('Khu vực', 'Region') + ": hcm\\n• PHONE: 0901234567\\n📝 " + t('Bán xe NVX 155 2022 chính chủ, màu xanh...', 'Selling Yamaha NVX 155 2022, owner, blue...') + "\\n🔗 https://www.facebook.com/groups/.../posts/sample1"`;
+  const preview = tmpl
+    .replace('{sessionId}', 'A')
+    .replace('{totalFound}', '3')
+    .replace('{skippedPro}', '12')
+    .replace('{skippedLoc}', '5')
+    .replace('{items}', sampleItems);
+
+  const previewModal = document.getElementById('previewModalBackdrop');
+  const previewBody = document.getElementById('previewModalBody');
+  const previewClose = document.getElementById('previewModalClose');
+  if (previewModal && previewBody) {
+    previewBody.textContent = preview;
+    previewModal.classList.add('open');
+    if (previewClose) previewClose.onclick = () => previewModal.classList.remove('open');
+  } else {
+    openModal({
+      title: t('👁️ Preview template', '👁️ Preview Template'),
+      desc: t('Xem trước báo cáo với dữ liệu mẫu', 'Preview report with sample data'),
+      body: `<pre style="white-space:pre-wrap;font-size:13px;line-height:1.6;font-family:inherit;background:var(--surface-2);padding:14px;border-radius:8px;border:1px solid var(--line);">${esc(preview)}</pre>`,
+      confirmText: t('Đóng', 'Close'),
+    });
+  }
+};
+
+// ─── Auto-load when utilities section is activated ────────────────────────────
+navButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    if ((btn.dataset.section === 'utilities' || btn.dataset.section === 'fb-crawler') && !fbState) {
+      loadFbCrawlerState();
+    }
+  });
+});
+
+// ─── FACEBOOK COOKIES MANAGERS ──────────────────────────────────────────────
+window.fbHandleCookieUpload = function (event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    try {
+      const json = JSON.parse(e.target.result);
+      const ta = document.getElementById('fbCookiesTextarea');
+      if (ta) {
+        ta.value = JSON.stringify(json, null, 2);
+      }
+      showToast(t('Đã nạp nội dung file Cookie JSON!', 'Loaded Cookie JSON file contents!'), 'info');
+    } catch (err) {
+      showToast(t('File JSON không hợp lệ!', 'Invalid JSON file!'), 'error');
+    }
+  };
+  reader.readAsText(file);
+};
+
+window.fbSaveCookies = async function () {
+  const btn = document.getElementById('btnFbSaveCookies');
+  const ta = document.getElementById('fbCookiesTextarea');
+  if (!ta) return;
+  const val = ta.value.trim();
+  if (!val) {
+    showToast(t('Vui lòng chọn file JSON hoặc dán cookies vào ô nhập!', 'Please choose a JSON file or paste cookies into the input!'), 'warning');
+    return;
+  }
+  let cookiesObj;
+  try {
+    cookiesObj = JSON.parse(val);
+  } catch (e) {
+    showToast(t('Cookies không phải JSON hợp lệ!', 'Cookies are not valid JSON!'), 'error');
+    return;
+  }
+
+  setButtonLoading(btn, true);
+  try {
+    const res = await api('/api/fb-crawler/save-cookies', {
+      method: 'POST',
+      body: JSON.stringify({ cookies: cookiesObj })
+    });
+    showToast(t('Đã lưu và áp dụng ', 'Successfully saved and applied ') + res.count + t(' cookies thành công!', ' cookies!'), 'success');
+    await loadFbCrawlerState();
+  } catch (e) {
+    showToast('Lỗi: ' + e.message, 'error');
+  } finally {
+    setButtonLoading(btn, false);
+  }
+};
+
+window.fbClearCookies = async function () {
+  const confirmed = await openModal({
+    title: t('Xóa Cookies Facebook', 'Delete Facebook Cookies'),
+    desc: t('Bạn có chắc chắn muốn xóa cookies Facebook hiện tại? Trình duyệt sẽ quay lại trạng thái ẩn danh không đăng nhập.', 'Are you sure you want to delete current Facebook cookies? The browser will return to incognito mode without logging in.'),
+    confirmText: t('Xóa', 'Delete'),
+    tone: 'danger',
+    danger: true
+  });
+  if (confirmed === false) return;
+
+  const btn = document.getElementById('btnFbClearCookies');
+  if (btn) setButtonLoading(btn, true);
+  try {
+    await api('/api/fb-crawler/save-cookies', {
+      method: 'POST',
+      body: JSON.stringify({ cookies: [] })
+    });
+    showToast(t('Đã xóa cookies thành công!', 'Deleted cookies successfully!'), 'success');
+    const ta = document.getElementById('fbCookiesTextarea');
+    if (ta) ta.value = '';
+    await loadFbCrawlerState();
+  } catch (e) {
+    showToast('Lỗi: ' + e.message, 'error');
+  } finally {
+    if (btn) setButtonLoading(btn, false);
+  }
+};
+
+// ─── Tab Switcher ───
+window.switchUtilTab = function (event, tabId) {
+  if (event) event.preventDefault();
+  const tabIds = ['fbTabTargets', 'fbTabFilters', 'fbTabCron', 'fbTabNotify', 'fbTabTemplate', 'fbTabCookies'];
+  tabIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  const targetEl = document.getElementById(tabId);
+  if (targetEl) targetEl.style.display = 'block';
+  const buttons = document.querySelectorAll('#fb-crawler .util-tab-btn');
+  buttons.forEach(btn => btn.classList.remove('active'));
+  if (event && event.currentTarget) {
+    event.currentTarget.classList.add('active');
+  } else if (event && event.target) {
+    event.target.classList.add('active');
+  }
+};
+// ═══════════════════════════════════════════════════════════════════════════
+// END FB CRAWLER MANAGER MODULE

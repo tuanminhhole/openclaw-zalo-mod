@@ -8,8 +8,8 @@
   <link rel="icon" type="image/png" sizes="32x32" href="./logo.png?v=20260515">
   <link rel="shortcut icon" href="./logo.png?v=20260515">
   <link rel="apple-touch-icon" href="./logo.png?v=20260515">
-  <link rel="stylesheet" href="./dashboard.css?v=20260605a">
-  <script src="./dashboard.js?v=20260605a" defer></script>
+  <link rel="stylesheet" href="./dashboard.css?v=20260612">
+  <script src="./dashboard.js?v=20260612" defer></script>
 </head>
 
 <body>
@@ -58,6 +58,19 @@
             <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             <path d="M14 2v6h6M16 13H8m8 4H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg><span class="nav-label">Lệnh & Rules</span></button>
+        <div class="nav-group open" id="navGroupUtilities">
+          <button class="nav-group-trigger" type="button" onclick="this.parentElement.classList.toggle('open')">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <line x1="7" y1="7" x2="7.01" y2="7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
+            <span class="nav-label">Tiện ích</span>
+            <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left: auto; width: 12px; height: 12px; transition: transform 0.2s; flex-shrink: 0;"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="sidebar-submenu">
+            <button data-section="fb-crawler" class="submenu-item" type="button"><span class="submenu-dot"></span><span class="nav-label">Facebook Crawler</span></button>
+          </div>
+        </div>
         <button data-section="upgrade"><svg viewBox="0 0 24 24" fill="none">
             <path d="m12 3 2.7 5.5 6 .9-4.3 4.2 1 5.9L12 16.6l-5.4 2.9 1-5.9L3.3 9.4l6-.9L12 3Z" stroke="currentColor"
               stroke-width="2" stroke-linejoin="round" />
@@ -74,7 +87,7 @@
             log.</span>
         </div>
         <div class="plugin-meta">
-          <strong>zalo-mod <span id="pluginVersion">v2.11.0</span></strong>
+          <strong>zalo-mod <span id="pluginVersion">v2.11.1</span></strong>
           <span>Được làm ❤️ bởi tuanminhole</span>
           <div class="socials" aria-label="Author links">
             <a href="https://www.facebook.com/holeminhtuan.it/" target="_blank" rel="noreferrer"
@@ -936,6 +949,388 @@
           </div>
         </div>
       </section>
+  <section class="section" id="fb-crawler">
+    <div class="page-head">
+      <div>
+        <h2 data-i18n="fbTitle">Facebook Crawler</h2>
+        <p data-i18n="fbDesc">Quản lý group Facebook, điều kiện lọc, lịch quét tự động và mẫu báo cáo.</p>
+      </div>
+      <div class="actions" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 6px; margin-right: 8px;">
+          <span style="font-size: 13px; font-weight: 500; color: var(--text-muted);" data-i18n="fbProfileLabel">Profile (Agent ID):</span>
+          <select id="fbProfileSelect" class="util-input" style="width: auto; min-width: 140px; height: 36px; padding: 0 10px;" onchange="fbProfileChanged()"></select>
+        </div>
+        <button class="btn" id="btnFbRefresh" type="button" onclick="loadFbCrawlerState()">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 0 1-14.8 4.2M4 12A8 8 0 0 1 18.8 7.8M20 5v5h-5M4 19v-5h5"/></svg>
+          Làm mới
+        </button>
+        <button class="btn primary" id="btnFbRunAll" type="button" onclick="fbRunAllImmediately()" style="background: var(--success); border-color: var(--success); color: white;">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Quét tất cả
+        </button>
+      </div>
+    </div>
+
+    <!-- Tabs navigation bar -->
+    <div class="util-tabs">
+      <button class="util-tab-btn active" type="button" onclick="switchUtilTab(event, 'fbTabTargets')" data-i18n-tab="targets">Plugin Targets</button>
+      <button class="util-tab-btn" type="button" onclick="switchUtilTab(event, 'fbTabFilters')" data-i18n-tab="filters">Filter Conditions</button>
+      <button class="util-tab-btn" type="button" onclick="switchUtilTab(event, 'fbTabCron')" data-i18n-tab="cron">Cron Scheduler</button>
+      <button class="util-tab-btn" type="button" onclick="switchUtilTab(event, 'fbTabNotify')" data-i18n-tab="notify">Nhóm nhận báo cáo</button>
+      <button class="util-tab-btn" type="button" onclick="switchUtilTab(event, 'fbTabTemplate')" data-i18n-tab="template">Report Template</button>
+      <button class="util-tab-btn" type="button" onclick="switchUtilTab(event, 'fbTabCookies')" data-i18n-tab="cookies">Facebook Cookies</button>
+    </div>
+
+    <!-- Status bar -->
+    <div id="fbCrawlerStatusBar" class="util-status-bar" style="display:none;">
+      <span id="fbCrawlerStatusDot" class="util-status-dot"></span>
+      <span id="fbCrawlerStatusText">FB Crawler đã tải</span>
+      <span class="util-status-path">📂 Config: <code id="fbCrawlerConfigPath"></code></span>
+    </div>
+
+    <!-- PANEL 0: Facebook Cookies -->
+    <div class="util-card" id="fbTabCookies" style="display:none;">
+      <div class="util-card-head">
+        <div>
+          <div class="util-eyebrow">FACEBOOK COOKIES</div>
+          <h3 class="util-card-title" data-i18n="fbCookiesTitle">Cấu hình Cookies đăng nhập</h3>
+          <p class="util-card-desc" data-i18n="fbCookiesDesc">Cookies giúp giả lập trạng thái đăng nhập để cuộn cào tin không giới hạn trong các Group.</p>
+        </div>
+        <div class="util-head-actions">
+          <input type="file" id="fbCookieFileInput" accept=".json" onchange="fbHandleCookieUpload(event)" style="display:none;">
+          <button class="util-btn-ghost" type="button" onclick="document.getElementById('fbCookieFileInput').click()" data-i18n="fbCookiesBtnChooseFile">📂 Chọn file JSON</button>
+          <button class="util-btn-primary" type="button" id="btnFbSaveCookies" onclick="fbSaveCookies()">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+            Lưu & Áp dụng
+          </button>
+        </div>
+      </div>
+      <div class="util-card-body" style="padding-top: 16px;">
+        <div id="fbCookieWarningBanner" class="util-warning-banner" style="margin-bottom:16px; padding:12px 16px; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 8px; color: #ef4444; font-size: 13px; display: flex; align-items: flex-start; gap: 8px;">
+          <span style="font-size: 16px;">⚠️</span>
+          <div>
+            <strong style="display: block; margin-bottom: 2px;" data-i18n="fbCookieWarningTitle">Cảnh báo bảo mật:</strong>
+            <span data-i18n="fbCookieWarningText">Vui lòng <strong>không sử dụng tài khoản Facebook chính (acc chính)</strong> để lấy cookie. Hãy sử dụng tài khoản phụ (clone) để tránh rủi ro bị checkpoint hoặc khóa tài khoản. Chúng tôi hoàn toàn miễn trừ trách nhiệm đối với bất kỳ rủi ro nào liên quan đến tài khoản Facebook của bạn.</span>
+          </div>
+        </div>
+        <p class="util-hint" style="margin-bottom:12px;" data-i18n="fbCookiesHint">💡 Mẹo: Sử dụng extension Chrome như <strong>Get Cookie</strong> hoặc <strong>J2TEAM Cookie</strong> để xuất file cookie dạng JSON.</p>
+        <textarea id="fbCookiesTextarea" class="util-textarea" rows="12" placeholder='Dán nội dung JSON Cookie vào đây (ví dụ: [{"domain": ".facebook.com", "name": "c_user", "value": "..."}]) hoặc chọn file tải lên ở trên...' style="font-family: monospace; font-size: 11px; margin-bottom: 12px;"></textarea>
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div style="font-size: 13px;">
+            <span data-i18n="fbCookiesStatusLabel">Trạng thái hoạt động:</span> <strong id="fbCookiesStatus" style="color: var(--text-muted);">Chưa nạp Cookies</strong>
+          </div>
+          <button class="btn" type="button" onclick="fbClearCookies()" id="btnFbClearCookies" style="color: var(--danger, #ef4444); border-color: var(--danger, #ef4444); display: none; padding: 4px 10px; font-size: 12px; min-height: auto;">
+            🗑️ Xóa Cookie
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL 1: Groups -->
+    <div class="util-card" id="fbTabTargets">
+      <div class="util-card-head">
+        <div>
+          <div class="util-eyebrow">PLUGIN TARGETS</div>
+          <h3 class="util-card-title" data-i18n="fbTargetsTitle">Danh sách Group Facebook</h3>
+          <p class="util-card-desc" data-i18n="fbTargetsDesc">Thêm URL group FB cần quét. Hệ thống sẽ tự phân batch theo lịch cron.</p>
+        </div>
+        <div class="util-head-actions">
+          <button class="util-btn-ghost" type="button" id="btnFbDownloadSample" onclick="fbDownloadSampleExcel()">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span data-i18n="fbTargetsBtnDownload">Tải mẫu CSV</span>
+          </button>
+          <button class="util-btn-outline" type="button" id="btnFbImportExcel" onclick="document.getElementById('fbExcelInput').click()">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <span data-i18n="fbTargetsBtnImport">Import CSV/Excel</span>
+          </button>
+          <input type="file" id="fbExcelInput" accept=".csv,.xlsx,.xls" style="display:none" onchange="fbImportExcelFile(this)">
+        </div>
+      </div>
+      <div class="util-add-form">
+        <div class="util-field" style="flex:0 0 90px">
+          <label class="util-label" data-i18n="fbTargetsLabelShortKey">Key ngắn</label>
+          <input type="text" id="fbNewGroupKey" placeholder="vd: nvx" class="util-input">
+        </div>
+        <div class="util-field" style="flex:1;min-width:150px">
+          <label class="util-label" data-i18n="fbTargetsLabelDisplayName">Tên hiển thị</label>
+          <input type="text" id="fbNewGroupName" placeholder="Yamaha NVX - Mua bán xe" class="util-input">
+        </div>
+        <div class="util-field" style="flex:2;min-width:220px">
+          <label class="util-label" data-i18n="fbTargetsLabelGroupUrl">URL Group Facebook</label>
+          <input type="url" id="fbNewGroupUrl" placeholder="https://www.facebook.com/groups/..." class="util-input">
+        </div>
+        <div class="util-field" style="flex:1;min-width:130px">
+          <label class="util-label" data-i18n="fbTargetsLabelKeywords">Từ khoá xe (cách bằng ;)</label>
+          <input type="text" id="fbNewGroupVK" placeholder="nvx;nvx 155" class="util-input">
+        </div>
+        <button class="util-btn-primary" type="button" onclick="fbAddGroup()" style="flex-shrink:0;align-self:flex-end">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <span data-i18n="fbTargetsBtnAdd">Thêm Group</span>
+        </button>
+      </div>
+      <div class="table-wrap">
+        <table id="fbGroupsTable">
+          <thead><tr>
+            <th style="width:36px">#</th>
+            <th style="width:72px" data-i18n="fbTargetsThKey">Key</th>
+            <th data-i18n="fbTargetsThGroupName">Tên Group</th>
+            <th data-i18n="fbTargetsThUrl">URL</th>
+            <th style="width:130px" data-i18n="fbTargetsThKeywords">Từ khoá xe</th>
+            <th style="width:72px" data-i18n="fbTargetsThDelete">Xóa</th>
+          </tr></thead>
+          <tbody id="fbGroupsTbody">
+            <tr><td colspan="6" class="util-empty-row" data-i18n="fbTargetsEmptyRow">Chưa có group nào. Thêm group hoặc import file CSV.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="util-card-foot">
+        <span id="fbGroupsCount" class="util-count">0 groups</span>
+        <button class="util-btn-primary" type="button" id="btnFbSaveGroups" onclick="fbSaveGroups()">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          <span data-i18n="fbTargetsBtnSave">Lưu danh sách</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- PANEL 2: Filter conditions -->
+    <div class="util-card" id="fbTabFilters" style="display:none;">
+      <div class="util-card-head">
+        <div>
+          <div class="util-eyebrow">FILTER CONDITIONS</div>
+          <h3 class="util-card-title" data-i18n="fbFiltersTitle">Điều kiện lọc bài viết</h3>
+          <p class="util-card-desc" data-i18n="fbFiltersDesc">Từ khoá bắt buộc, từ khoá chặn, khu vực và dữ liệu trích xuất tự động.</p>
+        </div>
+        <button class="util-btn-primary" type="button" id="btnFbSaveRules" onclick="fbSaveRules()">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+          <span data-i18n="fbFiltersBtnSave">Lưu điều kiện</span>
+        </button>
+      </div>
+
+      <!-- AI Classifier settings -->
+      <div class="util-field-block" style="margin-bottom: 20px; border-bottom: 1px dashed var(--border); padding-bottom: 20px;">
+        <span class="util-field-label" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+          <span style="font-weight: 600;" data-i18n="fbFiltersAiTitle"><span class="util-dot util-dot-purple"></span>Phân loại & Kiểm duyệt bằng AI</span>
+          <label class="util-toggle" style="margin: 0;" id="fbUseAiLabel">
+            <input type="checkbox" id="fbUseAi" onchange="fbToggleUseAi(this.checked)">
+            <span class="util-toggle-slider"></span>
+          </label>
+        </span>
+        <div id="fbAiSettingsGroup" style="margin-top: 12px; transition: opacity 0.2s;">
+          <label class="util-field-block">
+            <span class="util-field-label" data-i18n="fbFiltersAiProductDesc">Nhu cầu sản phẩm cần AI kiểm duyệt (Mô tả chi tiết sản phẩm/nhu cầu)</span>
+            <textarea id="fbAiProductDesc" class="util-textarea" rows="3" placeholder="Ví dụ: robot hút bụi lau nhà Xiaomi, Ecovacs, Dreame, Roborock (thanh lý hoặc tìm mua)"></textarea>
+            <p class="util-hint" style="margin-top: 4px;" data-i18n="fbFiltersAiHint">💡 AI sẽ dùng mô tả này để tự động phân loại đúng bài viết theo nhu cầu của bạn. Nếu để trống, hệ thống sẽ tự động dùng "Từ khoá bắt buộc" ở dưới để đối chiếu.</p>
+          </label>
+        </div>
+      </div>
+
+      <div class="util-2col">
+        <label class="util-field-block">
+          <span class="util-field-label" data-i18n="fbFiltersRequireKeywords"><span class="util-dot util-dot-green"></span>Từ khoá bắt buộc <small>(mỗi từ 1 dòng)</small></span>
+          <textarea id="fbRequireKeywords" class="util-textarea" rows="6" placeholder="bán&#10;thanh lý&#10;nhượng lại&#10;chính chủ"></textarea>
+        </label>
+        <label class="util-field-block">
+          <span class="util-field-label" data-i18n="fbFiltersBlockKeywords"><span class="util-dot util-dot-red"></span>Từ khoá chặn <small>(mỗi từ 1 dòng)</small></span>
+          <textarea id="fbBlockKeywords" class="util-textarea" rows="6" placeholder="trả góp&#10;cửa hàng&#10;salon&#10;bao nợ xấu"></textarea>
+        </label>
+      </div>
+
+      <!-- Location pill multi-select -->
+      <div class="util-field-block" style="margin-bottom:20px">
+        <span class="util-field-label" data-i18n="fbFiltersLocation"><span class="util-dot util-dot-blue"></span>Khu vực lọc <small>— click chọn tỉnh/thành, để trống = chấp nhận mọi nơi</small></span>
+        <div class="util-location-wrap">
+          <div class="util-location-search-row">
+            <input type="text" id="fbLocationSearch" class="util-input" placeholder="Tìm tỉnh/thành..." oninput="fbFilterProvinces(this.value)" style="flex:1;max-width:280px">
+            <button class="util-btn-ghost" type="button" onclick="fbClearLocations()" data-i18n="fbFiltersBtnClearLocations">Bỏ chọn tất cả</button>
+          </div>
+          <div class="util-province-grid" id="fbProvinceGrid"></div>
+          <div class="util-location-selected" id="fbLocationSelected">
+            <span class="util-muted" data-i18n="fbFiltersLocationEmpty">Chưa chọn khu vực nào — hệ thống chấp nhận mọi tỉnh thành</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="util-2col" style="align-items:start">
+        <!-- Regex extractor toggles -->
+        <div class="util-field-block">
+          <span class="util-field-label" data-i18n="fbFiltersExtractor"><span class="util-dot util-dot-purple"></span>Trích xuất dữ liệu tự động <small>— bật/tắt trường cần lấy</small></span>
+          <div class="util-extractor-grid" id="fbExtractorGrid"></div>
+          <p class="util-hint" data-i18n="fbFiltersExtractorHint">Hệ thống tự nhận dạng pattern. Không cần nhập regex thủ công.</p>
+        </div>
+        <!-- Max posts -->
+        <div class="util-field-block">
+          <span class="util-field-label" data-i18n="fbFiltersMaxPosts"><span class="util-dot util-dot-orange"></span>Giới hạn bài mỗi lần quét</span>
+          <div class="util-number-row">
+            <input type="number" id="fbMaxPosts" min="0" max="500" placeholder="0" class="util-input util-input-sm">
+            <span class="util-muted" id="fbFiltersMaxPostsUnit">bài / group &nbsp;·&nbsp; <code>0</code> = không giới hạn</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL 3: Cron scheduler -->
+    <div class="util-card" id="fbTabCron" style="display:none;">
+      <div class="util-card-head">
+        <div>
+          <div class="util-eyebrow">CRON SCHEDULER</div>
+          <h3 class="util-card-title" data-i18n="fbCronTitle">Hẹn lịch quét tự động</h3>
+          <p class="util-card-desc" data-i18n="fbCronDesc">Mỗi session quét một batch group theo lịch cron. AI tự đề xuất phân bổ tối ưu.</p>
+        </div>
+        <div class="util-head-actions">
+          <button class="util-btn-ai" type="button" id="btnFbAiCron" onclick="fbAiSuggestCron()">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <span data-i18n="fbCronBtnAi">AI Đề xuất lịch</span>
+          </button>
+          <button class="util-btn-primary" type="button" id="btnFbSaveCron" onclick="fbSaveCron()">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+            <span data-i18n="fbCronBtnSave">Lưu lịch</span>
+          </button>
+        </div>
+      </div>
+      <div class="util-add-form">
+        <div class="util-field" style="flex:0 0 60px">
+          <label class="util-label" data-i18n="fbCronLabelId">ID</label>
+          <input type="text" id="fbNewCronId" placeholder="A" class="util-input">
+        </div>
+        <div class="util-field" style="flex:1;min-width:170px">
+          <label class="util-label" data-i18n="fbCronLabelTime">Giờ chạy (VN)</label>
+          <input type="time" id="fbNewCronTime" class="util-input" style="height:36px; padding:0 10px;">
+        </div>
+        <div class="util-field" style="flex:0 0 90px">
+          <label class="util-label" data-i18n="fbCronLabelFrom">Group từ</label>
+          <input type="number" id="fbNewCronSliceFrom" placeholder="0" min="0" class="util-input">
+        </div>
+        <div class="util-field" style="flex:0 0 90px">
+          <label class="util-label" data-i18n="fbCronLabelTo">đến</label>
+          <input type="number" id="fbNewCronSliceTo" placeholder="5" min="1" class="util-input">
+        </div>
+        <button class="util-btn-outline" type="button" onclick="fbAddCronRow()" style="flex-shrink:0;align-self:flex-end">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <span data-i18n="fbCronBtnAdd">Thêm</span>
+        </button>
+      </div>
+      <div class="table-wrap">
+        <table id="fbCronTable">
+          <thead><tr>
+            <th style="width:56px">ID</th>
+            <th>Cron</th>
+            <th data-i18n="fbCronThTime">Giờ chạy (VN)</th>
+            <th data-i18n="fbCronThSlice">Group slice</th>
+            <th style="width:160px; text-align:right;" data-i18n="fbCronThActions">Thao tác</th>
+          </tr></thead>
+          <tbody id="fbCronTbody">
+            <tr><td colspan="5" class="util-empty-row">Chưa có lịch nào. Nhấn "AI Đề xuất lịch" để tự động phân bổ.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PANEL 3B: Report targets -->
+    <div class="util-card" id="fbTabNotify" style="display:none;">
+      <div class="util-card-head">
+        <div>
+          <div class="util-eyebrow" data-i18n="fbNotifyEyebrow">REPORT TARGETS</div>
+          <h3 class="util-card-title" data-i18n="fbNotifyTitle">Nhóm nhận báo cáo</h3>
+          <p class="util-card-desc" data-i18n="fbNotifyDesc">Chọn các nhóm Zalo hoặc người dùng nhận báo cáo kết quả quét tự động.</p>
+        </div>
+        <div class="util-head-actions">
+          <button class="util-btn-primary" type="button" id="btnFbSaveNotify" onclick="fbSaveNotify()">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+            Lưu cấu hình
+          </button>
+        </div>
+      </div>
+
+      <div class="util-card-body" style="padding-top: 16px;">
+        <div class="segmented" style="margin-bottom: 16px; display: inline-flex; width: auto;">
+          <button class="active" type="button" id="fbNotifySubTabGroupBtn" onclick="switchFbNotifySubTab('group')">
+            Nhóm (Group)
+          </button>
+          <button type="button" id="fbNotifySubTabUserBtn" onclick="switchFbNotifySubTab('user')">
+            Cá nhân (User)
+          </button>
+        </div>
+
+        <!-- Sub-tab 1: Group list table -->
+        <div id="fbNotifySubTabGroup" class="table-wrap" style="margin-bottom: 0;">
+          <table class="util-table">
+            <thead>
+              <tr>
+                <th style="width: 40px; text-align: center; vertical-align: middle;">
+                  <input type="checkbox" id="fbNotifySelectAllGroups" onclick="fbToggleSelectAllNotifyGroups(this)">
+                </th>
+                <th style="width: 60px; text-align: left; vertical-align: middle;" data-i18n="thAvatar">Avatar</th>
+                <th style="text-align: left; vertical-align: middle;" data-i18n="thGroupName">Tên nhóm</th>
+                <th style="width: 140px; text-align: right; vertical-align: middle;" data-i18n="thMemberCount">Số thành viên</th>
+              </tr>
+            </thead>
+            <tbody id="fbNotifyGroupListTbody">
+              <tr><td colspan="4" class="util-empty-row">Chưa có thông tin nhóm.</td></tr>
+            </tbody>
+          </table>
+          <div id="fbNotifyGroupPagination"></div>
+        </div>
+
+        <!-- Sub-tab 2: User list table -->
+        <div id="fbNotifySubTabUser" class="table-wrap" style="margin-bottom: 0; display: none;">
+          <table class="util-table">
+            <thead>
+              <tr>
+                <th style="width: 40px; text-align: center; vertical-align: middle;">
+                  <input type="checkbox" id="fbNotifySelectAllUsers" onclick="fbToggleSelectAllNotifyUsers(this)">
+                </th>
+                <th style="width: 60px; text-align: left; vertical-align: middle;" data-i18n="thAvatar">Avatar</th>
+                <th style="text-align: left; vertical-align: middle;" data-i18n="thFriendName">Tên bạn bè</th>
+                <th style="width: 180px; text-align: right; vertical-align: middle;" data-i18n="thUserId">User ID</th>
+              </tr>
+            </thead>
+            <tbody id="fbNotifyUserListTbody">
+              <tr><td colspan="4" class="util-empty-row">Chưa có thông tin bạn bè hoặc đang tải.</td></tr>
+            </tbody>
+          </table>
+          <div id="fbNotifyUserPagination"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL 4: Report template -->
+    <div class="util-card" id="fbTabTemplate" style="display:none;">
+      <div class="util-card-head">
+        <div>
+          <div class="util-eyebrow">REPORT TEMPLATE</div>
+          <h3 class="util-card-title" data-i18n="fbTemplateTitle">Mẫu template báo cáo</h3>
+          <p class="util-card-desc" data-i18n="fbTemplateDesc">Tuỳ chỉnh định dạng báo cáo kết quả gửi qua Zalo. Template lưu ngoài plugin, không mất khi update.</p>
+        </div>
+        <div class="util-head-actions">
+          <button class="util-btn-ghost" type="button" onclick="fbResetTemplate()" data-i18n="fbTemplateBtnReset">Reset mặc định</button>
+          <button class="util-btn-ghost" type="button" onclick="fbPreviewTemplate()" data-i18n="fbTemplateBtnPreview">&#128065; Preview</button>
+          <button class="util-btn-primary" type="button" id="btnFbSaveTemplate" onclick="fbSaveTemplate()">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+            <span data-i18n="fbTemplateBtnSave">Lưu template</span>
+          </button>
+        </div>
+      </div>
+      <div class="util-card-body" style="padding-top: 16px;">
+        <p class="util-hint" style="margin-bottom:12px" data-i18n="fbTemplateVarHint">📌 Biến có thể dùng — click để chèn vào template:</p>
+        <div class="util-var-chips" id="fbTemplateVarChips" style="margin-bottom:16px;">
+          <button class="util-chip" type="button" onclick="fbInsertVar('{sessionId}')">{sessionId}</button>
+          <button class="util-chip" type="button" onclick="fbInsertVar('{totalFound}')">{totalFound}</button>
+          <button class="util-chip" type="button" onclick="fbInsertVar('{skippedPro}')">{skippedPro}</button>
+          <button class="util-chip" type="button" onclick="fbInsertVar('{skippedLoc}')">{skippedLoc}</button>
+          <button class="util-chip util-chip-accent" type="button" onclick="fbInsertVar('{items}')">{items} <small data-i18n="fbTemplateVarItems">← ds kết quả</small></button>
+          <button class="util-chip" type="button" onclick="fbInsertVar('{groupName}')">{groupName}</button>
+          <button class="util-chip" type="button" onclick="fbInsertVar('{uid}')">{uid}</button>
+          <button class="util-chip" type="button" onclick="fbInsertVar('{location}')">{location}</button>
+          <button class="util-chip" type="button" onclick="fbInsertVar('{extracted}')">{extracted}</button>
+          <button class="util-chip" type="button" onclick="fbInsertVar('{snippet}')">{snippet}</button>
+          <button class="util-chip" type="button" onclick="fbInsertVar('{permalink}')">{permalink}</button>
+        </div>
+        <textarea id="fbReportTemplate" class="util-textarea util-template-area" rows="16" placeholder="Nhập template báo cáo..." style="margin-bottom:12px;"></textarea>
+        <p class="util-hint" style="margin-top:4px;" data-i18n="fbTemplateBottomHint">💡 Dùng <code>*text*</code> để in đậm trong Zalo. Template lưu tại <code>plugins-data/zalo-mod/report-template.txt</code></p>
+      </div>
+    </div>
+  </section>
+  <!-- ══ end utilities ══ -->
       <footer class="site-footer">
         <div class="footer-content" style="width: 100%;">
           <p class="footer-copyright" style="margin: 0; font-size: 11px; opacity: 0.6;">
@@ -1018,6 +1413,10 @@
           <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           <path d="M14 2v6h6M16 13H8m8 4H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg><span class="nav-label">Lệnh & Rules</span></button>
+      <button data-section="fb-crawler"><svg viewBox="0 0 24 24" fill="none">
+          <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <line x1="7" y1="7" x2="7.01" y2="7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+        </svg><span class="nav-label">Facebook Crawler</span></button>
       <button data-section="upgrade"><svg viewBox="0 0 24 24" fill="none">
           <path d="m12 3 2.7 5.5 6 .9-4.3 4.2 1 5.9L12 16.6l-5.4 2.9 1-5.9L3.3 9.4l6-.9L12 3Z" stroke="currentColor"
             stroke-width="2" stroke-linejoin="round" />
@@ -1054,6 +1453,10 @@
       </div>
     </div>
   </div>
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <!-- TIỆN ÍCH — FB Crawler Manager                                          -->
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+
 </body>
 
 </html>

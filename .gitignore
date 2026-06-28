@@ -13,3 +13,6 @@ upgrade/private-key.pem
 upgrade/orders.json
 upgrade/history.json
 
+
+# Local dev tooling & architecture docs (not shipped)
+docs_dev/

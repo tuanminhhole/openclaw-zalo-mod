@@ -10,7 +10,7 @@ const modalBody = document.getElementById('modalBody');
 const modalCancel = document.getElementById('modalCancel');
 const modalConfirm = document.getElementById('modalConfirm');
 const token = window.ZALO_DASHBOARD_TOKEN || '';
-const pluginVersion = '2.11.1';
+const pluginVersion = '2.11.2';
 let state = null;
 let activeGroupId = '';
 let lang = localStorage.getItem('zaloDashboardLang') || 'vi';
@@ -1738,6 +1738,7 @@ function updateBulkBar() {
   if (!actions || !state) return;
   const visibleGroups = state.groups.filter(groupMatchesFilter);
   const selectedVisible = visibleGroups.filter(group => selectedGroups.has(group.groupId));
+  const allVisibleSelected = visibleGroups.length > 0 && selectedVisible.length === visibleGroups.length;
   const defs = [
     ['muted', 'Mute'],
     ['silent', 'Silent'],
@@ -1747,7 +1748,7 @@ function updateBulkBar() {
     ['pendingAuto', 'Auto approve'],
   ];
   actions.innerHTML = `
-        <button class="btn" type="button" data-select-all-groups>Select all</button>
+        <button class="btn ${allVisibleSelected ? 'primary' : ''}" type="button" data-select-all-groups>${allVisibleSelected ? uiText('Bỏ chọn tất cả', 'Clear all') : uiText('Chọn tất cả', 'Select all')}</button>
         ${defs.map(([key, label]) => {
     const allOn = selectedVisible.length > 0 && selectedVisible.every(group => !!group.settings[key]);
     return `<button class="feature-toggle ${allOn ? 'on' : 'off'}" type="button" data-bulk-feature="${key}:${!allOn}">${label}</button>`;
@@ -3005,7 +3006,14 @@ document.addEventListener('click', async event => {
     }
     if (target.dataset.toggle) {
       const [groupId, key, rawValue] = target.dataset.toggle.split(':');
-      await runAction('toggle-setting', { groupId, key, value: rawValue === 'true' }, t(`${key} đã cập nhật`, `${key} updated`));
+      const value = rawValue === 'true';
+      await runAction('toggle-setting', { groupId, key, value }, t(`${key} đã cập nhật`, `${key} updated`));
+      // Reflect the change immediately (toggle-setting doesn't return full state, so the
+      // badge would otherwise keep its old on/off look until the next full refresh).
+      const g = state.groups && state.groups.find(x => x.groupId === groupId);
+      if (g) { g.settings = g.settings || {}; g.settings[key] = value; }
+      renderGroups();
+      updateBulkBar();
     }
     if (target.dataset.toggleCustom) {
       const [groupId, slug, state] = target.dataset.toggleCustom.split(':');

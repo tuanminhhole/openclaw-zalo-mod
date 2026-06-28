@@ -6,3 +6,4 @@ examples/
 *.tgz
 npm-debug.log*
 docs/
+docs_dev/

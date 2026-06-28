@@ -1,3 +1,9 @@
+## [2.11.2] - 2026-06-29
+
+### Fixed
+- **Badge tính năng per-group cập nhật ngay (Silent/Welcome/Tracking/Follow/Mute/Auto approve)**: Bấm bật/tắt badge của một group giờ vẽ lại trạng thái on/off ngay lập tức. Trước đây không re-render nên badge giữ nguyên màu cũ → dễ bấm nhầm lần 2 và vô tình đảo ngược (vd tắt Silent xong tưởng chưa tắt, bấm lại thành bật → bot vẫn im lặng).
+- **Nút "Select all" ở trang Nhóm hiển thị trạng thái active**: Khi đã chọn tất cả group đang hiển thị, nút sáng lên (primary) và đổi chữ thành "Clear all"; bấm lần nữa để bỏ chọn hết.
+
 ## [2.11.1] - 2026-06-13
 
 ### Fixed

@@ -1325,8 +1325,19 @@
           <button class="util-chip" type="button" onclick="fbInsertVar('{snippet}')">{snippet}</button>
           <button class="util-chip" type="button" onclick="fbInsertVar('{permalink}')">{permalink}</button>
         </div>
-        <textarea id="fbReportTemplate" class="util-textarea util-template-area" rows="16" placeholder="Nhập template báo cáo..." style="margin-bottom:12px;"></textarea>
-        <p class="util-hint" style="margin-top:4px;" data-i18n="fbTemplateBottomHint">💡 Dùng <code>*text*</code> để in đậm trong Zalo. Template lưu tại <code>plugins-data/zalo-mod/report-template.txt</code></p>
+        <div class="util-2col" style="align-items: stretch; margin-bottom: 12px; gap: 16px;">
+          <div class="util-field-block" style="flex: 1; display: flex; flex-direction: column;">
+            <span class="util-field-label" style="font-weight: 600; margin-bottom: 8px;">📋 Template tổng thể (Report Template)</span>
+            <textarea id="fbReportTemplate" class="util-textarea util-template-area" rows="14" placeholder="Nhập template báo cáo..." style="flex: 1; min-height: 250px; font-family: monospace;"></textarea>
+            <p class="util-hint" style="margin-top: 4px;">Biến hợp lệ: <code>{sessionId}</code>, <code>{totalFound}</code>, <code>{skippedPro}</code>, <code>{skippedLoc}</code>, và bắt buộc phải có <code>{items}</code>.</p>
+          </div>
+          <div class="util-field-block" style="flex: 1; display: flex; flex-direction: column;">
+            <span class="util-field-label" style="font-weight: 600; margin-bottom: 8px;">🏍️ Template từng bài đăng (Item Template)</span>
+            <textarea id="fbItemTemplate" class="util-textarea util-template-area" rows="14" placeholder="Nhập template cho từng bài đăng..." style="flex: 1; min-height: 250px; font-family: monospace;"></textarea>
+            <p class="util-hint" style="margin-top: 4px;">Biến hợp lệ: <code>{groupName}</code>, <code>{uid}</code>, <code>{location}</code>, <code>{extracted}</code>, <code>{snippet}</code>, <code>{permalink}</code>.</p>
+          </div>
+        </div>
+        <p class="util-hint" style="margin-top:4px;" data-i18n="fbTemplateBottomHint">💡 Dùng <code>*text*</code> để in đậm trong Zalo. Các template được lưu tại thư mục <code>plugins-data/zalo-mod/</code></p>
       </div>
     </div>
   </section>

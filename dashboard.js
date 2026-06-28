@@ -3724,7 +3724,7 @@ window.loadFbCrawlerState = async function () {
     renderFbCronTable();
     renderFbRules(data.config?.rules || {});
     renderFbNotify(data.config || {});
-    renderFbTemplate(data.reportTemplate || data.defaultTemplate || '');
+    renderFbTemplate(data.reportTemplate || data.defaultTemplate || '', data.itemTemplate || data.defaultItemTemplate || '');
 
     // Render Cookies Status
     const statusEl = document.getElementById('fbCookiesStatus');
@@ -4880,13 +4880,22 @@ window.fbSaveNotify = async function () {
 
 
 // ─── PANEL 4: Report Template ─────────────────────────────────────────────────
-function renderFbTemplate(tmpl) {
+function renderFbTemplate(tmpl, itemTmpl) {
   const ta = document.getElementById('fbReportTemplate');
   if (ta) ta.value = tmpl;
+  const taItem = document.getElementById('fbItemTemplate');
+  if (taItem) taItem.value = itemTmpl;
 }
 
+let fbLastFocusedTemplateArea = null;
+document.addEventListener('focusin', (e) => {
+  if (e.target && (e.target.id === 'fbReportTemplate' || e.target.id === 'fbItemTemplate')) {
+    fbLastFocusedTemplateArea = e.target;
+  }
+});
+
 window.fbInsertVar = function (varStr) {
-  const ta = document.getElementById('fbReportTemplate');
+  const ta = fbLastFocusedTemplateArea || document.getElementById('fbReportTemplate');
   if (!ta) return;
   const start = ta.selectionStart;
   const end = ta.selectionEnd;
@@ -4907,24 +4916,30 @@ window.fbResetTemplate = async function () {
   if (confirmed !== false) {
     const ta = document.getElementById('fbReportTemplate');
     if (ta && fbState?.defaultTemplate) ta.value = fbState.defaultTemplate;
-    showToast(t('Đã reset về template mặc định. Nhấn "Lưu template" để áp dụng!', 'Restored to default template. Click "Save Template" to apply!'), 'info');
+    const taItem = document.getElementById('fbItemTemplate');
+    if (taItem && fbState?.defaultItemTemplate) taItem.value = fbState.defaultItemTemplate;
+    showToast(t('Đã reset về template mặc định. Nhấn "Lưu template" để áp dụng!', 'Restored to default templates. Click "Save Template" to apply!'), 'info');
   }
 };
 
 window.fbSaveTemplate = async function () {
   const btn = document.getElementById('btnFbSaveTemplate');
   const tmpl = document.getElementById('fbReportTemplate')?.value || '';
+  const itemTmpl = document.getElementById('fbItemTemplate')?.value || '';
   if (!tmpl.trim()) {
-    showToast(t('Template không được để trống!', 'Template cannot be empty!'), 'warning'); return;
+    showToast(t('Template tổng thể không được để trống!', 'Report template cannot be empty!'), 'warning'); return;
+  }
+  if (!itemTmpl.trim()) {
+    showToast(t('Template từng bài đăng không được để trống!', 'Item template cannot be empty!'), 'warning'); return;
   }
   const profile = document.getElementById('fbProfileSelect') ? document.getElementById('fbProfileSelect').value : 'banxe';
   setButtonLoading(btn, true);
   try {
     await api('/api/fb-crawler/save-template?profile=' + encodeURIComponent(profile), {
       method: 'POST',
-      body: JSON.stringify({ template: tmpl }),
+      body: JSON.stringify({ template: tmpl, itemTemplate: itemTmpl }),
     });
-    showToast(t('Đã lưu template báo cáo! Lần quét tiếp theo sẽ dùng template mới.', 'Report template saved! The next crawl will use the new template.'), 'success');
+    showToast(t('Đã lưu template báo cáo! Lần quét tiếp theo sẽ dùng template mới.', 'Report templates saved! The next crawl will use the new templates.'), 'success');
   } catch (e) {
     showToast(e.message, 'error');
   } finally {
@@ -4934,13 +4949,22 @@ window.fbSaveTemplate = async function () {
 
 window.fbPreviewTemplate = function () {
   const tmpl = document.getElementById('fbReportTemplate')?.value || '';
-  const sampleItems = `"🏍️ *Yamaha NVX 155 2022*\\n👤 uid: 1234567890\\n📍 " + t('Khu vực', 'Region') + ": hcm\\n• PHONE: 0901234567\\n📝 " + t('Bán xe NVX 155 2022 chính chủ, màu xanh...', 'Selling Yamaha NVX 155 2022, owner, blue...') + "\\n🔗 https://www.facebook.com/groups/.../posts/sample1"`;
+  const itemTmpl = document.getElementById('fbItemTemplate')?.value || '';
+  
+  const sampleItems = itemTmpl
+    .replace(/{groupName}/g, 'Yamaha NVX 155 2022')
+    .replace(/{uid}/g, '1234567890')
+    .replace(/{location}/g, 'hcm')
+    .replace(/{extracted}/g, '• PHONE: 0901234567\n')
+    .replace(/{snippet}/g, 'Bán xe NVX 155 2022 chính chủ, màu xanh...')
+    .replace(/{permalink}/g, 'https://www.facebook.com/groups/.../posts/sample1');
+
   const preview = tmpl
-    .replace('{sessionId}', 'A')
-    .replace('{totalFound}', '3')
-    .replace('{skippedPro}', '12')
-    .replace('{skippedLoc}', '5')
-    .replace('{items}', sampleItems);
+    .replace(/{sessionId}/g, 'A')
+    .replace(/{totalFound}/g, '3')
+    .replace(/{skippedPro}/g, '12')
+    .replace(/{skippedLoc}/g, '5')
+    .replace(/{items}/g, sampleItems);
 
   const previewModal = document.getElementById('previewModalBackdrop');
   const previewBody = document.getElementById('previewModalBody');

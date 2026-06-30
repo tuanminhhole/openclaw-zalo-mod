@@ -10,7 +10,7 @@ const modalBody = document.getElementById('modalBody');
 const modalCancel = document.getElementById('modalCancel');
 const modalConfirm = document.getElementById('modalConfirm');
 const token = window.ZALO_DASHBOARD_TOKEN || '';
-const pluginVersion = '2.11.2';
+const pluginVersion = '2.12.0';
 let state = null;
 let activeGroupId = '';
 let lang = localStorage.getItem('zaloDashboardLang') || 'vi';
@@ -159,6 +159,7 @@ function setSection(id) {
   drawer.classList.remove('open');
   backdrop.classList.remove('open');
   window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (id === 'permissions') renderPermissions();
 }
 function toastIcon(tone) {
   const icons = {
@@ -290,6 +291,10 @@ function setSelectOptions(select, pairs) {
 function applyI18n() {
   document.documentElement.lang = lang;
   syncChromeState();
+  // Permissions section header + nav label
+  setText('#permissions .page-head h2', 'Phân quyền', 'Permissions');
+  setText('#permissions .page-head p', 'Kiểm soát ai được nhắn riêng (DM) với bot, bot hoạt động ở nhóm nào, và ai được dùng lệnh /note & /memory.', 'Control who can DM the bot, which groups the bot serves, and who can run /note & /memory.');
+  document.querySelectorAll('[data-section="permissions"] .nav-label').forEach(n => { n.textContent = t('Phân quyền', 'Permissions'); });
   setAttr('#search', 'placeholder', 'Tìm group, member, userId, API...', 'Search group, member, userId, API...');
   setAttr('[data-open-menu]', 'aria-label', 'More menu', 'Open more menu');
   setAttr('#themeToggle', 'aria-label', 'Theme switch', 'Switch theme');
@@ -307,6 +312,7 @@ function applyI18n() {
     ['Bạn bè', 'Friends'],
     ['Tin nhắn', 'Messages'],
     ['Lệnh & Rules', 'Rules & Cmds'],
+    ['Phân quyền', 'Permissions'],
     ['Tiện ích', 'Utilities'],
     ['Facebook Crawler', 'Facebook Crawler'],
     ['Nâng cấp', 'Upgrade'],
@@ -319,6 +325,7 @@ function applyI18n() {
     ['Bạn bè', 'Friends'],
     ['Tin nhắn', 'Messages'],
     ['Lệnh & Rules', 'Rules & Cmds'],
+    ['Phân quyền', 'Permissions'],
     ['Facebook Crawler', 'Facebook Crawler'],
     ['Nâng cấp', 'Upgrade'],
     ['Khu nguy hiểm', 'Danger Zone'],
@@ -1512,14 +1519,22 @@ function status(value, onLabel, offLabel) {
 function uiText(vi, en) {
   return t(vi, en);
 }
+// Một group có thể có nhiều bot → profile lưu dạng CSV "default,zuli_bot_le"
+function profileList(profile) {
+  return String(profile == null ? 'default' : profile).split(',').map(s => s.trim()).filter(Boolean);
+}
 function getBotBadge(profile) {
-  const bot = state.bots?.find(b => b.profile === profile);
-  const name = bot ? (bot.name || bot.id) : (profile || 'default');
-  const isWholesale = bot
-    ? (bot.id.includes('si') || bot.id.includes('2') || bot.name.includes('2') || bot.name.toLowerCase().includes('si'))
-    : (profile || '').includes('si');
-  const badgeClass = isWholesale ? 'si' : 'le';
-  return `<span class="bot-badge badge-${badgeClass}">${esc(name)}</span>`;
+  const profiles = profileList(profile);
+  if (profiles.length === 0) profiles.push('default');
+  return profiles.map(p => {
+    const bot = state.bots?.find(b => b.profile === p);
+    const name = bot ? (bot.name || bot.id) : (p || 'default');
+    const isWholesale = bot
+      ? (bot.id.includes('si') || bot.id.includes('2') || bot.name.includes('2') || bot.name.toLowerCase().includes('si'))
+      : (p || '').includes('si');
+    const badgeClass = isWholesale ? 'si' : 'le';
+    return `<span class="bot-badge badge-${badgeClass}">${esc(name)}</span>`;
+  }).join(' ');
 }
 function getBotInitials(bot) {
   if (!bot) return '🤖';
@@ -1668,7 +1683,7 @@ function avatarMeta(source, fallbackLabel = '') {
 }
 function groupMatchesFilter(group) {
   if (hiddenGroupIds().has(String(group.groupId))) return false;
-  if (selectedBotFilter !== 'all' && group.profile !== selectedBotFilter) return false;
+  if (selectedBotFilter !== 'all' && !profileList(group.profile).includes(selectedBotFilter)) return false;
   if (currentGroupFilter === 'silent') return !!group.settings.silent;
   if (currentGroupFilter === 'welcome') return !!group.settings.welcome;
   if (currentGroupFilter === 'muted') return !!group.settings.muted;
@@ -1763,7 +1778,7 @@ async function renderMembers() {
   if (select && state) {
     let groups = state.groups || [];
     if (selectedMemberBotFilter !== 'all') {
-      groups = groups.filter(g => g.profile === selectedMemberBotFilter);
+      groups = groups.filter(g => profileList(g.profile).includes(selectedMemberBotFilter));
     }
 
     if (groups.length > 0 && !groups.some(g => g.groupId === activeGroupId)) {
@@ -2834,6 +2849,277 @@ function refreshDetailModal() {
   modalConfirm.classList.remove('danger');
   modalConfirm.classList.add('primary');
 }
+// ── Nhật ký nhóm (Phase 3) ───────────────────────────────
+let journalState = { groupId: null, date: null, data: null, tab: 'summary' };
+async function journalApi(action, payload) {
+  const data = await api('/api/action', { method: 'POST', body: JSON.stringify({ action, payload }) });
+  return data.result;
+}
+async function loadJournal(groupId, date) {
+  const data = await journalApi('journal-data', { groupId, date });
+  journalState.groupId = groupId;
+  journalState.date = data.date;
+  journalState.data = data;
+  return data;
+}
+async function openJournal(groupId) {
+  journalState = { groupId, date: null, data: null, tab: 'summary' };
+  try { await loadJournal(groupId, null); }
+  catch (e) { showToast(uiText('Lỗi tải nhật ký', 'Journal load error') + ': ' + e.message, 'error'); return; }
+  await openModal({ title: uiText('Nhật ký nhóm', 'Group journal'), body: journalBodyHtml(), confirmText: uiText('Đóng', 'Close') });
+}
+function journalRerender() {
+  if (modalBackdrop.classList.contains('open')) modalBody.innerHTML = journalBodyHtml();
+}
+function journalBodyHtml() {
+  const js = journalState;
+  if (!js.data) return `<div class="item-sub">${uiText('Đang tải...', 'Loading...')}</div>`;
+  const d = js.data;
+  const tabs = [['summary', '📊 ' + uiText('Tóm tắt', 'Summary')], ['notes', '📝 Note'], ['memories', '🧠 Memory'], ['chat', '💬 ' + uiText('Chat thô', 'Raw chat')], ['config', '⚙️ ' + uiText('Lịch báo cáo', 'Schedule')]];
+  const tabBar = `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">${tabs.map(([k, l]) => `<button type="button" class="feature-toggle ${js.tab === k ? 'on' : 'off'}" data-jtab="${k}">${l}</button>`).join('')}</div>`;
+  let dateBar = '';
+  if (js.tab === 'summary' || js.tab === 'chat') {
+    const dates = js.tab === 'summary' ? d.summaryDates : d.chatDates;
+    const allDates = [...new Set([d.date, ...(dates || [])])];
+    dateBar = `<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+      <span class="item-sub">${uiText('Ngày', 'Date')}:</span>
+      ${allDates.slice(0, 14).map(dt => `<button type="button" data-jdate="${dt}" style="padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:${dt === d.date ? 'var(--primary)' : 'var(--surface-2)'};color:${dt === d.date ? '#fff' : 'var(--text)'};font-size:12px;cursor:pointer">${dt}</button>`).join('')}
+      <button type="button" class="btn" data-jgen="${d.date}" style="margin-left:auto">↻ ${uiText('Tổng hợp lại', 'Re-summarize')}</button>
+    </div>`;
+  }
+  let content = '';
+  if (js.tab === 'summary') content = journalSummaryHtml(d.summary);
+  else if (js.tab === 'notes') content = journalListHtml(d.notes, uiText('Chưa có note', 'No notes'));
+  else if (js.tab === 'memories') content = journalListHtml(d.memories, uiText('Chưa có memory', 'No memories'));
+  else if (js.tab === 'config') content = journalConfigHtml(d);
+  else content = journalChatHtml(d.chat, d.chatTotal);
+  return `<div>${tabBar}${dateBar}${content}</div>`;
+}
+function journalConfigHtml(d) {
+  const c = d.reportConfig || {};
+  const dv = c.deliver || {};
+  const cb = (id, checked, label) => `<label style="display:flex;align-items:center;gap:8px;margin:8px 0;cursor:pointer"><input type="checkbox" id="${id}" ${checked ? 'checked' : ''} style="width:18px;height:18px;min-height:0;padding:0;flex:0 0 auto;margin:0;cursor:pointer"/> <span>${label}</span></label>`;
+  return `<div class="list" style="padding:0">
+    <div class="item" style="display:block">
+      <div class="item-title">${uiText('Nhóm này', 'This group')}</div>
+      ${cb('jcfgAuto', d.autoSummary, uiText('Tự động tổng hợp cuối ngày cho nhóm này', 'Auto end-of-day summary for this group'))}
+    </div>
+    <div class="item" style="display:block">
+      <div class="item-title">${uiText('Lịch chung (áp cho mọi nhóm bật ở trên)', 'Global schedule')}</div>
+      ${cb('jcfgEnabled', c.enabled, uiText('Kích hoạt lịch báo cáo', 'Enable schedule'))}
+      <label style="display:flex;align-items:center;gap:8px;margin:8px 0">${uiText('Giờ chạy (VN)', 'Run time (VN)')}: <input type="time" id="jcfgTime" value="${esc(c.time || '23:55')}" style="padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:var(--surface-2);color:var(--text)"/></label>
+      <div class="item-title" style="margin-top:8px">${uiText('Gửi tới', 'Deliver to')}</div>
+      ${cb('jcfgThisGroup', dv.thisGroup, uiText('Đăng vào chính nhóm', 'Post into the group'))}
+      ${cb('jcfgOwnerDm', dv.ownerDm, uiText('DM cho owner bot', 'DM the bot owner'))}
+    </div>
+    <button type="button" class="btn primary" data-jsave="1" style="margin-top:8px">${uiText('Lưu cấu hình', 'Save config')}</button>
+    <div class="item-sub" style="margin-top:8px">${uiText('Lưu ý: phải bật CẢ "Kích hoạt lịch" (chung) LẪN "Tự động..." (từng nhóm) thì nhóm đó mới được báo cáo.', 'Note: enable both the global schedule and per-group auto.')}</div>
+  </div>`;
+}
+function journalSummaryHtml(s) {
+  if (!s) return `<div class="item-sub">${uiText('Chưa có tóm tắt cho ngày này. Bấm "Tổng hợp lại".', 'No summary yet. Click re-summarize.')}</div>`;
+  const x = s.sections || {};
+  const sec = (title, inner) => inner ? `<div class="item" style="display:block"><div class="item-title">${title}</div><div style="margin-top:6px">${inner}</div></div>` : '';
+  const list = arr => `<ul style="margin:0;padding-left:18px">${arr.map(i => `<li>${esc(i)}</li>`).join('')}</ul>`;
+  return `<div class="list" style="padding:0">
+    <div class="item-sub" style="margin-bottom:8px">💬 ${s.messageCount} ${uiText('tin', 'msgs')} · AI ${s.aiOk ? '✓' : '✗'}</div>
+    ${sec('📌 ' + uiText('Tổng quan', 'Overview'), x.overview ? esc(x.overview) : '')}
+    ${sec('⭐ ' + uiText('Nổi bật', 'Highlights'), x.highlights?.length ? list(x.highlights) : '')}
+    ${sec('🔁 ' + uiText('Lặp lại', 'Repeated'), x.repeatedTopics?.length ? list(x.repeatedTopics) : '')}
+    ${sec('🗣️ ' + uiText('Người nói chính', 'Key speakers'), x.keySpeakers?.length ? x.keySpeakers.map(k => `<div>• <strong>${esc(k.name || '')}</strong>: ${esc(k.gist || '')}</div>`).join('') : '')}
+    ${sec('📅 ' + uiText('Hẹn lịch', 'Appointments'), x.appointments?.length ? x.appointments.map(a => `<div>• ${esc(a.name || '')}: ${esc(a.what || '')}${a.when ? ` (${esc(a.when)})` : ''}</div>`).join('') : '')}
+    ${sec('🔗 Link', x.links?.length ? x.links.map(l => `<div>• <a href="${esc(l.url)}" target="_blank" rel="noopener" style="color:var(--primary)">${esc(l.url)}</a>${l.name ? ` — ${esc(l.name)}` : ''}</div>`).join('') : '')}
+    ${sec('📝 Note', x.notes?.length ? x.notes.map(n => `<div>• <strong>${esc(n.name || '')}</strong>: ${esc(n.text || '')}</div>`).join('') : '')}
+    ${sec('🧠 Memory', x.memories?.length ? x.memories.map(m => `<div>• <strong>${esc(m.name || '')}</strong>: ${esc(m.text || '')}</div>`).join('') : '')}
+  </div>`;
+}
+function journalListHtml(items, emptyMsg) {
+  if (!items?.length) return `<div class="item-sub">${emptyMsg}</div>`;
+  return `<div class="list" style="padding:0">${[...items].reverse().map(i => `<div class="item"><div><div class="item-title">${esc(i.userName || '?')}</div><div class="item-sub">${esc(i.text || '')}</div></div><small class="item-sub">${esc((i.ts || '').slice(0, 10))}</small></div>`).join('')}</div>`;
+}
+function journalChatHtml(chat, total) {
+  if (!chat?.length) return `<div class="item-sub">${uiText('Không có chat ngày này (cần bật tracking).', 'No chat this day (enable tracking).')}</div>`;
+  const more = total > chat.length ? `<div class="item-sub" style="margin-bottom:6px">${uiText(`hiển thị ${chat.length}/${total} tin gần nhất`, `showing last ${chat.length}/${total}`)}</div>` : '';
+  return `${more}<div class="list" style="padding:0;max-height:50vh;overflow:auto">${chat.map(e => `<div class="item"><div><div class="item-title" style="font-size:13px">${esc(e.name || '')} <small class="item-sub">${esc(e.t || '')}</small></div><div class="item-sub">${esc(e.text || '')}</div></div></div>`).join('')}</div>`;
+}
+// ── Phân quyền — mục riêng (section #permissions) ───────────────
+const permDmModes = () => [['all', uiText('Tất cả mọi người', 'Everyone')], ['friends', uiText('Chỉ bạn bè', 'Friends only')], ['list', uiText('Chỉ người được chọn', 'Selected people only')], ['owner', uiText('Chỉ owner', 'Owner only')], ['none', uiText('Không cho DM', 'No DM')]];
+const permGrpModes = () => [['all', uiText('Tất cả nhóm', 'All groups')], ['list', uiText('Chỉ nhóm được chọn', 'Selected groups only')], ['none', uiText('Không nhóm nào', 'No groups')]];
+const permCmdScopes = () => [['owner', uiText('Chỉ owner', 'Owner only')], ['admin', uiText('Owner + Admin', 'Owner + Admin')], ['list', uiText('Người được chọn', 'Selected people')], ['all', uiText('Mọi thành viên', 'Everyone')]];
+function permModeHint(domain, mode) {
+  const H = {
+    dm: {
+      all: uiText('Bất kỳ ai cũng nhắn riêng được với bot.', 'Anyone can DM the bot.'),
+      friends: uiText('Chỉ bạn bè Zalo của bot (và người tick dưới) được DM.', "Only the bot's Zalo friends (and people ticked below) can DM."),
+      list: uiText('CHỈ những người bạn tick ở dưới mới được DM với bot.', 'ONLY people you tick below can DM the bot.'),
+      owner: uiText('Chỉ chủ bot (owner) được DM, người khác bị bỏ qua.', 'Only the owner can DM; others ignored.'),
+      none: uiText('Bot không trả lời DM của bất kỳ ai.', 'Bot ignores all DMs.'),
+    },
+    group: {
+      all: uiText('Bot hoạt động ở tất cả nhóm nó tham gia.', 'Bot active in every group it joins.'),
+      list: uiText('Bot CHỈ hoạt động ở các nhóm bạn tick dưới đây.', 'Bot active ONLY in groups ticked below.'),
+      none: uiText('Bot không hoạt động ở nhóm nào.', 'Bot inactive in all groups.'),
+    },
+    cmd: {
+      owner: uiText('Chỉ chủ bot chạy được lệnh này.', 'Only the owner can run it.'),
+      admin: uiText('Chủ bot và admin nhóm chạy được.', 'Owner and group admins can run it.'),
+      list: uiText('CHỈ những người tick dưới mới chạy được.', 'ONLY people ticked below can run it.'),
+      all: uiText('Mọi thành viên trong nhóm đều chạy được.', 'Any group member can run it.'),
+    },
+  };
+  return (H[domain] && H[domain][mode]) || '';
+}
+let permState = { data: null, dmMode: 'all', grpMode: 'all', noteScope: 'admin', memScope: 'admin', dmSel: new Set(), grpSel: new Set(), noteSel: new Set(), memSel: new Set(), cmdTab: 'note' };
+
+async function renderPermissions() {
+  const root = document.getElementById('permContent');
+  if (!root) return;
+  if (!root.dataset.wired) { wirePermRoot(root); root.dataset.wired = '1'; }
+  root.innerHTML = `<div class="perm-empty">${uiText('Đang tải...', 'Loading...')}</div>`;
+  let d;
+  try { d = await journalApi('get-permissions', {}); }
+  catch (e) { root.innerHTML = `<div class="perm-empty">${esc(e.message)}</div>`; return; }
+  const p = d.permissions;
+  const userMap = {};
+  (d.members || []).forEach(u => { userMap[u.id] = { ...u }; });
+  (d.friends || []).forEach(u => { if (!userMap[u.id]) userMap[u.id] = { ...u }; });
+  permState = {
+    data: { users: Object.values(userMap), groups: d.groups || [] },
+    dmMode: p.dm.mode, grpMode: p.group.mode, noteScope: p.note.scope, memScope: p.memory.scope,
+    dmSel: new Set((p.dm.allowList || []).map(String)),
+    grpSel: new Set((p.group.allowList || []).map(String)),
+    noteSel: new Set((p.note.allowList || []).map(String)),
+    memSel: new Set((p.memory.allowList || []).map(String)),
+    cmdTab: 'note',
+  };
+  rebuildPermCards();
+}
+function rebuildPermCards() {
+  const root = document.getElementById('permContent');
+  if (root && permState.data) root.innerHTML = permCardsHtml();
+}
+function permDrop(kind, value, options) {
+  const cur = options.find(o => o[0] === value) || options[0];
+  return `<div class="pdrop">
+    <button type="button" class="pdrop-trigger" data-pdrop-toggle><span>${cur[1]}</span><svg class="pdrop-chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <div class="pdrop-menu">${options.map(o => `<button type="button" class="pdrop-opt ${o[0] === value ? 'active' : ''}" data-pdrop-pick="${kind}" data-val="${o[0]}">${o[1]}</button>`).join('')}</div>
+  </div>`;
+}
+function permAvatar(item) {
+  const initials = String(item.name || item.id || '?').trim().slice(0, 2).toUpperCase();
+  return item.avatar
+    ? `<span class="perm-av"><img src="${esc(item.avatar)}" alt="" onerror="const p=this.parentElement;this.remove();if(p)p.textContent='${esc(initials)}'"></span>`
+    : `<span class="perm-av">${esc(initials)}</span>`;
+}
+function permUserRows(users, set, setName) {
+  if (!users.length) return `<div class="perm-empty">${uiText('Chưa có member/bạn bè — mở tab Bạn bè/Thành viên để nạp trước.', 'No member/friend data yet.')}</div>`;
+  return users.map(u => {
+    const role = u.role === 'owner' ? `<span class="perm-role owner">Owner</span>` : `<span class="perm-role">Member</span>`;
+    return `<label class="perm-row"><input type="checkbox" data-perm-check data-perm-set="${setName}" data-uid="${esc(u.id)}" ${set.has(String(u.id)) ? 'checked' : ''}/>${permAvatar(u)}<span class="perm-row-main"><span class="perm-row-name">${esc(u.name || u.id)} ${role}</span><span class="perm-row-id">${esc(u.id)}</span></span></label>`;
+  }).join('');
+}
+function permGroupRows(groups, set) {
+  if (!groups.length) return `<div class="perm-empty">${uiText('Chưa có nhóm.', 'No groups.')}</div>`;
+  return groups.map(g => `<label class="perm-row"><input type="checkbox" data-perm-check data-perm-set="grp" data-gid="${esc(g.groupId)}" ${set.has(String(g.groupId)) ? 'checked' : ''}/><span class="perm-av">${esc(String(g.name || 'G').trim().slice(0, 2).toUpperCase())}</span><span class="perm-row-main"><span class="perm-row-name">${esc(repairText(g.name))}</span><span class="perm-row-id">${esc(g.groupId)}</span></span></label>`).join('');
+}
+function permListBlock(label, rowsHtml, placeholder) {
+  return `<div class="perm-list-wrap"><div class="perm-list-label">${label}</div><input type="text" class="perm-search" data-perm-search placeholder="${placeholder}"><div class="perm-list">${rowsHtml}</div></div>`;
+}
+const PERM_SAVE_ICON = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M17 21v-8H7v8M7 3v5h7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+function permHint(domain, mode) {
+  const txt = permModeHint(domain, mode);
+  return txt ? `<div class="perm-hint"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" aria-hidden="true"><path d="M12 8h.01M11 12h1v4h1m-1 5a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>${txt}</span></div>` : '';
+}
+function permCardsHtml() {
+  const s = permState;
+  const users = s.data.users || [];
+  const groups = s.data.groups || [];
+  const dmShow = !['none', 'owner'].includes(s.dmMode);
+  const grpShow = s.grpMode !== 'none';
+  const cmdKind = s.cmdTab === 'note' ? 'note' : 'memory';
+  const cmdScope = s.cmdTab === 'note' ? s.noteScope : s.memScope;
+  const cmdSet = s.cmdTab === 'note' ? s.noteSel : s.memSel;
+  const cmdShow = cmdScope !== 'owner';
+  const saveBtn = kind => `<button type="button" class="btn primary perm-save-btn" data-permsave-card="${kind}">${PERM_SAVE_ICON}<span>${uiText('Lưu', 'Save')}</span></button>`;
+  return `
+    <div class="card perm-card">
+      <div class="perm-card-head"><span class="perm-card-emoji">💬</span><div class="perm-card-title"><strong>${uiText('Quyền DM', 'DM access')}</strong><div class="item-sub">${uiText('Ai được nhắn riêng với bot', 'Who can DM the bot')}</div></div>${saveBtn('dm')}</div>
+      ${permDrop('dmMode', s.dmMode, permDmModes())}
+      ${permHint('dm', s.dmMode)}
+      ${dmShow ? permListBlock(uiText('Danh sách cho phép', 'Allow list'), permUserRows(users, s.dmSel, 'dm'), uiText('Tìm tên / ID...', 'Search name / ID...')) : ''}
+    </div>
+    <div class="card perm-card">
+      <div class="perm-card-head"><span class="perm-card-emoji">👥</span><div class="perm-card-title"><strong>${uiText('Quyền Group', 'Group access')}</strong><div class="item-sub">${uiText('Bot hoạt động ở nhóm nào', 'Which groups the bot serves')}</div></div>${saveBtn('group')}</div>
+      ${permDrop('grpMode', s.grpMode, permGrpModes())}
+      ${permHint('group', s.grpMode)}
+      ${grpShow ? permListBlock(uiText('Danh sách nhóm', 'Group list'), permGroupRows(groups, s.grpSel), uiText('Tìm nhóm...', 'Search group...')) : ''}
+    </div>
+    <div class="card perm-card">
+      <div class="perm-card-head"><span class="perm-card-emoji">📝</span><div class="perm-card-title"><strong>${uiText('Quyền lệnh', 'Command access')}</strong><div class="item-sub">${uiText('Ai được chạy /note & /memory', 'Who can run /note & /memory')}</div></div>${saveBtn('cmd')}</div>
+      <div class="perm-tabs"><button type="button" class="perm-tab ${s.cmdTab === 'note' ? 'active' : ''}" data-perm-tab="note">📝 /note</button><button type="button" class="perm-tab ${s.cmdTab === 'memory' ? 'active' : ''}" data-perm-tab="memory">🧠 /memory</button></div>
+      ${permDrop(cmdKind === 'note' ? 'noteScope' : 'memScope', cmdScope, permCmdScopes())}
+      ${permHint('cmd', cmdScope)}
+      ${cmdShow ? permListBlock(uiText('Ai được chạy', 'Allowed for') + ' /' + cmdKind, permUserRows(users, cmdSet, cmdKind === 'note' ? 'note' : 'mem'), uiText('Tìm tên / ID...', 'Search name / ID...')) : ''}
+    </div>`;
+}
+function wirePermRoot(root) {
+  root.addEventListener('click', async e => {
+    const toggle = e.target.closest('[data-pdrop-toggle]');
+    if (toggle) {
+      const dd = toggle.closest('.pdrop');
+      const wasOpen = dd.classList.contains('open');
+      root.querySelectorAll('.pdrop.open').forEach(d => d.classList.remove('open'));
+      if (!wasOpen) dd.classList.add('open');
+      return;
+    }
+    const pick = e.target.closest('[data-pdrop-pick]');
+    if (pick) {
+      const kind = pick.dataset.pdropPick;
+      permState[kind] = pick.dataset.val; // dmMode | grpMode | noteScope | memScope
+      rebuildPermCards();
+      return;
+    }
+    const tab = e.target.closest('[data-perm-tab]');
+    if (tab) { permState.cmdTab = tab.dataset.permTab; rebuildPermCards(); return; }
+    const save = e.target.closest('[data-permsave-card]');
+    if (save) { await savePermCard(save); return; }
+  });
+  root.addEventListener('change', e => {
+    const chk = e.target.closest('input[data-perm-check]');
+    if (!chk) return;
+    const map = { dm: permState.dmSel, grp: permState.grpSel, note: permState.noteSel, mem: permState.memSel };
+    const set = map[chk.dataset.permSet];
+    if (!set) return;
+    const id = chk.dataset.uid || chk.dataset.gid;
+    if (chk.checked) set.add(id); else set.delete(id);
+  });
+  root.addEventListener('input', e => {
+    const s = e.target.closest('[data-perm-search]');
+    if (!s) return;
+    const q = String(s.value || '').toLowerCase().trim();
+    s.parentElement.querySelectorAll('.perm-row').forEach(row => {
+      row.style.display = !q || row.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+  });
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.pdrop')) root.querySelectorAll('.pdrop.open').forEach(d => d.classList.remove('open'));
+  });
+}
+async function savePermCard(btn) {
+  const permissions = {
+    dm: { mode: permState.dmMode, allowList: [...permState.dmSel] },
+    group: { mode: permState.grpMode, allowList: [...permState.grpSel] },
+    note: { scope: permState.noteScope, allowList: [...permState.noteSel] },
+    memory: { scope: permState.memScope, allowList: [...permState.memSel] },
+  };
+  const old = btn.textContent;
+  btn.disabled = true; btn.textContent = '⏳';
+  try {
+    await journalApi('save-permissions', { permissions });
+    showToast(uiText('Đã lưu phân quyền', 'Permissions saved'), 'success');
+  } catch (e) { showToast(e.message, 'error'); }
+  finally { btn.disabled = false; btn.textContent = old; }
+}
 function groupDetailBody(detail) {
   const pending = pendingMembersFromDetail(detail);
   const pendingCount = Number(detail.pendingCount || pending.length || 0);
@@ -2853,6 +3139,7 @@ function groupDetailBody(detail) {
       ['pendingAuto', uiText('Tự duyệt', 'Auto approve')],
     ].map(([key, label]) => `<button class="feature-toggle ${detail.settings?.[key] ? 'on' : 'off'}" type="button" data-toggle="${esc(detail.groupId)}:${key}:${!detail.settings?.[key]}">${label}</button>`).join('')}
           </div></div></div>
+          <div class="item"><div style="width:100%"><div class="item-title">📊 ${uiText('Nhật ký & Tổng hợp', 'Journal & Summary')}</div><div class="item-sub">${uiText('Tóm tắt chat theo ngày, note, memory, chat thô', 'Daily summary, notes, memory, raw chat')}</div><button class="btn" type="button" data-journal="${esc(detail.groupId)}" style="margin-top:8px">${uiText('Mở nhật ký nhóm', 'Open journal')}</button></div></div>
           <div class="item"><div><div class="item-title">${uiText('Chế độ thông minh', 'Smart modes')}</div><div class="item-sub">${modes.length ? modes.map(mode => `${esc(repairText(mode.label))} (${mode.enabled ? 'on' : 'off'}) -> ${esc(repairText(mode.skill))}`).join('<br>') : uiText('Chưa có custom mode.', 'No custom modes yet.')}</div></div></div>
           <div class="item">
             <div style="width:100%">
@@ -2878,6 +3165,7 @@ function groupDetailBody(detail) {
 navButtons.forEach(button => {
   button.addEventListener('click', () => setSection(button.dataset.section));
 });
+document.getElementById('permBtn')?.addEventListener('click', () => setSection('permissions'));
 document.addEventListener('click', async event => {
   const target = event.target.closest('button');
   if (!target) return;
@@ -2976,6 +3264,50 @@ document.addEventListener('click', async event => {
       currentDetailGroupId = groupId;
       currentDetailPayload = detail;
       await openModal({ title: uiText('Chi tiết group', 'Group details'), body: groupDetailBody(detail), confirmText: uiText('Đóng', 'Close') });
+    }
+    if (target.dataset.journal) {
+      await openJournal(target.dataset.journal);
+    }
+    if (target.dataset.jtab) {
+      journalState.tab = target.dataset.jtab;
+      journalRerender();
+    }
+    if (target.dataset.jdate) {
+      try { await loadJournal(journalState.groupId, target.dataset.jdate); journalRerender(); }
+      catch (e) { showToast(e.message, 'error'); }
+    }
+    if (target.dataset.jgen) {
+      const btn = target;
+      btn.textContent = '⏳...'; btn.disabled = true;
+      try {
+        await journalApi('generate-summary', { groupId: journalState.groupId, date: target.dataset.jgen });
+        await loadJournal(journalState.groupId, target.dataset.jgen);
+        journalState.tab = 'summary';
+        journalRerender();
+        showToast(uiText('Đã tổng hợp', 'Summarized'), 'success');
+      } catch (e) {
+        showToast(uiText('Lỗi tổng hợp', 'Summarize error') + ': ' + e.message, 'error');
+        btn.textContent = '↻'; btn.disabled = false;
+      }
+    }
+    if (target.dataset.jsave) {
+      const gid = journalState.groupId;
+      const config = {
+        enabled: document.getElementById('jcfgEnabled')?.checked,
+        time: document.getElementById('jcfgTime')?.value || '23:55',
+        deliver: {
+          thisGroup: document.getElementById('jcfgThisGroup')?.checked,
+          ownerDm: document.getElementById('jcfgOwnerDm')?.checked,
+        },
+      };
+      const auto = document.getElementById('jcfgAuto')?.checked;
+      try {
+        await journalApi('save-report-config', { config });
+        await journalApi('toggle-setting', { groupId: gid, key: 'autoSummary', value: !!auto });
+        await loadJournal(gid, journalState.date);
+        journalRerender();
+        showToast(uiText('Đã lưu cấu hình báo cáo', 'Report config saved'), 'success');
+      } catch (e) { showToast(e.message, 'error'); }
     }
     if (target.dataset.leaveGroup) {
       const groupId = target.dataset.leaveGroup;
@@ -3178,8 +3510,10 @@ document.addEventListener('click', async event => {
       if (action === 'open-api') setSection('api');
       if (action === 'open-upgrade') setSection('upgrade');
       if (action === 'sync') {
-        const payload = {};
-        await runAction('sync-groups', payload, t('Đã sync group từ ZCA', 'Synced groups from ZCA'));
+        const res = await runAction('sync-groups', {}, t('Đã sync group từ ZCA', 'Synced groups from ZCA'));
+        if (res && Array.isArray(res.failed) && res.failed.length) {
+          showToast(t(`⚠️ Bot lỗi session, KHÔNG sync được: ${res.failed.join(', ')}. Đăng nhập lại các bot này rồi sync lại.`, `Sync failed for: ${res.failed.join(', ')}. Re-login those bots and sync again.`), 'warning');
+        }
       }
       if (action === 'danger') showToast(t('Action nguy hiểm cần xác nhận 2 bước ở backend.', 'Danger actions require two-step confirmation in backend.'), 'warning');
       if (action === 'approve-selected') {
@@ -3381,6 +3715,7 @@ if (langToggle) {
     localStorage.setItem('zaloDashboardLang', lang);
     applyI18n();
     if (state) renderState();
+    if (document.getElementById('permissions')?.classList.contains('active') && permState.data) rebuildPermCards();
     showToast(lang === 'vi' ? 'Ngôn ngữ: Tiếng Việt' : 'Language: English', 'info');
   });
 }

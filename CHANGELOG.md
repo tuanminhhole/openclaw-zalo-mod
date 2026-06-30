@@ -1,3 +1,21 @@
+## [2.12.0] - 2026-07-01
+
+### Added
+- **Tổng hợp lịch sử chat theo ngày bằng AI**: lệnh `/<prefix>history [ngày]` + nút "Tổng hợp lại" trong UI. AI (smart-route) đọc chat trong ngày → tóm tắt overview, điểm nổi bật, chủ đề lặp lại, ai gửi link gì, ai note/memory gì, ai hẹn lịch gì. Link/note/memory được tách chính xác bằng code, AI lo phần còn lại.
+- **Tab "Nhật ký nhóm"** trong chi tiết group: xem tóm tắt theo ngày, note, memory, chat thô, và cấu hình lịch báo cáo.
+- **Lịch báo cáo tự động cuối ngày** (giờ VN): bật theo từng nhóm (`autoSummary`), chọn giờ + nơi gửi (đăng vào nhóm / DM owner).
+- **Mục Phân quyền** riêng trên sidebar: quyền DM (all/friends/list/owner/none), quyền Group (all/list/none), quyền lệnh `/note`·`/memory` (owner/admin/list/all) — chọn trực quan từ danh sách member (có avatar + vai trò) và nhóm, dropdown hiện đại, song ngữ.
+- **`/note`** lưu note có cấu trúc vào `notes.json`; **`/memory`** lưu tri thức nhóm (agent đọc được, có dedup).
+- **Chat history JSON** theo ngày VN (`chat-history/<gid>/<ngày>.jsonl`, append-only) làm nguồn cho tóm tắt.
+
+### Fixed
+- **Đồng bộ nhóm nhiều bot**: gộp profile các bot vào 1 nhóm (CSV) thay vì ghi đè; badge hiện đủ bot. Sửa lỗi `mergeProfileStr` chèn nhầm "default" vào nhóm chỉ có bot khác (khiến 1 bot dính nhóm nó không ở).
+- **Định danh per-account của Zalo**: cùng 1 nhóm có ID khác nhau theo từng bot → gộp hiển thị theo tên để 1 dòng hiện đủ badge cả 2 bot; lọc ghost group bằng `getGroupInfo`.
+- **Bot phản hồi đúng danh tính**: tin nhắn group resolve bot theo `ctx.accountId` (bot nhận tin) thay vì profile ghi nhận của nhóm; tự lấy tên hiển thị riêng cho từng bot khi sync.
+- **Welcome bền vững qua restart**: baseline thành viên lấy từ `group-members.json` trên đĩa (không còn nuốt member vào lúc bot offline, không chào lại sau restart).
+- **Tối ưu ghi `group-members.json`**: chỉ ghi khi có thay đổi thật (hết hiện tượng file nhảy/nhấp nháy + tốn I/O).
+- Sửa `runDashboardZcaAction` dùng nguyên chuỗi profile CSV làm tham số gọi API Zalo (gây "No active Zalo API instance").
+
 ## [2.11.2] - 2026-06-29
 
 ### Fixed

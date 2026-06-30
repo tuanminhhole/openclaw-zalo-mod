@@ -4601,3 +4601,281 @@ textarea:focus {
   box-shadow: none !important;
   outline: none !important;
 }
+
+/* ══ Permissions section ══ */
+.perm-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+}
+.perm-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+}
+.perm-card-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.perm-card-emoji {
+  font-size: 22px;
+  width: 42px;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  flex: 0 0 auto;
+}
+.perm-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.perm-field-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.perm-select,
+.perm-text {
+  width: 100%;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 14px;
+}
+.perm-cmd-row {
+  display: flex;
+  gap: 12px;
+}
+.perm-cmd-row .perm-field {
+  flex: 1;
+}
+.perm-list-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.perm-list-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.perm-search {
+  width: 100%;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 13px;
+}
+.perm-list {
+  max-height: 260px;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.perm-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--line);
+  transition: background .12s ease;
+}
+.perm-row:last-child {
+  border-bottom: none;
+}
+.perm-row:hover {
+  background: var(--surface-2);
+}
+.perm-row input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  min-height: 0;
+  padding: 0;
+  margin: 0;
+  flex: 0 0 auto;
+  cursor: pointer;
+  accent-color: var(--primary);
+}
+.perm-row-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.perm-row-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.perm-row-id {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: ui-monospace, monospace;
+}
+.perm-empty {
+  padding: 16px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* ── Permissions: card head + per-card save ── */
+.perm-card-head { justify-content: space-between; }
+.perm-card-title { flex: 1; min-width: 0; }
+.perm-save-btn { padding: 6px 16px; font-size: 13px; flex: 0 0 auto; }
+.perm-note {
+  font-size: 13px;
+  color: var(--muted);
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border-radius: 10px;
+}
+/* avatar in rows */
+.perm-av {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-3);
+  color: var(--primary-strong);
+  font-size: 11px;
+  font-weight: 700;
+  overflow: hidden;
+}
+.perm-av img { width: 100%; height: 100%; object-fit: cover; }
+.perm-role {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--muted);
+  border: 1px solid var(--line);
+  vertical-align: middle;
+}
+.perm-role.owner {
+  background: rgba(245, 158, 11, .14);
+  color: var(--warning);
+  border-color: transparent;
+}
+/* tabs (/note · /memory) */
+.perm-tabs {
+  display: inline-flex;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 3px;
+  gap: 3px;
+}
+.perm-tab {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 13px;
+  padding: 6px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  min-height: 0;
+  transition: all .15s ease;
+}
+.perm-tab.active {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(14, 165, 233, .3);
+}
+/* modern dropdown (pdrop) */
+.pdrop { position: relative; }
+.pdrop-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.pdrop-trigger:hover { border-color: var(--primary); }
+.pdrop.open .pdrop-trigger {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-soft);
+}
+.pdrop-chev { width: 18px; height: 18px; color: var(--muted); transition: transform .18s ease; flex: 0 0 auto; }
+.pdrop.open .pdrop-chev { transform: rotate(180deg); }
+.pdrop-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 40;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 6px;
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+}
+.pdrop.open .pdrop-menu { display: flex; }
+.pdrop-opt {
+  text-align: left;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 14px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  min-height: 0;
+}
+.pdrop-opt:hover { background: var(--surface-2); }
+.pdrop-opt.active { background: var(--primary-soft); color: var(--primary-strong); font-weight: 700; }
+
+/* perm hint + save button icon */
+.perm-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--muted);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 9px 12px;
+}
+.perm-hint svg { flex: 0 0 auto; margin-top: 1px; color: var(--primary); }
+.perm-save-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}

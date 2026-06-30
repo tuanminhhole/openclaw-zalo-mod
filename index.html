@@ -8,8 +8,8 @@
   <link rel="icon" type="image/png" sizes="32x32" href="./logo.png?v=20260515">
   <link rel="shortcut icon" href="./logo.png?v=20260515">
   <link rel="apple-touch-icon" href="./logo.png?v=20260515">
-  <link rel="stylesheet" href="./dashboard.css?v=20260612">
-  <script src="./dashboard.js?v=20260612" defer></script>
+  <link rel="stylesheet" href="./dashboard.css?v=20260701c">
+  <script src="./dashboard.js?v=20260701c" defer></script>
 </head>
 
 <body>
@@ -58,6 +58,10 @@
             <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             <path d="M14 2v6h6M16 13H8m8 4H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg><span class="nav-label">Lệnh & Rules</span></button>
+        <button data-section="permissions"><svg viewBox="0 0 24 24" fill="none">
+            <path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg><span class="nav-label">Phân quyền</span></button>
         <div class="nav-group open" id="navGroupUtilities">
           <button class="nav-group-trigger" type="button" onclick="this.parentElement.classList.toggle('open')">
             <svg viewBox="0 0 24 24" fill="none">
@@ -87,7 +91,7 @@
             log.</span>
         </div>
         <div class="plugin-meta">
-          <strong>zalo-mod <span id="pluginVersion">v2.11.2</span></strong>
+          <strong>zalo-mod <span id="pluginVersion">v2.12.0</span></strong>
           <span>Được làm ❤️ bởi tuanminhole</span>
           <div class="socials" aria-label="Author links">
             <a href="https://www.facebook.com/holeminhtuan.it/" target="_blank" rel="noreferrer"
@@ -136,6 +140,7 @@
         </div>
         <div id="topbarBotFilter" style="margin-right: 12px; display: inline-flex; align-items: center;"></div>
         <div id="headerLicenseBadge" class="header-license-badge" onclick="setSection('upgrade')"></div>
+        <button class="theme-toggle-btn" id="permBtn" type="button" aria-label="Phân quyền" title="Phân quyền DM / Group / Lệnh" style="font-size:16px">🔐</button>
         <button class="theme-toggle-btn" id="themeToggle" type="button" aria-label="Toggle theme">
           <svg class="icon theme-icon moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
@@ -949,6 +954,15 @@
           </div>
         </div>
       </section>
+      <section class="section" id="permissions">
+        <div class="page-head">
+          <div>
+            <h2>Phân quyền</h2>
+            <p>Kiểm soát ai được nhắn riêng (DM) với bot, bot hoạt động ở nhóm nào, và ai được dùng lệnh /note &amp; /memory.</p>
+          </div>
+        </div>
+        <div class="perm-grid" id="permContent"></div>
+      </section>
   <section class="section" id="fb-crawler">
     <div class="page-head">
       <div>
@@ -1424,6 +1438,10 @@
           <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           <path d="M14 2v6h6M16 13H8m8 4H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg><span class="nav-label">Lệnh & Rules</span></button>
+      <button data-section="permissions"><svg viewBox="0 0 24 24" fill="none">
+          <path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg><span class="nav-label">Phân quyền</span></button>
       <button data-section="fb-crawler"><svg viewBox="0 0 24 24" fill="none">
           <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           <line x1="7" y1="7" x2="7.01" y2="7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>

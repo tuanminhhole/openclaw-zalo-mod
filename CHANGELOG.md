@@ -1,3 +1,9 @@
+## [2.14.2] - 2026-07-03
+
+### Fixed
+- **Mất PRO sau khi update/restart (Docker)**: `deviceId` trước tính từ `os.hostname()` = container id, ĐỔI mỗi lần recreate container → key device-bound mất hiệu lực → tụt về FREE. Nay **persist `deviceId` vào `plugins-data/zalo-mod/device-id`** (volume mount) → ổn định qua update/restart/recreate.
+- **Mất logo + favicon sau khi cài từ ClawHub/npm**: `logo.png` chưa nằm trong `files` whitelist nên không được đóng gói. Đã thêm → sidebar logo + favicon hiển thị đúng sau khi cài.
+
 ## [2.14.1] - 2026-07-03
 
 ### Security

@@ -1,4 +1,4 @@
-## [2.13.0] - 2026-07-03
+## [2.14.0] - 2026-07-03
 
 ### Added
 - **`/note` thông minh — tự đặt lịch nhắc**: note có mốc thời gian ("nhắc 2 phút nữa", "8h sáng mai", "mỗi sáng 8h") được AI/parser phân loại → plugin tự nhắc vào nhóm đúng giờ (chính xác đến giây qua `setTimeout`, poll 60s làm lưới an toàn, khôi phục sau restart). Note thường thì chỉ lưu. Lưu ở `reminders.json`.

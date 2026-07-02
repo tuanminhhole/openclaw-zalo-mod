@@ -1,3 +1,8 @@
+## [2.14.1] - 2026-07-03
+
+### Security
+- **Ngừng ship API key thanh toán ra client**: bỏ khối `monkeypay` (chứa `apiKey`) khỏi `upgrade/plans.json`. Luồng thanh toán chính đã đi qua license server (`/v1/orders`, key giữ ở server); flow cũ chỉ là fallback → giờ tự xuống "CK thủ công" (hiển thị đúng STK từ `bankInfo`). Key merchant không còn nằm trong bản phân phối.
+
 ## [2.14.0] - 2026-07-03
 
 ### Added

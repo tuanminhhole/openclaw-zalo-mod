@@ -72,7 +72,7 @@
     ]
   },
   "monkeypay": {
-    "serverUrl": "https://monkeypay-server-262289343328.asia-southeast1.run.app",
+    "serverUrl": "https://monkeypay-server.monkeytech.io.vn",
     "apiKey": "mpk_a3cc9cde9ac23ab01c997a99f3e322ee68e976072f8f7321",
     "notePrefix": "ZALOMOD"
   },

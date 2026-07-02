@@ -10,7 +10,7 @@ const modalBody = document.getElementById('modalBody');
 const modalCancel = document.getElementById('modalCancel');
 const modalConfirm = document.getElementById('modalConfirm');
 const token = window.ZALO_DASHBOARD_TOKEN || '';
-const pluginVersion = '2.12.0';
+const pluginVersion = '2.13.0';
 let state = null;
 let activeGroupId = '';
 let lang = localStorage.getItem('zaloDashboardLang') || 'vi';
@@ -357,7 +357,7 @@ function applyI18n() {
   setAllText('#groups .actions .btn', [['Import session', 'Import session'], ['Create group', 'Create group']]);
   setAllText('#groups .segmented button', [['All', 'All'], ['Silent', 'Silent'], ['Welcome', 'Welcome'], ['Muted', 'Muted'], ['Spam', 'Spam']]);
   setAllText('#groups thead th', [['Group', 'Group'], ['Member', 'Member'], ['Tính năng', 'Features'], ['Thao tác', 'Actions']]);
-  setText('#members .page-head h2', 'Thành viên & Pending', 'Members & Pending');
+  setText('#members .page-head h2', 'Thành viên', 'Members');
   setText('#members .page-head p', 'Duyệt member mới, xem member list, block hoặc xóa member với confirmation rõ ràng.', 'Review new members, inspect member lists, block, or remove members with clear confirmation.');
   setAllText('#members .segmented button', [['Thành viên', 'All members'], ['Chờ duyệt', 'Pending'], ['Bị chặn', 'Blocked'], ['Admin', 'Admins']]);
   setText('#btnConfigureColumns .btn-text-lang', 'Cài đặt bảng', 'Table settings');
@@ -686,6 +686,18 @@ function openModal({ title, desc, body, confirmText = 'OK', danger = false, tone
   const first = modalBody.querySelector('input, textarea, select, button');
   setTimeout(() => first?.focus(), 60);
   return new Promise(resolve => { modalResolve = resolve; });
+}
+// Cảnh báo trước khi bật "Tự duyệt": bot phải là Phó/Trưởng nhóm. Lưu ý nhóm nhiều bot.
+async function confirmPendingAutoWarning() {
+  return await openModal({
+    title: uiText('Bật tự động duyệt thành viên?', 'Enable auto-approve members?'),
+    tone: 'warning',
+    body: `<div class="modal-warn-body">
+      <p class="modal-warn-lead">${uiText('Để bot tự duyệt yêu cầu tham gia, <b>tài khoản bot phải là Phó nhóm hoặc Trưởng nhóm</b>. Zalo chỉ cho phó/trưởng nhóm xem &amp; duyệt.', 'For the bot to auto-approve join requests, the <b>bot account must be a Deputy or Group Leader</b>. Zalo only lets deputies/leaders view &amp; approve.')}</p>
+      <p class="modal-warn-note">${uiText('Nhóm nhiều bot: chỉ cần ít nhất một bot là phó/trưởng nhóm. Chưa cấp quyền thì bật vẫn bỏ qua an toàn.', 'Multi-bot groups: only one bot needs deputy/leader rights. Without it, the toggle just skips safely.')}</p>
+    </div>`,
+    confirmText: uiText('Đã hiểu, bật', 'Got it, enable'),
+  });
 }
 async function api(path, options = {}) {
   let url = path;
@@ -1714,7 +1726,6 @@ function renderGroups() {
               ${featureToggle(group, 'muted', 'Mute')}
               ${featureToggle(group, 'silent', 'Silent')}
               ${featureToggle(group, 'welcome', 'Welcome')}
-              ${featureToggle(group, 'tracking', 'Tracking')}
               ${featureToggle(group, 'follow', 'Follow')}
               ${featureToggle(group, 'pendingAuto', uiText('Tự duyệt', 'Auto approve'))}
               <button class="feature-toggle off" type="button" data-add-mode="${esc(group.groupId)}">${uiText('Thêm mode', 'Add mode')}</button>
@@ -1758,7 +1769,6 @@ function updateBulkBar() {
     ['muted', 'Mute'],
     ['silent', 'Silent'],
     ['welcome', 'Welcome'],
-    ['tracking', 'Tracking'],
     ['follow', 'Follow'],
     ['pendingAuto', 'Auto approve'],
   ];
@@ -2088,7 +2098,7 @@ async function renderMembers() {
         // 3. Kick button shown if bot has admin/creator rights and target is not owner
         if (!isOwner && botCanKick) {
           actionButtons += `
-                <button class="btn danger" type="button" data-kick-member="${esc(m.userId)}" style="padding: 4px 8px; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                <button class="btn danger" type="button" data-kick-member="${esc(m.userId)}" data-kick-name="${esc(displayName)}" style="padding: 4px 8px; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
                   <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="23" y1="11" x2="17" y2="11"></line></svg>
                   ${t('Kick', 'Kick')}
                 </button>
@@ -2304,18 +2314,29 @@ async function renderMembers() {
   // Bind other action buttons
   container.querySelectorAll('[data-kick-member]').forEach(btn => {
     btn.addEventListener('click', async event => {
-      const userId = event.target.dataset.kickMember;
-      if (confirm(t('Bạn có chắc chắn muốn kick thành viên này khỏi group?', 'Are you sure you want to kick this member?'))) {
-        try {
-          await api('/api/action', { method: 'POST', body: JSON.stringify({ action: 'remove-user', groupId: activeGroupId, userId }) });
-          showToast(t('Đã xóa thành viên', 'Member removed'), 'success');
-          if (state.members[activeGroupId]) {
-            delete state.members[activeGroupId][userId];
-          }
-          renderMembers();
-        } catch (e) {
-          showToast(e.message, 'error');
-        }
+      const el = event.currentTarget;
+      const userId = el.dataset.kickMember;
+      const name = el.dataset.kickName || userId;
+      // Modal xác nhận (thay cho confirm() của trình duyệt) — chú ý cao hơn, có tên rõ ràng.
+      const ok = await openModal({
+        title: uiText('Kick thành viên khỏi nhóm?', 'Kick member from group?'),
+        tone: 'warning',
+        body: `<div class="modal-warn-body">
+          <p class="modal-warn-lead">${uiText('Sẽ xoá', 'Will remove')} <b>${esc(name)}</b> ${uiText('khỏi nhóm này. Thao tác xoá này không hoàn tác được.', 'from this group. This cannot be undone.')}</p>
+          <p class="modal-warn-note">${uiText('Cần tài khoản bot là Phó/Trưởng nhóm mới kick được.', 'The bot account must be a Deputy/Leader to kick.')}</p>
+        </div>`,
+        confirmText: uiText('Kick', 'Kick'),
+        danger: true,
+      });
+      if (!ok) return;
+      try {
+        // payload PHẢI lồng trong "payload" (endpoint đọc body.payload) — trước đây gửi phẳng nên kick không chạy.
+        await api('/api/action', { method: 'POST', body: JSON.stringify({ action: 'remove-user', payload: { groupId: activeGroupId, userId } }) });
+        showToast(t('Đã gửi yêu cầu kick', 'Kick request sent'), 'success');
+        if (state.members[activeGroupId]) delete state.members[activeGroupId][userId];
+        renderMembers();
+      } catch (e) {
+        showToast(e.message, 'error');
       }
     });
   });
@@ -3134,7 +3155,6 @@ function groupDetailBody(detail) {
       ['muted', 'Mute'],
       ['silent', 'Silent'],
       ['welcome', 'Welcome'],
-      ['tracking', 'Tracking'],
       ['follow', 'Follow'],
       ['pendingAuto', uiText('Tự duyệt', 'Auto approve')],
     ].map(([key, label]) => `<button class="feature-toggle ${detail.settings?.[key] ? 'on' : 'off'}" type="button" data-toggle="${esc(detail.groupId)}:${key}:${!detail.settings?.[key]}">${label}</button>`).join('')}
@@ -3236,6 +3256,10 @@ document.addEventListener('click', async event => {
       if (!selectedGroups.size) return showToast('Select at least one group first.', 'warning');
       const [key, rawValue] = target.dataset.bulkFeature.split(':');
       const value = rawValue === 'true';
+      if (key === 'pendingAuto' && value) {
+        const ok = await confirmPendingAutoWarning();
+        if (!ok) return;
+      }
       await Promise.all([...selectedGroups].map(groupId => runAction('toggle-setting', { groupId, key, value }, 'Bulk groups updated')));
       renderGroups();
       updateBulkBar();
@@ -3339,6 +3363,10 @@ document.addEventListener('click', async event => {
     if (target.dataset.toggle) {
       const [groupId, key, rawValue] = target.dataset.toggle.split(':');
       const value = rawValue === 'true';
+      if (key === 'pendingAuto' && value) {
+        const ok = await confirmPendingAutoWarning();
+        if (!ok) { renderGroups(); return; } // huỷ → giữ nguyên trạng thái, không bật
+      }
       await runAction('toggle-setting', { groupId, key, value }, t(`${key} đã cập nhật`, `${key} updated`));
       // Reflect the change immediately (toggle-setting doesn't return full state, so the
       // badge would otherwise keep its old on/off look until the next full refresh).

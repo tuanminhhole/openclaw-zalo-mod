@@ -1,3 +1,23 @@
+## [2.13.0] - 2026-07-03
+
+### Added
+- **`/note` thông minh — tự đặt lịch nhắc**: note có mốc thời gian ("nhắc 2 phút nữa", "8h sáng mai", "mỗi sáng 8h") được AI/parser phân loại → plugin tự nhắc vào nhóm đúng giờ (chính xác đến giây qua `setTimeout`, poll 60s làm lưới an toàn, khôi phục sau restart). Note thường thì chỉ lưu. Lưu ở `reminders.json`.
+- **Tổng hợp `/history` rõ người**: thêm `👥 Người tham gia` (đếm số tin) + `🗣️ Ai nói gì` (keySpeakers). Tự resolve ID→tên (kể cả log cũ) nên không còn hiện dãy số.
+- **Auto-duyệt member (`pendingAuto`) chạy thật**: quét ~2 phút/lần, tự duyệt yêu cầu tham gia — chỉ khi tài khoản bot là Phó/Trưởng nhóm; lọc theo `pendingBlockKeywords`. Có modal cảnh báo trước khi bật.
+- **Modal cảnh báo** thay cho `alert()`/`confirm()` trình duyệt khi kick member và khi bật Tự duyệt (đỏ, có tên rõ ràng).
+
+### Changed
+- **Gộp Tracking vào Follow**: một tính năng duy nhất tên **Follow** (theo dõi nhóm = ghi lịch sử chat + memory). UI còn 1 badge Follow; `follow-on/off` là lệnh chuẩn (`tracking-on/off` giữ alias). Dữ liệu `tracking` cũ tự tương thích.
+- **Thông tin bot hết trùng lặp**: nguồn chuẩn ở `config.json > bots.<profile>`; `openclaw.json` chỉ giữ `enabled` + `hooks`, không mirror `botName/zaloDisplayNames/dashboardPort` nữa.
+- **Đồng bộ hồ sơ đa-agent**: avatar/sđt/ngày sinh của member giờ thử tất cả bot rồi gộp (bot nào kết bạn thì lấy được sđt/ngày sinh).
+
+### Fixed
+- **Chống bypass license**: bỏ backdoor key `DEV-*` không ký; `getLicenseStatus` verify lại chữ ký RSA (bind deviceId + hạn) mỗi lần đọc → sửa tay `license.json` hay đổi máy đều vô hiệu.
+- **AI summary/report hết lỗi**: đọc API key 9router thật từ `openclaw.json` (trước hardcode `sk-no-key` → 401 "API key required").
+- **Cài đặt đa-bot đồng bộ**: bật/tắt silent/welcome/follow… áp cho MỌI ID bot của cùng nhóm (fan-out `siblingGroupIds`); reload `settings.json` khi đổi (double-register không còn đọc state cũ).
+- **Kick member**: sửa thứ tự tham số `removeUserFromGroup(memberId, groupId)` + payload lồng đúng (trước báo "Nhóm không có thành viên").
+- **Số member cộng đồng**: hiển thị `totalMember` thật (vd 484) thay vì số liệt kê được (3). (Danh sách đầy đủ cộng đồng là giới hạn Zalo — sẽ xử lý qua PC App API ở phase sau.)
+
 ## [2.12.0] - 2026-07-01
 
 ### Added

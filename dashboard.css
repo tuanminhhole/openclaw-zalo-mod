@@ -2141,7 +2141,7 @@ textarea:focus {
 
 .modal-title-row {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 10px;
 }
 
@@ -2204,6 +2204,36 @@ textarea:focus {
   gap: 12px;
   overflow: auto;
   min-height: 0;
+}
+
+/* Modal cảnh báo (kick / bật tự duyệt…) — bố cục gọn, dòng phụ thành chip nền nhẹ */
+.modal-warn-body {
+  display: grid;
+  gap: 10px;
+  padding: 2px 2px 4px;
+}
+.modal-warn-lead {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text);
+}
+.modal-warn-lead b { color: var(--text); }
+.modal-warn-note {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #b91c1c;
+  font-weight: 600;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 9px;
+  padding: 9px 11px;
+}
+:root[data-theme="dark"] .modal-warn-note {
+  color: #fecaca;
+  background: rgba(127, 29, 29, .28);
+  border-color: rgba(220, 38, 38, .45);
 }
 
 #groups thead th:nth-child(1),

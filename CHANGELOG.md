@@ -1,3 +1,8 @@
+## [2.14.3] - 2026-07-03
+
+### Fixed
+- **Số member chờ duyệt (pendingCount) luôn hiển thị 0**: code đọc nhầm field `pendingCount` (không tồn tại) từ `getGroupInfo` — count thật nằm ở `pendingApprove.uids`. Nay đọc đúng → hiển thị đúng số chờ duyệt. Thêm **tự làm mới mỗi ~3 phút** (batch `getGroupInfo` cho mọi group, không cần bấm Sync) — memberCount cũng được làm mới cùng lúc.
+
 ## [2.14.2] - 2026-07-03
 
 ### Fixed

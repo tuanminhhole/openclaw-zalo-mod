@@ -8,8 +8,8 @@
   <link rel="icon" type="image/png" sizes="32x32" href="./logo.png?v=20260515">
   <link rel="shortcut icon" href="./logo.png?v=20260515">
   <link rel="apple-touch-icon" href="./logo.png?v=20260515">
-  <link rel="stylesheet" href="./dashboard.css?v=20260702c">
-  <script src="./dashboard.js?v=20260702c" defer></script>
+  <link rel="stylesheet" href="./dashboard.css?v=20260703f">
+  <script src="./dashboard.js?v=20260703f" defer></script>
 </head>
 
 <body>
@@ -46,6 +46,12 @@
             <path d="M15 8a4 4 0 1 1-8 0 4 4 0 0 1 8 0Zm-12 13a8 8 0 0 1 16 0m0-13h3m-1.5-1.5v3" stroke="currentColor"
               stroke-width="2" stroke-linecap="round" />
           </svg><span class="nav-label">Thành viên</span></button>
+        <button data-section="journal"><svg viewBox="0 0 24 24" fill="none">
+            <path d="M4 5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5Z" stroke="currentColor" stroke-width="2"
+              stroke-linejoin="round" />
+            <path d="M14 3v5h5M8 13h8M8 17h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round" />
+          </svg><span class="nav-label">Nhật ký</span></button>
         <button data-section="friends"><svg viewBox="0 0 24 24" fill="none">
             <path d="M8 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm8 10v-2a6 6 0 0 0-12 0v2m15-9v6m3-3h-6" stroke="currentColor"
               stroke-width="2" stroke-linecap="round" />
@@ -79,10 +85,10 @@
             <path d="m12 3 2.7 5.5 6 .9-4.3 4.2 1 5.9L12 16.6l-5.4 2.9 1-5.9L3.3 9.4l6-.9L12 3Z" stroke="currentColor"
               stroke-width="2" stroke-linejoin="round" />
           </svg><span class="nav-label">Nâng cấp</span></button>
-        <button data-section="danger"><svg viewBox="0 0 24 24" fill="none">
-            <path d="M12 3 2 21h20L12 3Zm0 7v4m0 3h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-              stroke-linejoin="round" />
-          </svg><span class="nav-label">Khu nguy hiểm</span></button>
+        <button data-section="settings"><svg viewBox="0 0 24 24" fill="none">
+            <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" stroke="currentColor" stroke-width="2" />
+            <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 7 19.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9H3a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 4.7 7l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9.5A1.7 1.7 0 0 0 10.5 3V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v.1a1.7 1.7 0 0 0 1.6 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+          </svg><span class="nav-label">Cài đặt</span></button>
       </nav>
       <div class="sidebar-footer">
         <div class="sidebar-card">
@@ -91,7 +97,7 @@
             log.</span>
         </div>
         <div class="plugin-meta">
-          <strong>zalo-mod <span id="pluginVersion">v2.14.3</span></strong>
+          <strong>zalo-mod <span id="pluginVersion">v2.14.4</span></strong>
           <span>Được làm ❤️ bởi tuanminhole</span>
           <div class="socials" aria-label="Author links">
             <a href="https://www.facebook.com/holeminhtuan.it/" target="_blank" rel="noreferrer"
@@ -542,6 +548,17 @@
           </div>
         </div>
       </section>
+      <section class="section" id="journal">
+        <div class="page-head">
+          <div>
+            <h2>Nhật ký nhóm</h2>
+            <p>Tóm tắt chat theo ngày, note, memory, chat thô và lịch báo cáo tự động của từng nhóm.</p>
+          </div>
+        </div>
+        <div style="width: 100%; margin-top: 14px;">
+          <div id="journalBody"></div>
+        </div>
+      </section>
       <section class="section" id="friends">
         <div class="page-head">
           <div>
@@ -866,30 +883,14 @@
           </article>
         </div>
       </section>
-      <section class="section" id="danger">
+      <section class="section" id="settings">
         <div class="page-head">
           <div>
-            <h2>Khu nguy hiểm</h2>
-            <p>Các action có thể gây mất dữ liệu hoặc ảnh hưởng group. Bắt buộc xác nhận 2 bước và ghi audit log.</p>
+            <h2>Cài đặt</h2>
+            <p>Tùy chỉnh ngôn ngữ, giao diện và xem thông tin thiết bị/phiên bản để tiện kích hoạt và hỗ trợ.</p>
           </div>
         </div>
-        <div class="grid api-grid">
-          <div class="api-card">
-            <h4>Disperse group</h4>
-            <p>Giải tán group bằng `disperseGroup`. Chỉ cho owner, bắt nhập lại groupId.</p><button class="btn danger"
-              disabled title="Chưa bật để tránh thao tác phá hủy group">Locked</button>
-          </div>
-          <div class="api-card">
-            <h4>Change owner</h4>
-            <p>Chuyển owner group bằng `changeGroupOwner`. Cần xác nhận userId đích.</p><button class="btn danger"
-              disabled title="Chưa bật để tránh chuyển nhầm owner">Locked</button>
-          </div>
-          <div class="api-card">
-            <h4>Delete chat/message</h4>
-            <p>Xóa chat hoặc message bằng `deleteChat`, `deleteMessage`, `undo`.</p><button class="btn danger" disabled
-              title="Chưa bật để tránh mất dữ liệu">Locked</button>
-          </div>
-        </div>
+        <div id="settingsBody" style="width: 100%; margin-top: 14px;"></div>
       </section>
       <section class="section" id="templates">
         <div class="page-head">
@@ -1426,6 +1427,12 @@
           <path d="M15 8a4 4 0 1 1-8 0 4 4 0 0 1 8 0Zm-12 13a8 8 0 0 1 16 0m0-13h3m-1.5-1.5v3" stroke="currentColor"
             stroke-width="2" stroke-linecap="round" />
         </svg><span class="nav-label">Thành viên</span></button>
+      <button data-section="journal"><svg viewBox="0 0 24 24" fill="none">
+          <path d="M4 5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5Z" stroke="currentColor" stroke-width="2"
+            stroke-linejoin="round" />
+          <path d="M14 3v5h5M8 13h8M8 17h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" />
+        </svg><span class="nav-label">Nhật ký</span></button>
       <button data-section="friends"><svg viewBox="0 0 24 24" fill="none">
           <path d="M8 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm8 10v-2a6 6 0 0 0-12 0v2m15-9v6m3-3h-6" stroke="currentColor"
             stroke-width="2" stroke-linecap="round" />
@@ -1450,10 +1457,10 @@
           <path d="m12 3 2.7 5.5 6 .9-4.3 4.2 1 5.9L12 16.6l-5.4 2.9 1-5.9L3.3 9.4l6-.9L12 3Z" stroke="currentColor"
             stroke-width="2" stroke-linejoin="round" />
         </svg><span class="nav-label">Nâng cấp</span></button>
-      <button data-section="danger"><svg viewBox="0 0 24 24" fill="none">
-          <path d="M12 3 2 21h20L12 3Zm0 7v4m0 3h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round" />
-        </svg><span class="nav-label">Khu nguy hiểm</span></button>
+      <button data-section="settings"><svg viewBox="0 0 24 24" fill="none">
+          <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" stroke="currentColor" stroke-width="2" />
+          <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 7 19.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9H3a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 4.7 7l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9.5A1.7 1.7 0 0 0 10.5 3V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v.1a1.7 1.7 0 0 0 1.6 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+        </svg><span class="nav-label">Cài đặt</span></button>
     </nav>
   </div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>

@@ -4909,3 +4909,480 @@ textarea:focus {
   align-items: center;
   gap: 6px;
 }
+
+/* ── Nhật ký nhóm (section #journal) ─────────────────────────────── */
+.journal-group-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.journal-group-row .custom-select-container {
+  flex: 0 1 420px;
+  min-width: 240px;
+}
+.journal-card {
+  padding: 18px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.journal-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+}
+/* Layout 2 cột: menu tab dọc (trái) + nội dung (phải) */
+.journal-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+.journal-vtabs {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  flex: 0 0 208px;
+  width: 208px;
+}
+.journal-vtab {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text);
+  font-size: 13.5px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.journal-vtab svg {
+  flex: 0 0 auto;
+  color: var(--muted);
+  transition: color .15s;
+}
+.journal-vtab:hover {
+  background: var(--surface-2);
+  color: var(--primary-strong);
+}
+.journal-vtab:hover svg {
+  color: var(--primary-strong);
+}
+.journal-vtab.active {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+  color: var(--primary-strong);
+}
+.journal-vtab.active svg {
+  color: var(--primary-strong);
+}
+.journal-daterow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.journal-date-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.journal-date-chip {
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.journal-date-chip:hover {
+  border-color: var(--primary);
+  color: var(--primary-strong);
+}
+.journal-date-chip.active {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+  color: var(--primary-strong);
+}
+.journal-date-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color .15s, color .15s;
+}
+.journal-date-picker:hover,
+.journal-date-picker.active {
+  border-color: var(--primary);
+  color: var(--primary-strong);
+}
+.journal-date-picker svg {
+  flex: 0 0 auto;
+}
+.journal-date-picker input[type="date"] {
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  min-height: 0;
+  width: 118px;
+}
+.journal-content {
+  min-height: 120px;
+}
+/* Tab Lịch báo cáo — toggle switch + time input + save */
+.journal-config {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 560px;
+}
+.journal-config-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+.journal-config-block .item-title {
+  margin-bottom: 6px;
+}
+.journal-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 0;
+  cursor: pointer;
+}
+.journal-toggle-label {
+  font-size: 13.5px;
+  color: var(--text);
+  line-height: 1.4;
+}
+.journal-switch {
+  position: relative;
+  display: inline-block;
+  width: 42px;
+  height: 24px;
+  flex: 0 0 auto;
+}
+.journal-switch input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  margin: 0;
+  min-height: 0;
+  padding: 0;
+}
+.journal-slider {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  transition: background .2s ease, border-color .2s ease;
+}
+.journal-slider::before {
+  content: "";
+  position: absolute;
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .25);
+  transition: transform .2s ease;
+}
+.journal-switch input:checked + .journal-slider {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+.journal-switch input:checked + .journal-slider::before {
+  transform: translate(18px, -50%);
+}
+.journal-switch input:focus-visible + .journal-slider {
+  box-shadow: 0 0 0 3px var(--primary-soft);
+}
+.journal-time-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 0;
+}
+.journal-time-input {
+  width: 130px;
+  flex: 0 0 auto;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  min-height: 0;
+}
+.journal-save-btn {
+  align-self: flex-end;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 18px;
+}
+@media (max-width: 991px) {
+  .journal-layout {
+    flex-direction: column;
+    gap: 12px;
+  }
+  /* Menu tab chuyển thành hàng chip cuộn ngang (kiểu app mobile) */
+  .journal-vtabs {
+    flex: 1 1 auto;
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 8px;
+    gap: 4px;
+  }
+  .journal-vtabs::-webkit-scrollbar {
+    display: none;
+  }
+  .journal-vtab {
+    width: auto;
+    flex: 0 0 auto;
+    white-space: nowrap;
+    padding: 9px 13px;
+  }
+}
+@media (max-width: 640px) {
+  .journal-group-row {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .journal-group-row .custom-select-container {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .journal-group-row .btn {
+    margin-left: 0 !important;
+    min-height: 44px;
+  }
+  .journal-daterow {
+    gap: 8px;
+  }
+  .journal-date-chip,
+  .journal-date-picker {
+    padding: 9px 14px;
+  }
+  .journal-card {
+    padding: 14px;
+  }
+  .journal-toolbar {
+    gap: 10px;
+    padding-bottom: 14px;
+    margin-bottom: 14px;
+  }
+  .settings-card {
+    padding: 16px;
+  }
+  .settings-seg-btn {
+    padding: 11px 12px;
+  }
+  /* Danh mục API: 1 cột trên màn nhỏ để chip tên API không bị cắt */
+  .api-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .chip {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+}
+
+/* ── Cài đặt (section #settings) ─────────────────────────────────── */
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+.settings-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+}
+.settings-card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.settings-card-head svg {
+  flex: 0 0 auto;
+  color: var(--primary);
+  margin-top: 2px;
+}
+.settings-card-head strong {
+  display: block;
+  font-size: 15px;
+}
+.settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.settings-field-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.settings-plan-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+}
+.settings-plan-badge.pro {
+  background: rgba(16, 185, 129, .12);
+  color: #059669;
+}
+:root[data-theme="dark"] .settings-plan-badge.pro {
+  color: #34d399;
+}
+.settings-plan-badge.pro svg {
+  color: #10b981;
+}
+.settings-plan-badge.free {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--muted);
+}
+.settings-plan-expiry {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary);
+  white-space: nowrap;
+}
+.settings-segmented {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+}
+.settings-seg-btn {
+  flex: 1 1 0;
+  padding: 9px 12px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s, color .15s, box-shadow .15s;
+}
+.settings-seg-btn:hover {
+  color: var(--primary-strong);
+}
+.settings-seg-btn.active {
+  background: var(--surface);
+  color: var(--primary-strong);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .1);
+}
+.settings-sub {
+  display: block;
+  font-weight: 400;
+  font-size: 11.5px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.settings-info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+}
+.settings-info-row:first-of-type {
+  border-top: none;
+}
+.settings-info-label {
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 600;
+}
+.settings-info-val {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+.settings-code {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 220px;
+}
+.settings-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  min-height: 0;
+  flex: 0 0 auto;
+}
+/* Giảm chuyển động (client-side pref) */
+[data-reduce-motion] * {
+  transition: none !important;
+  animation: none !important;
+  scroll-behavior: auto !important;
+}

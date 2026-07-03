@@ -1,3 +1,16 @@
+## [2.14.4] - 2026-07-03
+
+### Added
+- **Mục "Nhật ký" riêng trên sidebar**: xem tóm tắt chat theo ngày, note, memory, chat thô và lịch báo cáo của từng nhóm ngay trong dashboard (trước chỉ có modal). Chọn nhóm + nút "Tổng hợp lại" + tab ngày (Hôm nay/Hôm qua/Chọn ngày) gom gọn trong một khung.
+- **Mục "Cài đặt" riêng** chia 2 cột: **Tùy chỉnh** (ngôn ngữ, sáng/tối, giảm chuyển động) và **Thông tin** (gói bản quyền + hạn dùng nổi bật màu xanh, Device ID kèm nút copy, phiên bản plugin).
+
+### Changed
+- Bỏ khu "Nâng cao (nguy hiểm)" (3 action Locked không dùng được) khỏi Cài đặt và sidebar — UI gọn hơn.
+- Bỏ label "Chọn nhóm:" thừa ở trang Nhật ký — dropdown tự giải thích.
+
+### Fixed
+- **Tối ưu mobile/tablet toàn dashboard**: menu tab Nhật ký thành hàng chip cuộn ngang trên màn nhỏ (hết gãy 2 dòng); Danh mục API về 1 cột trên mobile (hết cắt chữ tên API); tăng vùng chạm nút; soát 12 section không còn tràn ngang ở 375/768/991px.
+
 ## [2.14.3] - 2026-07-03
 
 ### Fixed

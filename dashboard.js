@@ -10,7 +10,7 @@ const modalBody = document.getElementById('modalBody');
 const modalCancel = document.getElementById('modalCancel');
 const modalConfirm = document.getElementById('modalConfirm');
 const token = window.ZALO_DASHBOARD_TOKEN || '';
-const pluginVersion = '2.14.3';
+const pluginVersion = '2.14.4';
 let state = null;
 let activeGroupId = '';
 let lang = localStorage.getItem('zaloDashboardLang') || 'vi';
@@ -43,6 +43,7 @@ const fetchedBlockedMembers = {};
 let currentDetailGroupId = '';
 let currentDetailPayload = null;
 document.documentElement.dataset.theme = localStorage.getItem('zaloDashboardTheme') || 'light';
+if (localStorage.getItem('zaloReduceMotion') === '1') document.documentElement.setAttribute('data-reduce-motion', '');
 window.toggleLicenseVisibility = function () {
   const input = document.getElementById('licenseInput');
   const open = document.getElementById('eyeOpenIcon');
@@ -160,6 +161,8 @@ function setSection(id) {
   backdrop.classList.remove('open');
   window.scrollTo({ top: 0, behavior: 'smooth' });
   if (id === 'permissions') renderPermissions();
+  if (id === 'journal') renderJournal();
+  if (id === 'settings') renderSettings();
 }
 function toastIcon(tone) {
   const icons = {
@@ -295,6 +298,12 @@ function applyI18n() {
   setText('#permissions .page-head h2', 'Phân quyền', 'Permissions');
   setText('#permissions .page-head p', 'Kiểm soát ai được nhắn riêng (DM) với bot, bot hoạt động ở nhóm nào, và ai được dùng lệnh /note & /memory.', 'Control who can DM the bot, which groups the bot serves, and who can run /note & /memory.');
   document.querySelectorAll('[data-section="permissions"] .nav-label').forEach(n => { n.textContent = t('Phân quyền', 'Permissions'); });
+  // Journal section header (group-select label render động trong renderJournalBody)
+  setText('#journal .page-head h2', 'Nhật ký nhóm', 'Group journal');
+  setText('#journal .page-head p', 'Tóm tắt chat theo ngày, note, memory, chat thô và lịch báo cáo tự động của từng nhóm.', 'Daily chat summary, notes, memory, raw chat and each group\'s auto-report schedule.');
+  // Settings section header
+  setText('#settings .page-head h2', 'Cài đặt', 'Settings');
+  setText('#settings .page-head p', 'Tùy chỉnh ngôn ngữ, giao diện và xem thông tin thiết bị/phiên bản để tiện kích hoạt và hỗ trợ.', 'Customize language, appearance and view device/version info for activation and support.');
   setAttr('#search', 'placeholder', 'Tìm group, member, userId, API...', 'Search group, member, userId, API...');
   setAttr('[data-open-menu]', 'aria-label', 'More menu', 'Open more menu');
   setAttr('#themeToggle', 'aria-label', 'Theme switch', 'Switch theme');
@@ -309,6 +318,7 @@ function applyI18n() {
     ['Tổng quan', 'Overview'],
     ['Nhóm', 'Groups'],
     ['Thành viên', 'Members'],
+    ['Nhật ký', 'Journal'],
     ['Bạn bè', 'Friends'],
     ['Tin nhắn', 'Messages'],
     ['Lệnh & Rules', 'Rules & Cmds'],
@@ -316,19 +326,20 @@ function applyI18n() {
     ['Tiện ích', 'Utilities'],
     ['Facebook Crawler', 'Facebook Crawler'],
     ['Nâng cấp', 'Upgrade'],
-    ['Khu nguy hiểm', 'Danger Zone'],
+    ['Cài đặt', 'Settings'],
   ]);
   setAllText('[data-drawer-nav] button > span.nav-label', [
     ['Tổng quan', 'Overview'],
     ['Nhóm', 'Groups'],
     ['Thành viên', 'Members'],
+    ['Nhật ký', 'Journal'],
     ['Bạn bè', 'Friends'],
     ['Tin nhắn', 'Messages'],
     ['Lệnh & Rules', 'Rules & Cmds'],
     ['Phân quyền', 'Permissions'],
     ['Facebook Crawler', 'Facebook Crawler'],
     ['Nâng cấp', 'Upgrade'],
-    ['Khu nguy hiểm', 'Danger Zone'],
+    ['Cài đặt', 'Settings'],
   ]);
   setAllText('[data-bottom-nav] button > span', [
     ['Trang chủ', 'Home'],
@@ -411,15 +422,6 @@ function applyI18n() {
   setText('#upgrade .license-info p:nth-child(1) strong', 'Trạng thái kích hoạt:', 'Activation Status:');
   setText('#upgrade .license-info p:nth-child(2) strong', 'Device ID của bạn:', 'Your Device ID:');
   setText('#btnActivate', 'Xác thực', 'Verify');
-  setText('#danger .page-head h2', 'Khu nguy hiểm', 'Danger Zone');
-  setText('#danger .page-head p', 'Các action có thể gây mất dữ liệu hoặc ảnh hưởng group. Bắt buộc xác nhận 2 bước và ghi audit log.', 'Actions that can affect groups or data. Two-step confirmation and audit logging are required.');
-  setAllText('#danger .api-card h4', [['Giải tán group', 'Disperse group'], ['Chuyển owner', 'Change owner'], ['Xóa chat/message', 'Delete chat/message']]);
-  setAllText('#danger .api-card p', [
-    ['Giải tán group bằng `disperseGroup`. Chỉ cho owner, bắt nhập lại groupId.', 'Disperse a group with `disperseGroup`. Owner-only and requires retyping groupId.'],
-    ['Chuyển owner group bằng `changeGroupOwner`. Cần xác nhận userId đích.', 'Transfer group ownership with `changeGroupOwner`. Requires confirming the target userId.'],
-    ['Xóa chat hoặc message bằng `deleteChat`, `deleteMessage`, `undo`.', 'Delete chats or messages with `deleteChat`, `deleteMessage`, and `undo`.'],
-  ]);
-  setAllText('#danger .api-card .btn', [['Khóa', 'Locked'], ['Khóa', 'Locked'], ['Khóa', 'Locked']]);
   setText('#modalCancel', 'Hủy', 'Cancel');
   const footerContent = document.querySelector('.site-footer .footer-content');
   if (footerContent) {
@@ -1780,6 +1782,55 @@ function updateBulkBar() {
   }).join('')}
       `;
 }
+// ── Shared group dropdown (dùng chung Members + Nhật ký) ──────────────────
+// Tái sử dụng UI .custom-select-* / avatarMeta / getBotBadge. Điền pill + trigger
+// cho một custom-select bất kỳ dựa trên các id truyền vào.
+function populateGroupDropdown({ groups, dropdownId, avatarId, nameId, badgeId, containerId, onSelect }) {
+  const dropdown = document.getElementById(dropdownId);
+  if (!dropdown) return;
+  dropdown.innerHTML = groups.map(g => {
+    const avatar = avatarMeta(g, g.name);
+    const isActive = activeGroupId === g.groupId;
+    return `
+          <div class="custom-select-option-pill ${isActive ? 'active' : ''}" data-select-group-id="${esc(g.groupId)}">
+            ${avatar.src
+        ? `<div class="custom-select-avatar"><img src="${esc(avatar.src)}" alt="${esc(avatar.name || 'avatar')}" onerror="const p=this.parentElement; this.remove(); if(p)p.textContent='${esc(avatar.initials)}'"></div>`
+        : `<div class="custom-select-avatar">${esc(avatar.initials)}</div>`}
+            <span class="custom-select-name" style="display: flex; align-items: center; gap: 4px;">
+              ${esc(repairText(g.name))}
+              ${getBotBadge(g.profile)}
+            </span>
+            <span class="custom-select-badge">${g.memberCount} members</span>
+          </div>
+        `;
+  }).join('');
+
+  const activeGroup = groups.find(g => g.groupId === activeGroupId);
+  if (activeGroup) {
+    const avatar = avatarMeta(activeGroup, activeGroup.name);
+    const avatarNode = avatarId && document.getElementById(avatarId);
+    if (avatarNode) {
+      avatarNode.innerHTML = avatar.src
+        ? `<img src="${esc(avatar.src)}" alt="${esc(avatar.name || 'avatar')}" onerror="const p=this.parentElement; this.remove(); if(p)p.textContent='${esc(avatar.initials)}'">`
+        : esc(avatar.initials);
+    }
+    const nameNode = nameId && document.getElementById(nameId);
+    if (nameNode) nameNode.innerHTML = `${esc(repairText(activeGroup.name))} ${getBotBadge(activeGroup.profile)}`;
+    const badgeNode = badgeId && document.getElementById(badgeId);
+    if (badgeNode) badgeNode.textContent = `${activeGroup.memberCount} members`;
+  }
+
+  dropdown.querySelectorAll('[data-select-group-id]').forEach(pill => {
+    pill.addEventListener('click', event => {
+      event.stopPropagation();
+      const gid = event.currentTarget.dataset.selectGroupId;
+      activeGroupId = gid;
+      if (containerId) document.getElementById(containerId)?.classList.remove('open');
+      if (onSelect) onSelect(gid);
+    });
+  });
+}
+
 async function renderMembers() {
   const container = document.getElementById('membersTableWrapper') || document.querySelector('#members .mobile-stack');
   if (!container) return;
@@ -1806,56 +1857,20 @@ async function renderMembers() {
       select.value = activeGroupId;
     }
 
-    // Custom Dropdown Populating
-    const dropdown = document.getElementById('membersGroupSelectDropdown');
-    if (dropdown) {
-      dropdown.innerHTML = groups.map(g => {
-        const avatar = avatarMeta(g, g.name);
-        const isActive = activeGroupId === g.groupId;
-        return `
-              <div class="custom-select-option-pill ${isActive ? 'active' : ''}" data-select-group-id="${esc(g.groupId)}">
-                ${avatar.src
-            ? `<div class="custom-select-avatar"><img src="${esc(avatar.src)}" alt="${esc(avatar.name || 'avatar')}" onerror="const p=this.parentElement; this.remove(); if(p)p.textContent='${esc(avatar.initials)}'"></div>`
-            : `<div class="custom-select-avatar">${esc(avatar.initials)}</div>`}
-                <span class="custom-select-name" style="display: flex; align-items: center; gap: 4px;">
-                  ${esc(repairText(g.name))}
-                  ${getBotBadge(g.profile)}
-                </span>
-                <span class="custom-select-badge">${g.memberCount} members</span>
-              </div>
-            `;
-      }).join('');
-
-      // Update selected trigger contents
-      const activeGroup = groups.find(g => g.groupId === activeGroupId);
-      if (activeGroup) {
-        const avatar = avatarMeta(activeGroup, activeGroup.name);
-        const avatarNode = document.getElementById('selectedGroupAvatar');
-        if (avatarNode) {
-          avatarNode.innerHTML = avatar.src
-            ? `<img src="${esc(avatar.src)}" alt="${esc(avatar.name || 'avatar')}" onerror="const p=this.parentElement; this.remove(); if(p)p.textContent='${esc(avatar.initials)}'">`
-            : esc(avatar.initials);
-        }
-        document.getElementById('selectedGroupName').innerHTML = `
-              ${esc(repairText(activeGroup.name))}
-              ${getBotBadge(activeGroup.profile)}
-            `;
-        document.getElementById('selectedGroupBadge').textContent = `${activeGroup.memberCount} members`;
-      }
-
-      // Bind click handlers to custom pills inside dropdown
-      dropdown.querySelectorAll('[data-select-group-id]').forEach(pill => {
-        pill.addEventListener('click', event => {
-          event.stopPropagation();
-          const gid = event.currentTarget.dataset.selectGroupId;
-          activeGroupId = gid;
-          select.value = gid;
-          document.getElementById('membersGroupSelectContainer').classList.remove('open');
-          currentMembersPage = 1;
-          renderMembers();
-        });
-      });
-    }
+    // Custom Dropdown Populating (dùng helper chung)
+    populateGroupDropdown({
+      groups,
+      dropdownId: 'membersGroupSelectDropdown',
+      avatarId: 'selectedGroupAvatar',
+      nameId: 'selectedGroupName',
+      badgeId: 'selectedGroupBadge',
+      containerId: 'membersGroupSelectContainer',
+      onSelect: gid => {
+        select.value = gid;
+        currentMembersPage = 1;
+        renderMembers();
+      },
+    });
   }
 
   if (!activeGroupId) {
@@ -2890,14 +2905,39 @@ async function openJournal(groupId) {
   await openModal({ title: uiText('Nhật ký nhóm', 'Group journal'), body: journalBodyHtml(), confirmText: uiText('Đóng', 'Close') });
 }
 function journalRerender() {
-  if (modalBackdrop.classList.contains('open')) modalBody.innerHTML = journalBodyHtml();
+  if (modalBackdrop.classList.contains('open')) { modalBody.innerHTML = journalBodyHtml(); return; }
+  if (document.getElementById('journal')?.classList.contains('active')) renderJournalBody();
+}
+const JOURNAL_TAB_ICONS = {
+  summary: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true"><path d="M4 19V5m0 14h16M8 16v-5m4 5V8m4 8v-3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  notes: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  memories: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true"><path d="M9.5 3A3.5 3.5 0 0 0 6 6.5 3 3 0 0 0 4 12a3 3 0 0 0 2 5 3.5 3.5 0 0 0 6.5-1.8V4.8A2 2 0 0 0 9.5 3Zm5 0a3.5 3.5 0 0 1 3.5 3.5A3 3 0 0 1 20 12a3 3 0 0 1-2 5 3.5 3.5 0 0 1-6.5-1.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  chat: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true"><path d="M21 12a8 8 0 0 1-8 8H6l-4 2 1.4-4.2A8 8 0 1 1 21 12Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>',
+  config: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" stroke="currentColor" stroke-width="2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 7 19.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9H3a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 4.7 7l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9.5A1.7 1.7 0 0 0 10.5 3V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v.1a1.7 1.7 0 0 0 1.6 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+};
+function journalTabs() {
+  return [
+    ['summary', uiText('Tóm tắt', 'Summary')],
+    ['notes', 'Note'],
+    ['memories', 'Memory'],
+    ['chat', uiText('Chat thô', 'Raw chat')],
+    ['config', uiText('Lịch báo cáo', 'Schedule')],
+  ];
+}
+function journalContentHtml() {
+  const js = journalState;
+  const d = js.data;
+  if (js.tab === 'summary') return journalSummaryHtml(d.summary);
+  if (js.tab === 'notes') return journalListHtml(d.notes, uiText('Chưa có note', 'No notes'));
+  if (js.tab === 'memories') return journalListHtml(d.memories, uiText('Chưa có memory', 'No memories'));
+  if (js.tab === 'config') return journalConfigHtml(d);
+  return journalChatHtml(d.chat, d.chatTotal);
 }
 function journalBodyHtml() {
   const js = journalState;
   if (!js.data) return `<div class="item-sub">${uiText('Đang tải...', 'Loading...')}</div>`;
   const d = js.data;
-  const tabs = [['summary', '📊 ' + uiText('Tóm tắt', 'Summary')], ['notes', '📝 Note'], ['memories', '🧠 Memory'], ['chat', '💬 ' + uiText('Chat thô', 'Raw chat')], ['config', '⚙️ ' + uiText('Lịch báo cáo', 'Schedule')]];
-  const tabBar = `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">${tabs.map(([k, l]) => `<button type="button" class="feature-toggle ${js.tab === k ? 'on' : 'off'}" data-jtab="${k}">${l}</button>`).join('')}</div>`;
+  const tabBar = `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">${journalTabs().map(([k, l]) => `<button type="button" class="feature-toggle ${js.tab === k ? 'on' : 'off'}" data-jtab="${k}">${JOURNAL_TAB_ICONS[k]} ${l}</button>`).join('')}</div>`;
   let dateBar = '';
   if (js.tab === 'summary' || js.tab === 'chat') {
     const dates = js.tab === 'summary' ? d.summaryDates : d.chatDates;
@@ -2908,33 +2948,237 @@ function journalBodyHtml() {
       <button type="button" class="btn" data-jgen="${d.date}" style="margin-left:auto">↻ ${uiText('Tổng hợp lại', 'Re-summarize')}</button>
     </div>`;
   }
-  let content = '';
-  if (js.tab === 'summary') content = journalSummaryHtml(d.summary);
-  else if (js.tab === 'notes') content = journalListHtml(d.notes, uiText('Chưa có note', 'No notes'));
-  else if (js.tab === 'memories') content = journalListHtml(d.memories, uiText('Chưa có memory', 'No memories'));
-  else if (js.tab === 'config') content = journalConfigHtml(d);
-  else content = journalChatHtml(d.chat, d.chatTotal);
-  return `<div>${tabBar}${dateBar}${content}</div>`;
+  return `<div>${tabBar}${dateBar}${journalContentHtml()}</div>`;
+}
+// ── Nhật ký nhóm — mục riêng (section #journal) ──────────────────────────
+function localDateStr(offsetDays = 0) {
+  const dt = new Date();
+  dt.setDate(dt.getDate() + offsetDays);
+  const y = dt.getFullYear();
+  const m = String(dt.getMonth() + 1).padStart(2, '0');
+  const d = String(dt.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+// Điều hướng từ modal chi tiết group -> section, preselect group.
+async function openJournalSection(groupId) {
+  if (groupId) activeGroupId = groupId;
+  setSection('journal');
+  await renderJournal();
+}
+// Chọn ngày -> tải lại nhật ký ngày đó (dùng cho tab ngày của section).
+async function journalPickDate(date) {
+  const gid = journalState.groupId || activeGroupId;
+  if (!gid) return;
+  try { await loadJournal(gid, date); renderJournalBody(); }
+  catch (e) { showToast(uiText('Lỗi tải nhật ký', 'Journal load error') + ': ' + e.message, 'error'); }
+}
+function journalDateTabsHtml() {
+  const today = localDateStr(0);
+  const yesterday = localDateStr(-1);
+  const cur = journalState.date || today;
+  const isCustom = cur !== today && cur !== yesterday;
+  const CAL = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true"><path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const chip = (date, label) => `<button type="button" class="journal-date-chip ${cur === date ? 'active' : ''}" data-jsection-date="${date}">${label}</button>`;
+  return `<div class="journal-date-tabs">
+    ${chip(today, uiText('Hôm nay', 'Today'))}
+    ${chip(yesterday, uiText('Hôm qua', 'Yesterday'))}
+    <label class="journal-date-picker ${isCustom ? 'active' : ''}">${CAL}<span>${uiText('Chọn ngày', 'Pick date')}</span>
+      <input type="date" id="journalDateInput" value="${esc(cur)}" max="${today}">
+    </label>
+  </div>`;
+}
+// Dropdown chọn nhóm — render động trong card bên phải, wiring lại sau mỗi lần vẽ
+function journalGroupSelectHtml() {
+  return `<div class="custom-select-container" id="journalGroupSelectContainer">
+    <div class="custom-select-trigger" id="journalGroupSelectTrigger">
+      <div class="custom-select-trigger-content">
+        <div class="custom-select-avatar" id="journalSelectedGroupAvatar">G</div>
+        <span class="custom-select-name" id="journalSelectedGroupName">${uiText('Chọn nhóm...', 'Select group...')}</span>
+        <span class="custom-select-badge" id="journalSelectedGroupBadge">0</span>
+      </div>
+      <svg class="custom-select-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+    </div>
+    <div class="custom-select-dropdown" id="journalGroupSelectDropdown"></div>
+  </div>`;
+}
+function wireJournalGroupSelect() {
+  const trigger = document.getElementById('journalGroupSelectTrigger');
+  const container = document.getElementById('journalGroupSelectContainer');
+  if (trigger && container) {
+    trigger.addEventListener('click', event => {
+      event.stopPropagation();
+      container.classList.toggle('open');
+    });
+  }
+  populateGroupDropdown({
+    groups: (state && state.groups) || [],
+    dropdownId: 'journalGroupSelectDropdown',
+    avatarId: 'journalSelectedGroupAvatar',
+    nameId: 'journalSelectedGroupName',
+    badgeId: 'journalSelectedGroupBadge',
+    containerId: 'journalGroupSelectContainer',
+    onSelect: async gid => {
+      journalState = { groupId: gid, date: null, data: null, tab: journalState.tab || 'summary' };
+      renderJournalBody();
+      try { await loadJournal(gid, null); } catch (e) { showToast(uiText('Lỗi tải nhật ký', 'Journal load error') + ': ' + e.message, 'error'); }
+      renderJournalBody();
+    },
+  });
+}
+// Vẽ phần thân: menu tab dọc (trái) + card nội dung (phải, gồm chọn nhóm + tab ngày)
+function renderJournalBody() {
+  const body = document.getElementById('journalBody');
+  if (!body) return;
+  const js = journalState;
+  const d = js.data;
+  // Menu tab DỌC (cột trái)
+  const tabMenu = journalTabs().map(([k, l]) => `<button type="button" class="journal-vtab ${js.tab === k ? 'active' : ''}" data-jtab="${k}">${JOURNAL_TAB_ICONS[k]}<span>${l}</span></button>`).join('');
+  const showDates = !!(js.groupId && d && (js.tab === 'summary' || js.tab === 'chat'));
+  // Hàng 1: dropdown chọn nhóm + Tổng hợp lại. Hàng 2: tab ngày.
+  const groupRow = `<div class="journal-group-row">
+    ${journalGroupSelectHtml()}
+    ${showDates ? `<button type="button" class="btn" data-jgen="${d.date}" style="margin-left:auto">↻ ${uiText('Tổng hợp lại', 'Re-summarize')}</button>` : ''}
+  </div>`;
+  const dateRow = showDates ? `<div class="journal-daterow">${journalDateTabsHtml()}</div>` : '';
+  let content;
+  if (!js.groupId) content = `<div style="padding:40px;text-align:center;color:var(--muted)">${uiText('Chọn một nhóm để xem nhật ký.', 'Select a group to view its journal.')}</div>`;
+  else if (!d) content = `<div style="padding:40px;text-align:center;color:var(--muted)">${uiText('Đang tải...', 'Loading...')}</div>`;
+  else content = journalContentHtml();
+  body.innerHTML = `<div class="journal-layout">
+    <nav class="card journal-vtabs" aria-label="${uiText('Mục nhật ký', 'Journal tabs')}">${tabMenu}</nav>
+    <div class="card journal-card"><div class="journal-toolbar">${groupRow}${dateRow}</div><div class="journal-content">${content}</div></div>
+  </div>`;
+  wireJournalGroupSelect();
+}
+async function renderJournal() {
+  const section = document.getElementById('journal');
+  if (!section) return;
+  const groups = (state && state.groups) || [];
+  // Đồng bộ activeGroupId với danh sách nhóm hiện có
+  if (groups.length > 0 && !groups.some(g => g.groupId === activeGroupId)) {
+    activeGroupId = groups[0].groupId;
+  }
+  if (!activeGroupId) { journalState = { groupId: null, date: null, data: null, tab: 'summary' }; renderJournalBody(); return; }
+  // Nạp dữ liệu nếu group đổi hoặc chưa có. Đổi group thì reset ngày về mặc định.
+  if (journalState.groupId !== activeGroupId || !journalState.data) {
+    const keepDate = journalState.groupId === activeGroupId ? journalState.date : null;
+    journalState = { groupId: activeGroupId, date: keepDate, data: null, tab: journalState.tab || 'summary' };
+    renderJournalBody();
+    try { await loadJournal(activeGroupId, keepDate); }
+    catch (e) { showToast(uiText('Lỗi tải nhật ký', 'Journal load error') + ': ' + e.message, 'error'); }
+  }
+  renderJournalBody();
+}
+// ── Cài đặt — mục riêng (section #settings) ──────────────────────────────
+const SETTINGS_ICONS = {
+  lang: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true"><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  theme: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  info: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true"><path d="M12 8h.01M11 12h1v4h1m-1 5a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  copy: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>',
+};
+function settingsToggle(id, checked, label, sub) {
+  return `<label class="journal-toggle-row"><span class="journal-toggle-label">${label}${sub ? `<small class="settings-sub">${sub}</small>` : ''}</span><span class="journal-switch"><input type="checkbox" id="${id}" ${checked ? 'checked' : ''}/><span class="journal-slider"></span></span></label>`;
+}
+function settingsPlanInfo() {
+  const lic = (state && state.license) || {};
+  if (!lic.isPro) return { name: 'FREE', expiry: uiText('Vĩnh viễn', 'Forever'), isPro: false };
+  let name = (lic.plan || 'PRO').toUpperCase();
+  if (lic.plan === 'personal') name = t('Cá nhân Pro', 'Personal Pro');
+  else if (lic.plan === 'team') name = t('Team Pro', 'Team Pro');
+  else if (lic.plan === 'lifetime') name = 'Lifetime';
+  return { name, expiry: lic.expiry || '', isPro: true };
+}
+function renderSettings() {
+  const root = document.getElementById('settingsBody');
+  if (!root) return;
+  const dark = (document.documentElement.dataset.theme || 'light') === 'dark';
+  const seg = (active, val, label) => `<button type="button" class="settings-seg-btn ${active ? 'active' : ''}" data-set-${val}>${label}</button>`;
+  const deviceId = (state && state.license && state.license.deviceId) || '';
+  const version = (state && state.pluginVersion) || pluginVersion;
+  const reduceMotion = localStorage.getItem('zaloReduceMotion') === '1';
+  const plan = settingsPlanInfo();
+  const STAR = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>';
+  root.innerHTML = `
+    <div class="settings-grid">
+      <div class="card settings-card">
+        <div class="settings-card-head">${SETTINGS_ICONS.theme}<div><strong>${uiText('Tùy chỉnh', 'Preferences')}</strong><div class="item-sub">${uiText('Ngôn ngữ, giao diện và hiệu ứng', 'Language, appearance and effects')}</div></div></div>
+        <div class="settings-field">
+          <span class="settings-field-label">${uiText('Ngôn ngữ', 'Language')}</span>
+          <div class="settings-segmented">${seg(lang === 'vi', 'lang-vi', 'Tiếng Việt')}${seg(lang === 'en', 'lang-en', 'English')}</div>
+        </div>
+        <div class="settings-field">
+          <span class="settings-field-label">${uiText('Giao diện', 'Appearance')}</span>
+          <div class="settings-segmented">${seg(!dark, 'theme-light', uiText('Sáng', 'Light'))}${seg(dark, 'theme-dark', uiText('Tối', 'Dark'))}</div>
+        </div>
+        ${settingsToggle('setReduceMotion', reduceMotion, uiText('Giảm chuyển động', 'Reduce motion'), uiText('Tắt hiệu ứng chuyển cảnh', 'Disable transition effects'))}
+      </div>
+      <div class="card settings-card">
+        <div class="settings-card-head">${SETTINGS_ICONS.info}<div><strong>${uiText('Thông tin', 'Information')}</strong><div class="item-sub">${uiText('Gói bản quyền, thiết bị và phiên bản', 'License plan, device and version')}</div></div></div>
+        <div class="settings-info-row">
+          <span class="settings-info-label">${uiText('Gói bản quyền', 'Plan')}</span>
+          <div class="settings-info-val">
+            <span class="settings-plan-badge ${plan.isPro ? 'pro' : 'free'}">${plan.isPro ? STAR : ''}${esc(plan.name)}</span>
+          </div>
+        </div>
+        ${plan.expiry ? `<div class="settings-info-row">
+          <span class="settings-info-label">${uiText('Hạn dùng', 'Expiry')}</span>
+          <div class="settings-info-val"><span class="settings-plan-expiry">${esc(plan.expiry)}</span></div>
+        </div>` : ''}
+        <div class="settings-info-row">
+          <span class="settings-info-label">Device ID</span>
+          <div class="settings-info-val">
+            <code class="settings-code">${esc(deviceId || '----')}</code>
+            ${deviceId ? `<button type="button" class="btn settings-copy-btn" data-copy-id="${esc(deviceId)}" title="${uiText('Copy Device ID', 'Copy Device ID')}">${SETTINGS_ICONS.copy}</button>` : ''}
+          </div>
+        </div>
+        <div class="settings-info-row">
+          <span class="settings-info-label">${uiText('Phiên bản plugin', 'Plugin version')}</span>
+          <div class="settings-info-val"><code class="settings-code">v${esc(version)}</code></div>
+        </div>
+      </div>
+    </div>`;
+  if (!root.dataset.wired) { wireSettingsRoot(root); root.dataset.wired = '1'; }
+}
+function applyReduceMotion() {
+  const on = localStorage.getItem('zaloReduceMotion') === '1';
+  document.documentElement.toggleAttribute('data-reduce-motion', on);
+}
+function wireSettingsRoot(root) {
+  root.addEventListener('click', e => {
+    if (e.target.closest('[data-set-lang-vi]')) return setLang('vi');
+    if (e.target.closest('[data-set-lang-en]')) return setLang('en');
+    if (e.target.closest('[data-set-theme-light]')) return setTheme('light');
+    if (e.target.closest('[data-set-theme-dark]')) return setTheme('dark');
+  });
+  root.addEventListener('change', e => {
+    if (e.target.id === 'setReduceMotion') {
+      localStorage.setItem('zaloReduceMotion', e.target.checked ? '1' : '0');
+      applyReduceMotion();
+      showToast(e.target.checked ? uiText('Đã giảm chuyển động', 'Reduced motion on') : uiText('Đã bật lại chuyển động', 'Motion restored'), 'success');
+    }
+  });
 }
 function journalConfigHtml(d) {
   const c = d.reportConfig || {};
   const dv = c.deliver || {};
-  const cb = (id, checked, label) => `<label style="display:flex;align-items:center;gap:8px;margin:8px 0;cursor:pointer"><input type="checkbox" id="${id}" ${checked ? 'checked' : ''} style="width:18px;height:18px;min-height:0;padding:0;flex:0 0 auto;margin:0;cursor:pointer"/> <span>${label}</span></label>`;
-  return `<div class="list" style="padding:0">
-    <div class="item" style="display:block">
+  // Nút gạt bật/tắt hiện đại (checkbox ẩn + slider CSS)
+  const toggle = (id, checked, label) => `<label class="journal-toggle-row"><span class="journal-toggle-label">${label}</span><span class="journal-switch"><input type="checkbox" id="${id}" ${checked ? 'checked' : ''}/><span class="journal-slider"></span></span></label>`;
+  const SAVE_ICON = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M17 21v-8H7v8M7 3v5h7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  return `<div class="journal-config">
+    <div class="journal-config-block">
       <div class="item-title">${uiText('Nhóm này', 'This group')}</div>
-      ${cb('jcfgAuto', d.autoSummary, uiText('Tự động tổng hợp cuối ngày cho nhóm này', 'Auto end-of-day summary for this group'))}
+      ${toggle('jcfgAuto', d.autoSummary, uiText('Tự động tổng hợp cuối ngày cho nhóm này', 'Auto end-of-day summary for this group'))}
     </div>
-    <div class="item" style="display:block">
+    <div class="journal-config-block">
       <div class="item-title">${uiText('Lịch chung (áp cho mọi nhóm bật ở trên)', 'Global schedule')}</div>
-      ${cb('jcfgEnabled', c.enabled, uiText('Kích hoạt lịch báo cáo', 'Enable schedule'))}
-      <label style="display:flex;align-items:center;gap:8px;margin:8px 0">${uiText('Giờ chạy (VN)', 'Run time (VN)')}: <input type="time" id="jcfgTime" value="${esc(c.time || '23:55')}" style="padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:var(--surface-2);color:var(--text)"/></label>
-      <div class="item-title" style="margin-top:8px">${uiText('Gửi tới', 'Deliver to')}</div>
-      ${cb('jcfgThisGroup', dv.thisGroup, uiText('Đăng vào chính nhóm', 'Post into the group'))}
-      ${cb('jcfgOwnerDm', dv.ownerDm, uiText('DM cho owner bot', 'DM the bot owner'))}
+      ${toggle('jcfgEnabled', c.enabled, uiText('Kích hoạt lịch báo cáo', 'Enable schedule'))}
+      <div class="journal-time-row"><span class="journal-toggle-label">${uiText('Giờ chạy (VN)', 'Run time (VN)')}</span><input type="time" id="jcfgTime" class="journal-time-input" value="${esc(c.time || '23:55')}"/></div>
+      <div class="item-title" style="margin-top:12px">${uiText('Gửi tới', 'Deliver to')}</div>
+      ${toggle('jcfgThisGroup', dv.thisGroup, uiText('Đăng vào chính nhóm', 'Post into the group'))}
+      ${toggle('jcfgOwnerDm', dv.ownerDm, uiText('DM cho owner bot', 'DM the bot owner'))}
     </div>
-    <button type="button" class="btn primary" data-jsave="1" style="margin-top:8px">${uiText('Lưu cấu hình', 'Save config')}</button>
-    <div class="item-sub" style="margin-top:8px">${uiText('Lưu ý: phải bật CẢ "Kích hoạt lịch" (chung) LẪN "Tự động..." (từng nhóm) thì nhóm đó mới được báo cáo.', 'Note: enable both the global schedule and per-group auto.')}</div>
+    <button type="button" class="btn primary journal-save-btn" data-jsave="1">${SAVE_ICON}<span>${uiText('Lưu cấu hình', 'Save config')}</span></button>
+    <div class="item-sub" style="margin-top:10px">${uiText('Lưu ý: phải bật CẢ "Kích hoạt lịch" (chung) LẪN "Tự động..." (từng nhóm) thì nhóm đó mới được báo cáo.', 'Note: enable both the global schedule and per-group auto.')}</div>
   </div>`;
 }
 function journalSummaryHtml(s) {
@@ -3290,7 +3534,7 @@ document.addEventListener('click', async event => {
       await openModal({ title: uiText('Chi tiết group', 'Group details'), body: groupDetailBody(detail), confirmText: uiText('Đóng', 'Close') });
     }
     if (target.dataset.journal) {
-      await openJournal(target.dataset.journal);
+      await openJournalSection(target.dataset.journal);
     }
     if (target.dataset.jtab) {
       journalState.tab = target.dataset.jtab;
@@ -3299,6 +3543,9 @@ document.addEventListener('click', async event => {
     if (target.dataset.jdate) {
       try { await loadJournal(journalState.groupId, target.dataset.jdate); journalRerender(); }
       catch (e) { showToast(e.message, 'error'); }
+    }
+    if (target.dataset.jsectionDate) {
+      await journalPickDate(target.dataset.jsectionDate);
     }
     if (target.dataset.jgen) {
       const btn = target;
@@ -3725,27 +3972,43 @@ if (selectTrigger && selectContainer) {
   });
 }
 
+// Chọn ngày bằng input date trong section Nhật ký
+document.addEventListener('change', event => {
+  if (event.target && event.target.id === 'journalDateInput') {
+    journalPickDate(event.target.value);
+  }
+});
+
+// Đặt theme (dùng chung nút topbar + section Cài đặt)
+function setTheme(next) {
+  document.documentElement.dataset.theme = next;
+  localStorage.setItem('zaloDashboardTheme', next);
+  syncChromeState();
+  if (document.getElementById('settings')?.classList.contains('active')) renderSettings();
+  showToast(next === 'dark' ? t('Đã bật dark mode', 'Dark mode enabled') : t('Đã chuyển sang light mode', 'Light mode enabled'), 'success');
+}
+// Đặt ngôn ngữ (dùng chung nút topbar + section Cài đặt)
+function setLang(next) {
+  if (next === lang) return;
+  lang = next;
+  localStorage.setItem('zaloDashboardLang', lang);
+  applyI18n();
+  if (state) renderState();
+  if (document.getElementById('permissions')?.classList.contains('active') && permState.data) rebuildPermCards();
+  if (document.getElementById('journal')?.classList.contains('active')) renderJournal();
+  if (document.getElementById('settings')?.classList.contains('active')) renderSettings();
+  showToast(lang === 'vi' ? 'Ngôn ngữ: Tiếng Việt' : 'Language: English', 'info');
+}
 const themeToggle = document.getElementById('themeToggle');
 if (themeToggle) {
   themeToggle.addEventListener('click', () => {
     const current = document.documentElement.dataset.theme || 'light';
-    const next = current === 'dark' ? 'light' : 'dark';
-    document.documentElement.dataset.theme = next;
-    localStorage.setItem('zaloDashboardTheme', next);
-    syncChromeState();
-    showToast(next === 'dark' ? t('Đã bật dark mode', 'Dark mode enabled') : t('Đã chuyển sang light mode', 'Light mode enabled'), 'success');
+    setTheme(current === 'dark' ? 'light' : 'dark');
   });
 }
 const langToggle = document.getElementById('langToggle');
 if (langToggle) {
-  langToggle.addEventListener('click', () => {
-    lang = lang === 'vi' ? 'en' : 'vi';
-    localStorage.setItem('zaloDashboardLang', lang);
-    applyI18n();
-    if (state) renderState();
-    if (document.getElementById('permissions')?.classList.contains('active') && permState.data) rebuildPermCards();
-    showToast(lang === 'vi' ? 'Ngôn ngữ: Tiếng Việt' : 'Language: English', 'info');
-  });
+  langToggle.addEventListener('click', () => setLang(lang === 'vi' ? 'en' : 'vi'));
 }
 
 const ownerPill = document.getElementById('ownerPill');
@@ -3773,6 +4036,8 @@ document.addEventListener('click', () => {
   if (groupsBotContainer) groupsBotContainer.classList.remove('open');
   const topbarBotContainer = document.getElementById('topbarBotSelectContainer');
   if (topbarBotContainer) topbarBotContainer.classList.remove('open');
+  const jGroupContainer = document.getElementById('journalGroupSelectContainer');
+  if (jGroupContainer) jGroupContainer.classList.remove('open');
   if (ownerPill) ownerPill.classList.remove('open');
 });
 

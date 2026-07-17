@@ -5,7 +5,6 @@ index.original.js
 .env
 .agent/
 data/
-docs/
 build-and-publish.js
 
 # Never ship server-side signing material/state
@@ -14,5 +13,5 @@ upgrade/orders.json
 upgrade/history.json
 
 
-# Local dev tooling & architecture docs (not shipped)
+# Local dev tooling (not shipped)
 docs_dev/

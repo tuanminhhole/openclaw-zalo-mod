@@ -1,3 +1,32 @@
+## [2.15.0] - 2026-07-17
+
+### Added
+- **Test runner thật**: `npm test` chạy toàn bộ regression bằng `node:test` (trước chỉ có `node --check`). Toàn bộ chạy trên mock, không cần tài khoản Zalo.
+- **OpenClaw Zalo Connect bridge v2** (`src/integration/`): service runtime cho status, capabilities, action và live group policy; capability thiếu sẽ degrade riêng thay vì làm plugin crash. Contract kỹ thuật được giữ local trong `docs_dev/`.
+- **Auto-tag phản hồi agent exact UID**: gắn `{uid, pos, len}` ngay trong `deliverZaloClawReply`, dùng sender của chính scope `processMessage`; không phụ thuộc OpenClaw hooks, không dò tên, bỏ qua reasoning/status và chống A/B cross-tag.
+- **TurnContext bất biến + FIFO queue per-conversation** (`src/context/turn-context.js`, `src/messaging/conversation-queue.js`): mỗi lượt mention đóng băng danh tính người gửi ngay khi nhận tin; các lượt cùng nhóm chạy tuần tự, nhóm khác song song; timeout 1 lượt không chặn lượt sau. Regression: A/B mention đồng thời 50 lần → **0 cross-tag**.
+- **Mention đúng UID cho action chủ động** (`src/messaging/mention-builder.js`): payload `group-mention` lấy UID chính xác từ TurnContext, policy sender/quoted-author/all-addressed/off. Reply tự động của relay dùng run correlation + native name parser của Zalo Connect; tên trùng nhau được bỏ qua an toàn thay vì đoán UID.
+- **Passive context zero-token** (`src/context/`): mọi tin group được phép ghi vào buffer + SQLite TRƯỚC mention gate (không gọi LLM); khi bot được tag, inject snapshot bounded (mặc định ≤20 tin/15 phút/≤5 tin người khác, cắt tại reply gần nhất của bot) vào prompt dưới nhãn `[UNTRUSTED RECENT GROUP CONTEXT]` kèm guard chống prompt-injection và budget ký tự. Fix kịch bản "nhắn `abc`, `xyz` rồi mới tag bot".
+- **SQLite storage + migration framework** (`node:sqlite`, Node ≥22.5; tự fallback in-memory): bảng conversations/messages/attachments/turn_contexts, turn dở dang sau restart được đánh dấu failed (không double-send).
+
+### Added (CRM core — Z4)
+- **CRM backend** (`src/crm/`): Contacts (idempotent theo account+UID, tags, search/phân trang, import từ member Zalo), Leads pipeline (New → Contacted → Qualified → Quoted → Won/Lost, chuyển stage có history + undo, lý do lost), Tasks (hạn, quá hạn, link contact/lead), audit log mọi mutation, stats cho Overview. Chạy trên SQLite (migration v2); API handler thuần `handleCrmAction` test được không cần HTTP.
+- **CRM UI trên dashboard**: 3 mục sidebar mới — Khách hàng, Pipeline (kanban kéo-thả + hoàn tác), Công việc. Song ngữ, responsive 375/768/991.
+
+### Security
+- **Bỏ first-user-claim công khai**: `im owner`/`/ownerid` giờ yêu cầu **mã one-time** (in trong log gateway/dashboard máy chủ, hết hạn 24h, dùng 1 lần) — người lạ DM bot không thể tự nhận owner nữa. Áp cho cả luồng chính lẫn luồng fallback.
+
+### Fixed
+- **Silent không còn làm bot "mất trí nhớ"**: Zalo Connect bridge phát một bản sao inbound trước mention gate; Zalo Mod capture vào passive buffer zero-token. Khi user chỉ tag bot ở tin sau, bounded context của chính user được inject và bot trả lời vấn đề ngay phía trên. Chuẩn hoá timestamp Zalo từ giây sang millisecond để selector không loại nhầm tin vừa nhận là quá cũ.
+- **Model thực sự nhận passive context trên OpenClaw 2026.5.x**: ghi nội dung enrich vào `BodyForAgent` thay vì chỉ `Body`; giữ `RawBody/CommandBody` nguyên bản cho slash command. Live trajectory xác nhận prompt chứa immediate intent và trả đúng câu trước khi tag.
+- **Toggle Tự do / Silent / Mute áp tức thì, zero-token và không restart**: mở rộng Zalo Connect bridge v2 với runtime group-policy override. Zalo Mod map `muted/silent` → `mute/silent/free`, fan-out theo mọi ID của nhóm đa-bot, và Zalo Connect chặn ngay trong inbound listener trước relay/model. Policy vẫn lưu bền trong `settings.json` và tự replay sau một lần gateway restart thật; không còn ghi group policy vào `openclaw.json`.
+- **Toàn bộ API đọc (Sync Account, danh sách nhóm/thành viên/bạn bè, profile bot/owner/user, pending, admin nhóm) chạy qua ZaloConnectBridge**: thêm `src/integration/zca-facade.js` — facade giữ nguyên chữ ký các call-site hiện có, nhưng route mọi method zca-js (getAllGroups, getGroupInfo, getUserInfo, getAllFriends, fetchAccountInfo, getPendingGroupMembers, getGroupMembersInfo) qua bridge và dựng lại đúng shape thô mà dashboard kỳ vọng. Hết lỗi "ZCA API unavailable". `scanGroupMembers` lấy tên cả nhóm trong 1 call (get-group-members-info theo groupId) thay vì gọi từng member.
+- **Bot "câm" chiều gửi ra khi chạy với Zalo Connect** (`sendDmMsg/sendGroupMsg skipped — API unavailable`): mọi send production route qua Zalo Connect bridge service; outbound adapter public là degrade path cho text/media cơ bản. Tin xác nhận owner, moderation và dashboard composer hoạt động trở lại.
+
+### Changed
+- **Zalo Connect-only trong production**: OpenClaw Zalo Connect sở hữu session/listener/transport; Zalo Mod sở hữu dashboard/policy/context/automation. Không còn nhánh transport hay migration Zalouser trong runtime hiện tại.
+- Debug log mỗi tin nhắn (`[ZALO-MOD-DEBUG]`) chỉ còn in khi `ZALO_MOD_DEBUG=1` (trước in JSON đầy log ở mọi tin).
+
 ## [2.14.4] - 2026-07-03
 
 ### Added

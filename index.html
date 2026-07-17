@@ -68,6 +68,20 @@
             <path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             <path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg><span class="nav-label">Phân quyền</span></button>
+        <div class="nav-group open" id="navGroupCrm">
+          <button class="nav-group-trigger" type="button" onclick="this.parentElement.classList.toggle('open')">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2m22 0v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75M13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="nav-label">CRM</span>
+            <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left: auto; width: 12px; height: 12px; transition: transform 0.2s; flex-shrink: 0;"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="sidebar-submenu">
+            <button data-section="contacts" class="submenu-item" type="button"><span class="submenu-dot"></span><span class="nav-label">Khách hàng</span></button>
+            <button data-section="leads" class="submenu-item" type="button"><span class="submenu-dot"></span><span class="nav-label">Pipeline</span></button>
+            <button data-section="tasks" class="submenu-item" type="button"><span class="submenu-dot"></span><span class="nav-label">Công việc</span></button>
+          </div>
+        </div>
         <div class="nav-group open" id="navGroupUtilities">
           <button class="nav-group-trigger" type="button" onclick="this.parentElement.classList.toggle('open')">
             <svg viewBox="0 0 24 24" fill="none">
@@ -1357,6 +1371,41 @@
     </div>
   </section>
   <!-- ══ end utilities ══ -->
+
+      <section class="section" id="contacts">
+        <div class="page-head">
+          <div>
+            <h2>Khách hàng</h2>
+            <p>Danh bạ CRM — gộp từ member Zalo, gắn tag, ghi chú, liên kết lead.</p>
+          </div>
+          <div class="actions" id="crmContactsActions"></div>
+        </div>
+        <div id="crmContactsBody"></div>
+      </section>
+
+      <section class="section" id="leads">
+        <div class="page-head">
+          <div>
+            <h2>Pipeline</h2>
+            <p>Kéo thả lead qua các giai đoạn: Mới → Đã liên hệ → Tiềm năng → Đã báo giá → Thắng/Thua.</p>
+          </div>
+          <div class="actions" id="crmLeadsActions"></div>
+        </div>
+        <div id="crmUndoBar"></div>
+        <div id="crmLeadsBody"></div>
+      </section>
+
+      <section class="section" id="tasks">
+        <div class="page-head">
+          <div>
+            <h2>Công việc</h2>
+            <p>Việc cần làm, hạn chót, nhắc quá hạn — gắn với khách hàng hoặc lead.</p>
+          </div>
+          <div class="actions" id="crmTasksActions"></div>
+        </div>
+        <div id="crmTasksBody"></div>
+      </section>
+
       <footer class="site-footer">
         <div class="footer-content" style="width: 100%;">
           <p class="footer-copyright" style="margin: 0; font-size: 11px; opacity: 0.6;">
@@ -1380,8 +1429,7 @@
             </button>
           </p>
         </div>
-      </footer>
-    </main>
+      </footer>    </main>
   </div>
   <nav class="bottom-nav" data-bottom-nav aria-label="Mobile navigation">
     <button class="active" data-section="overview" aria-label="Overview"><svg class="icon" viewBox="0 0 24 24"
@@ -1449,6 +1497,15 @@
           <path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           <path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg><span class="nav-label">Phân quyền</span></button>
+      <button data-section="contacts"><svg viewBox="0 0 24 24" fill="none">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2m12-14a4 4 0 1 1-8 0 4 4 0 0 1 8 0Zm10 14v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg><span class="nav-label">Khách hàng</span></button>
+      <button data-section="leads"><svg viewBox="0 0 24 24" fill="none">
+          <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg><span class="nav-label">Pipeline</span></button>
+      <button data-section="tasks"><svg viewBox="0 0 24 24" fill="none">
+          <path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg><span class="nav-label">Công việc</span></button>
       <button data-section="fb-crawler"><svg viewBox="0 0 24 24" fill="none">
           <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           <line x1="7" y1="7" x2="7.01" y2="7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>

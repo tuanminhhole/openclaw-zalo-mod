@@ -4,9 +4,19 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![OpenClaw Plugin](https://img.shields.io/badge/OpenClaw-Plugin-blue.svg)](https://openclaw.ai)
-[![Version](https://img.shields.io/badge/version-2.14.4-green.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.15.0-green.svg)](./CHANGELOG.md)
 
 **[🇺🇸 English](./README.md)**
+
+---
+
+<div align="center">
+  <a href="https://www.youtube.com/watch?v=hPusYX-5Pmw">
+    <img src="https://img.youtube.com/vi/hPusYX-5Pmw/maxresdefault.jpg" alt="Watch the OpenClaw and Zalo video guide" width="820" />
+  </a>
+  <br />
+  <strong>▶ Watch the OpenClaw + Zalo video guide on YouTube</strong>
+</div>
 
 ---
 
@@ -52,14 +62,19 @@ The plugin features a built-in administrative graphical user interface **Zalo Ow
 
 ```
 Tin nhắn Zalo đến
-    │
-    ├─ /slash command     → Plugin xử lý local (0 token)
-    ├─ Spam phát hiện     → Log + block im lặng (0 token)
-    ├─ Sticker/media      → Chuyển thành [Sticker] (0 token)
-    ├─ "Ai bị warn?"      → Plugin trả lời từ store (0 token)
-    │
-    └─ @BotName câu hỏi  → Chuyển lên LLM agent (dùng token)
+    │  OpenClaw Zalo Connect owns the connection and inbound gate
+    ├─ Mute               → drop before pipeline/model (0 tokens)
+    ├─ Silent, no mention → drop before pipeline/model (0 tokens)
+    └─ Allowed message    → Zalo Mod commands/policy/context
+                              ├─ local command, anti-spam (0 tokens)
+                              └─ agent reply → tag triggering sender
+                                                → Zalo Connect native mention
 ```
+
+OpenClaw Zalo Connect is the only Zalo channel/runtime used in production. Zalo Mod
+does not log in separately, patch private `dist` files, or own a second transport.
+Internal architecture and bridge notes live in the ignored `docs_dev/`
+directory and are intentionally not included in public releases.
 
 ---
 
@@ -68,7 +83,8 @@ Tin nhắn Zalo đến
 ### 1. Docker (khuyến nghị — dùng với openclaw-setup)
 
 ```powershell
-# Chạy bên trong container
+# Install the pinned OpenClaw Zalo Connect release first, then Zalo Mod
+docker exec openclaw-bot openclaw plugins install "https://github.com/tuanminhhole/openclaw-zalo-connect.git#v3.0.0"
 docker exec openclaw-bot openclaw plugins install clawhub:openclaw-zalo-mod --force
 docker restart openclaw-bot
 ```
@@ -76,6 +92,7 @@ docker restart openclaw-bot
 ### 2. Native (không Docker)
 
 ```bash
+openclaw plugins install "https://github.com/tuanminhhole/openclaw-zalo-connect.git#v3.0.0"
 openclaw plugins install openclaw-zalo-mod
 openclaw gateway restart
 ```
@@ -117,7 +134,9 @@ docker restart openclaw-bot
 Kiểm tra log sau khi restart:
 
 ```
-[gateway] http server listening (5 plugins: browser, memory-core, openclaw-n8n-facebook-poster, zalo-mod, zalouser; ...)
+[gateway] ... plugins: ..., zalo-connect, zalo-mod, ...
+[openclaw-zalo-mod] bridge backend: zalo-connect-service connected=true
+[openclaw-zalo-mod] live group policy replayed: N/N
 ```
 
 Plugin phải xuất hiện trong danh sách. Nếu thiếu, kiểm tra quyền file.
@@ -210,9 +229,10 @@ Cấu hình trong `openclaw.json`:
 
 ## 🔧 Yêu cầu
 
-- OpenClaw `>= 2026.3.24`
-- Channel `zalouser` đã được cấu hình và xác thực
-- Node.js `>= 20`
+- OpenClaw `>= 2026.5.7`
+- Plugin/channel `zalo-connect` is configured and authenticated
+- OpenClaw Zalo Connect bridge service v2 (including live group policy)
+- Node.js `>= 22`
 
 ---
 

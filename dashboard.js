@@ -163,6 +163,9 @@ function setSection(id) {
   if (id === 'permissions') renderPermissions();
   if (id === 'journal') renderJournal();
   if (id === 'settings') renderSettings();
+  if (id === 'contacts') renderCrmContacts();
+  if (id === 'leads') renderCrmLeads();
+  if (id === 'tasks') renderCrmTasks();
 }
 function toastIcon(tone) {
   const icons = {
@@ -323,6 +326,10 @@ function applyI18n() {
     ['Tin nhắn', 'Messages'],
     ['Lệnh & Rules', 'Rules & Cmds'],
     ['Phân quyền', 'Permissions'],
+    ['CRM', 'CRM'],
+    ['Khách hàng', 'Contacts'],
+    ['Pipeline', 'Pipeline'],
+    ['Công việc', 'Tasks'],
     ['Tiện ích', 'Utilities'],
     ['Facebook Crawler', 'Facebook Crawler'],
     ['Nâng cấp', 'Upgrade'],
@@ -337,6 +344,9 @@ function applyI18n() {
     ['Tin nhắn', 'Messages'],
     ['Lệnh & Rules', 'Rules & Cmds'],
     ['Phân quyền', 'Permissions'],
+    ['Khách hàng', 'Contacts'],
+    ['Pipeline', 'Pipeline'],
+    ['Công việc', 'Tasks'],
     ['Facebook Crawler', 'Facebook Crawler'],
     ['Nâng cấp', 'Upgrade'],
     ['Cài đặt', 'Settings'],
@@ -3997,6 +4007,9 @@ function setLang(next) {
   if (document.getElementById('permissions')?.classList.contains('active') && permState.data) rebuildPermCards();
   if (document.getElementById('journal')?.classList.contains('active')) renderJournal();
   if (document.getElementById('settings')?.classList.contains('active')) renderSettings();
+  if (document.getElementById('contacts')?.classList.contains('active')) renderCrmContacts();
+  if (document.getElementById('leads')?.classList.contains('active')) renderCrmLeads();
+  if (document.getElementById('tasks')?.classList.contains('active')) renderCrmTasks();
   showToast(lang === 'vi' ? 'Ngôn ngữ: Tiếng Việt' : 'Language: English', 'info');
 }
 const themeToggle = document.getElementById('themeToggle');
@@ -5728,3 +5741,564 @@ window.switchUtilTab = function (event, tabId) {
 };
 // ═══════════════════════════════════════════════════════════════════════════
 // END FB CRAWLER MANAGER MODULE
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CRM MODULE — Contacts / Leads pipeline / Tasks (Phase Z4 core)
+// Backend: src/crm/ qua POST /api/action { action: 'crm-*', payload }
+// ═══════════════════════════════════════════════════════════════════════════
+
+const crmState = {
+  contacts: null, contactsTotal: 0, contactsPage: 1, contactsSearch: '', contactsTag: '',
+  pipeline: null, tasks: null, taskFilter: 'open', undoLead: null,
+};
+const CRM_PAGE_SIZE = 50;
+const CRM_STAGE_LABELS = {
+  new: ['Mới', 'New'], contacted: ['Đã liên hệ', 'Contacted'],
+  qualified: ['Tiềm năng', 'Qualified'], quoted: ['Đã báo giá', 'Quoted'],
+  won: ['Thắng', 'Won'], lost: ['Thua', 'Lost'],
+};
+const CRM_STAGE_COLORS = {
+  new: 'var(--muted)', contacted: 'var(--primary)', qualified: '#8b5cf6',
+  quoted: 'var(--warning)', won: 'var(--success)', lost: 'var(--danger)',
+};
+
+async function crmAction(action, payload = {}) {
+  const data = await api('/api/action', {
+    method: 'POST',
+    body: JSON.stringify({ action, payload }),
+  });
+  return data.result;
+}
+
+function crmStageLabel(stage) {
+  const pair = CRM_STAGE_LABELS[stage] || [stage, stage];
+  return t(pair[0], pair[1]);
+}
+
+function crmMoney(v, currency = 'VND') {
+  if (!v) return '—';
+  try {
+    return new Intl.NumberFormat('vi-VN').format(v) + (currency === 'VND' ? 'đ' : ` ${currency}`);
+  } catch (_) { return String(v); }
+}
+
+function crmEsc(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function crmDate(ts) {
+  if (!ts) return '—';
+  const d = new Date(ts);
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
+function crmErrorCard(container, err, retryFn) {
+  container.innerHTML = `<div class="card" style="padding:24px;text-align:center">
+    <p style="color:var(--danger);margin:0 0 12px">${crmEsc(err.message || err)}</p>
+    <button class="btn" id="crmRetryBtn">${t('Thử lại', 'Retry')}</button></div>`;
+  container.querySelector('#crmRetryBtn')?.addEventListener('click', retryFn);
+}
+
+// ── Contacts ────────────────────────────────────────────────────────────────
+
+async function renderCrmContacts() {
+  const head = document.querySelector('#contacts .page-head');
+  if (head) {
+    head.querySelector('h2').textContent = t('Khách hàng', 'Contacts');
+    head.querySelector('p').textContent = t('Danh bạ CRM — gộp từ member Zalo, gắn tag, ghi chú, liên kết lead.',
+      'CRM contact book — merged from Zalo members, with tags, notes and lead links.');
+  }
+  const actions = document.getElementById('crmContactsActions');
+  actions.innerHTML = `
+    <button class="btn" id="crmImportBtn">${t('⟳ Import từ Zalo', '⟳ Import from Zalo')}</button>
+    <button class="btn primary" id="crmAddContactBtn">${t('+ Thêm khách', '+ Add contact')}</button>`;
+  actions.querySelector('#crmImportBtn').addEventListener('click', crmImportFromZalo);
+  actions.querySelector('#crmAddContactBtn').addEventListener('click', () => crmContactModal(null));
+
+  const body = document.getElementById('crmContactsBody');
+  body.innerHTML = `<div class="card" style="padding:24px;color:var(--muted)">${t('Đang tải…', 'Loading…')}</div>`;
+  try {
+    const res = await crmAction('crm-contacts-list', {
+      search: crmState.contactsSearch || undefined,
+      tag: crmState.contactsTag || undefined,
+      limit: CRM_PAGE_SIZE,
+      offset: (crmState.contactsPage - 1) * CRM_PAGE_SIZE,
+    });
+    crmState.contacts = res.contacts;
+    crmState.contactsTotal = res.total;
+    crmRenderContactsTable(body);
+  } catch (err) {
+    crmErrorCard(body, err, renderCrmContacts);
+  }
+}
+
+function crmRenderContactsTable(body) {
+  const rows = crmState.contacts || [];
+  const totalPages = Math.max(Math.ceil(crmState.contactsTotal / CRM_PAGE_SIZE), 1);
+  const rowsHtml = rows.map(c => `
+    <tr data-contact-id="${crmEsc(c.id)}">
+      <td>
+        <div style="display:flex;align-items:center;gap:10px">
+          ${c.avatar_url
+            ? `<img src="${crmEsc(c.avatar_url)}" alt="" style="width:32px;height:32px;border-radius:50%;object-fit:cover">`
+            : `<span style="width:32px;height:32px;border-radius:50%;background:var(--primary-soft);color:var(--primary-deep);display:inline-flex;align-items:center;justify-content:center;font-weight:600">${crmEsc((c.display_name || '?')[0].toUpperCase())}</span>`}
+          <div>
+            <div style="font-weight:600">${crmEsc(c.display_name)}</div>
+            <div style="color:var(--muted);font-size:12px">${crmEsc(c.zalo_uid || '')}</div>
+          </div>
+        </div>
+      </td>
+      <td>${crmEsc(c.phone || '—')}</td>
+      <td><div class="chips">${(c.tags || []).map(tag =>
+        `<span class="chip" data-crm-tag="${crmEsc(tag)}" style="cursor:pointer">${crmEsc(tag)}</span>`).join('') || '—'}</div></td>
+      <td>${crmEsc(c.source || '—')}</td>
+      <td style="white-space:nowrap">${crmDate(c.last_contact_at)}</td>
+      <td style="white-space:nowrap;text-align:right">
+        <button class="btn" data-crm-edit="${crmEsc(c.id)}">${t('Sửa', 'Edit')}</button>
+        <button class="btn danger" data-crm-del="${crmEsc(c.id)}">✕</button>
+      </td>
+    </tr>`).join('');
+
+  body.innerHTML = `
+    <div class="crm-toolbar">
+      <input type="search" id="crmContactSearch" class="crm-search" placeholder="${t('Tìm tên / SĐT / UID…', 'Search name / phone / UID…')}" value="${crmEsc(crmState.contactsSearch)}">
+      ${crmState.contactsTag ? `<span class="chip" id="crmTagClear" style="cursor:pointer">🏷 ${crmEsc(crmState.contactsTag)} ✕</span>` : ''}
+      <span style="margin-left:auto;color:var(--muted);font-size:13px">${t(`${crmState.contactsTotal} khách`, `${crmState.contactsTotal} contacts`)}</span>
+    </div>
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>${t('Khách hàng', 'Contact')}</th><th>${t('SĐT', 'Phone')}</th>
+            <th>Tags</th><th>${t('Nguồn', 'Source')}</th>
+            <th>${t('Tương tác cuối', 'Last contact')}</th><th></th>
+          </tr></thead>
+          <tbody>${rowsHtml || `<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:28px">${t('Chưa có khách hàng. Bấm "Import từ Zalo" hoặc "+ Thêm khách".', 'No contacts yet. Use "Import from Zalo" or "+ Add contact".')}</td></tr>`}</tbody>
+        </table>
+      </div>
+      ${totalPages > 1 ? `<div class="crm-pager">
+        <button class="btn" id="crmPrevPage" ${crmState.contactsPage <= 1 ? 'disabled' : ''}>‹</button>
+        <span>${crmState.contactsPage}/${totalPages}</span>
+        <button class="btn" id="crmNextPage" ${crmState.contactsPage >= totalPages ? 'disabled' : ''}>›</button>
+      </div>` : ''}
+    </div>`;
+
+  let searchTimer;
+  body.querySelector('#crmContactSearch').addEventListener('input', (e) => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+      crmState.contactsSearch = e.target.value.trim();
+      crmState.contactsPage = 1;
+      renderCrmContacts();
+    }, 300);
+  });
+  body.querySelector('#crmTagClear')?.addEventListener('click', () => {
+    crmState.contactsTag = '';
+    renderCrmContacts();
+  });
+  body.querySelector('#crmPrevPage')?.addEventListener('click', () => { crmState.contactsPage--; renderCrmContacts(); });
+  body.querySelector('#crmNextPage')?.addEventListener('click', () => { crmState.contactsPage++; renderCrmContacts(); });
+  body.querySelectorAll('[data-crm-tag]').forEach(el => el.addEventListener('click', () => {
+    crmState.contactsTag = el.dataset.crmTag;
+    crmState.contactsPage = 1;
+    renderCrmContacts();
+  }));
+  body.querySelectorAll('[data-crm-edit]').forEach(el => el.addEventListener('click', () => {
+    const contact = (crmState.contacts || []).find(c => c.id === el.dataset.crmEdit);
+    if (contact) crmContactModal(contact);
+  }));
+  body.querySelectorAll('[data-crm-del]').forEach(el => el.addEventListener('click', async () => {
+    const contact = (crmState.contacts || []).find(c => c.id === el.dataset.crmDel);
+    const ok = await openModal({
+      title: t('Xoá khách hàng?', 'Delete contact?'),
+      desc: t(`"${contact?.display_name}" sẽ bị xoá khỏi CRM (lead/task liên quan được giữ lại, chỉ gỡ liên kết).`,
+        `"${contact?.display_name}" will be removed from CRM (linked leads/tasks are kept, just unlinked).`),
+      confirmText: t('Xoá', 'Delete'), danger: true, tone: 'danger',
+    });
+    if (!ok) return;
+    try {
+      await crmAction('crm-contact-delete', { id: el.dataset.crmDel });
+      showToast(t('Đã xoá khách hàng', 'Contact deleted'), 'success');
+      renderCrmContacts();
+    } catch (err) { showToast(err.message, 'error'); }
+  }));
+}
+
+async function crmContactModal(contact) {
+  const f = (id, label, value, type = 'text', placeholder = '') => `
+    <label class="crm-field"><span>${label}</span>
+      <input type="${type}" id="${id}" value="${crmEsc(value ?? '')}" placeholder="${crmEsc(placeholder)}"></label>`;
+  const ok = await openModal({
+    title: contact ? t('Sửa khách hàng', 'Edit contact') : t('Thêm khách hàng', 'Add contact'),
+    body: `<div class="crm-form">
+      ${f('crmFName', t('Tên hiển thị *', 'Display name *'), contact?.display_name)}
+      ${f('crmFPhone', t('SĐT', 'Phone'), contact?.phone)}
+      ${f('crmFTags', 'Tags', (contact?.tags || []).join(', '), 'text', t('vd: vip, khách sỉ', 'e.g. vip, wholesale'))}
+      ${f('crmFSource', t('Nguồn', 'Source'), contact?.source, 'text', t('vd: zalo-group, giới thiệu', 'e.g. zalo-group, referral'))}
+      <label class="crm-field"><span>${t('Ghi chú', 'Notes')}</span>
+        <textarea id="crmFNotes" rows="3">${crmEsc(contact?.notes ?? '')}</textarea></label>
+    </div>`,
+    confirmText: t('Lưu', 'Save'),
+  });
+  if (!ok) return;
+  const name = document.getElementById('crmFName')?.value.trim();
+  if (!name) { showToast(t('Tên là bắt buộc', 'Name is required'), 'error'); return; }
+  try {
+    const saved = await crmAction('crm-contact-save', {
+      id: contact?.id,
+      displayName: name,
+      phone: document.getElementById('crmFPhone').value.trim(),
+      source: document.getElementById('crmFSource').value.trim(),
+      notes: document.getElementById('crmFNotes').value,
+      zaloUid: contact?.zalo_uid,
+    });
+    const tags = document.getElementById('crmFTags').value.split(',').map(s => s.trim()).filter(Boolean);
+    await crmAction('crm-contact-tags', { id: saved.id, tags });
+    showToast(t('Đã lưu khách hàng', 'Contact saved'), 'success');
+    renderCrmContacts();
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+async function crmImportFromZalo() {
+  const membersMap = (state && state.members) || {};
+  const seen = new Map();
+  for (const groupId of Object.keys(membersMap)) {
+    for (const [uid, raw] of Object.entries(membersMap[groupId] || {})) {
+      if (!uid || seen.has(uid)) continue;
+      const name = raw?.name || raw?.displayName || raw?.dName || raw?.zaloName || '';
+      if (!name) continue;
+      seen.set(uid, {
+        uid,
+        name,
+        avatar: raw?.avatar || raw?.avatarUrl || raw?.avatar_url || raw?.photo || '',
+        source: 'zalo-group',
+      });
+    }
+  }
+  const members = [...seen.values()];
+  if (!members.length) {
+    showToast(t('Chưa có member nào trong state — mở trang Thành viên để sync trước.',
+      'No members in state — open the Members page to sync first.'), 'error');
+    return;
+  }
+  const ok = await openModal({
+    title: t('Import member Zalo vào CRM', 'Import Zalo members into CRM'),
+    desc: t(`Sẽ import ${members.length} member (đã có thì cập nhật, không nhân đôi).`,
+      `Will import ${members.length} members (existing ones are updated, no duplicates).`),
+    confirmText: 'Import',
+  });
+  if (!ok) return;
+  try {
+    const res = await crmAction('crm-contacts-import', { members });
+    showToast(t(`Import xong: ${res.created} mới, ${res.updated} cập nhật`,
+      `Imported: ${res.created} new, ${res.updated} updated`), 'success');
+    renderCrmContacts();
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+// ── Leads (kanban) ──────────────────────────────────────────────────────────
+
+async function renderCrmLeads() {
+  const head = document.querySelector('#leads .page-head');
+  if (head) {
+    head.querySelector('h2').textContent = t('Pipeline', 'Pipeline');
+    head.querySelector('p').textContent = t('Kéo thả lead qua các giai đoạn: Mới → Đã liên hệ → Tiềm năng → Đã báo giá → Thắng/Thua.',
+      'Drag leads across stages: New → Contacted → Qualified → Quoted → Won/Lost.');
+  }
+  const actions = document.getElementById('crmLeadsActions');
+  actions.innerHTML = `<button class="btn primary" id="crmAddLeadBtn">${t('+ Thêm lead', '+ Add lead')}</button>`;
+  actions.querySelector('#crmAddLeadBtn').addEventListener('click', () => crmLeadModal(null));
+
+  const body = document.getElementById('crmLeadsBody');
+  body.innerHTML = `<div class="card" style="padding:24px;color:var(--muted)">${t('Đang tải…', 'Loading…')}</div>`;
+  try {
+    crmState.pipeline = await crmAction('crm-pipeline', {});
+    crmRenderKanban(body);
+  } catch (err) {
+    crmErrorCard(body, err, renderCrmLeads);
+  }
+}
+
+function crmRenderKanban(body) {
+  const p = crmState.pipeline;
+  const cols = p.stages.map(stage => {
+    const leads = p.byStage[stage] || [];
+    const cards = leads.map(lead => `
+      <div class="kanban-card" draggable="true" data-lead-id="${crmEsc(lead.id)}">
+        <div class="kanban-card-title">${crmEsc(lead.title)}</div>
+        <div class="kanban-card-meta">
+          <span class="kanban-card-value">${crmMoney(lead.value, lead.currency)}</span>
+          ${lead.contactName ? `<span class="kanban-card-contact">👤 ${crmEsc(lead.contactName)}</span>` : ''}
+        </div>
+        ${lead.next_action ? `<div class="kanban-card-next">→ ${crmEsc(lead.next_action)}</div>` : ''}
+      </div>`).join('');
+    return `
+      <div class="kanban-col" data-stage="${stage}">
+        <div class="kanban-col-head" style="border-top:3px solid ${CRM_STAGE_COLORS[stage]}">
+          <span class="kanban-col-title">${crmStageLabel(stage)}</span>
+          <span class="kanban-col-count">${leads.length}</span>
+          <span class="kanban-col-total">${crmMoney(p.totals[stage])}</span>
+        </div>
+        <div class="kanban-col-body" data-stage-body="${stage}">${cards}</div>
+      </div>`;
+  }).join('');
+  body.innerHTML = `<div class="kanban">${cols}</div>`;
+  crmRenderUndoBar();
+
+  body.querySelectorAll('.kanban-card').forEach(card => {
+    card.addEventListener('dragstart', (e) => {
+      e.dataTransfer.setData('text/plain', card.dataset.leadId);
+      e.dataTransfer.effectAllowed = 'move';
+      card.classList.add('dragging');
+    });
+    card.addEventListener('dragend', () => card.classList.remove('dragging'));
+    card.addEventListener('click', () => {
+      const lead = crmFindLead(card.dataset.leadId);
+      if (lead) crmLeadModal(lead);
+    });
+  });
+  body.querySelectorAll('.kanban-col').forEach(col => {
+    col.addEventListener('dragover', (e) => { e.preventDefault(); col.classList.add('dragover'); });
+    col.addEventListener('dragleave', () => col.classList.remove('dragover'));
+    col.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      col.classList.remove('dragover');
+      const leadId = e.dataTransfer.getData('text/plain');
+      const toStage = col.dataset.stage;
+      const lead = crmFindLead(leadId);
+      if (!lead || lead.stage === toStage) return;
+      let lossReason;
+      if (toStage === 'lost') {
+        const ok = await openModal({
+          title: t('Đánh dấu Thua', 'Mark as Lost'),
+          body: `<label class="crm-field"><span>${t('Lý do (tuỳ chọn)', 'Reason (optional)')}</span>
+            <input type="text" id="crmLossReason"></label>`,
+          confirmText: t('Xác nhận', 'Confirm'), danger: true, tone: 'warning',
+        });
+        if (!ok) return;
+        lossReason = document.getElementById('crmLossReason')?.value.trim();
+      }
+      try {
+        await crmAction('crm-lead-move', { id: leadId, stage: toStage, lossReason });
+        crmState.undoLead = { id: leadId, title: lead.title, from: lead.stage, to: toStage };
+        renderCrmLeads();
+      } catch (err) { showToast(err.message, 'error'); }
+    });
+  });
+}
+
+function crmFindLead(id) {
+  const p = crmState.pipeline;
+  if (!p) return null;
+  for (const stage of p.stages) {
+    const found = (p.byStage[stage] || []).find(l => l.id === id);
+    if (found) return found;
+  }
+  return null;
+}
+
+function crmRenderUndoBar() {
+  const bar = document.getElementById('crmUndoBar');
+  if (!bar) return;
+  if (!crmState.undoLead) { bar.innerHTML = ''; return; }
+  const u = crmState.undoLead;
+  bar.innerHTML = `<div class="crm-undo">
+    <span>${t(`Đã chuyển "${crmEsc(u.title)}": ${crmStageLabel(u.from)} → ${crmStageLabel(u.to)}`,
+      `Moved "${crmEsc(u.title)}": ${crmStageLabel(u.from)} → ${crmStageLabel(u.to)}`)}</span>
+    <button class="btn" id="crmUndoBtn">${t('↩ Hoàn tác', '↩ Undo')}</button>
+  </div>`;
+  bar.querySelector('#crmUndoBtn').addEventListener('click', async () => {
+    try {
+      await crmAction('crm-lead-undo', { id: u.id });
+      crmState.undoLead = null;
+      renderCrmLeads();
+      showToast(t('Đã hoàn tác', 'Undone'), 'success');
+    } catch (err) { showToast(err.message, 'error'); }
+  });
+  clearTimeout(crmRenderUndoBar._timer);
+  crmRenderUndoBar._timer = setTimeout(() => { crmState.undoLead = null; crmRenderUndoBar(); }, 15000);
+}
+
+async function crmLeadModal(lead) {
+  let contactOptions = `<option value="">${t('— Không gắn —', '— None —')}</option>`;
+  try {
+    const res = await crmAction('crm-contacts-list', { limit: 200 });
+    contactOptions += res.contacts.map(c =>
+      `<option value="${crmEsc(c.id)}" ${lead?.contact_id === c.id ? 'selected' : ''}>${crmEsc(c.display_name)}</option>`).join('');
+  } catch (_) { /* dropdown rỗng vẫn dùng được */ }
+
+  const ok = await openModal({
+    title: lead ? t('Sửa lead', 'Edit lead') : t('Thêm lead', 'Add lead'),
+    body: `<div class="crm-form">
+      <label class="crm-field"><span>${t('Tiêu đề *', 'Title *')}</span>
+        <input type="text" id="crmLTitle" value="${crmEsc(lead?.title ?? '')}"></label>
+      <label class="crm-field"><span>${t('Giá trị (VND)', 'Value (VND)')}</span>
+        <input type="number" min="0" id="crmLValue" value="${crmEsc(lead?.value ?? 0)}"></label>
+      <label class="crm-field"><span>${t('Khách hàng', 'Contact')}</span>
+        <select id="crmLContact">${contactOptions}</select></label>
+      <label class="crm-field"><span>${t('Sản phẩm', 'Product')}</span>
+        <input type="text" id="crmLProduct" value="${crmEsc(lead?.product ?? '')}"></label>
+      <label class="crm-field"><span>${t('Người phụ trách', 'Assignee')}</span>
+        <input type="text" id="crmLAssignee" value="${crmEsc(lead?.assignee ?? '')}"></label>
+      <label class="crm-field"><span>${t('Việc tiếp theo', 'Next action')}</span>
+        <input type="text" id="crmLNext" value="${crmEsc(lead?.next_action ?? '')}"></label>
+      ${lead ? `<button class="btn danger" id="crmLDelete" type="button" data-lead-id="${crmEsc(lead.id)}" data-lead-title="${crmEsc(lead.title)}" style="justify-self:start">${t('Xoá lead', 'Delete lead')}</button>` : ''}
+    </div>`,
+    confirmText: t('Lưu', 'Save'),
+  });
+
+  const delBtn = document.getElementById('crmLDelete');
+  if (delBtn && delBtn.dataset.clicked === '1') return; // đã xử lý xoá
+
+  if (!ok) return;
+  const payload = {
+    title: document.getElementById('crmLTitle')?.value.trim(),
+    value: Number(document.getElementById('crmLValue')?.value || 0),
+    contactId: document.getElementById('crmLContact')?.value || null,
+    product: document.getElementById('crmLProduct')?.value.trim(),
+    assignee: document.getElementById('crmLAssignee')?.value.trim(),
+    nextAction: document.getElementById('crmLNext')?.value.trim(),
+  };
+  if (!payload.title) { showToast(t('Tiêu đề là bắt buộc', 'Title is required'), 'error'); return; }
+  try {
+    if (lead) await crmAction('crm-lead-update', { id: lead.id, ...payload });
+    else await crmAction('crm-lead-create', payload);
+    showToast(t('Đã lưu lead', 'Lead saved'), 'success');
+    renderCrmLeads();
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+document.addEventListener('click', async (e) => {
+  // Nút xoá lead trong modal (nằm ngoài luồng confirm)
+  if (e.target?.id === 'crmLDelete') {
+    e.target.dataset.clicked = '1';
+    const leadId = e.target.dataset.leadId;
+    const leadTitle = e.target.dataset.leadTitle || '';
+    closeModal(false);
+    if (!leadId) return;
+    const ok = await openModal({
+      title: t('Xoá lead?', 'Delete lead?'),
+      desc: t(`"${leadTitle}" sẽ bị xoá vĩnh viễn khỏi pipeline.`, `"${leadTitle}" will be permanently removed.`),
+      confirmText: t('Xoá', 'Delete'), danger: true, tone: 'danger',
+    });
+    if (!ok) return;
+    try {
+      await crmAction('crm-lead-delete', { id: leadId });
+      showToast(t('Đã xoá lead', 'Lead deleted'), 'success');
+      renderCrmLeads();
+    } catch (err) { showToast(err.message, 'error'); }
+  }
+});
+
+// ── Tasks ───────────────────────────────────────────────────────────────────
+
+async function renderCrmTasks() {
+  const head = document.querySelector('#tasks .page-head');
+  if (head) {
+    head.querySelector('h2').textContent = t('Công việc', 'Tasks');
+    head.querySelector('p').textContent = t('Việc cần làm, hạn chót, nhắc quá hạn — gắn với khách hàng hoặc lead.',
+      'To-dos with due dates and overdue alerts — linked to contacts or leads.');
+  }
+  const actions = document.getElementById('crmTasksActions');
+  actions.innerHTML = `<button class="btn primary" id="crmAddTaskBtn">${t('+ Thêm việc', '+ Add task')}</button>`;
+  actions.querySelector('#crmAddTaskBtn').addEventListener('click', () => crmTaskModal());
+
+  const body = document.getElementById('crmTasksBody');
+  body.innerHTML = `<div class="card" style="padding:24px;color:var(--muted)">${t('Đang tải…', 'Loading…')}</div>`;
+  try {
+    const res = await crmAction('crm-tasks-list', { filter: crmState.taskFilter });
+    crmState.tasks = res.tasks;
+    crmRenderTasksList(body);
+  } catch (err) {
+    crmErrorCard(body, err, renderCrmTasks);
+  }
+}
+
+function crmRenderTasksList(body) {
+  const filters = [
+    ['open', t('Đang mở', 'Open')], ['overdue', t('Quá hạn', 'Overdue')],
+    ['done', t('Đã xong', 'Done')], ['all', t('Tất cả', 'All')],
+  ];
+  const chips = filters.map(([key, label]) =>
+    `<button class="chip ${crmState.taskFilter === key ? 'chip-active' : ''}" data-task-filter="${key}">${label}</button>`).join('');
+  const rows = (crmState.tasks || []).map(task => `
+    <tr class="${task.overdue ? 'crm-task-overdue' : ''}">
+      <td style="width:36px;text-align:center">
+        <input type="checkbox" data-task-done="${crmEsc(task.id)}" ${task.done_at ? 'checked' : ''}>
+      </td>
+      <td>
+        <div style="font-weight:600;${task.done_at ? 'text-decoration:line-through;color:var(--muted)' : ''}">${crmEsc(task.title)}</div>
+        ${task.note ? `<div style="color:var(--muted);font-size:12px">${crmEsc(task.note)}</div>` : ''}
+      </td>
+      <td style="white-space:nowrap">
+        ${task.due_at ? `<span class="${task.overdue ? 'crm-overdue-badge' : ''}">${crmDate(task.due_at)}</span>` : '—'}
+      </td>
+      <td>${crmEsc(task.assignee || '—')}</td>
+      <td style="text-align:right"><button class="btn danger" data-task-del="${crmEsc(task.id)}">✕</button></td>
+    </tr>`).join('');
+
+  body.innerHTML = `
+    <div class="crm-toolbar"><div class="chips">${chips}</div></div>
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th></th><th>${t('Công việc', 'Task')}</th><th>${t('Hạn', 'Due')}</th><th>${t('Phụ trách', 'Assignee')}</th><th></th></tr></thead>
+          <tbody>${rows || `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:28px">${t('Không có việc nào.', 'No tasks.')}</td></tr>`}</tbody>
+        </table>
+      </div>
+    </div>`;
+
+  body.querySelectorAll('[data-task-filter]').forEach(el => el.addEventListener('click', () => {
+    crmState.taskFilter = el.dataset.taskFilter;
+    renderCrmTasks();
+  }));
+  body.querySelectorAll('[data-task-done]').forEach(el => el.addEventListener('change', async () => {
+    try {
+      await crmAction('crm-task-done', { id: el.dataset.taskDone, done: el.checked });
+      renderCrmTasks();
+    } catch (err) { showToast(err.message, 'error'); }
+  }));
+  body.querySelectorAll('[data-task-del]').forEach(el => el.addEventListener('click', async () => {
+    try {
+      await crmAction('crm-task-delete', { id: el.dataset.taskDel });
+      renderCrmTasks();
+    } catch (err) { showToast(err.message, 'error'); }
+  }));
+}
+
+async function crmTaskModal() {
+  let contactOptions = `<option value="">${t('— Không gắn —', '— None —')}</option>`;
+  try {
+    const res = await crmAction('crm-contacts-list', { limit: 200 });
+    contactOptions += res.contacts.map(c => `<option value="${crmEsc(c.id)}">${crmEsc(c.display_name)}</option>`).join('');
+  } catch (_) { }
+  const ok = await openModal({
+    title: t('Thêm công việc', 'Add task'),
+    body: `<div class="crm-form">
+      <label class="crm-field"><span>${t('Việc cần làm *', 'Task title *')}</span>
+        <input type="text" id="crmTTitle"></label>
+      <label class="crm-field"><span>${t('Hạn chót', 'Due')}</span>
+        <input type="datetime-local" id="crmTDue"></label>
+      <label class="crm-field"><span>${t('Khách hàng', 'Contact')}</span>
+        <select id="crmTContact">${contactOptions}</select></label>
+      <label class="crm-field"><span>${t('Ghi chú', 'Note')}</span>
+        <textarea id="crmTNote" rows="2"></textarea></label>
+    </div>`,
+    confirmText: t('Tạo', 'Create'),
+  });
+  if (!ok) return;
+  const title = document.getElementById('crmTTitle')?.value.trim();
+  if (!title) { showToast(t('Tiêu đề là bắt buộc', 'Title is required'), 'error'); return; }
+  const dueRaw = document.getElementById('crmTDue')?.value;
+  try {
+    await crmAction('crm-task-create', {
+      title,
+      dueAt: dueRaw ? new Date(dueRaw).getTime() : null,
+      contactId: document.getElementById('crmTContact')?.value || null,
+      note: document.getElementById('crmTNote')?.value || '',
+    });
+    showToast(t('Đã tạo công việc', 'Task created'), 'success');
+    renderCrmTasks();
+  } catch (err) { showToast(err.message, 'error'); }
+}
+// ═══ END CRM MODULE ═══

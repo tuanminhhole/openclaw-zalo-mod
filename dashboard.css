@@ -5386,3 +5386,162 @@ textarea:focus {
   animation: none !important;
   scroll-behavior: auto !important;
 }
+
+/* ═══ CRM MODULE (Contacts / Leads / Tasks) ═══ */
+.crm-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.crm-search {
+  flex: 0 1 320px;
+  min-width: 180px;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+.crm-search:focus { outline: 2px solid var(--primary-soft); border-color: var(--primary); }
+.crm-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 12px;
+  color: var(--muted);
+  border-top: 1px solid var(--line);
+}
+
+/* Form trong modal */
+.crm-form { display: grid; gap: 12px; }
+.crm-field { display: grid; gap: 5px; }
+.crm-field > span { font-size: 13px; font-weight: 600; color: var(--muted); }
+.crm-field input, .crm-field select, .crm-field textarea {
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  width: 100%;
+}
+.crm-field input:focus, .crm-field select:focus, .crm-field textarea:focus {
+  outline: 2px solid var(--primary-soft);
+  border-color: var(--primary);
+}
+
+/* Kanban */
+.kanban {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  -webkit-overflow-scrolling: touch;
+}
+.kanban-col {
+  flex: 1 0 218px;
+  min-width: 218px;
+  max-width: 300px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.kanban-col.dragover { outline: 2px dashed var(--primary); outline-offset: -2px; }
+.kanban-col-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  border-radius: var(--radius) var(--radius) 0 0;
+  background: var(--surface);
+}
+.kanban-col-title { font-weight: 700; font-size: 13px; }
+.kanban-col-count {
+  background: var(--surface-3);
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.kanban-col-total { margin-left: auto; font-size: 11px; color: var(--muted); white-space: nowrap; }
+.kanban-col-body {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  min-height: 60px;
+  max-height: 62vh;
+  overflow-y: auto;
+}
+.kanban-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  cursor: grab;
+  box-shadow: var(--shadow);
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.kanban-card:hover { transform: translateY(-1px); border-color: var(--primary); }
+.kanban-card.dragging { opacity: .5; cursor: grabbing; }
+.kanban-card-title { font-weight: 600; font-size: 13.5px; word-break: break-word; }
+.kanban-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+  font-size: 12px;
+}
+.kanban-card-value { color: var(--success); font-weight: 700; }
+.kanban-card-contact { color: var(--muted); word-break: break-word; }
+.kanban-card-next {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--primary-deep);
+  background: var(--primary-soft);
+  border-radius: 6px;
+  padding: 3px 8px;
+  word-break: break-word;
+}
+
+/* Undo bar sau kéo-thả */
+.crm-undo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+  background: var(--primary-soft);
+  color: var(--primary-deep);
+  border: 1px solid var(--primary);
+  border-radius: var(--radius);
+  padding: 8px 14px;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+
+/* Tasks */
+.crm-task-overdue td { background: var(--danger-soft); }
+.crm-overdue-badge { color: var(--danger); font-weight: 700; }
+.chip.chip-active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+@media (max-width: 991px) {
+  .kanban-col { flex: 0 0 236px; }
+  .kanban-col-body { max-height: 56vh; }
+}
+@media (max-width: 768px) {
+  .crm-toolbar { gap: 8px; }
+  .crm-search { flex: 1 1 100%; }
+  .crm-undo { flex-direction: column; align-items: flex-start; gap: 8px; }
+}
+/* ═══ END CRM MODULE ═══ */

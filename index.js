@@ -16,7 +16,7 @@
  *   listZaloGroupMembers API, diff with previous snapshot.
  *
  * @author tuanminhhole
- * @version 2.17.2
+ * @version 2.17.3
  */
 
 import fs from 'node:fs/promises';
@@ -1345,7 +1345,9 @@ YwIDAQAB
                     }
                 }
 
-                // 4. Auto-detect & patch config if empty (ClawHub install flow)
+                // 4. Bootstrap plugin-local data only. Do not mutate openclaw.json
+                // while `openclaw plugins install/update` is validating the newly
+                // extracted plugin: the CLI rejects mid-flight config changes.
                 const configNeedsPatch = !pluginCfg.botName || Object.keys(groupNames).length === 0;
                 if (configNeedsPatch) {
                     // 4a. Write detected botName to config (bots.default) so it is saved
@@ -1357,8 +1359,6 @@ YwIDAQAB
                     // 4b. Scan session data for groups (DEPRECATED: only sync via API)
                     logger.info('[openclaw-zalo-mod] initialized with empty group list — please click "Sync Account" on the dashboard to import groups via Zalo API');
 
-                    // 4c. Đảm bảo openclaw.json có enabled + hooks + bindings/channels (không mirror thông tin bot)
-                    await _patchOpenclawConfig(_openclawHome, {}, logger);
                 }
             } catch (e) {
                 logger.warn(`[openclaw-zalo-mod] bootstrap workspace files failed: ${e.message}`);

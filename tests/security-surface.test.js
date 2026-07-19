@@ -28,3 +28,10 @@ test('ClawPack excludes legacy local payment and crawler helpers', () => {
   assert.ok(!pkg.files.includes('upgrade/flow.js'));
   assert.ok(!pkg.files.includes('upgrade/SKILL.md'));
 });
+
+test('first-load bootstrap never mutates openclaw.json during CLI install validation', () => {
+  const start = source.indexOf('async function bootstrapWorkspaceFiles()');
+  const end = source.indexOf('// Fire-and-forget bootstrap', start);
+  assert.ok(start >= 0 && end > start);
+  assert.doesNotMatch(source.slice(start, end), /_patchOpenclawConfig/);
+});

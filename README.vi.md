@@ -4,7 +4,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![OpenClaw Plugin](https://img.shields.io/badge/OpenClaw-Plugin-blue.svg)](https://openclaw.ai)
-[![Version](https://img.shields.io/badge/version-2.15.0-green.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.15.1-green.svg)](./CHANGELOG.md)
 
 **[🇺🇸 English](./README.md)**
 
@@ -55,6 +55,20 @@ Plugin tích hợp sẵn giao diện quản trị đồ họa **Zalo Owner Dashb
 3. **⏳ Thành viên & Duyệt**: Duyệt nhanh thành viên xin vào nhóm, theo dõi member vi phạm/cảnh cáo.
 4. **✍️ Gửi tin nhắn (Composer)**: Soạn thảo tin nhắn và gửi trực tiếp đến các nhóm nhanh chóng, hỗ trợ preview hình ảnh trước khi gửi.
 5. **🔌 Danh mục API**: Tra cứu toàn bộ các ZCA API khả dụng và các ví dụ thực tế.
+
+---
+
+### Gói tính năng
+
+Mỗi bản cài mới được tự động dùng thử **Pro trong 30 ngày**. Trial được license server ký và gắn với Device ID, không cần nhập key.
+
+| Gói | Xem dashboard | Thao tác từng group/member | Nhiều group / hàng loạt / `all` | Nhiều bot cùng lúc |
+| --- | --- | --- | --- | --- |
+| Free | ✅ | ✅ | ❌ | ❌ |
+| Pro | ✅ | ✅ | ✅ | ❌ |
+| Team / Lifetime | ✅ | ✅ | ✅ | ✅ |
+
+Hết trial, dashboard và mọi dữ liệu vẫn xem được; các thao tác đơn vẫn hoạt động bình thường.
 
 ---
 
@@ -140,13 +154,13 @@ Kiểm tra log sau khi restart:
 
 ### Bước 2: Nhận quyền Owner
 
-Gửi tin nhắn DM riêng cho bot:
+Mở **Zalo Mod Dashboard → Cài đặt**, copy **Device ID**, rồi gửi DM riêng cho bot:
 
 ```
-i'm admin
+i'm owner <DEVICE_ID>
 ```
 
-Bot sẽ tự động ghi `ownerId` vào config và xác nhận.
+Device ID chứng minh bạn có quyền truy cập máy chủ, tránh người lạ tự nhận Owner. Chỉ cần xác nhận một lần; bot sẽ ghi `ownerId` vào config và khóa quyền sở hữu.
 
 ### Bước 3: Đăng ký Group
 

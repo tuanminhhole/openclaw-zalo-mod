@@ -1,3 +1,14 @@
+## [2.16.0] - 2026-07-19
+
+### Added
+- **Tặng 30 ngày Pro cho lần cài đầu tiên**: kích hoạt tự động bằng entitlement do license server ký RSA và gắn với Device ID; không cần nhập key thủ công.
+- **Phân tầng Free / Pro / Team rõ ràng**: Free xem toàn bộ dashboard và thao tác từng group/member; Pro mở thao tác nhiều group, hàng loạt và `all`; Team mở thêm thao tác nhiều bot cùng lúc.
+
+### Security
+- **Khóa quyền ở backend thay vì chỉ ẩn nút**: mọi batch payload và hành động nhiều bot đều được kiểm tra entitlement tại API; sửa state giao diện hoặc gọi API trực tiếp không vượt được giới hạn gói.
+- **Trial chống cấp lại**: máy chủ ghi nhận Device ID, fingerprint và dấu vết mạng; ngày bắt đầu/hết hạn nằm trong proof có chữ ký, không phụ thuộc đồng hồ hay file cấu hình phía client.
+- **Owner claim an toàn, gọn hơn**: `i'm owner <DEVICE_ID>` thay mã dùng một lần; xác nhận một lần từ Device ID trong Dashboard và giữ ổn định qua restart/update.
+
 ## [2.15.0] - 2026-07-17
 
 ### Added
@@ -12,9 +23,6 @@
 ### Added (CRM core — Z4)
 - **CRM backend** (`src/crm/`): Contacts (idempotent theo account+UID, tags, search/phân trang, import từ member Zalo), Leads pipeline (New → Contacted → Qualified → Quoted → Won/Lost, chuyển stage có history + undo, lý do lost), Tasks (hạn, quá hạn, link contact/lead), audit log mọi mutation, stats cho Overview. Chạy trên SQLite (migration v2); API handler thuần `handleCrmAction` test được không cần HTTP.
 - **CRM UI trên dashboard**: 3 mục sidebar mới — Khách hàng, Pipeline (kanban kéo-thả + hoàn tác), Công việc. Song ngữ, responsive 375/768/991.
-
-### Security
-- **Bỏ first-user-claim công khai**: `im owner`/`/ownerid` giờ yêu cầu **mã one-time** (in trong log gateway/dashboard máy chủ, hết hạn 24h, dùng 1 lần) — người lạ DM bot không thể tự nhận owner nữa. Áp cho cả luồng chính lẫn luồng fallback.
 
 ### Fixed
 - **Silent không còn làm bot "mất trí nhớ"**: Zalo Connect bridge phát một bản sao inbound trước mention gate; Zalo Mod capture vào passive buffer zero-token. Khi user chỉ tag bot ở tin sau, bounded context của chính user được inject và bot trả lời vấn đề ngay phía trên. Chuẩn hoá timestamp Zalo từ giây sang millisecond để selector không loại nhầm tin vừa nhận là quá cũ.

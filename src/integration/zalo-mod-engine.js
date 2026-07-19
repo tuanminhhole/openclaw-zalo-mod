@@ -5,15 +5,13 @@
  *   - TurnContext bất biến cho mỗi lượt mention + FIFO correlation
  *     (thay pattern mutable "ghi lúc dispatch, đọc lúc reply" theo sessionKey).
  *   - Inject bounded UNTRUSTED context vào prompt ở before_model_resolve.
- *   - Owner-claim bằng one-time code (vá lỗ hổng first-user-claim công khai).
+ *   - Owner-claim được index.js bảo vệ bằng Device ID của máy chủ.
  *
  * Mọi state nằm trong instance — không dùng globalThis (trừ handshake bridge
  * được định nghĩa bởi bridge contract v2).
  */
 
-import crypto from 'node:crypto';
 import path from 'node:path';
-import { readFileSync, writeFileSync, unlinkSync, existsSync } from 'node:fs';
 
 import { TurnContextStore } from '../context/turn-context.js';
 import { ConversationBuffer } from '../context/conversation-buffer.js';
@@ -25,7 +23,6 @@ import { CrmStore } from '../crm/crm-store.js';
 import { createZaloConnectBridge } from './zalo-connect-bridge.js';
 import { createOpenclawAdapter } from './openclaw-adapter.js';
 
-const CLAIM_CODE_TTL_MS = 24 * 60 * 60 * 1000; // one-time code sống 24h rồi tự xoay
 const SWEEP_INTERVAL_MS = 60 * 1000;
 
 export function createZaloModEngine({ dataDir, logger, runtime, getConfig, config = {} }) {
@@ -246,43 +243,6 @@ export function createZaloModEngine({ dataDir, logger, runtime, getConfig, confi
             return turn;
         },
 
-        // ── Owner claim: one-time expiring code (vá first-user-claim công khai) ──
-
-        /**
-         * Lấy code claim hiện hành (tạo mới nếu chưa có/hết hạn). Code chỉ hiển thị
-         * ở nơi owner thật tiếp cận được: log gateway + dashboard localhost.
-         */
-        getOwnerClaimCode() {
-            const file = path.join(dataDir, 'owner-claim-code.json');
-            try {
-                if (existsSync(file)) {
-                    const cur = JSON.parse(readFileSync(file, 'utf8'));
-                    if (cur.code && cur.expiresAt > Date.now()) return cur;
-                }
-            } catch { }
-            const fresh = {
-                code: crypto.randomBytes(4).toString('hex').toUpperCase(),
-                expiresAt: Date.now() + CLAIM_CODE_TTL_MS,
-            };
-            try { writeFileSync(file, JSON.stringify(fresh), { mode: 0o600 }); } catch { }
-            return fresh;
-        },
-
-        /** Verify + consume: đúng code thì xoá file (one-time). */
-        verifyOwnerClaimCode(code) {
-            if (!code) return false;
-            const file = path.join(dataDir, 'owner-claim-code.json');
-            try {
-                if (!existsSync(file)) return false;
-                const cur = JSON.parse(readFileSync(file, 'utf8'));
-                const ok = cur.code
-                    && cur.expiresAt > Date.now()
-                    && timingSafeEqualStr(String(code).trim().toUpperCase(), cur.code);
-                if (ok) { try { unlinkSync(file); } catch { } }
-                return ok;
-            } catch { return false; }
-        },
-
         /** Health snapshot cho dashboard. */
         health() {
             return {
@@ -304,11 +264,4 @@ function hashLite(s) {
     let h = 0;
     for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0;
     return (h >>> 0).toString(36);
-}
-
-function timingSafeEqualStr(a, b) {
-    const ba = Buffer.from(String(a));
-    const bb = Buffer.from(String(b));
-    if (ba.length !== bb.length) return false;
-    return crypto.timingSafeEqual(ba, bb);
 }

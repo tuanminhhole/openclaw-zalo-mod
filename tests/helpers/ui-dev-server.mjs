@@ -34,7 +34,8 @@ console.log(`[dev] CRM DB: ${DB_PATH}`);
 
 const STATE_STUB = {
     ok: true,
-    license: { isPro: true, plan: 'PRO (dev)', expiresAt: null },
+    pluginVersion: '2.16.0',
+    license: { isPro: true, canBulk: true, canMultiBot: false, tier: 'pro', plan: 'personal', expiry: '2026-08-18', isTrial: true },
     bot: { botName: 'DevBot', ownerId: '', ownerName: 'Owner', profile: 'default' },
     bots: [{ profile: 'default', botName: 'DevBot', avatar: '' }],
     groups: [],
@@ -47,7 +48,8 @@ const STATE_STUB = {
             'uid-1004': { name: 'Phạm Quốc Dũng', avatar: '' },
         },
     },
-    settings: {}, permissions: {}, reports: [], apis: [],
+    settings: {}, permissions: {}, reports: [], apis: [], audit: [], templates: {},
+    totals: { groups: 0, members: 0, warnings: 0, violations: 0 },
 };
 
 const MIME = {

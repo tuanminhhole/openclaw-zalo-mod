@@ -470,23 +470,23 @@ function applyI18n() {
   setText('[data-i18n-sub="free"]', 'Mở đầu trải nghiệm', 'Get started');
   setText('[data-i18n-feature="free-1"]', 'Dùng toàn bộ UI dashboard', 'Use full UI dashboard');
   setText('[data-i18n-feature="free-2"]', 'Xem dữ liệu group/member/log', 'View group, member & log data');
-  setText('[data-i18n-feature="free-3"]', 'Giới hạn tính năng điều khiển', 'Limited advanced controls');
+  setText('[data-i18n-feature="free-3"]', 'Thao tác từng group/member', 'Single group/member actions');
   setText('[data-i18n-btn="free"]', 'Trải nghiệm ngay', 'Try now');
 
   setText('[data-i18n-badge="personal"]', 'Cá nhân', 'Personal');
   setText('[data-i18n-title="personal"]', 'Gói Cá nhân', 'Personal Plan');
   setText('[data-i18n-sub="personal"]', 'hoặc 990.000đ / 12 tháng', 'or 990,000đ / 12 months');
-  setText('[data-i18n-feature="personal-1"]', 'Mở khóa điều khiển nâng cao', 'Unlock advanced control features');
-  setText('[data-i18n-feature="personal-2"]', 'Ưu tiên cập nhật tính năng mới', 'Priority new feature updates');
+  setText('[data-i18n-feature="personal-1"]', 'Nhiều group, hàng loạt và All', 'Multi-group, bulk and All actions');
+  setText('[data-i18n-feature="personal-2"]', 'Tặng 30 ngày Pro khi cài lần đầu', '30-day Pro trial on first install');
   setText('[data-i18n-feature="personal-3"]', 'Dùng cho 1 owner account', 'Use for 1 owner account');
   setText('[data-i18n-btn="personal"]', 'Nâng cấp Cá nhân', 'Upgrade Personal');
 
   setText('[data-i18n-badge="team"]', 'Team', 'Team');
   setText('[data-i18n-title="team"]', 'Gói Team', 'Team Plan');
   setText('[data-i18n-sub="team"]', 'hoặc 2.990.000đ / 12 tháng', 'or 2,990,000đ / 12 months');
-  setText('[data-i18n-feature="team-1"]', 'Dành cho nhiều thành viên', 'For multiple team operators');
+  setText('[data-i18n-feature="team-1"]', 'Thao tác nhiều bot cùng lúc', 'Operate multiple bots at once');
   setText('[data-i18n-feature="team-2"]', 'Ưu tiên hỗ trợ nhanh hơn', 'Priority faster support');
-  setText('[data-i18n-feature="team-3"]', 'Phù hợp team growth/ops', 'Suited for growth/ops teams');
+  setText('[data-i18n-feature="team-3"]', 'Bao gồm toàn bộ quyền Pro', 'Includes every Pro capability');
   setText('[data-i18n-btn="team"]', 'Đăng ký Team', 'Register Team');
 
   setText('[data-i18n-badge="lifetime"]', 'Vĩnh viễn', 'Lifetime');
@@ -784,7 +784,8 @@ function renderLicense() {
     if (isPro) {
       headerBadge.className = 'header-license-badge pro';
       let planName = lic.plan.toUpperCase();
-      if (lic.plan === 'personal') planName = t('Cá nhân Pro', 'Personal Pro');
+      if (lic.isTrial) planName = t('Dùng thử Pro', 'Pro Trial');
+      else if (lic.plan === 'personal') planName = t('Cá nhân Pro', 'Personal Pro');
       else if (lic.plan === 'team') planName = t('Team Pro', 'Team Pro');
       else if (lic.plan === 'lifetime') planName = t('Lifetime', 'Lifetime');
 
@@ -807,7 +808,8 @@ function renderLicense() {
   if (dropdownPlan && dropdownExpiry) {
     if (isPro) {
       let planName = lic.plan.toUpperCase();
-      if (lic.plan === 'personal') planName = t('Cá nhân Pro', 'Personal Pro');
+      if (lic.isTrial) planName = t('Dùng thử Pro', 'Pro Trial');
+      else if (lic.plan === 'personal') planName = t('Cá nhân Pro', 'Personal Pro');
       else if (lic.plan === 'team') planName = t('Team Pro', 'Team Pro');
       else if (lic.plan === 'lifetime') planName = t('Lifetime', 'Lifetime');
       dropdownPlan.textContent = planName;
@@ -823,7 +825,8 @@ function renderLicense() {
 
   if (isPro) {
     let planName = lic.plan.toUpperCase();
-    if (lic.plan === 'personal') planName = t('Cá nhân Pro', 'Personal Pro');
+    if (lic.isTrial) planName = t('Dùng thử Pro', 'Pro Trial');
+    else if (lic.plan === 'personal') planName = t('Cá nhân Pro', 'Personal Pro');
     else if (lic.plan === 'team') planName = t('Team Pro', 'Team Pro');
     else if (lic.plan === 'lifetime') planName = t('Lifetime Premium', 'Lifetime Premium');
 
@@ -3093,7 +3096,8 @@ function settingsPlanInfo() {
   const lic = (state && state.license) || {};
   if (!lic.isPro) return { name: 'FREE', expiry: uiText('Vĩnh viễn', 'Forever'), isPro: false };
   let name = (lic.plan || 'PRO').toUpperCase();
-  if (lic.plan === 'personal') name = t('Cá nhân Pro', 'Personal Pro');
+  if (lic.isTrial) name = t('Dùng thử Pro', 'Pro Trial');
+  else if (lic.plan === 'personal') name = t('Cá nhân Pro', 'Personal Pro');
   else if (lic.plan === 'team') name = t('Team Pro', 'Team Pro');
   else if (lic.plan === 'lifetime') name = 'Lifetime';
   return { name, expiry: lic.expiry || '', isPro: true };
@@ -3483,8 +3487,13 @@ document.addEventListener('click', async event => {
       if (!selectedMembers.size) return showToast('Select at least one member first.', 'warning');
       const selected = [...selectedMembers].filter(key => key.startsWith(`${activeGroupId}:`)).map(key => key.split(':')[1]);
       if (!selected.length) return showToast('No members selected in this group.', 'warning');
+      if (!state.license?.canBulk) {
+        showToast(t('Thao tác nhiều thành viên yêu cầu gói PRO hoặc TEAM.', 'Multi-member actions require PRO or TEAM.'), 'warning');
+        setSection('upgrade');
+        return;
+      }
       if (target.dataset.bulkMemberAction === 'friend') {
-        await Promise.all(selected.map(userId => runAction('send-friend-request', { userId, message: 'Xin chào, mình là Williams bot owner.' }, 'Friend request sent')));
+        await runAction('bulk-friend-request', { userIds: selected, message: 'Xin chào, mình là Williams bot owner.' }, 'Friend requests sent');
         showToast('Friend requests sent.', 'success');
       }
       if (target.dataset.bulkMemberAction === 'dm') {
@@ -3496,13 +3505,13 @@ document.addEventListener('click', async event => {
         });
         const text = document.getElementById('bulkMemberMessage')?.value.trim();
         if (ok && text) {
-          await Promise.all(selected.map(userId => runAction('send-message', { targetType: 'user', targetId: userId, text }, 'Bulk DM sent')));
+          await runAction('send-messages', { targets: selected.map(targetId => ({ targetType: 'user', targetId })), text }, 'Bulk DM sent');
           showToast(t('Đã gửi DM hàng loạt', 'Bulk DM sent'), 'success');
         }
       }
     }
     if (target.dataset.bulkFeature) {
-      if (!state.license?.isPro) {
+      if (!state.license?.canBulk) {
         showToast(t('Thao tác hàng loạt cho nhiều group yêu cầu bản quyền PRO!', 'Bulk operations for multiple groups require a PRO license!'), 'error');
         setSection('upgrade');
         return;
@@ -3514,7 +3523,7 @@ document.addEventListener('click', async event => {
         const ok = await confirmPendingAutoWarning();
         if (!ok) return;
       }
-      await Promise.all([...selectedGroups].map(groupId => runAction('toggle-setting', { groupId, key, value }, 'Bulk groups updated')));
+      await runAction('bulk-toggle-setting', { groupIds: [...selectedGroups], key, value }, 'Bulk groups updated');
       renderGroups();
       updateBulkBar();
     }
@@ -3795,7 +3804,13 @@ document.addEventListener('click', async event => {
       if (action === 'open-api') setSection('api');
       if (action === 'open-upgrade') setSection('upgrade');
       if (action === 'sync') {
-        const res = await runAction('sync-groups', {}, t('Đã sync group từ ZCA', 'Synced groups from ZCA'));
+        if (selectedBotFilter === 'all' && state.bots?.length > 1 && !state.license?.canMultiBot) {
+          showToast(t('Đồng bộ nhiều bot cùng lúc yêu cầu gói TEAM. Hãy chọn một bot để đồng bộ riêng.', 'Syncing multiple bots at once requires TEAM. Select one bot to sync it separately.'), 'warning');
+          setSection('upgrade');
+          return;
+        }
+        const syncPayload = selectedBotFilter === 'all' ? {} : { profile: selectedBotFilter };
+        const res = await runAction('sync-groups', syncPayload, t('Đã sync group từ ZCA', 'Synced groups from ZCA'));
         if (res && Array.isArray(res.failed) && res.failed.length) {
           showToast(t(`⚠️ Bot lỗi session, KHÔNG sync được: ${res.failed.join(', ')}. Đăng nhập lại các bot này rồi sync lại.`, `Sync failed for: ${res.failed.join(', ')}. Re-login those bots and sync again.`), 'warning');
         }
@@ -3884,8 +3899,8 @@ document.addEventListener('click', async event => {
           return showToast(t('Chọn ít nhất một target và nhập nội dung trước khi gửi.', 'Choose at least one target and enter content before sending.'), 'warning');
         }
 
-        const isPro = !!(state?.license?.isPro);
-        if (targets.length > 1 && !isPro) {
+        const canBulk = !!(state?.license?.canBulk);
+        if (targets.length > 1 && !canBulk) {
           return showToast(t('Gửi tin nhắn hàng loạt chỉ dành cho tài khoản PRO. Vui lòng nâng cấp!', 'Bulk messaging is only for PRO accounts. Please upgrade!'), 'warning');
         }
 
@@ -3905,16 +3920,17 @@ document.addEventListener('click', async event => {
 
         let successCount = 0;
         let failCount = 0;
-        for (let i = 0; i < targets.length; i++) {
-          const { targetType, targetId } = targets[i];
-          try {
-            if (i > 0) await new Promise(r => setTimeout(r, 300));
-            await runAction('send-message', { targetType, targetId, text }, null);
-            successCount++;
-          } catch (err) {
-            console.error(err);
-            failCount++;
+        try {
+          if (targets.length === 1) {
+            await runAction('send-message', { ...targets[0], text }, null);
+            successCount = 1;
+          } else {
+            const result = await runAction('send-messages', { targets, text }, null);
+            successCount = Number(result?.sent || targets.length);
           }
+        } catch (err) {
+          console.error(err);
+          failCount = targets.length;
         }
 
         showToast(t(`Gửi hoàn tất: Thành công ${successCount}, Lỗi ${failCount}`, `Sending complete: Success ${successCount}, Fail ${failCount}`), failCount > 0 ? 'warning' : 'success');

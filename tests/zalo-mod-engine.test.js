@@ -82,22 +82,6 @@ test('không có gì để inject → prompt giữ nguyên', (t) => {
     assert.equal(event.prompt, 'nguyên bản');
 });
 
-test('owner-claim code: đúng code mới claim được, one-time, sai code fail', (t) => {
-    const { engine, cleanup } = makeEngine();
-    t.after(cleanup);
-    const { code, expiresAt } = engine.getOwnerClaimCode();
-    assert.match(code, /^[0-9A-F]{8}$/);
-    assert.ok(expiresAt > Date.now());
-    // lấy lại → cùng code (chưa hết hạn)
-    assert.equal(engine.getOwnerClaimCode().code, code);
-    assert.equal(engine.verifyOwnerClaimCode('SAI-CODE'), false);
-    assert.equal(engine.verifyOwnerClaimCode(code.toLowerCase()), true, 'case-insensitive');
-    // one-time: dùng rồi là hết
-    assert.equal(engine.verifyOwnerClaimCode(code), false);
-    // code mới phải khác
-    assert.notEqual(engine.getOwnerClaimCode().code, code);
-});
-
 test('captureBotReply cắt context tại reply của bot', (t) => {
     const { engine, cleanup } = makeEngine();
     t.after(cleanup);

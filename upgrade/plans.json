@@ -55,13 +55,14 @@
   ],
   "planFeatures": {
     "personal": [
-      "Mở khoá điều khiển nâng cao",
-      "Xem dữ liệu group/member/log",
-      "Ưu tiên cập nhật tính năng mới",
+      "Thao tác nhiều group, hàng loạt và All",
+      "Xem toàn bộ dữ liệu group/member/log",
+      "Tặng 30 ngày Pro khi cài lần đầu",
       "Dùng cho 1 owner account"
     ],
     "team": [
-      "Dành cho nhiều thành viên",
+      "Thao tác nhiều bot cùng lúc",
+      "Bao gồm toàn bộ quyền Pro",
       "Ưu tiên hỗ trợ nhanh hơn",
       "Phù hợp team growth/ops"
     ],

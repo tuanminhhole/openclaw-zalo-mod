@@ -16,7 +16,7 @@
  *   listZaloGroupMembers API, diff with previous snapshot.
  *
  * @author tuanminhhole
- * @version 2.17.1
+ * @version 2.17.2
  */
 
 import fs from 'node:fs/promises';
@@ -4686,8 +4686,14 @@ Quy tắc:
             // Docker needs the service to listen on the container interface so the
             // host's 127.0.0.1:<port>:<port> mapping can reach it. Outside Docker,
             // keep the safer localhost-only default.
-            const isManagedContainerBind = !pluginCfg.dashboardHost && existsSync('/.dockerenv');
+            const configuredDashboardHost = String(pluginCfg.dashboardHost || '').trim().toLowerCase();
+            // OpenClaw applies the manifest's 127.0.0.1 default before plugin
+            // startup, so an unset host arrives here as "127.0.0.1". Inside a
+            // container that value must still be treated as the managed default.
+            const isManagedContainerBind = existsSync('/.dockerenv')
+                && (!configuredDashboardHost || configuredDashboardHost === '127.0.0.1' || configuredDashboardHost === 'localhost');
             const host = String(pluginCfg.dashboardHost || (isManagedContainerBind ? '0.0.0.0' : '127.0.0.1'));
+            const bindHost = isManagedContainerBind ? '0.0.0.0' : host;
             const port = Number(pluginCfg.dashboardPort || 19790);
             const configuredToken = String(pluginCfg.dashboardToken || cfg?.gateway?.auth?.token || '').trim();
             const token = configuredToken || crypto.randomBytes(24).toString('base64url');
@@ -4812,8 +4818,8 @@ Quy tắc:
                 }
             });
 
-            server.listen(port, host, () => {
-                logger.info(`[openclaw-zalo-mod] dashboard listening at http://${host}:${port}/dashboard`);
+            server.listen(port, bindHost, () => {
+                logger.info(`[openclaw-zalo-mod] dashboard listening at http://${bindHost}:${port}/dashboard`);
             });
             globalThis[key] = { server, port, host };
         }

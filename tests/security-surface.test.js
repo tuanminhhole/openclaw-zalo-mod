@@ -15,7 +15,8 @@ test('published runtime has no environment-secret or browser-cookie access', () 
 test('dashboard is localhost-first and remote binding requires a strong token', () => {
   assert.match(source, /isManagedContainerBind/);
   assert.match(source, /existsSync\('\/\.dockerenv'\)/);
-  assert.match(source, /isManagedContainerBind \? '0\.0\.0\.0' : '127\.0\.0\.1'/);
+  assert.match(source, /configuredDashboardHost === '127\.0\.0\.1'/);
+  assert.match(source, /bindHost = isManagedContainerBind \? '0\.0\.0\.0' : host/);
   assert.match(source, /configuredToken\.length < 24/);
   assert.equal(manifest.configSchema.properties.dashboardHost.default, '127.0.0.1');
   assert.equal(manifest.configSchema.properties.dashboardToken.minLength, 24);

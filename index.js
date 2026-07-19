@@ -16,7 +16,7 @@
  *   listZaloGroupMembers API, diff with previous snapshot.
  *
  * @author tuanminhhole
- * @version 2.17.3
+ * @version 2.17.4
  */
 
 import fs from 'node:fs/promises';
@@ -4853,11 +4853,12 @@ Quy tắc:
             return '';
         };
         const replyMentions = new ReplyMentionCorrelator();
+        let handleZaloDispatch = null;
         // ZaloConnect phát mọi tin group đã qua access gate nhưng CHƯA qua mention
         // gate. Capture local tại đây để Silent vẫn có ngữ cảnh khi user tag bot
         // ở tin sau; callback này không dispatch/model nên luôn zero-token.
         try { globalThis.__zaloModInboundUnsubscribe?.(); } catch { }
-        globalThis.__zaloModInboundUnsubscribe = zEngine.bridge.onInbound((event) => {
+        globalThis.__zaloModInboundUnsubscribe = zEngine.bridge.onInbound(async (event) => {
             if (!event?.isGroup) return;
             zEngine.captureInbound({
                 accountId: event.accountId,
@@ -4870,6 +4871,34 @@ Quy tắc:
                 timestamp: event.timestamp,
                 rawType: event.rawType,
                 quote: event.quote,
+            });
+            // Bridge contract v3 lets Zalo Mod claim slash commands before
+            // Zalo Connect's silent/mention gate. This keeps commands zero-token
+            // and prevents a second agent reply. Older bridge versions keep the
+            // legacy before_dispatch path without risking duplicate execution.
+            const bridgeVersion = Number(globalThis.__zaloConnectBridgeService?.version || 0);
+            if (bridgeVersion < 3 || typeof handleZaloDispatch !== 'function') return;
+            if (!/(?:^|\s)\/[a-z][a-z0-9-]*/i.test(String(event.text || ''))) return;
+            return handleZaloDispatch({
+                body: event.text,
+                content: event.text,
+                messageId: event.messageId,
+                senderId: event.senderId,
+                senderName: event.senderName,
+                conversationId: event.conversationId,
+                mentions: (event.mentions || []).map((mention) => ({
+                    uid: mention.userId || mention.uid,
+                    name: mention.displayName || mention.name || '',
+                })),
+                quote: event.quote,
+                timestamp: event.timestamp,
+            }, {
+                channelId: 'zalo-connect',
+                channel: 'zalo-connect',
+                accountId: event.accountId || 'default',
+                conversationId: event.conversationId || `group:${event.groupId}`,
+                senderId: event.senderId,
+                isGroup: true,
             });
         });
         zEngine.bridge.getStatus('default').then((s) => {
@@ -4953,7 +4982,7 @@ Quy tắc:
         });
 
         // ── Event: before_dispatch (legacy command/moderation hook) ──
-        api.on('before_dispatch', async (event, ctx) => {
+        handleZaloDispatch = async (event, ctx) => {
             // 1. Chỉ bắt event từ OpenClaw Zalo Connect
             if (pluginCfg.debug === true) { console.log('[ZALO-MOD-DEBUG] ctx:', JSON.stringify(ctx || {})); console.log('[ZALO-MOD-DEBUG] body:', event?.body); }
             if (!isZaloChannel(ctx)) return;
@@ -5636,7 +5665,7 @@ Device ID: ${result.deviceId}`);
 
             // Non-mention, non-slash, non-spam, non-silent → let LLM decide
             return;
-        }, { priority: 300 }); // priority 300 = runs before relay plugin (200)
+        }; // registered below with priority 300, before relay plugin (200)
 
         // ── Fallback: before_model_resolve + before_agent_reply ─────────────
         // OpenClaw v2026.5.x: runtime plugins cannot register gateway-level hooks.
@@ -5698,6 +5727,7 @@ Device ID: ${result.deviceId}`);
             logger.info('[openclaw-zalo-mod] [OWNER-FALLBACK] im owner from ' + sId + ' sKey=' + sKey);
             _adminClaims.set(sKey, { senderId: sId, code: suppliedCode, ts: Date.now() });
         });
+        api.on('before_dispatch', handleZaloDispatch, { priority: 300 });
 
         api.on('before_agent_reply', async (event, ctx) => {
             if (!isZaloChannel(ctx)) return;

@@ -140,13 +140,16 @@ export function createZaloConnectBridge(adapter, opts = {}) {
     let groupUnsub = null;
 
     async function dispatchSafe(handlers, event, kind) {
+        let handled = false;
         for (const h of handlers) {
             try {
-                await h(event);
+                const outcome = await h(event);
+                if (outcome === true || outcome?.handled === true) handled = true;
             } catch (e) {
                 logger.warn?.(`[zalo-mod] bridge ${kind} handler error: ${e.message}`);
             }
         }
+        return handled;
     }
 
     return {
@@ -198,7 +201,8 @@ export function createZaloConnectBridge(adapter, opts = {}) {
             if (!inboundUnsub && adapter.subscribeInbound) {
                 inboundUnsub = adapter.subscribeInbound(async (raw) => {
                     const ev = raw.accountId && raw.messageId ? raw : normalizeInboundEvent(raw);
-                    if (ev) await dispatchSafe(inboundHandlers, ev, 'inbound');
+                    if (ev) return dispatchSafe(inboundHandlers, ev, 'inbound');
+                    return false;
                 });
             }
             return () => {

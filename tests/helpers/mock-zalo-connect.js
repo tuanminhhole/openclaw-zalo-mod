@@ -64,7 +64,8 @@ export class MockZaloConnectAdapter {
 
     /** Test helper: giả lập một tin nhắn đến (đã normalized hoặc raw). */
     async emitInbound(event) {
-        if (this._inboundCb) await this._inboundCb(event);
+        if (this._inboundCb) return this._inboundCb(event);
+        return false;
     }
 
     async emitGroupEvent(event) {

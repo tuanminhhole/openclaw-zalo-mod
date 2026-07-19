@@ -86,6 +86,15 @@ test('handler lỗi không giết dispatcher (các handler khác vẫn chạy)',
     assert.equal(warned.length, 1);
 });
 
+test('onInbound truyền handled ngược về Zalo Connect để chặn mention/model gate', async () => {
+    const adapter = new MockZaloConnectAdapter();
+    const bridge = createZaloConnectBridge(adapter, { logger: { warn() {} } });
+    bridge.onInbound(async (event) => event.text.startsWith('/bot-') ? { handled: true } : undefined);
+
+    assert.equal(await adapter.emitInbound(makeInbound({ text: '/bot-noi-quy' })), true);
+    assert.equal(await adapter.emitInbound(makeInbound({ text: 'alo' })), false);
+});
+
 test('normalizeInboundEvent map đủ trường từ before_dispatch shape', () => {
     const ev = normalizeInboundEvent({
         ctx: { accountId: 'acc1', conversationId: 'group-77', senderId: 'uid-A', isGroup: true },

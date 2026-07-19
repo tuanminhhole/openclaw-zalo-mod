@@ -4,7 +4,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![OpenClaw Plugin](https://img.shields.io/badge/OpenClaw-Plugin-blue.svg)](https://openclaw.ai)
-[![Version](https://img.shields.io/badge/version-2.17.0-green.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.17.1-green.svg)](./CHANGELOG.md)
 
 **[🇺🇸 English](./README.md)**
 
@@ -100,7 +100,7 @@ The published package is intentionally auditable and ships readable source code.
 - **Zalo access:** uses the locally installed OpenClaw Zalo Connect bridge. Zalo Mod does not collect Zalo login cookies or create a second Zalo session.
 - **License service:** sends the random installation ID and license/order state only to `https://zalo-mod-server.monkeytech.io.vn` to issue the 30-day trial, activate purchases, and refresh signed entitlements. It does not send hostname, hardware identifiers, browser cookies, chat history, or Zalo credentials.
 - **AI summaries:** only when a summary feature is used, the relevant text is sent to the 9Router/OpenAI-compatible endpoint already configured by the OpenClaw owner. No hidden endpoint is used.
-- **Dashboard:** listens on `127.0.0.1` by default. A non-loopback `dashboardHost` is rejected unless an explicit `dashboardToken` of at least 24 characters is configured; remote access must include that token.
+- **Dashboard:** listens on `127.0.0.1` by default. In Docker it listens on the container interface so a host-side `127.0.0.1:PORT:PORT` mapping can reach it; OpenClaw Setup creates that localhost-only mapping automatically. An explicitly configured non-loopback `dashboardHost` still requires a `dashboardToken` of at least 24 characters.
 - **Removed scope:** this package contains no Facebook crawler and never reads, stores, or forwards Facebook/browser cookies.
 - **Telemetry:** the plugin has no analytics or background telemetry.
 

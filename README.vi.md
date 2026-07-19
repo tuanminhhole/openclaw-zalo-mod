@@ -4,7 +4,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![OpenClaw Plugin](https://img.shields.io/badge/OpenClaw-Plugin-blue.svg)](https://openclaw.ai)
-[![Version](https://img.shields.io/badge/version-2.17.0-green.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.17.1-green.svg)](./CHANGELOG.md)
 
 **[🇺🇸 English](./README.md)**
 
@@ -100,7 +100,7 @@ Gói phát hành dùng mã nguồn rõ để người dùng và ClawHub có th�
 - **Kết nối Zalo:** dùng bridge của OpenClaw Zalo Connect đã cài trên cùng máy. Zalo Mod không thu thập cookie đăng nhập Zalo và không tạo phiên Zalo thứ hai.
 - **Máy chủ bản quyền:** chỉ gửi mã cài đặt ngẫu nhiên cùng trạng thái license/order tới `https://zalo-mod-server.monkeytech.io.vn` để cấp 30 ngày Pro, kích hoạt đơn hàng và làm mới entitlement có chữ ký. Không gửi hostname, thông tin phần cứng, cookie trình duyệt, lịch sử chat hay thông tin đăng nhập Zalo.
 - **Tóm tắt AI:** chỉ khi người dùng bật/chạy tính năng tóm tắt, phần text liên quan mới được gửi tới endpoint tương thích OpenAI/9Router mà chính Owner đã cấu hình trong OpenClaw; plugin không dùng endpoint bí mật khác.
-- **Dashboard:** mặc định chỉ nghe tại `127.0.0.1`. Nếu cấu hình host ngoài localhost, plugin từ chối khởi động dashboard nếu chưa có `dashboardToken` dài tối thiểu 24 ký tự; truy cập từ xa phải kèm token này.
+- **Dashboard:** mặc định chỉ nghe tại `127.0.0.1`. Trong Docker, plugin nghe trên interface nội bộ của container để ánh xạ `127.0.0.1:PORT:PORT` phía máy chủ truy cập được; OpenClaw Setup tự tạo ánh xạ chỉ-localhost này. Nếu tự cấu hình `dashboardHost` ngoài localhost, plugin vẫn yêu cầu `dashboardToken` dài tối thiểu 24 ký tự.
 - **Đã bỏ khỏi phạm vi:** gói không chứa Facebook Crawler và không đọc, lưu hay chuyển tiếp cookie Facebook/cookie trình duyệt.
 - **Telemetry:** plugin không có analytics hoặc telemetry nền.
 

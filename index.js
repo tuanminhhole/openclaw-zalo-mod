@@ -16,7 +16,7 @@
  *   listZaloGroupMembers API, diff with previous snapshot.
  *
  * @author tuanminhhole
- * @version 2.17.0
+ * @version 2.17.1
  */
 
 import fs from 'node:fs/promises';
@@ -4683,12 +4683,16 @@ Quy tắc:
 
         function startDashboardServer() {
             if (pluginCfg.dashboardEnabled === false) return;
-            const host = String(pluginCfg.dashboardHost || '127.0.0.1');
+            // Docker needs the service to listen on the container interface so the
+            // host's 127.0.0.1:<port>:<port> mapping can reach it. Outside Docker,
+            // keep the safer localhost-only default.
+            const isManagedContainerBind = !pluginCfg.dashboardHost && existsSync('/.dockerenv');
+            const host = String(pluginCfg.dashboardHost || (isManagedContainerBind ? '0.0.0.0' : '127.0.0.1'));
             const port = Number(pluginCfg.dashboardPort || 19790);
             const configuredToken = String(pluginCfg.dashboardToken || cfg?.gateway?.auth?.token || '').trim();
             const token = configuredToken || crypto.randomBytes(24).toString('base64url');
             const isLoopback = ['127.0.0.1', '::1', 'localhost'].includes(host.toLowerCase());
-            if (!isLoopback && configuredToken.length < 24) {
+            if (!isLoopback && !isManagedContainerBind && configuredToken.length < 24) {
                 logger.error('[openclaw-zalo-mod] dashboard disabled: non-loopback dashboardHost requires dashboardToken with at least 24 characters');
                 return;
             }
@@ -4712,7 +4716,7 @@ Quy tắc:
                     }
                     const url = new URL(req.url || '/', `http://${host}:${port}`);
                     if (req.method === 'GET' && (url.pathname === '/' || url.pathname === '/dashboard')) {
-                        if (!isLoopback && url.searchParams.get('token') !== token) {
+                        if (!isLoopback && !isManagedContainerBind && url.searchParams.get('token') !== token) {
                             sendDashboardJson(res, 401, { ok: false, error: 'Dashboard token required' });
                             return;
                         }

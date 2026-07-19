@@ -1,5 +1,7 @@
 node_modules/
+*.tgz
 *.log
+reports/
 index.original.js
 .DS_Store
 .env

@@ -1,6 +1,6 @@
 {
   "name": "openclaw-zalo-mod",
-  "version": "2.16.3",
+  "version": "2.17.0",
   "description": "Zero-token Zalo group moderation plugin for OpenClaw — slash commands, anti-spam, warn system, and memory integration.",
   "type": "module",
   "main": "index.js",
@@ -17,9 +17,7 @@
     "dashboard.css",
     "dashboard.js",
     "logo.png",
-    "upgrade/flow.js",
     "upgrade/plans.json",
-    "upgrade/SKILL.md",
     "bvbank.jpg",
     "LICENSE"
   ],
@@ -57,10 +55,19 @@
       "pluginApi": ">=2026.5.7",
       "minGatewayVersion": "2026.5.7"
     },
+    "install": {
+      "clawhubSpec": "tuanminhhole/openclaw-zalo-mod",
+      "defaultChoice": "clawhub",
+      "minHostVersion": ">=2026.5.7"
+    },
     "build": {
       "entry": "./index.js",
       "openclawVersion": "2026.5.7",
       "pluginSdkVersion": "2026.5.7"
+    },
+    "release": {
+      "publishToClawHub": true,
+      "publishToNpm": false
     }
   },
   "peerDependencies": {

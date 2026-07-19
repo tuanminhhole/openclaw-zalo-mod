@@ -1,4 +1,5 @@
 .agent/
+.claude/
 data/
 examples/
 .gitignore
@@ -7,3 +8,6 @@ examples/
 npm-debug.log*
 docs/
 docs_dev/
+index.original.js
+upgrade/flow.js
+upgrade/SKILL.md

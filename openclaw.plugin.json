@@ -2,7 +2,7 @@
   "id": "zalo-mod",
   "name": "OpenClaw Zalo Mod",
   "description": "Zero-token Zalo group moderation — slash commands, anti-spam, warn system, memory integration. Blocks LLM for non-mention messages.",
-  "version": "2.16.3",
+  "version": "2.17.0",
   "enabledByDefault": false,
   "activation": {
     "onStartup": true,
@@ -39,6 +39,36 @@
       "dashboardPort": {
         "type": "number",
         "description": "Dashboard port. Default: 19790"
+      },
+      "dashboardEnabled": {
+        "type": "boolean",
+        "description": "Enable the local management dashboard. Default: true"
+      },
+      "dashboardHost": {
+        "type": "string",
+        "default": "127.0.0.1",
+        "description": "Dashboard bind host. Defaults to localhost; non-loopback hosts require a strong dashboardToken."
+      },
+      "dashboardToken": {
+        "type": "string",
+        "minLength": 24,
+        "description": "Required when dashboardHost is not localhost. Keep this secret."
+      },
+      "licenseServerTimeoutMs": {
+        "type": "number",
+        "minimum": 1000,
+        "maximum": 60000,
+        "default": 10000,
+        "description": "Timeout for trial, activation and entitlement requests to the documented license service."
+      },
+      "smartRouteApiKey": {
+        "type": "string",
+        "description": "Optional 9Router/OpenAI-compatible API key override. Normally inherited from OpenClaw model provider configuration."
+      },
+      "debug": {
+        "type": "boolean",
+        "default": false,
+        "description": "Enable local debug logging. Message payload logging is disabled by default."
       }
     },
     "additionalProperties": true

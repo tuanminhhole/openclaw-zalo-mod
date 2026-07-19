@@ -4494,7 +4494,6 @@ textarea:focus {
 
 /* Responsive */
 @media (max-width: 860px) {
-  #fb-crawler .page-head { flex-direction: column; align-items: flex-start; }
   .util-2col { grid-template-columns: 1fr !important; }
   .util-card-head { flex-direction: column; }
   .util-head-actions { width: 100%; justify-content: flex-end; }

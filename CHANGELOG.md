@@ -1,3 +1,16 @@
+## [2.17.0] - 2026-07-19
+
+### Security
+- **ClawHub-auditable release:** publish readable source and document every local/network data flow so the installed artifact can be reviewed end to end.
+- **Narrowed plugin scope:** remove the unrelated Facebook crawler and all browser-cookie handling from Zalo Mod.
+- **Safer dashboard:** bind to localhost by default; exposing the dashboard on another interface now requires a strong explicit token.
+- **No hidden runtime inputs:** remove environment-variable credential reads, arbitrary upgrade-script paths, shell command construction, hostname/hardware fingerprinting, and the legacy local payment fallback.
+- **Signed access control:** verify trial and paid entitlement proofs against the persistent random installation ID before granting Pro/Team actions.
+
+### Changed
+- Declare ClawHub-first installation metadata and publish an exact, transparent ClawPack artifact.
+- Keep Free actions available per item, reserve bulk/multi-group actions for Pro, and reserve multi-bot actions for Team.
+
 ## [2.16.0] - 2026-07-19
 
 ### Added

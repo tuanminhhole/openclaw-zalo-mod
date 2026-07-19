@@ -4,7 +4,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![OpenClaw Plugin](https://img.shields.io/badge/OpenClaw-Plugin-blue.svg)](https://openclaw.ai)
-[![Version](https://img.shields.io/badge/version-2.16.3-green.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.17.0-green.svg)](./CHANGELOG.md)
 
 **[🇺🇸 English](./README.md)**
 
@@ -89,6 +89,20 @@ OpenClaw Zalo Connect là channel/runtime Zalo duy nhất trong production. Zalo
 không đăng nhập Zalo riêng, không patch private `dist`, và không sở hữu transport thứ hai.
 Kiến trúc kỹ thuật và bridge contract nằm trong thư mục nội bộ `docs_dev/`,
 được Git bỏ qua và không phát hành công khai.
+
+---
+
+## 🔐 Dữ liệu & bảo mật
+
+Gói phát hành dùng mã nguồn rõ để người dùng và ClawHub có thể kiểm tra đầy đủ.
+
+- **Dữ liệu local:** chỉ đọc cấu hình OpenClaw và dữ liệu Zalo Mod trong project; chỉ ghi thiết lập plugin, audit, memory/lịch sử và một mã cài đặt ngẫu nhiên 16 ký tự được lưu bền vững.
+- **Kết nối Zalo:** dùng bridge của OpenClaw Zalo Connect đã cài trên cùng máy. Zalo Mod không thu thập cookie đăng nhập Zalo và không tạo phiên Zalo thứ hai.
+- **Máy chủ bản quyền:** chỉ gửi mã cài đặt ngẫu nhiên cùng trạng thái license/order tới `https://zalo-mod-server.monkeytech.io.vn` để cấp 30 ngày Pro, kích hoạt đơn hàng và làm mới entitlement có chữ ký. Không gửi hostname, thông tin phần cứng, cookie trình duyệt, lịch sử chat hay thông tin đăng nhập Zalo.
+- **Tóm tắt AI:** chỉ khi người dùng bật/chạy tính năng tóm tắt, phần text liên quan mới được gửi tới endpoint tương thích OpenAI/9Router mà chính Owner đã cấu hình trong OpenClaw; plugin không dùng endpoint bí mật khác.
+- **Dashboard:** mặc định chỉ nghe tại `127.0.0.1`. Nếu cấu hình host ngoài localhost, plugin từ chối khởi động dashboard nếu chưa có `dashboardToken` dài tối thiểu 24 ký tự; truy cập từ xa phải kèm token này.
+- **Đã bỏ khỏi phạm vi:** gói không chứa Facebook Crawler và không đọc, lưu hay chuyển tiếp cookie Facebook/cookie trình duyệt.
+- **Telemetry:** plugin không có analytics hoặc telemetry nền.
 
 ---
 

@@ -1,3 +1,14 @@
+## [2.17.5] - 2026-07-21
+
+### Fixed
+- **Báo cáo cuối ngày không còn rỗng**: tin nhắn group được ghi vào lịch sử chat ngay tại luồng `onInbound`. Trên OpenClaw v2026.5.x, runtime plugin không nhận `before_dispatch` — nơi duy nhất trước đây gọi ghi lịch sử — nên nhóm đang follow báo cáo "0 tin nhắn" dù có chat.
+- **Số member chờ duyệt không còn nhảy về 0 sai**: `getGroupInfo` dạng batch thường bỏ `pendingApprove` (Zalo chỉ trả cho admin), nên không còn ghi đè số đã biết bằng 0.
+- **Modal chi tiết group**: nút gạt "Tự động báo cáo cuối ngày" không còn tự tắt lại sau khi bật Follow; nút Follow ở card nhóm mở đúng modal lịch báo cáo (kiểm tra trạng thái modal thật thay vì dò element ẩn còn sót trong DOM).
+
+### Changed
+- **Modal chi tiết group**: gộp thao tác lưu lịch báo cáo vào nút footer "Lưu" (bỏ nút "Lưu lịch báo cáo" riêng cho gọn); nút "Xem nhật ký" đổi sang kiểu outline-primary theo design system + thêm icon.
+- **Bảng Nhóm**: căn trái cột Group (tên cột, tên nhóm, ID) cho dễ đọc.
+
 ## [2.17.0] - 2026-07-19
 
 ### Security

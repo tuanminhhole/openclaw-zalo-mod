@@ -2523,8 +2523,14 @@ Quy tắc:
             for (const gid of targets) {
                 const time = normReportTime(store.getSetting(gid, 'reportTime', '23:55'));
                 if (now < time) continue;             // chưa tới giờ của nhóm này
-                if (byGroup[gid] === today) continue; // nhóm này đã báo cáo hôm nay
-                byGroup[gid] = today;
+                // Guard chống lặp khoá theo (NGÀY + GIỜ đã hẹn), không chỉ theo ngày. Nhờ vậy khi
+                // owner ĐỔI giờ hẹn trong cùng ngày (vd 18:50 → 20:08) thì lịch mới vẫn chạy;
+                // lưu lại đúng giờ cũ thì không bắn trùng. Format cũ (chỉ lưu chuỗi ngày) coi như
+                // CHƯA chạy cho giờ hiện tại → tự chữa ngay trong ngày chuyển đổi.
+                const ran = byGroup[gid];
+                const ranThisSlot = ran && typeof ran === 'object' && ran.date === today && ran.time === time;
+                if (ranThisSlot) continue;            // nhóm này đã báo cáo đúng khung giờ này hôm nay
+                byGroup[gid] = { date: today, time };
                 await writePluginDataJson('report-state.json', { byGroup });
                 try {
                     await runOneGroupReport(gid, today);

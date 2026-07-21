@@ -392,6 +392,60 @@ const DEFAULT_HUONG_DAN = `📖 HƯỚNG DẪN SỬ DỤNG BOT {BOTNAME}
 ━━━━━━━━━━━━━━━━━━
 ❓ Cần hỗ trợ thêm → @{botName}`;
 
+const DEFAULT_WELCOME = `👋 Chào mừng {memberName} vào nhóm {groupName}!
+📋 {cmdPrefix}noi-quy để xem nội quy
+📖 {cmdPrefix}menu để xem lệnh
+💬 @{botName} nếu cần hỏi bot`;
+
+const DEFAULT_SPAM_WARNING = `⚠️ CẢNH BÁO SPAM
+{memberName} vui lòng KHÔNG gửi link quảng cáo / spam trong nhóm.
+Vi phạm tiếp theo có thể bị warn hoặc kick theo nội quy nhóm {groupName}.`;
+
+const DEFAULT_MAINTENANCE = `🔧 THÔNG BÁO BẢO TRÌ
+Bot {botName} đang tạm bảo trì để nâng cấp. Một số chức năng có thể gián đoạn trong ít phút.
+Mong cả nhà thông cảm — {botName} sẽ hoạt động lại sớm! 🙏`;
+
+// ── Template thống nhất ───────────────────────────────────────
+// Nội dung lưu file .txt trong dataDir; lệnh slash tuỳ chỉnh lưu ở config.json (templateCommands).
+// kind: 'command' = trả lời khi gõ lệnh; 'welcome' = gửi khi có thành viên mới; 'message' = gửi thủ công / gán lệnh.
+const TEMPLATE_DEFS = [
+    { key: 'noi-quy', label: 'Nội quy nhóm', def: DEFAULT_NOI_QUY, defCmd: 'noi-quy', kind: 'command' },
+    { key: 'huong-dan', label: 'Hướng dẫn dùng bot', def: DEFAULT_HUONG_DAN, defCmd: 'huong-dan', kind: 'command' },
+    { key: 'menu', label: 'Menu lệnh', def: DEFAULT_MENU, defCmd: 'menu', kind: 'command' },
+    { key: 'welcome', label: 'Chào mừng thành viên', def: DEFAULT_WELCOME, defCmd: '', kind: 'welcome' },
+    { key: 'spam-warning', label: 'Cảnh báo spam link', def: DEFAULT_SPAM_WARNING, defCmd: '', kind: 'message' },
+    { key: 'maintenance', label: 'Thông báo bảo trì bot', def: DEFAULT_MAINTENANCE, defCmd: '', kind: 'message' },
+];
+const TEMPLATE_KEYS = TEMPLATE_DEFS.map(d => d.key);
+function normCmdWord(s) {
+    return String(s || '').trim().toLowerCase().replace(/^\/+/, '').replace(/[^a-z0-9-]/g, '');
+}
+// Map template-key → command word (mặc định trộn với override owner lưu trong config).
+function templateCommandsFrom(pluginCfg) {
+    const saved = (pluginCfg && pluginCfg.templateCommands && typeof pluginCfg.templateCommands === 'object') ? pluginCfg.templateCommands : {};
+    const out = {};
+    for (const d of TEMPLATE_DEFS) {
+        const v = saved[d.key];
+        out[d.key] = normCmdWord(typeof v === 'string' ? v : d.defCmd);
+    }
+    return out;
+}
+// Từ 'command' đã strip prefix (vd '/quy') → template-key nếu owner có gán lệnh.
+function resolveTemplateKeyByCommand(command, pluginCfg) {
+    const kw = normCmdWord(command);
+    if (!kw) return null;
+    const map = templateCommandsFrom(pluginCfg);
+    for (const d of TEMPLATE_DEFS) {
+        if (map[d.key] && map[d.key] === kw) return d.key;
+    }
+    return null;
+}
+async function loadTemplateContent(dataDir, key) {
+    const d = TEMPLATE_DEFS.find(x => x.key === key);
+    if (!d) return '';
+    return await getTemplateContent(path.join(dataDir, `${key}.txt`), d.def);
+}
+
 async function getTemplateContent(filePath, defaultContent) {
     try {
         if (existsSync(filePath)) {
@@ -2416,7 +2470,9 @@ Quy tắc:
                 setTimeout(() => _G.welcomedDedup.delete(dedupKey(groupId, member.id)), 3600000);
                 try {
                     const botCfg = getBotConfig(groupId);
-                    await sendGroupMsg({ accountId: botCfg.profile }, groupId, buildWelcome(memberName, botCfg.botName, botCfg.cmdPrefix));
+                    const welcomeTpl = await loadTemplateContent(dataDir, 'welcome');
+                    const welcomeText = renderTemplate(welcomeTpl, { memberName, groupName: getGroupName(groupId), botName: botCfg.botName, cmdPrefix: botCfg.cmdPrefix });
+                    await sendGroupMsg({ accountId: botCfg.profile }, groupId, welcomeText);
                     await appendToMemoryFile(groupId, 'chat-highlights.md', `| ${nowShort()} | SYSTEM | Welcome: ${memberName} joined (detected by watcher) |`);
                     logger.info(`[openclaw-zalo-mod] [WATCHER] welcome sent for ${memberName} in group ${groupId}`);
                 } catch (e) {
@@ -2434,26 +2490,49 @@ Quy tắc:
         }
 
         // ── Scheduler báo cáo tự động cuối ngày (Phase 4) ──
-        async function runDailyReports(date, cfg) {
-            const targets = watchGroupIds.filter(gid => store.getSetting(gid, 'autoSummary', false));
+        // Chuẩn hoá "H:MM"/"HH:MM" → "HH:MM" (so sánh chuỗi theo giờ VN cần zero-pad).
+        function normReportTime(t) {
+            const m = /^(\d{1,2}):(\d{2})$/.exec(String(t || '').trim());
+            if (!m) return '23:55';
+            const hh = String(Math.min(23, Number(m[1]))).padStart(2, '0');
+            return `${hh}:${m[2]}`;
+        }
+        // Gửi báo cáo cuối ngày cho MỘT nhóm theo cấu hình gửi RIÊNG của nhóm đó.
+        async function runOneGroupReport(gid, date) {
+            const summary = await generateDailySummary(gid, date, { by: 'auto' });
+            const text = formatSummaryText(summary);
+            const prof = primaryProfile(groupNames[gid]?.profile);
+            const toGroup = store.getSetting(gid, 'reportDeliverThisGroup', true) === true;
+            const toOwner = store.getSetting(gid, 'reportDeliverOwnerDm', false) === true;
+            if (toGroup) await sendGroupMsg({ accountId: prof }, gid, text);
+            if (toOwner) {
+                const oid = getBotConfig(gid).ownerId || ownerId;
+                if (oid) await sendDmMsg({ accountId: prof }, oid, text);
+            }
+        }
+        // Quét mỗi phút: mỗi nhóm bật autoSummary có GIỜ RIÊNG. Tới giờ nhóm nào thì báo
+        // cáo nhóm đó — một lần/ngày/nhóm, chống lặp qua report-state.json (theo từng nhóm).
+        // Lưu ý: 'follow' chỉ bật ghi lịch sử chat; việc có báo cáo hay không do autoSummary.
+        async function runDueReports() {
+            const targets = watchGroupIds.filter(gid => store.getSetting(gid, 'autoSummary', false) === true);
             if (targets.length === 0) return;
-            logger.info(`[openclaw-zalo-mod] [REPORT] daily summary cho ${targets.length} group, ngày ${date}`);
+            const today = vnDateStr();
+            const now = vnTimeStr();
+            const raw = await readPluginDataJson('report-state.json');
+            const byGroup = (raw && typeof raw === 'object' && raw.byGroup && typeof raw.byGroup === 'object') ? raw.byGroup : {};
             for (const gid of targets) {
+                const time = normReportTime(store.getSetting(gid, 'reportTime', '23:55'));
+                if (now < time) continue;             // chưa tới giờ của nhóm này
+                if (byGroup[gid] === today) continue; // nhóm này đã báo cáo hôm nay
+                byGroup[gid] = today;
+                await writePluginDataJson('report-state.json', { byGroup });
                 try {
-                    const summary = await generateDailySummary(gid, date, { by: 'auto' });
-                    const text = formatSummaryText(summary);
-                    const prof = primaryProfile(groupNames[gid]?.profile);
-                    if (cfg.deliver?.thisGroup) {
-                        await sendGroupMsg({ accountId: prof }, gid, text);
-                    }
-                    if (cfg.deliver?.ownerDm) {
-                        const oid = getBotConfig(gid).ownerId || ownerId;
-                        if (oid) await sendDmMsg({ accountId: prof }, oid, text);
-                    }
-                    await new Promise(r => setTimeout(r, 2000)); // tránh rate limit
+                    await runOneGroupReport(gid, today);
+                    logger.info(`[openclaw-zalo-mod] [REPORT] đã gửi báo cáo nhóm ${gid} (giờ ${time}) ngày ${today}`);
                 } catch (e) {
                     logger.warn(`[openclaw-zalo-mod] [REPORT] lỗi group ${gid}: ${e.message}`);
                 }
+                await new Promise(r => setTimeout(r, 2000)); // tránh rate limit
             }
         }
         // ── Auto-duyệt member chờ (pendingAuto) — CHỈ khi bot là admin nhóm; lọc theo từ khoá tên ──
@@ -2521,7 +2600,7 @@ Quy tắc:
                                 const info = map[gid] || map[String(gid)];
                                 if (!info) continue;
                                 const pc = extractPendingCount(info);
-                                if (Number(store.getSetting(gid, 'pendingCount', 0)) !== pc) { store.setSetting(gid, 'pendingCount', pc); changed = true; }
+                                if (pc != null && Number(store.getSetting(gid, 'pendingCount', 0)) !== pc) { store.setSetting(gid, 'pendingCount', pc); changed = true; }
                                 const mc = Math.max(extractGroupMemberCount(info, 0), Number(store.getSetting(gid, 'memberCount', 0)) || 0);
                                 if (mc && Number(store.getSetting(gid, 'memberCount', 0)) !== mc) { store.setSetting(gid, 'memberCount', mc); changed = true; }
                             }
@@ -2561,16 +2640,8 @@ Quy tắc:
                     logger.warn(`[openclaw-zalo-mod] [pendingAuto] scan error: ${e.message}`);
                 }
                 try {
-                    const cfg = pluginCfg.summaryReport || {};
-                    if (!cfg.enabled) return;
-                    const today = vnDateStr();
-                    if (vnTimeStr() < String(cfg.time || '23:55')) return; // chưa tới giờ VN
-                    if (_R.lastRunDate === today) return;                  // đã chạy hôm nay (trong RAM)
-                    const st = await readPluginDataJson('report-state.json');
-                    if (st.lastRunDate === today) { _R.lastRunDate = today; return; } // đã chạy (qua restart)
-                    _R.lastRunDate = today;
-                    await writePluginDataJson('report-state.json', { lastRunDate: today });
-                    await runDailyReports(today, cfg);
+                    // Báo cáo cuối ngày: mỗi nhóm bật autoSummary tự chạy theo giờ RIÊNG của nó.
+                    await runDueReports();
                 } catch (e) {
                     logger.warn(`[openclaw-zalo-mod] [REPORT] scheduler error: ${e.message}`);
                 }
@@ -3423,11 +3494,16 @@ Quy tắc:
             return Number(cached || 0) || 0;
         }
         // Số member CHỜ DUYỆT — getGroupInfo trả `pendingApprove.uids` (KHÔNG phải field pendingCount).
+        // Trả null khi info KHÔNG chứa tín hiệu pending tin cậy: getGroupInfo dạng batch
+        // thường bỏ `pendingApprove` (Zalo chỉ trả cho admin / hay lược trong batch). Nếu ép
+        // về 0 sẽ GHI ĐÈ số đúng đã lấy từ getPendingGroupMembers → UI lúc đúng lúc 0 sai.
+        // Caller phải bỏ qua khi null để giữ giá trị đã biết trước đó.
         function extractPendingCount(info) {
             const u = info?.pendingApprove?.uids;
             if (Array.isArray(u)) return u.length;
             const n = Number(info?.pendingCount);
-            return Number.isFinite(n) && n >= 0 ? n : 0;
+            if (Number.isFinite(n) && n >= 0) return n;
+            return null; // không rõ — đừng ghi đè
         }
 
         function pendingListFromResult(pending) {
@@ -3665,6 +3741,10 @@ Quy tắc:
                         tracking: (settings.follow === true || settings.tracking === true),
                         follow: (settings.follow === true || settings.tracking === true),
                         pendingAuto: !!settings.pendingAuto,
+                        autoSummary: settings.autoSummary === true,
+                        reportTime: settings.reportTime || '23:55',
+                        reportDeliverThisGroup: settings.reportDeliverThisGroup !== false,
+                        reportDeliverOwnerDm: settings.reportDeliverOwnerDm === true,
                     },
                     customModes: getGroupCustomModes(groupId),
                     profile: info?.profile || 'default',
@@ -3775,16 +3855,19 @@ Quy tắc:
             }
 
             const bots = await getZaloBots();
-            const templates = {
-                'noi-quy': await getTemplateContent(path.join(dataDir, 'noi-quy.txt'), DEFAULT_NOI_QUY),
-                'huong-dan': await getTemplateContent(path.join(dataDir, 'huong-dan.txt'), DEFAULT_HUONG_DAN),
-                'menu': await getTemplateContent(path.join(dataDir, 'menu.txt'), DEFAULT_MENU)
-            };
+            const templates = {};
+            for (const d of TEMPLATE_DEFS) {
+                templates[d.key] = await loadTemplateContent(dataDir, d.key);
+            }
+            const templateMeta = TEMPLATE_DEFS.map(d => ({ key: d.key, label: d.label, kind: d.kind, defCmd: d.defCmd }));
+            const templateCommands = templateCommandsFrom(pluginCfg);
             return {
                 ok: true,
                 pluginVersion: currentVersion,
                 license: getLicenseStatus(),
                 bots,
+                templateMeta,
+                templateCommands,
                 bot: {
                     name: botName,
                     cmdPrefix,
@@ -4028,7 +4111,8 @@ Quy tắc:
                                 if (merged[gId].inviteLink) store.setSetting(gId, 'inviteLink', merged[gId].inviteLink);
 
                                 store.setSetting(gId, 'memberCount', extractGroupMemberCount(z, store.getSetting(gId, 'memberCount', 0)));
-                                store.setSetting(gId, 'pendingCount', extractPendingCount(z));
+                                const _pc = extractPendingCount(z);
+                                if (_pc != null) store.setSetting(gId, 'pendingCount', _pc);
 
                                 // Deprecated: Sequential getGroupInfo calls for groups with 0 members are too slow and cause timeouts.
                                 // Info is already populated by getGroupInfoInBatches.
@@ -4248,7 +4332,9 @@ Quy tắc:
                     notes: await getNotes(groupId),
                     memories: await getGroupMemories(groupId),
                     autoSummary: store.getSetting(groupId, 'autoSummary', false),
-                    reportConfig: pluginCfg.summaryReport || { enabled: false, time: '23:55', deliver: { thisGroup: true, ownerDm: false } },
+                    reportTime: store.getSetting(groupId, 'reportTime', '23:55'),
+                    reportDeliverThisGroup: store.getSetting(groupId, 'reportDeliverThisGroup', true),
+                    reportDeliverOwnerDm: store.getSetting(groupId, 'reportDeliverOwnerDm', false),
                 };
             }
             if (action === 'generate-summary') {
@@ -4311,16 +4397,27 @@ Quy tắc:
                 }
                 return { permissions: clean };
             }
-            if (action === 'save-report-config') {
-                const cfg = payload.config || {};
-                const clean = {
-                    enabled: !!cfg.enabled,
-                    time: /^\d{2}:\d{2}$/.test(cfg.time) ? cfg.time : '23:55',
-                    deliver: { thisGroup: !!cfg.deliver?.thisGroup, ownerDm: !!cfg.deliver?.ownerDm },
-                };
-                await savePluginConfig({ summaryReport: clean });
-                pluginCfg.summaryReport = clean;
-                return { config: clean };
+            if (action === 'save-report-schedule') {
+                // Cấu hình lịch báo cáo THEO NHÓM: áp cho 1/nhiều/tất cả nhóm được chọn.
+                const rawIds = Array.isArray(payload.groupIds) ? payload.groupIds.map(String).map(s => s.trim()).filter(Boolean) : [];
+                if (!rawIds.length) throw new Error('Chọn ít nhất một nhóm');
+                const enabled = !!payload.enabled;
+                const time = /^\d{1,2}:\d{2}$/.test(String(payload.time || '')) ? normReportTime(payload.time) : '23:55';
+                const toGroup = payload.deliverThisGroup !== false; // mặc định bật
+                const toOwner = !!payload.deliverOwnerDm;
+                // Fan-out ra MỌI ID cùng nhóm (đa bot → mỗi bot 1 ID) cho từng group đã chọn.
+                const ids = new Set();
+                for (const gid of rawIds) for (const id of siblingGroupIds(gid)) ids.add(id);
+                for (const id of ids) {
+                    store.setSetting(id, 'autoSummary', enabled);
+                    store.setSetting(id, 'reportTime', time);
+                    store.setSetting(id, 'reportDeliverThisGroup', toGroup);
+                    store.setSetting(id, 'reportDeliverOwnerDm', toOwner);
+                    // Báo cáo cuối ngày cần lịch sử chat → bật auto-report thì bật luôn follow/tracking.
+                    if (enabled) { store.setSetting(id, 'follow', true); store.setSetting(id, 'tracking', true); }
+                }
+                await store.saveSettings();
+                return { ok: true, count: ids.size, enabled, time, deliverThisGroup: toGroup, deliverOwnerDm: toOwner };
             }
 
             if (action === 'create-payment') {
@@ -4466,14 +4563,29 @@ Quy tắc:
             if (action === 'save-templates') {
                 const key = String(payload.key || '').trim();
                 const content = String(payload.content || '');
-                if (!['noi-quy', 'huong-dan', 'menu'].includes(key)) {
+                if (!TEMPLATE_KEYS.includes(key)) {
                     throw new Error('Template key không hợp lệ');
                 }
                 const filename = `${key}.txt`;
                 const filePath = path.join(dataDir, filename);
                 await fs.writeFile(filePath, content, 'utf8');
-                logger.info(`[openclaw-zalo-mod] template ${key} saved by dashboard`);
-                return { ok: true, key };
+                // Lệnh slash tuỳ chỉnh (tuỳ chọn) — lưu vào config.json để dispatcher tra động.
+                let command;
+                if (payload.command !== undefined) {
+                    command = normCmdWord(payload.command);
+                    // Chống trùng lệnh với template khác.
+                    const cur = templateCommandsFrom(pluginCfg);
+                    for (const k of Object.keys(cur)) {
+                        if (k !== key && command && cur[k] === command) {
+                            throw new Error(`Lệnh "${command}" đã dùng cho template khác`);
+                        }
+                    }
+                    const map = (pluginCfg.templateCommands && typeof pluginCfg.templateCommands === 'object') ? { ...pluginCfg.templateCommands } : {};
+                    map[key] = command;
+                    await savePluginConfig({ templateCommands: map });
+                }
+                logger.info(`[openclaw-zalo-mod] template ${key} saved by dashboard${command !== undefined ? ` (cmd="${command}")` : ''}`);
+                return { ok: true, key, command };
             }
 
             if (action === 'group-detail') {
@@ -4506,6 +4618,10 @@ Quy tắc:
                         tracking: (settings.follow === true || settings.tracking === true),
                         follow: (settings.follow === true || settings.tracking === true),
                         pendingAuto: !!settings.pendingAuto,
+                        autoSummary: settings.autoSummary === true,
+                        reportTime: settings.reportTime || '23:55',
+                        reportDeliverThisGroup: settings.reportDeliverThisGroup !== false,
+                        reportDeliverOwnerDm: settings.reportDeliverOwnerDm === true,
                     },
                     customModes: getGroupCustomModes(groupId),
                     zcaInfo,
@@ -4872,6 +4988,26 @@ Quy tắc:
                 rawType: event.rawType,
                 quote: event.quote,
             });
+            // Ghi lịch sử chat (.jsonl mà báo cáo cuối ngày đọc) NGAY tại onInbound.
+            // Trên OpenClaw v2026.5.x, runtime plugin KHÔNG nhận before_dispatch nên
+            // handleZaloDispatch (nơi duy nhất từng gọi appendChatLog) không chạy cho tin
+            // thường → báo cáo luôn 0 tin. Đây là path fire cho MỌI tin group, nên ghi ở
+            // đây mới đảm bảo nhóm follow có dữ liệu. appendChatLog tự dedup → an toàn kể
+            // cả khi before_dispatch cũng fire ở deployment khác.
+            (async () => {
+                try {
+                    const gid = plainGroupId(event.groupId, event.conversationId);
+                    const text = String(event.text || '').trim();
+                    if (!gid || !text || text.startsWith('/') || !isFollowOn(gid)) return;
+                    let name = String(event.senderName || '').trim();
+                    if (!name || name === String(event.senderId)) {
+                        name = (await resolveUserName(event.accountId, event.senderId)) || name;
+                    }
+                    await appendChatLog(gid, name, event.text, event.senderId);
+                } catch (e) {
+                    logger.warn('[openclaw-zalo-mod] inbound chat-log failed: ' + e.message);
+                }
+            })();
             // Bridge contract v3 lets Zalo Mod claim slash commands before
             // Zalo Connect's silent/mention gate. This keeps commands zero-token
             // and prevents a second agent reply. Older bridge versions keep the
@@ -5287,6 +5423,25 @@ Quy tắc:
                         cmdPrefix
                     });
                     await sendGroupMsg(ctx, groupId, text);
+                    return { handled: true };
+                }
+
+                // Lệnh template tuỳ chỉnh (owner đặt trong mục "Template"): gửi nội dung template tương ứng.
+                // Các lệnh mặc định noi-quy/menu/huong-dan đã xử lý ở trên; đây bắt lệnh do owner tự đặt
+                // cho bất kỳ template nào (kể cả welcome/spam-warning/maintenance).
+                const boundTplKey = resolveTemplateKeyByCommand(command, pluginCfg);
+                if (boundTplKey) {
+                    const tpl = await loadTemplateContent(dataDir, boundTplKey);
+                    const vars = { groupName: getGroupName(groupId), botName, cmdPrefix, memberName: senderName };
+                    if (boundTplKey === 'menu') {
+                        const customModesText = buildCustomModesText(groupId, cmdPrefix);
+                        vars.customModes = customModesText;
+                        let text = renderTemplate(tpl, vars);
+                        if (customModesText && !tpl.includes('{customModes}')) text += '\n\n' + customModesText;
+                        await sendGroupMsg(ctx, groupId, text);
+                    } else {
+                        await sendGroupMsg(ctx, groupId, renderTemplate(tpl, vars));
+                    }
                     return { handled: true };
                 }
 

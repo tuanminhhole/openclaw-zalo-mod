@@ -908,8 +908,8 @@
       <section class="section" id="templates">
         <div class="page-head">
           <div>
-            <h2>Quản lý Lệnh & Rules</h2>
-            <p>Tùy chỉnh nội dung phản hồi của bot cho các lệnh slash commands.</p>
+            <h2>Quản lý Template</h2>
+            <p>Tùy chỉnh nội dung & gán lệnh slash cho từng template: nội quy, hướng dẫn, menu, welcome, cảnh báo spam, bảo trì.</p>
           </div>
         </div>
         
@@ -937,6 +937,27 @@
                 <span>menu.txt</span>
               </div>
             </div>
+            <div class="template-item" data-template-key="welcome">
+              <div class="template-item-icon">👋</div>
+              <div class="template-item-meta">
+                <strong>Chào mừng thành viên</strong>
+                <span>welcome.txt</span>
+              </div>
+            </div>
+            <div class="template-item" data-template-key="spam-warning">
+              <div class="template-item-icon">⚠️</div>
+              <div class="template-item-meta">
+                <strong>Cảnh báo spam link</strong>
+                <span>spam-warning.txt</span>
+              </div>
+            </div>
+            <div class="template-item" data-template-key="maintenance">
+              <div class="template-item-icon">🔧</div>
+              <div class="template-item-meta">
+                <strong>Thông báo bảo trì bot</strong>
+                <span>maintenance.txt</span>
+              </div>
+            </div>
           </div>
           
           <!-- Cột bên phải: Editor -->
@@ -944,6 +965,12 @@
             <div class="editor-head">
               <h4 id="current-template-title">Nội quy nhóm</h4>
               <span class="file-badge" id="current-template-file">noi-quy.txt</span>
+            </div>
+            <div class="editor-cmd" id="template-cmd-row" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 12px;">
+              <label for="template-command" style="font-size:13px;color:var(--muted);white-space:nowrap;font-weight:600;">Lệnh slash:</label>
+              <span id="template-command-prefix" style="font-family:ui-monospace,monospace;color:var(--muted);"></span>
+              <input type="text" id="template-command" placeholder="vd: noi-quy — để trống = không gán lệnh" style="flex:1;min-width:160px;padding:7px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-family:ui-monospace,monospace;" />
+              <span id="template-command-hint" style="font-size:12px;color:var(--muted);flex-basis:100%;"></span>
             </div>
             <div class="editor-body">
               <textarea id="template-textarea" spellcheck="false" placeholder="Nhập nội dung template..."></textarea>
@@ -957,6 +984,7 @@
                 <span class="var-tag" title="Tên bot" data-var="{botName}"><code>{botName}</code> - Tên bot</span>
                 <span class="var-tag" title="Tên bot viết hoa" data-var="{BOTNAME}"><code>{BOTNAME}</code> - Tên bot viết hoa</span>
                 <span class="var-tag" title="Prefix lệnh (ví dụ /williams-)" data-var="{cmdPrefix}"><code>{cmdPrefix}</code> - Prefix lệnh</span>
+                <span class="var-tag var-member-only" title="Tên thành viên (welcome / cảnh báo spam)" data-var="{memberName}" style="display: none;"><code>{memberName}</code> - Tên thành viên</span>
                 <span class="var-tag var-menu-only" title="Danh sách slash commands chế độ tính năng" data-var="{customModes}" style="display: none;"><code>{customModes}</code> - Chế độ tính năng</span>
               </div>
             </div>

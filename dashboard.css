@@ -812,6 +812,17 @@ main {
   border-color: var(--danger);
 }
 
+.btn.outline-primary {
+  color: var(--primary-strong);
+  background: var(--surface);
+  border-color: var(--primary);
+}
+
+.btn.outline-primary:hover {
+  background: var(--primary-soft);
+  border-color: var(--primary-strong);
+}
+
 .grid {
   display: grid;
   gap: 14px;
@@ -2236,14 +2247,22 @@ textarea:focus {
   border-color: rgba(220, 38, 38, .45);
 }
 
-#groups thead th:nth-child(1),
+/* Cột Group (tên cột + tên group + id) căn trái cho dễ đọc; các cột còn lại center. */
+#groups thead th:nth-child(1) {
+  text-align: left;
+}
+
 #groups thead th:nth-child(2),
 #groups thead th:nth-child(3),
 #groups thead th:nth-child(4) {
   text-align: center;
 }
 
-#groups tbody td:nth-child(1),
+#groups tbody td:nth-child(1) {
+  text-align: left;
+  vertical-align: middle;
+}
+
 #groups tbody td:nth-child(2),
 #groups tbody td:nth-child(3),
 #groups tbody td:nth-child(4) {
@@ -2253,10 +2272,10 @@ textarea:focus {
 
 #groups tbody td:nth-child(1) .group-title-line,
 #groups tbody td:nth-child(1) .group-meta {
-  justify-items: center;
-  justify-content: center;
-  text-align: center;
-  margin: 0 auto;
+  justify-items: start;
+  justify-content: flex-start;
+  text-align: left;
+  margin: 0;
 }
 
 #groups tbody td:nth-child(4) .feature-toggles,
@@ -3573,6 +3592,28 @@ textarea:focus {
   cursor: pointer;
   transition: all 0.15s ease;
   margin: 0;
+}
+
+/* Multi-select report dropdown: flat rows, no sticky blue box/focus ring */
+#journalRptSelectDropdown .custom-select-option-pill {
+  background: transparent;
+  border-color: transparent;
+  border-radius: 10px;
+}
+#journalRptSelectDropdown .custom-select-option-pill:hover {
+  background: var(--primary-soft);
+  border-color: transparent;
+}
+#journalRptSelectDropdown .custom-select-option-pill:focus,
+#journalRptSelectDropdown .custom-select-option-pill:focus-within,
+#journalRptSelectDropdown .custom-select-option-pill:active {
+  outline: none;
+  box-shadow: none;
+  border-color: transparent;
+}
+#journalRptSelectDropdown input[type="checkbox"]:focus,
+#journalRptSelectDropdown input[type="checkbox"]:focus-visible {
+  outline: none;
 }
 
 .custom-select-option-pill:hover {

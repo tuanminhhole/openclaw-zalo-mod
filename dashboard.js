@@ -324,7 +324,7 @@ function applyI18n() {
     ['Nhật ký', 'Journal'],
     ['Bạn bè', 'Friends'],
     ['Tin nhắn', 'Messages'],
-    ['Lệnh & Rules', 'Rules & Cmds'],
+    ['Template', 'Templates'],
     ['Phân quyền', 'Permissions'],
     ['CRM', 'CRM'],
     ['Khách hàng', 'Contacts'],
@@ -341,7 +341,7 @@ function applyI18n() {
     ['Nhật ký', 'Journal'],
     ['Bạn bè', 'Friends'],
     ['Tin nhắn', 'Messages'],
-    ['Lệnh & Rules', 'Rules & Cmds'],
+    ['Template', 'Templates'],
     ['Phân quyền', 'Permissions'],
     ['Khách hàng', 'Contacts'],
     ['Pipeline', 'Pipeline'],
@@ -498,8 +498,8 @@ function applyI18n() {
     setAllText('[data-i18n-period="month"]', [['/tháng', '/month']]);
 
   // --- Rules & Cmds Tab Translations ---
-  setText('#templates .page-head h2', 'Quản lý Lệnh & Rules', 'Manage Rules & Commands');
-  setText('#templates .page-head p', 'Tùy chỉnh nội dung phản hồi của bot cho các lệnh slash commands.', 'Customize bot response content for slash commands.');
+  setText('#templates .page-head h2', 'Quản lý Template', 'Manage Templates');
+  setText('#templates .page-head p', 'Tùy chỉnh nội dung & gán lệnh slash cho từng template.', 'Customize content & bind a slash command for each template.');
   setText('[data-template-key="noi-quy"] strong', 'Nội quy nhóm', 'Group Rules');
   setText('[data-template-key="huong-dan"] strong', 'Hướng dẫn dùng bot', 'Bot Manual');
   setText('[data-template-key="menu"] strong', 'Menu lệnh', 'Slash Commands Menu');
@@ -1625,11 +1625,9 @@ function renderGroups() {
               ${featureToggle(group, 'welcome', 'Welcome')}
               ${featureToggle(group, 'follow', 'Follow')}
               ${featureToggle(group, 'pendingAuto', uiText('Tự duyệt', 'Auto approve'))}
-              <button class="feature-toggle off" type="button" data-add-mode="${esc(group.groupId)}">${uiText('Thêm mode', 'Add mode')}</button>
             </div>
           </td>
           <td class="col-actions" data-label="${esc(uiText('Thao tác', 'Actions'))}">
-            ${renderGroupModePills(group)}
             <div class="icon-actions">
               <button class="icon-btn" type="button" data-scan-members="${esc(group.groupId)}" aria-label="${esc(uiText('Quét member', 'Scan members'))}" title="${esc(uiText('Quét member', 'Scan members'))}">
                 <svg viewBox="0 0 24 24" fill="none"><path d="M4 4h6M4 4v6M20 4h-6M20 4v6M4 20h6M4 20v-6M20 20h-6M20 20v-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M9.5 12a2.5 2.5 0 1 0 5 0 2.5 2.5 0 0 0-5 0Zm-3.5 7a6 6 0 0 1 12 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
@@ -2776,7 +2774,7 @@ function refreshDetailModal() {
   currentDetailPayload = buildLocalGroupDetail(currentDetailGroupId, currentDetailPayload?.pending || null);
   modalTitle.textContent = uiText('Chi tiết group', 'Group details');
   modalBody.innerHTML = groupDetailBody(currentDetailPayload);
-  modalConfirm.textContent = uiText('Đóng', 'Close');
+  modalConfirm.textContent = uiText('Lưu', 'Save');
   modalConfirm.classList.remove('danger');
   modalConfirm.classList.add('primary');
 }
@@ -2931,7 +2929,7 @@ function renderJournalBody() {
   const showDates = !!(js.groupId && d && (js.tab === 'summary' || js.tab === 'chat'));
   // Hàng 1: dropdown chọn nhóm + Tổng hợp lại. Hàng 2: tab ngày.
   const groupRow = `<div class="journal-group-row">
-    ${journalGroupSelectHtml()}
+    ${js.tab === 'config' ? journalReportGroupSelectHtml() : journalGroupSelectHtml()}
     ${showDates ? `<button type="button" class="btn" data-jgen="${d.date}" style="margin-left:auto">↻ ${uiText('Tổng hợp lại', 'Re-summarize')}</button>` : ''}
   </div>`;
   const dateRow = showDates ? `<div class="journal-daterow">${journalDateTabsHtml()}</div>` : '';
@@ -2943,7 +2941,7 @@ function renderJournalBody() {
     <nav class="card journal-vtabs" aria-label="${uiText('Mục nhật ký', 'Journal tabs')}">${tabMenu}</nav>
     <div class="card journal-card"><div class="journal-toolbar">${groupRow}${dateRow}</div><div class="journal-content">${content}</div></div>
   </div>`;
-  wireJournalGroupSelect();
+  if (js.tab === 'config') wireJournalReportGroupSelect(); else wireJournalGroupSelect();
 }
 async function renderJournal() {
   const section = document.getElementById('journal');
@@ -3055,27 +3053,79 @@ function wireSettingsRoot(root) {
   });
 }
 function journalConfigHtml(d) {
-  const c = d.reportConfig || {};
-  const dv = c.deliver || {};
   // Nút gạt bật/tắt hiện đại (checkbox ẩn + slider CSS)
   const toggle = (id, checked, label) => `<label class="journal-toggle-row"><span class="journal-toggle-label">${label}</span><span class="journal-switch"><input type="checkbox" id="${id}" ${checked ? 'checked' : ''}/><span class="journal-slider"></span></span></label>`;
   const SAVE_ICON = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M17 21v-8H7v8M7 3v5h7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   return `<div class="journal-config">
+    <div class="item-sub" style="margin-bottom:12px">${uiText('Cấu hình bên dưới áp cho (các) nhóm đang chọn ở ô chọn nhóm phía trên. Giờ báo cáo theo từng nhóm — chọn "Tất cả nhóm" để đặt cùng một giờ. "Follow" là chức năng riêng, chỉ để ghi lịch sử chat.', 'The config below applies to the group(s) selected in the picker above. Report time is per group — pick "All groups" to set one shared time. "Follow" is separate and only records chat history.')}</div>
     <div class="journal-config-block">
-      <div class="item-title">${uiText('Nhóm này', 'This group')}</div>
-      ${toggle('jcfgAuto', d.autoSummary, uiText('Tự động tổng hợp cuối ngày cho nhóm này', 'Auto end-of-day summary for this group'))}
-    </div>
-    <div class="journal-config-block">
-      <div class="item-title">${uiText('Lịch chung (áp cho mọi nhóm bật ở trên)', 'Global schedule')}</div>
-      ${toggle('jcfgEnabled', c.enabled, uiText('Kích hoạt lịch báo cáo', 'Enable schedule'))}
-      <div class="journal-time-row"><span class="journal-toggle-label">${uiText('Giờ chạy (VN)', 'Run time (VN)')}</span><input type="time" id="jcfgTime" class="journal-time-input" value="${esc(c.time || '23:55')}"/></div>
+      <div class="item-title">${uiText('Cấu hình báo cáo cuối ngày', 'End-of-day report config')}</div>
+      ${toggle('jcfgAuto', d.autoSummary, uiText('Tự động báo cáo cuối ngày', 'Auto end-of-day report'))}
+      <div class="journal-time-row"><span class="journal-toggle-label">${uiText('Giờ báo cáo (VN)', 'Report time (VN)')}</span><input type="time" id="jcfgTime" class="journal-time-input" value="${esc(d.reportTime || '23:55')}"/></div>
       <div class="item-title" style="margin-top:12px">${uiText('Gửi tới', 'Deliver to')}</div>
-      ${toggle('jcfgThisGroup', dv.thisGroup, uiText('Đăng vào chính nhóm', 'Post into the group'))}
-      ${toggle('jcfgOwnerDm', dv.ownerDm, uiText('DM cho owner bot', 'DM the bot owner'))}
+      ${toggle('jcfgThisGroup', d.reportDeliverThisGroup !== false, uiText('Đăng vào chính nhóm', 'Post into the group'))}
+      ${toggle('jcfgOwnerDm', d.reportDeliverOwnerDm === true, uiText('DM cho owner bot', 'DM the bot owner'))}
     </div>
-    <button type="button" class="btn primary journal-save-btn" data-jsave="1">${SAVE_ICON}<span>${uiText('Lưu cấu hình', 'Save config')}</span></button>
-    <div class="item-sub" style="margin-top:10px">${uiText('Lưu ý: phải bật CẢ "Kích hoạt lịch" (chung) LẪN "Tự động..." (từng nhóm) thì nhóm đó mới được báo cáo.', 'Note: enable both the global schedule and per-group auto.')}</div>
+    <button type="button" class="btn primary journal-save-btn" data-jsave="1">${SAVE_ICON}<span>${uiText('Lưu lịch báo cáo', 'Save report schedule')}</span></button>
   </div>`;
+}
+// Multi-select group dropdown for the report tab — reuses the .custom-select-* component
+// styling (same as the journal group picker) instead of a second bespoke dropdown.
+function journalReportGroupSelectHtml() {
+  const groups = (state && state.groups) || [];
+  const curGid = String(journalState.groupId || activeGroupId || (groups[0] && groups[0].groupId) || '');
+  const rows = groups.length
+    ? groups.map(g => {
+      const a = avatarMeta(g, g.name);
+      return `<label class="custom-select-option-pill jcfg-opt" style="cursor:pointer">
+        <input type="checkbox" class="jcfg-grp" value="${esc(g.groupId)}" ${String(g.groupId) === curGid ? 'checked' : ''} style="width:16px;height:16px;flex:none;accent-color:var(--primary)"/>
+        <div class="custom-select-avatar">${esc(a.initials)}</div>
+        <span class="custom-select-name">${esc(repairText(g.name))} ${getBotBadge(g.profile)}</span>
+        <span class="custom-select-badge">${g.memberCount} members</span>
+      </label>`;
+    }).join('')
+    : `<div class="item-sub" style="padding:10px">${uiText('Chưa có nhóm.', 'No groups.')}</div>`;
+  return `<div class="custom-select-container" id="journalRptSelectContainer">
+    <div class="custom-select-trigger" id="journalRptSelectTrigger">
+      <div class="custom-select-trigger-content">
+        <span class="custom-select-name" id="journalRptSelectLabel">${uiText('Chọn nhóm...', 'Select groups...')}</span>
+      </div>
+      <svg class="custom-select-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+    </div>
+    <div class="custom-select-dropdown" id="journalRptSelectDropdown">
+      <label class="custom-select-option-pill" style="cursor:pointer;font-weight:600;border-bottom:1px solid var(--border)">
+        <input type="checkbox" id="jcfgSelectAll" style="width:16px;height:16px;flex:none;accent-color:var(--primary)"/>
+        <span class="custom-select-name">${uiText('Tất cả nhóm', 'All groups')} (${groups.length})</span>
+      </label>
+      ${rows}
+    </div>
+  </div>`;
+}
+function updateRptSelectLabel() {
+  const label = document.getElementById('journalRptSelectLabel');
+  const boxes = [...document.querySelectorAll('#journalRptSelectDropdown .jcfg-grp')];
+  const checked = boxes.filter(b => b.checked);
+  const selectAll = document.getElementById('jcfgSelectAll');
+  if (selectAll) selectAll.checked = boxes.length > 0 && checked.length === boxes.length;
+  if (!label) return;
+  if (!checked.length) label.textContent = uiText('Chưa chọn nhóm', 'No groups selected');
+  else if (checked.length === boxes.length) label.textContent = uiText('Tất cả nhóm', 'All groups') + ` (${boxes.length})`;
+  else if (checked.length === 1) label.textContent = (checked[0].closest('.custom-select-option-pill')?.querySelector('.custom-select-name')?.textContent || '').trim() || ('1 ' + uiText('nhóm', 'group'));
+  else label.textContent = checked.length + uiText(' nhóm đã chọn', ' groups selected');
+}
+function wireJournalReportGroupSelect() {
+  const trigger = document.getElementById('journalRptSelectTrigger');
+  const container = document.getElementById('journalRptSelectContainer');
+  if (trigger && container) trigger.addEventListener('click', e => { e.stopPropagation(); container.classList.toggle('open'); });
+  const selectAll = document.getElementById('jcfgSelectAll');
+  if (selectAll) selectAll.addEventListener('change', () => {
+    document.querySelectorAll('#journalRptSelectDropdown .jcfg-grp').forEach(b => { b.checked = selectAll.checked; });
+    updateRptSelectLabel();
+  });
+  document.querySelectorAll('#journalRptSelectDropdown .jcfg-grp').forEach(b => b.addEventListener('change', updateRptSelectLabel));
+  // Keep the dropdown open while ticking (labels wrap the checkbox)
+  document.querySelectorAll('#journalRptSelectDropdown label').forEach(l => l.addEventListener('click', e => e.stopPropagation()));
+  updateRptSelectLabel();
 }
 function journalSummaryHtml(s) {
   if (!s) return `<div class="item-sub">${uiText('Chưa có tóm tắt cho ngày này. Bấm "Tổng hợp lại".', 'No summary yet. Click re-summarize.')}</div>`;
@@ -3281,11 +3331,41 @@ async function savePermCard(btn) {
   } catch (e) { showToast(e.message, 'error'); }
   finally { btn.disabled = false; btn.textContent = old; }
 }
+async function openGroupDetailModal(groupId) {
+  let detail = null;
+  try { detail = await runAction('group-detail', { groupId }, 'Group detail loaded'); } catch (_) { }
+  if (!detail) {
+    let pendingResult = null;
+    try { pendingResult = await runAction('get-pending', { groupId }, 'Pending members loaded'); } catch (_) { }
+    detail = buildLocalGroupDetail(groupId, pendingResult);
+  }
+  currentDetailGroupId = groupId;
+  currentDetailPayload = detail;
+  // Footer "Lưu" (thay cho "Đóng") gộp luôn việc lưu lịch báo cáo — bỏ nút "Lưu lịch
+  // báo cáo" riêng cho gọn. Feature toggle (Mute/Silent/Follow…) vẫn lưu tức thì khi
+  // bấm; footer chỉ chốt phần form lịch báo cáo (auto/giờ/nơi gửi).
+  const saved = await openModal({ title: uiText('Chi tiết group', 'Group details'), body: groupDetailBody(detail), confirmText: uiText('Lưu', 'Save') });
+  if (!saved) return;
+  // closeModal không xoá innerHTML nên các input vẫn còn trong DOM để đọc giá trị cuối.
+  const auto = document.getElementById('mrpAuto');
+  if (!auto) return;
+  const payload = {
+    groupIds: [groupId],
+    enabled: !!auto.checked,
+    time: document.getElementById('mrpTime')?.value || '23:55',
+    deliverThisGroup: !!document.getElementById('mrpThisGroup')?.checked,
+    deliverOwnerDm: !!document.getElementById('mrpOwnerDm')?.checked,
+  };
+  try {
+    await runAction('save-report-schedule', payload, uiText('Đã lưu lịch báo cáo', 'Report schedule saved'));
+  } catch (e) { showToast(e.message, 'error'); }
+}
 function groupDetailBody(detail) {
   const pending = pendingMembersFromDetail(detail);
   const pendingCount = Number(detail.pendingCount || pending.length || 0);
   const modes = Array.isArray(detail.customModes) ? detail.customModes : [];
   const people = groupPeople(detail);
+  const VIEW_ICON = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/></svg>';
   return `
         <div class="list" style="padding:0">
           <div class="item"><div><div class="item-title">${esc(repairText(detail.name))} <span class="member-badge">${detail.memberCount || 0} ${uiText('members', 'members')}</span></div><div class="item-sub">${esc(detail.groupId)} - ${detail.admins?.length || 0} admins</div></div><span class="status ${detail.settings?.pendingAuto ? 'on' : 'off'}">${detail.settings?.pendingAuto ? uiText('Tự duyệt', 'Auto approve') : uiText('Duyệt tay', 'Manual')}</span></div>
@@ -3299,8 +3379,17 @@ function groupDetailBody(detail) {
       ['pendingAuto', uiText('Tự duyệt', 'Auto approve')],
     ].map(([key, label]) => `<button class="feature-toggle ${detail.settings?.[key] ? 'on' : 'off'}" type="button" data-toggle="${esc(detail.groupId)}:${key}:${!detail.settings?.[key]}">${label}</button>`).join('')}
           </div></div></div>
-          <div class="item"><div style="width:100%"><div class="item-title">📊 ${uiText('Nhật ký & Tổng hợp', 'Journal & Summary')}</div><div class="item-sub">${uiText('Tóm tắt chat theo ngày, note, memory, chat thô', 'Daily summary, notes, memory, raw chat')}</div><button class="btn" type="button" data-journal="${esc(detail.groupId)}" style="margin-top:8px">${uiText('Mở nhật ký nhóm', 'Open journal')}</button></div></div>
-          <div class="item"><div><div class="item-title">${uiText('Chế độ thông minh', 'Smart modes')}</div><div class="item-sub">${modes.length ? modes.map(mode => `${esc(repairText(mode.label))} (${mode.enabled ? 'on' : 'off'}) -> ${esc(repairText(mode.skill))}`).join('<br>') : uiText('Chưa có custom mode.', 'No custom modes yet.')}</div></div></div>
+          <div class="item"><div style="width:100%">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+              <div class="item-title" style="font-size:15px;font-weight:700">🗓️ ${uiText('Lịch báo cáo cuối ngày', 'End-of-day report')}</div>
+              <button class="btn outline-primary" type="button" data-journal="${esc(detail.groupId)}" style="padding:5px 11px;font-size:12px;flex:none">${VIEW_ICON}${uiText('Xem nhật ký', 'View journal')}</button>
+            </div>
+            <div class="item-sub" style="margin:2px 0 6px">${uiText('Báo cáo tóm tắt chat cuối ngày cho riêng nhóm này.', 'End-of-day chat summary for this group only.')}</div>
+            <label class="journal-toggle-row"><span class="journal-toggle-label">${uiText('Tự động báo cáo cuối ngày', 'Auto end-of-day report')}</span><span class="journal-switch"><input type="checkbox" id="mrpAuto" ${detail.settings?.autoSummary ? 'checked' : ''}/><span class="journal-slider"></span></span></label>
+            <div class="journal-time-row"><span class="journal-toggle-label">${uiText('Giờ báo cáo (VN)', 'Report time (VN)')}</span><input type="time" id="mrpTime" class="journal-time-input" value="${esc(detail.settings?.reportTime || '23:55')}"/></div>
+            <label class="journal-toggle-row"><span class="journal-toggle-label">${uiText('Đăng vào chính nhóm', 'Post into the group')}</span><span class="journal-switch"><input type="checkbox" id="mrpThisGroup" ${detail.settings?.reportDeliverThisGroup !== false ? 'checked' : ''}/><span class="journal-slider"></span></span></label>
+            <label class="journal-toggle-row"><span class="journal-toggle-label">${uiText('DM cho owner bot', 'DM the bot owner')}</span><span class="journal-switch"><input type="checkbox" id="mrpOwnerDm" ${detail.settings?.reportDeliverOwnerDm === true ? 'checked' : ''}/><span class="journal-slider"></span></span></label>
+          </div></div>
           <div class="item">
             <div style="width:100%">
               <div class="pending-head">
@@ -3326,6 +3415,36 @@ navButtons.forEach(button => {
   button.addEventListener('click', () => setSection(button.dataset.section));
 });
 document.getElementById('permBtn')?.addEventListener('click', () => setSection('permissions'));
+document.addEventListener('change', async event => {
+  // Bật "Tự động báo cáo cuối ngày" trong modal → tự bật Follow (cần lịch sử chat).
+  if (event.target.id === 'mrpAuto' && event.target.checked) {
+    const gid = currentDetailGroupId;
+    if (!gid) return;
+    const g = state.groups && state.groups.find(x => x.groupId === gid);
+    if (g && g.settings && (g.settings.follow || g.settings.tracking)) return;
+    // Mutate before the API call: runAction() calls refreshDetailModal() once the request
+    // resolves, which rebuilds this modal from state. Doing the mutation after the await left
+    // the rebuild reading the pre-toggle value, so Follow visually reverted to off.
+    if (g) { g.settings = g.settings || {}; g.settings.follow = true; g.settings.tracking = true; }
+    // That same rebuild also redraws the schedule form from `state`, where autoSummary is still
+    // false (only Follow changed) — snapshot the form so unsaved edits (including the checkbox
+    // the user just ticked) survive the rebuild instead of resetting to their pre-edit values.
+    const timeVal = document.getElementById('mrpTime')?.value;
+    const thisGroupVal = document.getElementById('mrpThisGroup')?.checked;
+    const ownerDmVal = document.getElementById('mrpOwnerDm')?.checked;
+    try { await runAction('toggle-setting', { groupId: gid, key: 'follow', value: true }, uiText('Đã bật Follow để ghi lịch sử chat', 'Follow enabled to record chat history')); } catch (_) { }
+    const autoBox = document.getElementById('mrpAuto');
+    if (autoBox) autoBox.checked = true;
+    const timeBox = document.getElementById('mrpTime');
+    if (timeBox && timeVal) timeBox.value = timeVal;
+    const thisGroupBox = document.getElementById('mrpThisGroup');
+    if (thisGroupBox) thisGroupBox.checked = thisGroupVal;
+    const ownerDmBox = document.getElementById('mrpOwnerDm');
+    if (ownerDmBox) ownerDmBox.checked = ownerDmVal;
+    const badge = document.querySelector(`[data-toggle="${gid}:follow:true"]`);
+    if (badge) { badge.classList.add('on'); badge.classList.remove('off'); badge.setAttribute('data-toggle', `${gid}:follow:false`); }
+  }
+});
 document.addEventListener('click', async event => {
   const target = event.target.closest('button');
   if (!target) return;
@@ -3422,17 +3541,7 @@ document.addEventListener('click', async event => {
       showToast(uiText('Đã copy ID', 'ID copied'), 'success');
     }
     if (target.dataset.groupDetail) {
-      const groupId = target.dataset.groupDetail;
-      let detail = null;
-      try { detail = await runAction('group-detail', { groupId }, 'Group detail loaded'); } catch (_) { }
-      if (!detail) {
-        let pendingResult = null;
-        try { pendingResult = await runAction('get-pending', { groupId }, 'Pending members loaded'); } catch (_) { }
-        detail = buildLocalGroupDetail(groupId, pendingResult);
-      }
-      currentDetailGroupId = groupId;
-      currentDetailPayload = detail;
-      await openModal({ title: uiText('Chi tiết group', 'Group details'), body: groupDetailBody(detail), confirmText: uiText('Đóng', 'Close') });
+      await openGroupDetailModal(target.dataset.groupDetail);
     }
     if (target.dataset.journal) {
       await openJournalSection(target.dataset.journal);
@@ -3464,21 +3573,20 @@ document.addEventListener('click', async event => {
     }
     if (target.dataset.jsave) {
       const gid = journalState.groupId;
-      const config = {
-        enabled: document.getElementById('jcfgEnabled')?.checked,
+      const groupIds = [...document.querySelectorAll('.jcfg-grp:checked')].map(el => el.value);
+      if (!groupIds.length) { showToast(uiText('Chọn ít nhất một nhóm', 'Select at least one group'), 'error'); return; }
+      const payload = {
+        groupIds,
+        enabled: !!document.getElementById('jcfgAuto')?.checked,
         time: document.getElementById('jcfgTime')?.value || '23:55',
-        deliver: {
-          thisGroup: document.getElementById('jcfgThisGroup')?.checked,
-          ownerDm: document.getElementById('jcfgOwnerDm')?.checked,
-        },
+        deliverThisGroup: !!document.getElementById('jcfgThisGroup')?.checked,
+        deliverOwnerDm: !!document.getElementById('jcfgOwnerDm')?.checked,
       };
-      const auto = document.getElementById('jcfgAuto')?.checked;
       try {
-        await journalApi('save-report-config', { config });
-        await journalApi('toggle-setting', { groupId: gid, key: 'autoSummary', value: !!auto });
+        await journalApi('save-report-schedule', payload);
         await loadJournal(gid, journalState.date);
         journalRerender();
-        showToast(uiText('Đã lưu cấu hình báo cáo', 'Report config saved'), 'success');
+        showToast(uiText('Đã lưu lịch báo cáo', 'Report schedule saved') + ' (' + groupIds.length + ')', 'success');
       } catch (e) { showToast(e.message, 'error'); }
     }
     if (target.dataset.leaveGroup) {
@@ -3515,13 +3623,24 @@ document.addEventListener('click', async event => {
         const ok = await confirmPendingAutoWarning();
         if (!ok) { renderGroups(); return; } // huỷ → giữ nguyên trạng thái, không bật
       }
-      await runAction('toggle-setting', { groupId, key, value }, t(`${key} đã cập nhật`, `${key} updated`));
-      // Reflect the change immediately (toggle-setting doesn't return full state, so the
-      // badge would otherwise keep its old on/off look until the next full refresh).
+      // Reflect the change immediately and before the API call: toggle-setting doesn't return
+      // full state, so runAction()'s refreshDetailModal() (fired once the request resolves)
+      // would otherwise rebuild the open modal from the stale pre-toggle value, making the
+      // toggle look like it reverted itself right after being saved.
       const g = state.groups && state.groups.find(x => x.groupId === groupId);
+      const hadAutoSummary = !!(g && g.settings && g.settings.autoSummary);
       if (g) { g.settings = g.settings || {}; g.settings[key] = value; }
+      await runAction('toggle-setting', { groupId, key, value }, t(`${key} đã cập nhật`, `${key} updated`));
       renderGroups();
       updateBulkBar();
+      // Bật Follow (từ group card) → mở modal chi tiết để cài lịch báo cáo nếu nhóm chưa set,
+      // và chưa có modal nào đang mở (tránh mở chồng). Checking modalBackdrop's open state
+      // instead of an element inside it — closeModal() never clears modalBody.innerHTML, so
+      // an element id like 'mrpAuto' stays in the DOM (just hidden) after the first time this
+      // modal is shown, permanently defeating a "does this element exist" check.
+      if (key === 'follow' && value && !hadAutoSummary && !modalBackdrop.classList.contains('open')) {
+        await openGroupDetailModal(groupId);
+      }
     }
     if (target.dataset.toggleCustom) {
       const [groupId, slug, state] = target.dataset.toggleCustom.split(':');
@@ -4059,21 +4178,46 @@ function renderTemplates() {
   const titles = {
     'noi-quy': t('Nội quy nhóm', 'Group Rules'),
     'huong-dan': t('Hướng dẫn dùng bot', 'Bot Manual'),
-    'menu': t('Menu lệnh', 'Slash Commands Menu')
+    'menu': t('Menu lệnh', 'Slash Commands Menu'),
+    'welcome': t('Chào mừng thành viên', 'Welcome Message'),
+    'spam-warning': t('Cảnh báo spam link', 'Spam Link Warning'),
+    'maintenance': t('Thông báo bảo trì bot', 'Maintenance Notice')
   };
-  
+
   titleEl.textContent = titles[activeTemplateKey] || activeTemplateKey;
   fileEl.textContent = `${activeTemplateKey}.txt`;
-  
+
   // 3. Set text content
   const textarea = document.getElementById('template-textarea');
   textarea.value = state.templates[activeTemplateKey] || '';
-  
-  // 4. Custom modes only shown for menu
-  const menuOnlyVars = document.querySelectorAll('#templates .var-menu-only');
-  menuOnlyVars.forEach(el => {
+
+  // 3b. Custom slash command binding
+  const cmdInput = document.getElementById('template-command');
+  const cmdPrefixEl = document.getElementById('template-command-prefix');
+  const cmds = state.templateCommands || {};
+  const prefix = (state.bot && state.bot.cmdPrefix) || '/bot-';
+  if (cmdInput) cmdInput.value = cmds[activeTemplateKey] || '';
+  if (cmdPrefixEl) cmdPrefixEl.textContent = prefix;
+  updateTemplateCmdHint();
+
+  // 4. Custom modes only shown for menu; memberName only for welcome / spam-warning
+  document.querySelectorAll('#templates .var-menu-only').forEach(el => {
     el.style.display = (activeTemplateKey === 'menu') ? 'inline-flex' : 'none';
   });
+  document.querySelectorAll('#templates .var-member-only').forEach(el => {
+    el.style.display = (activeTemplateKey === 'welcome' || activeTemplateKey === 'spam-warning') ? 'inline-flex' : 'none';
+  });
+}
+
+function updateTemplateCmdHint() {
+  const cmdInput = document.getElementById('template-command');
+  const cmdHintEl = document.getElementById('template-command-hint');
+  if (!cmdHintEl) return;
+  const prefix = (state && state.bot && state.bot.cmdPrefix) || '/bot-';
+  const w = (cmdInput && cmdInput.value.trim().toLowerCase().replace(/^\/+/, '').replace(/[^a-z0-9-]/g, '')) || '';
+  cmdHintEl.textContent = w
+    ? t('Gõ ', 'Type ') + prefix + w + t(' trong nhóm để bot gửi template này.', ' in the group to send this template.')
+    : t('Để trống nếu không muốn gán lệnh slash cho template này.', 'Leave empty to not bind a slash command.');
 }
 
 function initTemplatesEditor() {
@@ -4099,26 +4243,34 @@ function initTemplatesEditor() {
     });
   });
   
+  // Live-update the slash-command hint as the owner types
+  const cmdInputEl = document.getElementById('template-command');
+  if (cmdInputEl) cmdInputEl.addEventListener('input', updateTemplateCmdHint);
+
   // Bind save button
   const saveBtn = document.getElementById('btn-save-template');
   if (saveBtn) {
     saveBtn.addEventListener('click', async () => {
       const textarea = document.getElementById('template-textarea');
       const content = textarea.value;
-      
+      const cmdInput = document.getElementById('template-command');
+      const command = cmdInput ? cmdInput.value : '';
+
       setButtonLoading(saveBtn, true);
       try {
         const res = await api('/api/action', {
           method: 'POST',
           body: JSON.stringify({
             action: 'save-templates',
-            payload: { key: activeTemplateKey, content }
+            payload: { key: activeTemplateKey, content, command }
           })
         });
         if (res.ok) {
-          showToast(t('Lưu cấu hình thành công!', 'Template saved successfully!'), 'success');
+          showToast(t('Lưu template thành công!', 'Template saved successfully!'), 'success');
           // Update in local state object too
           state.templates[activeTemplateKey] = content;
+          state.templateCommands = state.templateCommands || {};
+          if (res.command !== undefined) state.templateCommands[activeTemplateKey] = res.command;
           renderTemplates();
         } else {
           showToast(res.error || t('Có lỗi xảy ra!', 'An error occurred!'), 'error');
@@ -4146,7 +4298,8 @@ function initTemplatesEditor() {
         groupName: t('Nhóm Cứu Hộ Thế Giới 🌍', 'World Rescue Group 🌍'),
         botName: state.bot?.name || 'Mkt Bot',
         BOTNAME: String(state.bot?.name || 'Mkt Bot').toUpperCase(),
-        cmdPrefix: state.bot?.cmdPrefix || '/bot-'
+        cmdPrefix: state.bot?.cmdPrefix || '/bot-',
+        memberName: t('Minh (thành viên mới)', 'Minh (new member)')
       };
       
       for (const [k, v] of Object.entries(dummyVars)) {

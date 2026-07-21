@@ -1,3 +1,8 @@
+## [2.17.6] - 2026-07-21
+
+### Fixed
+- **Đổi giờ lịch báo cáo trong ngày giờ chạy đúng**: guard chống lặp nay khoá theo **(ngày + giờ đã hẹn)** thay vì chỉ theo ngày. Trước đây nếu nhóm đã báo cáo lúc 18:50 rồi owner đổi sang 20:08 cùng ngày thì lịch mới bị guard chặn, không bắn. State format cũ (chỉ có ngày) được coi như chưa chạy cho khung giờ hiện tại nên tự chữa ngay trong ngày chuyển đổi.
+
 ## [2.17.5] - 2026-07-21
 
 ### Fixed

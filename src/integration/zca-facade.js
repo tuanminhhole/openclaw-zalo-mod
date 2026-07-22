@@ -129,6 +129,60 @@ export function createZcaFacade({ getBridge, logger } = {}) {
                 const r = await exec(profile, { action: 'friends' });
                 return r?.friends || [];
             },
+
+            // ── Ghi/hành động (moderation & friend) ─────────────────────────────
+            // Action zalo-connect nhận 1 userId/lần cho kick/block; caller cũ (zalo-mod)
+            // truyền `members` là mảng (nhiều) hoặc 1 id (đơn) → loop gọi từng id.
+            // zca thô: removeUserFromGroup(members, groupId).
+            async removeUserFromGroup(memberOrMembers, groupId) {
+                const ids = (Array.isArray(memberOrMembers) ? memberOrMembers : [memberOrMembers]).map(String).filter(Boolean);
+                const results = [];
+                for (const uid of ids) results.push(await exec(profile, { action: 'remove-from-group', groupId: String(groupId), userId: uid }));
+                return Array.isArray(memberOrMembers) ? results : results[0];
+            },
+            // zca thô: addGroupBlockedMember(members, groupId).
+            async addGroupBlockedMember(memberOrMembers, groupId) {
+                const ids = (Array.isArray(memberOrMembers) ? memberOrMembers : [memberOrMembers]).map(String).filter(Boolean);
+                const results = [];
+                for (const uid of ids) results.push(await exec(profile, { action: 'block-group-member', groupId: String(groupId), userId: uid }));
+                return Array.isArray(memberOrMembers) ? results : results[0];
+            },
+            // zca thô: removeGroupBlockedMember(members, groupId).
+            async removeGroupBlockedMember(memberOrMembers, groupId) {
+                const ids = (Array.isArray(memberOrMembers) ? memberOrMembers : [memberOrMembers]).map(String).filter(Boolean);
+                const results = [];
+                for (const uid of ids) results.push(await exec(profile, { action: 'unblock-group-member', groupId: String(groupId), userId: uid }));
+                return Array.isArray(memberOrMembers) ? results : results[0];
+            },
+            // zca thô: getGroupBlockedMember({}, groupId) → danh sách bị chặn trong nhóm.
+            async getGroupBlockedMember(groupId) {
+                const r = await exec(profile, { action: 'get-group-blocked', groupId: String(groupId) });
+                return r?.result ?? r;
+            },
+            // zca thô: leaveGroup(groupId, silent?). Action zalo-connect chỉ cần groupId.
+            async leaveGroup(groupId /* , silent */) {
+                return exec(profile, { action: 'leave-group', groupId: String(groupId) });
+            },
+            // zca thô: reviewPendingMemberRequest({ members, isApprove }, groupId).
+            // `members` có thể là mảng hoặc chuỗi phân tách bởi dấu phẩy → chuẩn hoá về mảng.
+            async reviewPendingMemberRequest(opts, groupId) {
+                const raw = opts?.members;
+                const memberIds = Array.isArray(raw)
+                    ? raw.map(String).filter(Boolean)
+                    : String(raw || '').split(',').map(s => s.trim()).filter(Boolean);
+                return exec(profile, { action: 'review-pending-members', groupId: String(groupId), memberIds, isApprove: opts?.isApprove !== false });
+            },
+            // ── Bạn bè ──
+            async acceptFriendRequest(userId) {
+                return exec(profile, { action: 'accept-friend-request', userId: String(userId) });
+            },
+            async rejectFriendRequest(userId) {
+                return exec(profile, { action: 'reject-friend-request', userId: String(userId) });
+            },
+            // zca thô: sendFriendRequest(message, userId).
+            async sendFriendRequest(message, userId) {
+                return exec(profile, { action: 'send-friend-request', userId: String(userId), requestMessage: message || 'Xin chào!' });
+            },
         };
     }
 

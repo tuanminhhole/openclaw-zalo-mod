@@ -173,6 +173,24 @@ export function createOpenclawAdapter(deps = {}) {
             return svc.getGroupPolicy(accountId, String(groupId));
         },
 
+        async getNameTriggers(accountId) {
+            const svc = getService();
+            if (typeof svc?.getNameTriggers !== 'function') {
+                throw new Error('zalo-connect bridge quá cũ (cần v4) cho name-trigger — hãy cập nhật OpenClaw Zalo Connect.');
+            }
+            logBackendOnce('zalo-connect-bridge-service');
+            return svc.getNameTriggers(accountId);
+        },
+
+        async setNameTriggers(accountId, triggers) {
+            const svc = getService();
+            if (typeof svc?.setNameTriggers !== 'function') {
+                throw new Error('zalo-connect bridge quá cũ (cần v4) cho name-trigger — hãy cập nhật OpenClaw Zalo Connect.');
+            }
+            logBackendOnce('zalo-connect-bridge-service');
+            return svc.setNameTriggers(accountId, Array.isArray(triggers) ? triggers : []);
+        },
+
         subscribeInbound(cb) {
             const svc = getService();
             if (svc?.subscribeInbound) return svc.subscribeInbound(cb);

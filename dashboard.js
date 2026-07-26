@@ -10,7 +10,7 @@ const modalBody = document.getElementById('modalBody');
 const modalCancel = document.getElementById('modalCancel');
 const modalConfirm = document.getElementById('modalConfirm');
 const token = window.ZALO_DASHBOARD_TOKEN || '';
-const pluginVersion = '2.17.7';
+const pluginVersion = '2.17.8';
 let state = null;
 let activeGroupId = '';
 let lang = localStorage.getItem('zaloDashboardLang') || 'vi';
@@ -166,6 +166,20 @@ function setSection(id) {
   if (id === 'contacts') renderCrmContacts();
   if (id === 'leads') renderCrmLeads();
   if (id === 'tasks') renderCrmTasks();
+}
+// Re-render whichever on-demand section is currently active (these render on
+// tab-open via setSection, not inside renderState). Called when the selected bot
+// changes so bot-scoped pages (Permissions, Journal, CRM…) refresh immediately.
+function refreshActiveOnDemandSection() {
+  const active = [...sections].find(s => s.classList.contains('active'));
+  switch (active?.id) {
+    case 'permissions': renderPermissions(); break;
+    case 'journal': renderJournal(); break;
+    case 'settings': renderSettings(); break;
+    case 'contacts': renderCrmContacts(); break;
+    case 'leads': renderCrmLeads(); break;
+    case 'tasks': renderCrmTasks(); break;
+  }
 }
 function toastIcon(tone) {
   const icons = {
@@ -592,6 +606,52 @@ async function confirmPendingAutoWarning() {
     </div>`,
     confirmText: uiText('Đã hiểu, bật', 'Got it, enable'),
   });
+}
+// Modal khi bật Silent: diễn giải chế độ + hiển thị & sửa "tên gọi" (name triggers).
+// Áp dụng theo TÀI KHOẢN (bot), không riêng nhóm — bot im lặng vẫn trả lời khi được
+// @nhắc hoặc gọi đúng tên. Fetch danh sách hiện tại rồi cho user sửa, lưu qua bridge.
+async function openSilentNameModal(accountId, botLabel) {
+  const acct = String(accountId || 'default');
+  const safeLabel = esc(botLabel || acct);
+  let info = { displayName: null, triggers: [], effective: [], bridgeUnavailable: false };
+  try {
+    const res = await api('/api/action', { method: 'POST', body: JSON.stringify({ action: 'get-name-triggers', payload: { accountId: acct } }) });
+    if (res && res.result) info = res.result;
+  } catch { /* vẫn mở modal để user nhập; lưu sẽ thử lại */ }
+  const auto = info.displayName
+    ? `<code style="background:var(--surface-2);padding:2px 8px;border-radius:6px;font-size:12px;">${esc(info.displayName)}</code>`
+    : `<em style="color:var(--text-muted);font-size:12px;">${t('(chưa lấy được tên Zalo — đăng nhập xong sẽ tự có)', '(Zalo name not fetched yet — appears after login)')}</em>`;
+  const aliases = (info.triggers || []).join('\n');
+  const bridgeWarn = info.bridgeUnavailable
+    ? `<p class="modal-warn-note" style="color:#dc2626;">${t('⚠ Zalo Connect chưa sẵn sàng — vẫn lưu, sẽ áp dụng khi kết nối lại.', '⚠ Zalo Connect not ready — saved anyway, applied on reconnect.')}</p>`
+    : '';
+  const body = `<div class="modal-warn-body">
+      <p class="modal-warn-lead">${t('Chế độ <b>Im lặng</b>: trong nhóm, bot chỉ trả lời khi được <b>@nhắc</b> hoặc khi tin nhắn <b>gọi đúng tên bot</b> — không chen ngang.', 'In <b>Silent</b> mode the bot replies only when <b>@mentioned</b> or when a message <b>calls its name</b> — it never chimes in.')}</p>
+      <div style="display:flex;align-items:center;gap:8px;margin:12px 0 6px;font-size:13px;">
+        <span style="color:var(--text-muted);">${t('Tên Zalo tự nhận', 'Auto Zalo name')}:</span>${auto}
+      </div>
+      <label style="display:block;font-size:13px;color:var(--text-muted);">
+        <span style="display:block;margin-bottom:4px;">${t('Tên gọi để nhắc bot — mỗi dòng một tên (vd: mkt, mei)', 'Names used to address the bot — one per line (e.g. mkt, mei)')}</span>
+        <textarea id="ntAliases" rows="4" style="width:100%;box-sizing:border-box;resize:vertical;" placeholder="mkt&#10;mei">${esc(aliases)}</textarea>
+      </label>
+      <p class="modal-warn-note">${t('Đây là <b>tên gọi</b> để nhắc bot <b>' + safeLabel + '</b> (ngoài @nhắc) — dùng chung cho bot ở mọi nhóm vì là tên của bot. <b>KHÔNG</b> phải bật Im lặng ở mọi nhóm: tắt/bật Im lặng vẫn <b>riêng từng nhóm</b>. Khớp không dấu, không phân biệt hoa/thường.', 'These are <b>names</b> for addressing bot <b>' + safeLabel + '</b> (besides @mention) — shared across all groups since they are the bot\'s identity. This does <b>NOT</b> turn Silent on everywhere: enabling/disabling Silent stays <b>per group</b>. Accent- and case-insensitive.')}</p>
+      ${bridgeWarn}
+    </div>`;
+  const ok = await openModal({
+    title: t('Chế độ Im lặng — tên gọi bot', 'Silent mode — bot names'),
+    tone: 'info',
+    body,
+    confirmText: t('Lưu', 'Save'),
+  });
+  if (!ok) return;
+  const raw = document.getElementById('ntAliases')?.value || '';
+  const triggers = raw.split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
+  try {
+    await api('/api/action', { method: 'POST', body: JSON.stringify({ action: 'set-name-triggers', payload: { accountId: acct, triggers } }) });
+    showToast(t('Đã lưu tên gọi cho chế độ Im lặng', 'Silent-mode names saved'), 'success');
+  } catch (e) {
+    showToast(`${t('Lưu tên gọi lỗi', 'Failed to save names')} - ${e.message}`, 'error');
+  }
 }
 async function api(path, options = {}) {
   let url = path;
@@ -1270,6 +1330,7 @@ function renderState() {
             if (topbarContainer) topbarContainer.classList.remove('open');
 
             renderState();
+            refreshActiveOnDemandSection();
           });
         });
       }
@@ -1331,11 +1392,12 @@ function renderState() {
           if (groupSelect) groupSelect.value = profile;
           const memberSelect = document.getElementById('memberBotSelect');
           if (memberSelect) memberSelect.value = profile;
-          
+
           renderState();
+          refreshActiveOnDemandSection();
         });
       });
-      
+
       document.body.classList.toggle('has-sub-topbar', window.innerWidth <= 991);
     } else {
       mobileBotFilterBar.innerHTML = '';
@@ -1517,7 +1579,7 @@ function groupRows(limit) {
           </td>
           <td class="col-overview-members" data-label="${esc(t('Thành viên', 'Members'))}">${group.memberCount}</td>
           <td class="col-overview-violations" data-label="${esc(t('Cảnh báo', 'Violations'))}"><span class="status ${group.violationCount ? 'warn' : 'off'}">${group.violationCount} ${t('vi phạm', 'violations')}</span></td>
-          <td class="col-overview-mode" data-label="${esc(t('Mode', 'Mode'))}">${status(group.settings.silent, 'Silent', 'Normal')} ${status(group.settings.welcome, 'Welcome', t('\u004b\u0068\u00f4\u006e\u0067 welcome', 'No welcome'))}</td>
+          <td class="col-overview-mode" data-label="${esc(t('Mode', 'Mode'))}">${status(botSettings(group).silent, 'Silent', 'Normal')} ${status(botSettings(group).welcome, 'Welcome', t('\u004b\u0068\u00f4\u006e\u0067 welcome', 'No welcome'))}</td>
           <td class="col-overview-actions" data-label="${esc(t('\u0048\u00e0\u006e\u0068 \u0111\u1ed9\u006e\u0067', 'Action'))}"><button class="btn" data-open-members="${esc(group.groupId)}"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; margin-right: 4px; vertical-align: middle;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>${t('Thành viên', 'Members')}</button></td>
         </tr>
       `).join('');
@@ -1543,9 +1605,24 @@ function approvalHtml(group) {
   const pending = Number(group.pendingCount || 0);
   return `<div class="approval-stack"><span class="member-badge">${group.memberCount || 0} ${uiText('members', 'members')}</span><span class="status ${pending ? 'warn' : 'off'}">${pending} ${uiText('đang chờ', 'pending')}</span></div>`;
 }
+// Per-bot group state helpers. When a specific bot is selected in the top bar, show
+// and toggle THAT bot's settings + groupId (each bot has its own per-account groupId,
+// so state is independent). On "all bots" we fall back to the merged/aggregate row.
+function selBotProfile() {
+  return (selectedBotFilter && selectedBotFilter !== 'all') ? selectedBotFilter : '';
+}
+function botSettings(group) {
+  const p = selBotProfile();
+  return (p && group.settingsByProfile && group.settingsByProfile[p]) || group.settings || {};
+}
+function botGroupId(group) {
+  const p = selBotProfile();
+  return (p && group.groupIdByProfile && group.groupIdByProfile[p]) || group.groupId;
+}
 function featureToggle(group, key, label) {
-  const on = !!group.settings[key];
-  return `<button class="feature-toggle ${on ? 'on' : 'off'}" type="button" data-toggle="${esc(group.groupId)}:${key}:${!on}">${label}</button>`;
+  const on = !!botSettings(group)[key];
+  const gid = botGroupId(group);
+  return `<button class="feature-toggle ${on ? 'on' : 'off'}" type="button" data-toggle="${esc(gid)}:${key}:${!on}" data-toggle-profile="${esc(selBotProfile())}">${label}</button>`;
 }
 function hiddenGroupIds() {
   return new Set(); // Không hardcode — hiển thị tất cả groups từ ZCA
@@ -1593,9 +1670,9 @@ function avatarMeta(source, fallbackLabel = '') {
 function groupMatchesFilter(group) {
   if (hiddenGroupIds().has(String(group.groupId))) return false;
   if (selectedBotFilter !== 'all' && !profileList(group.profile).includes(selectedBotFilter)) return false;
-  if (currentGroupFilter === 'silent') return !!group.settings.silent;
-  if (currentGroupFilter === 'welcome') return !!group.settings.welcome;
-  if (currentGroupFilter === 'muted') return !!group.settings.muted;
+  if (currentGroupFilter === 'silent') return !!botSettings(group).silent;
+  if (currentGroupFilter === 'welcome') return !!botSettings(group).welcome;
+  if (currentGroupFilter === 'muted') return !!botSettings(group).muted;
   if (currentGroupFilter === 'spam') return Number(group.violationCount || 0) > 0;
   return true;
 }
@@ -1670,7 +1747,7 @@ function updateBulkBar() {
   actions.innerHTML = `
         <button class="btn ${allVisibleSelected ? 'primary' : ''}" type="button" data-select-all-groups>${allVisibleSelected ? uiText('Bỏ chọn tất cả', 'Clear all') : uiText('Chọn tất cả', 'Select all')}</button>
         ${defs.map(([key, label]) => {
-    const allOn = selectedVisible.length > 0 && selectedVisible.every(group => !!group.settings[key]);
+    const allOn = selectedVisible.length > 0 && selectedVisible.every(group => !!botSettings(group)[key]);
     return `<button class="feature-toggle ${allOn ? 'on' : 'off'}" type="button" data-bulk-feature="${key}:${!allOn}">${label}</button>`;
   }).join('')}
       `;
@@ -2761,10 +2838,14 @@ function pendingMembersFromDetail(detail) {
   return out;
 }
 function buildLocalGroupDetail(groupId, pendingResult = null) {
-  const group = state.groups.find(item => item.groupId === groupId) || {};
+  const group = state.groups.find(item =>
+    item.groupId === groupId
+    || (item.groupIdByProfile && Object.values(item.groupIdByProfile).includes(groupId))
+    || (Array.isArray(item.siblingIds) && item.siblingIds.includes(groupId))) || {};
   return {
     ...group,
-    settings: group.settings || {},
+    settings: botSettings(group),          // selected bot's settings (per-bot)
+    botGroupId: botGroupId(group),         // selected bot's per-account groupId for toggles
     admins: group.admins || [],
     pending: pendingResult,
   };
@@ -3186,9 +3267,16 @@ async function renderPermissions() {
   const root = document.getElementById('permContent');
   if (!root) return;
   if (!root.dataset.wired) { wirePermRoot(root); root.dataset.wired = '1'; }
+  // Permissions are per-bot (each bot has its own groups). Require a specific bot
+  // so the group list isn't a confusing cross-bot union that shows shared groups
+  // twice. When "all bots" is selected, prompt the user to pick one.
+  if (selectedBotFilter === 'all') {
+    root.innerHTML = `<div class="perm-empty">${uiText('Chọn 1 bot cụ thể ở thanh chọn bot phía trên để cấu hình phân quyền (mỗi bot có nhóm riêng).', 'Pick a specific bot in the top bar to configure permissions (each bot has its own groups).')}</div>`;
+    return;
+  }
   root.innerHTML = `<div class="perm-empty">${uiText('Đang tải...', 'Loading...')}</div>`;
   let d;
-  try { d = await journalApi('get-permissions', {}); }
+  try { d = await journalApi('get-permissions', { profile: selectedBotFilter }); }
   catch (e) { root.innerHTML = `<div class="perm-empty">${esc(e.message)}</div>`; return; }
   const p = d.permissions;
   const userMap = {};
@@ -3377,7 +3465,7 @@ function groupDetailBody(detail) {
       ['welcome', 'Welcome'],
       ['follow', 'Follow'],
       ['pendingAuto', uiText('Tự duyệt', 'Auto approve')],
-    ].map(([key, label]) => `<button class="feature-toggle ${detail.settings?.[key] ? 'on' : 'off'}" type="button" data-toggle="${esc(detail.groupId)}:${key}:${!detail.settings?.[key]}">${label}</button>`).join('')}
+    ].map(([key, label]) => `<button class="feature-toggle ${detail.settings?.[key] ? 'on' : 'off'}" type="button" data-toggle="${esc(detail.botGroupId || detail.groupId)}:${key}:${!detail.settings?.[key]}" data-toggle-profile="${esc(selBotProfile())}">${label}</button>`).join('')}
           </div></div></div>
           <div class="item"><div style="width:100%">
             <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
@@ -3524,7 +3612,15 @@ document.addEventListener('click', async event => {
         const ok = await confirmPendingAutoWarning();
         if (!ok) return;
       }
-      await runAction('bulk-toggle-setting', { groupIds: [...selectedGroups], key, value }, 'Bulk groups updated');
+      // Per-bot: when a specific bot is selected, map each selected group to THAT bot's
+      // groupId and pass the profile so the change applies to that bot only.
+      const _bulkProfile = selBotProfile();
+      const _bulkGids = [...selectedGroups].map(gid => {
+        if (!_bulkProfile) return gid;
+        const g = state.groups.find(x => x.groupId === gid || (Array.isArray(x.siblingIds) && x.siblingIds.includes(gid)));
+        return (g && g.groupIdByProfile && g.groupIdByProfile[_bulkProfile]) || gid;
+      });
+      await runAction('bulk-toggle-setting', { groupIds: _bulkGids, key, value, profile: _bulkProfile }, 'Bulk groups updated');
       renderGroups();
       updateBulkBar();
     }
@@ -3618,6 +3714,7 @@ document.addEventListener('click', async event => {
     }
     if (target.dataset.toggle) {
       const [groupId, key, rawValue] = target.dataset.toggle.split(':');
+      const profile = target.dataset.toggleProfile || '';
       const value = rawValue === 'true';
       if (key === 'pendingAuto' && value) {
         const ok = await confirmPendingAutoWarning();
@@ -3627,10 +3724,30 @@ document.addEventListener('click', async event => {
       // full state, so runAction()'s refreshDetailModal() (fired once the request resolves)
       // would otherwise rebuild the open modal from the stale pre-toggle value, making the
       // toggle look like it reverted itself right after being saved.
-      const g = state.groups && state.groups.find(x => x.groupId === groupId);
-      const hadAutoSummary = !!(g && g.settings && g.settings.autoSummary);
-      if (g) { g.settings = g.settings || {}; g.settings[key] = value; }
-      await runAction('toggle-setting', { groupId, key, value }, t(`${key} đã cập nhật`, `${key} updated`));
+      // groupId is the SELECTED bot's per-account id — match against the row id, its
+      // per-bot map, or its siblings so the optimistic update lands on the right row.
+      const g = state.groups && state.groups.find(x =>
+        x.groupId === groupId
+        || (x.groupIdByProfile && Object.values(x.groupIdByProfile).includes(groupId))
+        || (Array.isArray(x.siblingIds) && x.siblingIds.includes(groupId)));
+      const gSettings = (g && profile && g.settingsByProfile && g.settingsByProfile[profile]) || (g && g.settings) || {};
+      const hadAutoSummary = !!gSettings.autoSummary;
+      if (g) {
+        // Per-bot toggle must NOT leak to sibling bots. seed()/merge make
+        // settingsByProfile[winnerProfile] the SAME object as g.settings, and other bots
+        // fall back to g.settings when their own bucket is absent — so mutating in place
+        // flips their badge too. Clone before writing to break that shared reference, and
+        // when a bot is selected always write into ITS OWN bucket (never shared g.settings).
+        if (profile) {
+          g.settingsByProfile = g.settingsByProfile || {};
+          g.settingsByProfile[profile] = { ...(g.settingsByProfile[profile] || g.settings || {}) };
+          g.settingsByProfile[profile][key] = value;
+        } else {
+          g.settings = { ...(g.settings || {}) };
+          g.settings[key] = value;
+        }
+      }
+      await runAction('toggle-setting', { groupId, key, value, profile }, t(`${key} đã cập nhật`, `${key} updated`));
       renderGroups();
       updateBulkBar();
       // Bật Follow (từ group card) → mở modal chi tiết để cài lịch báo cáo nếu nhóm chưa set,
@@ -3640,6 +3757,13 @@ document.addEventListener('click', async event => {
       // modal is shown, permanently defeating a "does this element exist" check.
       if (key === 'follow' && value && !hadAutoSummary && !modalBackdrop.classList.contains('open')) {
         await openGroupDetailModal(groupId);
+      }
+      // Bật Silent → mở modal diễn giải + cho sửa "tên gọi" (name triggers) của bot.
+      // Name triggers theo TÀI KHOẢN: dùng profile của toggle, hoặc profile đầu của nhóm.
+      if (key === 'silent' && value && !modalBackdrop.classList.contains('open')) {
+        const acct = profile || String(g?.profile || '').split(',')[0].trim() || 'default';
+        const botLabel = (state?.bots || []).find(b => (b.profile || b.id || b.accountId) === acct)?.name || acct;
+        await openSilentNameModal(acct, botLabel);
       }
     }
     if (target.dataset.toggleCustom) {

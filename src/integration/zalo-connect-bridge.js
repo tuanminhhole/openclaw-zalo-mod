@@ -196,6 +196,30 @@ export function createZaloConnectBridge(adapter, opts = {}) {
             return adapter.getGroupPolicy(accountId, String(groupId));
         },
 
+        /**
+         * Silent-mode name gate. Read the bot's own Zalo display name (auto) plus
+         * the runtime alias overrides that let a silent-mode bot answer when
+         * addressed by name (besides @mention). Needs zalo-connect bridge ≥ v4.
+         */
+        async getNameTriggers(accountId) {
+            if (typeof adapter.getNameTriggers !== 'function') {
+                throw new Error('adapter does not support name triggers');
+            }
+            return adapter.getNameTriggers(accountId);
+        },
+
+        /**
+         * Replace the runtime alias overrides for an account. Runtime-only inside
+         * zalo-connect (no openclaw.json write, no gateway restart); persistence
+         * lives in Zalo Mod settings and is replayed on boot.
+         */
+        async setNameTriggers(accountId, triggers) {
+            if (typeof adapter.setNameTriggers !== 'function') {
+                throw new Error('adapter does not support name triggers');
+            }
+            return adapter.setNameTriggers(accountId, Array.isArray(triggers) ? triggers : []);
+        },
+
         onInbound(handler) {
             inboundHandlers.add(handler);
             if (!inboundUnsub && adapter.subscribeInbound) {

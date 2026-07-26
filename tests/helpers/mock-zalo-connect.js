@@ -17,6 +17,7 @@ export class MockZaloConnectAdapter {
         this._inboundCb = null;
         this._groupCb = null;
         this.groupPolicies = new Map();
+        this.nameTriggers = new Map();
     }
 
     async getStatus(accountId) {
@@ -50,6 +51,28 @@ export class MockZaloConnectAdapter {
 
     async getGroupPolicy(accountId, groupId) {
         return this.groupPolicies.get(`${accountId || 'default'}|${String(groupId).replace(/^group:/, '')}`);
+    }
+
+    async getNameTriggers(accountId) {
+        const id = accountId || 'default';
+        const triggers = this.nameTriggers.get(id) || [];
+        return { displayName: this.statusByAccount[id]?.displayName ?? null, triggers: [...triggers], effective: [...triggers] };
+    }
+
+    async setNameTriggers(accountId, triggers) {
+        const id = accountId || 'default';
+        const seen = new Set();
+        const clean = [];
+        for (const raw of Array.isArray(triggers) ? triggers : []) {
+            const v = String(raw ?? '').trim();
+            if (!v) continue;
+            const k = v.toLowerCase();
+            if (seen.has(k)) continue;
+            seen.add(k);
+            clean.push(v);
+        }
+        if (clean.length) this.nameTriggers.set(id, clean); else this.nameTriggers.delete(id);
+        return this.getNameTriggers(id);
     }
 
     subscribeInbound(cb) {

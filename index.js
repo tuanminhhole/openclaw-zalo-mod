@@ -892,6 +892,38 @@ const plugin = definePluginEntry({
         } catch (e) {
             _pluginConfig = {};
         }
+        // Normalize to the per-bot shape: bot identity (botName / zaloDisplayNames /
+        // ownerId / slashPrefix) lives ONLY under bots.<profile>. Legacy single-bot
+        // top-level copies are folded into bots.default and stripped from config.json.
+        // Idempotent; only rewrites the file when something actually changed.
+        try {
+            const _slug = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9-]/g, '');
+            let _cfgChanged = false;
+            _pluginConfig.bots = _pluginConfig.bots || {};
+            const _def = _pluginConfig.bots.default = _pluginConfig.bots.default || {};
+            if (!_def.botName && _pluginConfig.botName) { _def.botName = _pluginConfig.botName; _cfgChanged = true; }
+            if ((!Array.isArray(_def.zaloDisplayNames) || !_def.zaloDisplayNames.length)
+                && Array.isArray(_pluginConfig.zaloDisplayNames) && _pluginConfig.zaloDisplayNames.length) {
+                _def.zaloDisplayNames = _pluginConfig.zaloDisplayNames; _cfgChanged = true;
+            }
+            if (!_def.ownerId && _pluginConfig.ownerId) { _def.ownerId = _pluginConfig.ownerId; _cfgChanged = true; }
+            if (!_def.slashPrefix && _pluginConfig.slashPrefix) { _def.slashPrefix = _pluginConfig.slashPrefix; _cfgChanged = true; }
+            // Per-bot completeness (do NOT invent ownerId — that comes from owner-claim).
+            for (const [_p, _b] of Object.entries(_pluginConfig.bots)) {
+                if (!_b || typeof _b !== 'object') continue;
+                if ((!Array.isArray(_b.zaloDisplayNames) || !_b.zaloDisplayNames.length) && _b.botName) {
+                    _b.zaloDisplayNames = [_b.botName]; _cfgChanged = true;
+                }
+                if (!_b.slashPrefix) { const _pfx = _slug(_b.botName) || _slug(_p); if (_pfx) { _b.slashPrefix = _pfx; _cfgChanged = true; } }
+            }
+            for (const _k of ['botName', 'zaloDisplayNames', 'ownerId', 'slashPrefix']) {
+                if (_k in _pluginConfig) { delete _pluginConfig[_k]; _cfgChanged = true; }
+            }
+            if (_cfgChanged && existsSync(configFile)) {
+                writeFileSync(configFile, JSON.stringify(_pluginConfig, null, 2) + '\n', 'utf8');
+                logger.info('[openclaw-zalo-mod] normalized config.json → per-bot bots.* shape (stripped legacy top-level identity)');
+            }
+        } catch { /* non-fatal: fall back to whatever loaded */ }
         // Merged view: config.json overrides, fallback to openclaw.json for backward-compat
         const pluginCfg = { ..._sdkPluginCfg, ..._pluginConfig };
 
@@ -926,7 +958,8 @@ const plugin = definePluginEntry({
             if (!name) return;
             const bots = { ...(pluginCfg.bots || {}) };
             const cur = bots[profile] || {};
-            bots[profile] = { ...cur, botName: name, zaloDisplayNames: [name] };
+            const slashPrefix = cur.slashPrefix || String(name).toLowerCase().replace(/[^a-z0-9-]/g, '') || profile;
+            bots[profile] = { ...cur, botName: name, zaloDisplayNames: [name], slashPrefix };
             if (profile === 'default') { pluginCfg.botName = name; pluginCfg.zaloDisplayNames = [name]; }
             await savePluginConfig({ bots });
         }
@@ -3484,6 +3517,54 @@ Quy tắc:
             return { applied, failed: errors.length, errors };
         }
 
+        // ── Silent-mode name triggers (per bot/account) ─────────────────────────
+        // Aliases that let a silent-mode bot answer when addressed by name (besides
+        // @mention). Persisted here (settings.json), pushed live into the ZaloConnect
+        // runtime via bridge — RAM-only there, no openclaw.json write, no restart.
+        function dedupeAliases(list) {
+            const seen = new Set();
+            const out = [];
+            for (const raw of Array.isArray(list) ? list : []) {
+                const value = String(raw ?? '').trim();
+                if (!value) continue;
+                const key = value.toLowerCase();
+                if (seen.has(key)) continue;
+                seen.add(key);
+                out.push(value);
+            }
+            return out;
+        }
+        function readTriggerMap() {
+            const map = store.getSetting('global', 'nameTriggersByAccount', {});
+            return (map && typeof map === 'object' && !Array.isArray(map)) ? map : {};
+        }
+        function getStoredNameTriggers(accountId) {
+            const id = primaryProfile(String(accountId || 'default')) || 'default';
+            const value = readTriggerMap()[id];
+            return Array.isArray(value) ? value : [];
+        }
+        async function persistNameTriggers(accountId, list) {
+            const id = primaryProfile(String(accountId || 'default')) || 'default';
+            const clean = dedupeAliases(list);
+            const map = { ...readTriggerMap() };
+            if (clean.length === 0) delete map[id]; else map[id] = clean;
+            store.setSetting('global', 'nameTriggersByAccount', map);
+            await store.saveSettings();
+            return clean;
+        }
+        // Replay persisted aliases into the ZaloConnect runtime after (re)start.
+        async function replayNameTriggers() {
+            const bridge = globalThis.__zaloModEngine?.bridge;
+            if (!bridge?.setNameTriggers) return { unavailable: true };
+            const map = readTriggerMap();
+            let applied = 0;
+            for (const [accountId, list] of Object.entries(map)) {
+                try { await bridge.setNameTriggers(accountId, Array.isArray(list) ? list : []); applied++; }
+                catch (e) { logger.warn(`[openclaw-zalo-mod] name-trigger replay ${accountId}: ${e.message}`); }
+            }
+            return { applied, total: Object.keys(map).length };
+        }
+
 
         function extractGroupMemberCount(info, cached = 0) {
             const direct = [info?.totalMember, info?.memberCount, info?.totalMembers, info?.userCount, info?.memCount, info?.currentMems]
@@ -3762,24 +3843,37 @@ Quy tắc:
             }
 
             const byName = new Map();
+            // Per-bot state: a physical group has a different groupId per bot, and feature
+            // settings are stored per groupId (so they are inherently per-bot). We keep ONE
+            // display row per physical group but carry each bot's settings + groupId so the
+            // dashboard can read/toggle the SELECTED bot only (no cross-bot leak).
+            const seed = (g) => ({
+                ...g,
+                siblingIds: [g.groupId],
+                settingsByProfile: { [primaryProfile(g.profile)]: g.settings },
+                groupIdByProfile: { [primaryProfile(g.profile)]: g.groupId },
+            });
             for (const group of rawGroups) {
                 const key = groupDedupeKey(group.name);
                 if (!key) {
-                    byName.set(`id:${group.groupId}`, group);
+                    byName.set(`id:${group.groupId}`, seed(group));
                     continue;
                 }
                 const existing = byName.get(key);
                 if (!existing) {
-                    byName.set(key, { ...group, siblingIds: [group.groupId] });
+                    byName.set(key, seed(group));
                     continue;
                 }
                 // Cùng tên = cùng nhóm vật lý (Zalo cấp ID per-account khác nhau cho mỗi bot).
                 // HỢP profile của tất cả bản trùng để badge hiện đủ bot; giữ entry chất lượng cao làm đại diện.
+                const prof = primaryProfile(group.profile);
                 const unionProfiles = [...new Set([...parseProfiles(existing.profile), ...parseProfiles(group.profile)])].join(',');
                 const siblingIds = [...new Set([...(existing.siblingIds || [existing.groupId]), group.groupId])];
                 const winner = groupQualityScore(group) > groupQualityScore(existing) ? { ...group } : { ...existing };
                 winner.profile = unionProfiles;
                 winner.siblingIds = siblingIds;
+                winner.settingsByProfile = { ...(existing.settingsByProfile || {}), [prof]: group.settings };
+                winner.groupIdByProfile = { ...(existing.groupIdByProfile || {}), [prof]: group.groupId };
                 byName.set(key, winner);
             }
             const groups = [...byName.values()];
@@ -4360,7 +4454,14 @@ Quy tắc:
                 const memberMap = {};
                 for (const users of Object.values(memberDir)) for (const [id, name] of Object.entries(users)) memberMap[id] = name;
                 const members = Object.entries(memberMap).map(([id, name]) => ({ id, name, avatar: avatarOf(id), role: roleOf(id) })).slice(0, 800);
-                const groups = watchGroupIds.map(g => ({ groupId: g, name: getGroupName(g) }));
+                // Permissions are per-bot: when a specific bot (profile) is requested,
+                // return ONLY that bot's groups. This avoids the same physical group
+                // showing twice (each bot has its own per-account groupId). The dashboard
+                // requires a specific bot on this page, so `profile` is normally set.
+                const permProfile = payload.profile ? String(payload.profile) : '';
+                const groups = watchGroupIds
+                    .filter(g => !permProfile || parseProfiles(groupNames[g]?.profile).includes(permProfile))
+                    .map(g => ({ groupId: g, name: getGroupName(g) }));
                 let friends = [];
                 try { friends = extractFriendList(await runDashboardZcaAction('get-friends', {})).map(f => ({ ...f, avatar: avatarOf(f.id), role: roleOf(f.id) })); } catch (_) { }
                 return {
@@ -4514,8 +4615,11 @@ Quy tắc:
                 if (!groupId || !['muted', 'silent', 'welcome', 'tracking', 'follow', 'pendingAuto', 'autoSummary'].includes(key)) {
                     throw new Error('Invalid setting payload');
                 }
-                // Áp cho MỌI ID cùng nhóm (đa bot → mỗi bot 1 ID) để không sót bot nào.
-                const ids = siblingGroupIds(groupId);
+                // Per-bot: khi dashboard chọn 1 bot cụ thể (payload.profile), CHỈ áp cho đúng
+                // groupId của bot đó — không lan sang bot khác cùng nhóm. Khi "tất cả bot"
+                // (không có profile), fan-out ra mọi ID cùng nhóm để bật/tắt cho mọi bot.
+                const profile = String(payload.profile || '').trim();
+                const ids = (profile && profile !== 'all') ? [groupId] : siblingGroupIds(groupId);
                 // follow/tracking đã gộp → set cả 2 key cho đồng bộ.
                 const applyOne = (id, v) => (key === 'follow' || key === 'tracking') ? setFollow(id, v) : store.setSetting(id, key, v);
                 for (const id of ids) applyOne(id, !!payload.value);
@@ -4532,15 +4636,60 @@ Quy tắc:
                 if (!groupIds.length || !['muted', 'silent', 'welcome', 'tracking', 'follow', 'pendingAuto', 'autoSummary'].includes(key)) {
                     throw new Error('Invalid bulk setting payload');
                 }
-                // Fan-out ra mọi ID cùng nhóm (đa bot) cho từng group được chọn.
+                // Per-bot khi chọn 1 bot cụ thể (payload.profile) → chỉ áp đúng các groupId
+                // được gửi; "tất cả bot" → fan-out ra mọi ID cùng nhóm cho từng group.
+                const profile = String(payload.profile || '').trim();
+                const perBot = profile && profile !== 'all';
                 const all = new Set();
-                for (const gid of groupIds) for (const id of siblingGroupIds(gid)) all.add(id);
+                for (const gid of groupIds) {
+                    if (perBot) all.add(gid);
+                    else for (const id of siblingGroupIds(gid)) all.add(id);
+                }
                 for (const id of all) (key === 'follow' || key === 'tracking') ? setFollow(id, !!payload.value) : store.setSetting(id, key, !!payload.value);
                 await store.saveSettings();
                 const runtimePolicy = (key === 'muted' || key === 'silent')
                     ? await syncZaloConnectRuntimePolicies([...all])
                     : undefined;
                 return { key, value: !!payload.value, count: all.size, runtimePolicy };
+            }
+
+            if (action === 'get-name-triggers') {
+                const accountId = primaryProfile(String(payload.accountId || payload.profile || 'default')) || 'default';
+                const stored = getStoredNameTriggers(accountId);
+                const bridge = globalThis.__zaloModEngine?.bridge;
+                if (bridge?.getNameTriggers) {
+                    try {
+                        const res = await bridge.getNameTriggers(accountId);
+                        // Store is the source of truth for the alias list; the bridge adds
+                        // the auto display name. Prefer store if the runtime hasn't been
+                        // replayed yet (empty runtime but non-empty store).
+                        const triggers = (Array.isArray(res.triggers) && res.triggers.length) ? res.triggers : stored;
+                        return { accountId, displayName: res.displayName ?? null, triggers, effective: dedupeAliases([res.displayName, ...triggers]) };
+                    } catch (e) {
+                        logger.warn(`[openclaw-zalo-mod] get-name-triggers ${accountId}: ${e.message}`);
+                    }
+                }
+                return { accountId, displayName: null, triggers: stored, effective: stored, bridgeUnavailable: true };
+            }
+
+            if (action === 'set-name-triggers') {
+                const accountId = primaryProfile(String(payload.accountId || payload.profile || 'default')) || 'default';
+                const input = Array.isArray(payload.triggers) ? payload.triggers.map(String) : [];
+                const bridge = globalThis.__zaloModEngine?.bridge;
+                let runtime = null;
+                if (bridge?.setNameTriggers) {
+                    try { runtime = await bridge.setNameTriggers(accountId, input); }
+                    catch (e) { logger.warn(`[openclaw-zalo-mod] set-name-triggers ${accountId}: ${e.message}`); }
+                }
+                // Persist the runtime-cleaned list when available so store and runtime match.
+                const persisted = await persistNameTriggers(accountId, runtime ? runtime.triggers : input);
+                return {
+                    accountId,
+                    displayName: runtime?.displayName ?? null,
+                    triggers: persisted,
+                    effective: runtime?.effective ?? dedupeAliases(persisted),
+                    bridgeUnavailable: !runtime,
+                };
             }
 
             if (action === 'upsert-custom-mode') {
@@ -5059,6 +5208,10 @@ Quy tắc:
                     const result = await syncZaloConnectRuntimePolicies(watchGroupIds, { quiet: true });
                     if (result.failed === 0) {
                         logger.info(`[openclaw-zalo-mod] live group policy replayed: ${result.applied}/${watchGroupIds.length}`);
+                        const nt = await replayNameTriggers().catch(() => null);
+                        if (nt && !nt.unavailable && nt.total) {
+                            logger.info(`[openclaw-zalo-mod] name triggers replayed: ${nt.applied}/${nt.total} account(s)`);
+                        }
                         return;
                     }
                 } catch { /* bridge chưa load — retry */ }
@@ -5241,16 +5394,14 @@ Quy tắc:
                             await savePluginConfig(patch);
                             patched = true;
                         } else {
-                            const patch = {
-                                bots: {
-                                    ...pluginCfg.bots,
-                                    default: botPatch
-                                },
-                                ownerId: senderId
-                            };
-                            const res = await _patchOpenclawConfig(_openclawHome, { ownerId: senderId }, logger, true);
-                            await savePluginConfig(patch);
-                            patched = res.patched || true;
+                            // Default bot: identity (incl. ownerId) lives under bots.default
+                            // only — no legacy top-level ownerId, no openclaw.json mirror.
+                            // The in-memory global ownerId is backfilled from bots.default on
+                            // next load; this session is covered by adminIds.add below.
+                            await savePluginConfig({
+                                bots: { ...pluginCfg.bots, default: botPatch }
+                            });
+                            patched = true;
                         }
                         if (patched) {
                             adminIds.add(senderId);

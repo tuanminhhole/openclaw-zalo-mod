@@ -63,6 +63,24 @@ test('setGroupPolicy map free/silent/mute qua adapter, tách theo account', asyn
     await assert.rejects(bridge.setGroupPolicy('acc1', 'g1', 'other'), /invalid group mode/);
 });
 
+test('nameTriggers passthrough: set/get theo account, dedupe', async () => {
+    const adapter = new MockZaloConnectAdapter();
+    const bridge = createZaloConnectBridge(adapter);
+    assert.deepEqual((await bridge.getNameTriggers('acc1')).triggers, []);
+    const set = await bridge.setNameTriggers('acc1', [' Mkt ', 'mei', 'mkt', '']);
+    assert.deepEqual(set.triggers, ['Mkt', 'mei']);
+    assert.deepEqual((await bridge.getNameTriggers('acc1')).triggers, ['Mkt', 'mei']);
+    assert.deepEqual((await bridge.getNameTriggers('acc2')).triggers, []);
+    assert.deepEqual((await bridge.setNameTriggers('acc1', [])).triggers, []);
+});
+
+test('nameTriggers ném lỗi rõ ràng khi adapter cũ (bridge < v4)', async () => {
+    const bareAdapter = { getStatus: async () => ({}), listActions: async () => [], executeAction: async () => ({}) };
+    const bridge = createZaloConnectBridge(bareAdapter);
+    await assert.rejects(bridge.getNameTriggers('acc1'), /does not support name triggers/);
+    await assert.rejects(bridge.setNameTriggers('acc1', ['x']), /does not support name triggers/);
+});
+
 test('onInbound nhận event; unsubscribe dừng nhận', async () => {
     const adapter = new MockZaloConnectAdapter();
     const bridge = createZaloConnectBridge(adapter);

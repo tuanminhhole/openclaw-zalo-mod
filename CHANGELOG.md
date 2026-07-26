@@ -1,3 +1,11 @@
+## [2.17.8] - 2026-07-26
+
+### Added
+- **Chế độ Im lặng — sửa "tên gọi" bot ngay trên dashboard**: bật badge Silent ở một nhóm mở modal diễn giải chế độ + hiển thị tên Zalo bot tự nhận, kèm ô nhập các "tên gọi" phụ (alias). Bot đang Im lặng sẽ trả lời khi được @nhắc HOẶC khi tin nhắn gọi đúng một trong các tên đó (khớp không dấu, không phân biệt hoa/thường). Tên gọi lưu **theo tài khoản (bot)** và áp cho bot ở mọi nhóm; đẩy vào runtime OpenClaw Zalo Connect (RAM-only, không ghi `openclaw.json`, không restart) và tự replay sau khi khởi động lại. Cần OpenClaw Zalo Connect hỗ trợ bridge v4; bản cũ hơn thì vẫn lưu và tự áp khi kết nối lại.
+
+### Fixed
+- **Bật/tắt Silent (và các toggle tính năng) không còn lan sang bot khác cùng nhóm**: khi chọn một bot cụ thể trong dropdown rồi gạt toggle, cập nhật hiển thị tức thời chỉ áp cho đúng bot đó. Trước đây, do bản ghi cài đặt của "bot đại diện" dùng chung tham chiếu với settings của nhóm, gạt toggle cho bot A làm badge của bot B (cùng nhóm) đổi theo khi chuyển dropdown.
+
 ## [2.17.6] - 2026-07-21
 
 ### Fixed

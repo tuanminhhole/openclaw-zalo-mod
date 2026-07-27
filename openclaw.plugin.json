@@ -3,7 +3,7 @@
   "name": "OpenClaw Zalo Mod",
   "description": "Zero-token Zalo group moderation — slash commands, anti-spam, warn system, memory integration. Blocks LLM for non-mention messages.",
   "icon": "https://cdn.simpleicons.org/zalo",
-  "version": "2.18.1",
+  "version": "2.18.2",
   "author": "tuanminhhole",
   "license": "MIT",
   "homepage": "https://github.com/tuanminhhole/openclaw-zalo-mod",

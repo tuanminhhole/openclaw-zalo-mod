@@ -1,3 +1,8 @@
+## [2.17.9] - 2026-07-27
+
+### Fixed
+- **Máy cài mới: bot không nhận `im owner` (không có tin xác nhận chủ) và bỏ qua slash command.** Trên một cài đặt còn trắng — chưa có tên bot trong config — hàm dựng cấu hình bot chạm vào một biến chưa khai báo, ném `ReferenceError` và làm **sập toàn bộ hook `before_dispatch`** (log chỉ hiện đúng một dòng `before_dispatch handler from zalo-mod failed: _detectedBotNames is not defined`). Vì lệnh claim chủ được phân tích bên trong hook đó, bot nhận tin nhưng không bao giờ trả lời `im owner <Device ID>`, nên không thể nhận chủ. Nay tên bot lùi về `Bot` khi chưa dò được (tên dò từ IDENTITY.md hoặc Zalo API vẫn được lưu và đọc như trước), kèm test chặn tái phát. Lỗi có từ 2.15.0 và chỉ xuất hiện ở máy cài mới.
+
 ## [2.17.8] - 2026-07-26
 
 ### Added

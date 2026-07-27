@@ -1041,7 +1041,14 @@ const plugin = definePluginEntry({
 
             let bName = botSpecific.botName || pluginCfg.botName;
             if (!bName) {
-                bName = _detectedBotNames[profile] || 'Bot';
+                // Plain 'Bot' is the only fallback left to make: a name detected from IDENTITY.md or
+                // the Zalo API is persisted by saveBotName() into bots[profile].botName (and
+                // pluginCfg.botName for 'default'), which the line above already reads. This used to
+                // consult an undeclared per-profile name map, which threw a ReferenceError on a fresh
+                // install (no name configured yet) and took the whole before_dispatch hook down with
+                // it — so owner claims and slash commands were silently dropped. See the regression
+                // test in tests/owner-claim.test.js.
+                bName = 'Bot';
             }
 
             const zNames = botSpecific.zaloDisplayNames || pluginCfg.zaloDisplayNames || [];

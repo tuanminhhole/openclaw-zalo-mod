@@ -1,3 +1,12 @@
+## [2.18.0] - 2026-07-27
+
+### Changed
+- **Khai báo metadata plugin đầy đủ theo chuẩn ClawHub.** `openclaw.plugin.json` nay khai luôn `icon`, `author`, `license`, `homepage` và `compat` (`pluginApi` / `minGatewayVersion`) — trước đây compat chỉ nằm trong `package.json` và các field còn lại bị thiếu, nên trang plugin trên ClawHub hiển thị thiếu thông tin. Plugin Inspector: PASS, 0 breakage.
+
+### Notes
+- Bản **2.17.9 không phát hành được lên ClawHub**: registry ghi nhận số version (nên chặn publish lại) nhưng không phục vụ được artifact và không cập nhật `latest` — đã báo ClawHub. **Bản vá owner-claim của 2.17.9 nằm trong 2.18.0 này**, nên hãy cập nhật thẳng lên 2.18.0.
+- Cảnh báo `package-manifest-version-drift` còn lại là do gói `openclaw-zalo-mod` trên **npm** vẫn ở 2.14.4 (plugin phát hành qua ClawHub, `publishToNpm: false`). Chỉ hết khi publish npm cùng số.
+
 ## [2.17.9] - 2026-07-27
 
 ### Fixed

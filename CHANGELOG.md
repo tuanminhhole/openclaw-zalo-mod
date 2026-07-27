@@ -1,3 +1,13 @@
+## [2.18.3] - 2026-07-27
+
+### Fixed
+- **Trang Phân quyền trắng trang khi chỉ có 1 bot.** Thanh chọn bot ở topbar chỉ được render khi có **nhiều hơn 1** bot, nên máy 1 bot thì bộ lọc bot mãi ở trạng thái "tất cả bot" — và trang Phân quyền (vốn cần biết đang cấu hình cho bot nào, vì mỗi bot có group riêng) chỉ hiện đúng một câu *"Chọn 1 bot cụ thể ở thanh chọn bot phía trên"* trong khi **thanh đó không tồn tại**. Nay khi chỉ có 1 bot thì trang tự suy ra bot đó ("tất cả bot" và "bot duy nhất" là một) và render bình thường. Máy nhiều bot giữ nguyên hành vi cũ: vẫn yêu cầu chọn bot cụ thể để danh sách nhóm không bị gộp chéo và hiện nhóm dùng chung hai lần.
+- **Chưa có bot nào**: trạng thái rỗng nay chỉ tới nút **Sync Account** thay vì chỉ tới thanh chọn bot rỗng.
+- **Mở tab Phân quyền trước khi `/api/state` trả về**: hiện "Đang tải..." rồi **tự nạp lại** khi có state, thay vì đứng im hoặc báo sai "chưa có bot nào".
+
+### Notes
+- Đã kiểm cả 2 chiều trên môi trường thật: dashboard 1 bot (native, Minh Khang) render đủ 3 card quyền, và dashboard 2 bot (Docker, William + Mkt) vẫn hiện hướng dẫn chọn bot rồi render đúng sau khi chọn — không lỗi console ở cả hai.
+
 ## [2.18.2] - 2026-07-27
 
 ### Added

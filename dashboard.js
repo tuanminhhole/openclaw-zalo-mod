@@ -1480,6 +1480,11 @@ function renderState() {
   renderLicense();
   renderComposerTargets();
   renderTemplates();
+
+  // Trang phân quyền chỉ render lúc mở tab. Nếu người dùng mở tab đó TRƯỚC khi
+  // /api/state về thì lúc ấy chưa có state để biết đang cấu hình cho bot nào —
+  // nạp lại ngay khi state có, nếu không trang sẽ đứng ở "Đang tải...".
+  if (document.getElementById('permissions')?.classList.contains('active') && !permState.data) renderPermissions();
 }
 function countPendingHint() {
   return state.groups.reduce((sum, group) => sum + (group.pendingCount || 0), 0);
@@ -3263,20 +3268,39 @@ function permModeHint(domain, mode) {
 }
 let permState = { data: null, dmMode: 'all', grpMode: 'all', noteScope: 'admin', memScope: 'admin', dmSel: new Set(), grpSel: new Set(), noteSel: new Set(), memSel: new Set(), cmdTab: 'note' };
 
+// Trang phân quyền là per-bot (mỗi bot có group riêng), nên cần biết đang cấu hình
+// cho bot nào. Nhưng thanh chọn bot ở topbar CHỈ được render khi có >1 bot, nên máy
+// 1 bot thì selectedBotFilter mãi là 'all' → trước đây trang hiện đúng một câu
+// "chọn 1 bot ở thanh chọn bot phía trên" trong khi thanh đó không tồn tại, nhìn như
+// trắng trang. Có 1 bot thì 'all' và chính bot đó là một, nên tự suy ra luôn.
+// KHÔNG sửa biến selectedBotFilter toàn cục: nó còn dùng để lọc group ở trang khác.
+function permProfile() {
+  if (selectedBotFilter && selectedBotFilter !== 'all') return selectedBotFilter;
+  const bots = (state && state.bots) || [];
+  return bots.length === 1 ? bots[0].profile : '';
+}
+
 async function renderPermissions() {
   const root = document.getElementById('permContent');
   if (!root) return;
   if (!root.dataset.wired) { wirePermRoot(root); root.dataset.wired = '1'; }
-  // Permissions are per-bot (each bot has its own groups). Require a specific bot
-  // so the group list isn't a confusing cross-bot union that shows shared groups
-  // twice. When "all bots" is selected, prompt the user to pick one.
-  if (selectedBotFilter === 'all') {
-    root.innerHTML = `<div class="perm-empty">${uiText('Chọn 1 bot cụ thể ở thanh chọn bot phía trên để cấu hình phân quyền (mỗi bot có nhóm riêng).', 'Pick a specific bot in the top bar to configure permissions (each bot has its own groups).')}</div>`;
+  if (!state) {
+    // Mở tab trước khi /api/state về — đợi refresh gọi lại, đừng báo "chưa có bot".
+    root.innerHTML = `<div class="perm-empty">${uiText('Đang tải...', 'Loading...')}</div>`;
+    return;
+  }
+  const profile = permProfile();
+  if (!profile) {
+    const botCount = (state.bots || []).length;
+    // Không có bot nào → hướng dẫn Sync Account, chứ đừng chỉ tới thanh chọn bot rỗng.
+    root.innerHTML = `<div class="perm-empty">${botCount === 0
+      ? uiText('Chưa có bot nào. Bấm "Sync Account" ở trên để nạp tài khoản Zalo và group, rồi quay lại trang này.', 'No bot yet. Click "Sync Account" above to import the Zalo account and its groups, then come back.')
+      : uiText('Chọn 1 bot cụ thể ở thanh chọn bot phía trên để cấu hình phân quyền (mỗi bot có nhóm riêng).', 'Pick a specific bot in the top bar to configure permissions (each bot has its own groups).')}</div>`;
     return;
   }
   root.innerHTML = `<div class="perm-empty">${uiText('Đang tải...', 'Loading...')}</div>`;
   let d;
-  try { d = await journalApi('get-permissions', { profile: selectedBotFilter }); }
+  try { d = await journalApi('get-permissions', { profile }); }
   catch (e) { root.innerHTML = `<div class="perm-empty">${esc(e.message)}</div>`; return; }
   const p = d.permissions;
   const userMap = {};

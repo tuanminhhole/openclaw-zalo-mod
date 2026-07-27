@@ -30,6 +30,9 @@ import { handleCrmAction } from './src/crm/crm-api.js';
 import { createZcaFacade } from './src/integration/zca-facade.js';
 import { ReplyMentionCorrelator } from './src/messaging/reply-mention-correlator.js';
 import { matchesOwnerClaimDeviceId } from './src/integration/owner-claim.js';
+import { createZaloModAgentTools, collectOwnerIds, ZALO_MOD_TOOL_NAMES } from './src/agent/tool-surface.js';
+import { listAllCommands, renderCommandPanel, renderRulesPanel, TOGGLE_KEYS } from './src/agent/commands.js';
+import { buildWorkspaceSkillMarkdown, WORKSPACE_SKILL_VERSION } from './src/agent/skill-content.js';
 import { assertActionAllowed, capabilitiesForPlan, verifySignedEntitlement } from './src/licensing/entitlements.js';
 import crypto from 'node:crypto';
 import zlib from 'node:zlib';
@@ -1094,6 +1097,39 @@ const plugin = definePluginEntry({
                 : _defaultWorkspace || path.join(_openclawHome, 'workspace')
         );
 
+        /**
+         * Workspace của MỌI agent, không chỉ agent đầu tiên.
+         * Multi-bot (mỗi bot Zalo = 1 agent) thì bot thứ 2 trở đi cũng cần skill.
+         */
+        function agentWorkspaceDirs() {
+            const dirs = new Set();
+            const resolveWs = (value) => {
+                const raw = String(value || '').trim();
+                if (!raw) return '';
+                return path.isAbsolute(raw) ? raw : path.resolve(_openclawHome, raw);
+            };
+            for (const agent of (cfg?.agents?.list || [])) {
+                const dir = resolveWs(agent?.workspace);
+                if (dir) dirs.add(dir);
+            }
+            const fallback = resolveWs(cfg?.agents?.defaults?.workspace) || path.join(_openclawHome, 'workspace');
+            if (!dirs.size) dirs.add(fallback);
+            return [...dirs];
+        }
+
+        /**
+         * Host đã publish skill native của plugin chưa? Nếu rồi thì KHÔNG ghi bản
+         * fallback vào workspace (tránh 2 skill trùng nội dung, và tránh bản
+         * workspace bị cũ so với plugin).
+         */
+        function pluginSkillPublished() {
+            const candidates = [
+                path.join(_openclawHome, '.openclaw', 'plugin-skills', 'zalo-mod-control'),
+                path.join(_openclawHome, 'plugin-skills', 'zalo-mod-control'),
+            ];
+            return candidates.some((p) => existsSync(p));
+        }
+
         // Memory dir — per-group: skills/memory/zalo-groups/{group-slug}/
         function _slugify(name) {
             return (name || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -1241,158 +1277,49 @@ YwIDAQAB
             storeLoaded = true;
         }
 
+        // ── Skill fallback trong workspace ──────────────────────────────────
+        // Đường CHÍNH là skill native `skills/zalo-mod-control` khai trong
+        // openclaw.plugin.json → host tự symlink vào <home>/plugin-skills/ cho MỌI
+        // agent, luôn khớp version plugin. Chỉ khi host không publish được (bản cũ
+        // chưa hỗ trợ plugin skills) mới ghi bản fallback vào workspace.
+        //
+        // Bản cũ có 2 lỗ đã sửa ở đây: (a) chỉ ghi vào workspace của agent ĐẦU TIÊN
+        // nên multi-bot thì bot sau không có skill; (b) chỉ ghi khi file chưa tồn tại
+        // nên skill đóng băng vĩnh viễn, update plugin không cập nhật được.
+        async function ensureWorkspaceSkillFallback() {
+            if (pluginSkillPublished()) return { skipped: 'plugin-skill-published' };
+            const written = [];
+            for (const wsDir of agentWorkspaceDirs()) {
+                const skillDir = path.join(wsDir, 'skills', 'zalo-group-admin');
+                const skillMdPath = path.join(skillDir, 'SKILL.md');
+                const botCfg = getBotConfig('default');
+                const skillContent = buildWorkspaceSkillMarkdown({
+                    botName: botCfg.botName,
+                    cmdPrefix: botCfg.cmdPrefix,
+                    memoryPathHint: path.join(wsDir, 'skills/memory/zalo-groups'),
+                });
+                let existing = '';
+                try { existing = await fs.readFile(skillMdPath, 'utf8'); } catch { /* chưa có */ }
+                if (existing === skillContent) continue;
+                // Không có dòng version do plugin sinh ra → người dùng sửa tay, giữ nguyên.
+                if (existing && !/^version: \d+\.\d+\.\d+$/m.test(existing)) {
+                    logger.info(`[openclaw-zalo-mod] giữ nguyên SKILL.md đã sửa tay: ${skillMdPath}`);
+                    continue;
+                }
+                await fs.mkdir(skillDir, { recursive: true });
+                await fs.writeFile(skillMdPath, skillContent, 'utf8');
+                written.push(skillMdPath);
+                logger.info(`[openclaw-zalo-mod] wrote fallback skill ${skillMdPath} (v${WORKSPACE_SKILL_VERSION})`);
+            }
+            return { written };
+        }
         // ── Auto-bootstrap workspace files on first load ─────────
         // Creates SKILL.md + memory INDEX.md if they don't exist.
         // This runs automatically so ClawHub installs work without manual setup.js.
         async function bootstrapWorkspaceFiles() {
             try {
-                // 1. Create skills/zalo-group-admin/SKILL.md
-                const skillDir = path.join(workspaceDir, 'skills', 'zalo-group-admin');
-                const skillMdPath = path.join(skillDir, 'SKILL.md');
-                try {
-                    await fs.access(skillMdPath);
-                } catch {
-                    // File doesn't exist — create it
-                    await fs.mkdir(skillDir, { recursive: true });
-                    const skillContent = [
-                        '---',
-                        'name: Zalo Group Admin',
-                        'slug: zalo-group-admin',
-                        'version: 1.2.0',
-                        `description: Quy tắc reply và quản lý group Zalo — ưu tiên ngắn gọn, súc tích.`,
-                        '---',
-                        '',
-                        '# Zalo Group Admin 💬',
-                        '',
-                        '## Khi nào dùng skill này',
-                        '',
-                        'Khi `chat_id` chứa `group:` → Bot đang ở trong Zalo group. Áp dụng toàn bộ quy tắc bên dưới.',
-                        '',
-                        '---',
-                        '',
-                        '## ⚡ NGUYÊN TẮC SỐ 1 — NGẮN GỌN LÀ ĐẶC QUYỀN CỦA GROUP',
-                        '',
-                        '> Trong group chat, **ngắn gọn = tôn trọng**. AI nói dài = spam group.',
-                        '',
-                        '### Giới hạn cứng (KHÔNG vi phạm):',
-                        '- **Tối đa 5 dòng** mỗi reply trong group',
-                        '- **KHÔNG dùng markdown headers** (`##`, `###`) — Zalo không render',
-                        '- **KHÔNG dùng bullet list dài** — tối đa 3 bullets',
-                        '- **KHÔNG dùng bold italic** (`**text**`) — Zalo không render',
-                        '- **Chỉ 1 câu hỏi nếu cần làm rõ**',
-                        '',
-                        '---',
-                        '',
-                        `## 📖 Đọc Group Memory Trước Khi Reply`,
-                        '',
-                        `Khi @mention trong group:`,
-                        `1. Đọc memory dir tương ứng trong ~/skills/memory/zalo-groups/`,
-                        '2. Kiểm tra `chat-highlights.md` xem context gần nhất',
-                        '3. Nếu user từng mention trước → reference lại, không hỏi lại',
-                        '',
-                        `**Path:** \`~/skills/memory/zalo-groups/\``,
-                        '',
-                        '---',
-                        '',
-                        '## 🎯 Xưng Hô Trong Group',
-                        '',
-                        '- Với **member thường**: xưng "mình", gọi "bác" hoặc tên',
-                        '- Với **câu hỏi kỹ thuật**: trả lời thẳng, không giải thích quá nhiều',
-                        '- Với **câu hỏi mơ hồ**: hỏi 1 câu làm rõ — chỉ 1 câu thôi',
-                        '',
-                        '---',
-                        '',
-                        '## 📝 Ghi Memory Sau Reply',
-                        '',
-                        'Sau mỗi @mention được xử lý:',
-                        '```',
-                        `~/skills/memory/zalo-groups/*/chat-highlights.md`,
-                        '```',
-                        'Format: `| YYYY-MM-DD HH:MM | {tên user} | {tóm tắt 1 dòng} |`',
-                        '',
-                        '---',
-                        '',
-                        '## 📋 DANH SÁCH SLASH COMMANDS ĐẦY ĐỦ',
-                        '',
-                        '> Tất cả commands xử lý bởi plugin `openclaw-zalo-mod` — bot KHÔNG cần reply.',
-                        `> Prefix lệnh: \`${cmdPrefix}\` (theo tên bot)`,
-                        '',
-                        '### 👤 Mọi người (trong group)',
-                        '',
-                        '| Command | Mô tả |',
-                        '|---------|-------|',
-                        `| \`${cmdPrefix}noi-quy\` | Xem nội quy nhóm |`,
-                        `| \`${cmdPrefix}menu\` | Danh sách lệnh |`,
-                        `| \`${cmdPrefix}huong-dan\` | Hướng dẫn sử dụng bot |`,
-                        '',
-                        '### 🔧 Admin (trong group)',
-                        '',
-                        '| Command | Mô tả |',
-                        '|---------|-------|',
-                        `| \`${cmdPrefix}mute\` | Tắt bot hoàn toàn |`,
-                        `| \`${cmdPrefix}unmute\` / \`${cmdPrefix}bat-bot\` | Bật lại bot |`,
-                        `| \`${cmdPrefix}warn @name [lý do]\` | Cảnh cáo member |`,
-                        `| \`${cmdPrefix}note [text]\` | Ghi chú admin |`,
-                        `| \`${cmdPrefix}report\` | Báo cáo vi phạm + warn |`,
-                        `| \`${cmdPrefix}memory [note]\` | Lưu memory digest |`,
-                        '',
-                        '### 👑 Owner — trong group',
-                        '',
-                        '| Command | Mô tả |',
-                        '|---------|-------|',
-                        `| \`${cmdPrefix}rules\` | Xem panel sub-lệnh |`,
-                        `| \`${cmdPrefix}rules status\` | Cấu hình group hiện tại |`,
-                        `| \`${cmdPrefix}rules groupid\` | Thêm group này vào config |`,
-                        `| \`${cmdPrefix}rules silent-on\` | Bật silent (chỉ reply khi @tag) |`,
-                        `| \`${cmdPrefix}rules silent-off\` | Tắt silent mode |`,
-                        `| \`${cmdPrefix}rules welcome-on\` | Bật chào member mới |`,
-                        `| \`${cmdPrefix}rules welcome-off\` | Tắt chào member mới |`,
-                        `| \`${cmdPrefix}rules follow-on\` | Bật theo dõi nhóm (ghi lịch sử chat + memory) |`,
-                        `| \`${cmdPrefix}rules follow-off\` | Tắt theo dõi nhóm |`,
-                        '',
-                        '### 🔐 Owner — qua DM',
-                        '',
-                        '| Command | Mô tả |',
-                        '|---------|-------|',
-                        `| \`${cmdPrefix}rules mute-list\` | Trạng thái mute tất cả groups |`,
-                        `| \`${cmdPrefix}rules mute <groupId> on/off\` | Mute/unmute group cụ thể |`,
-                        `| \`${cmdPrefix}rules mute all on/off\` | Mute/unmute tất cả |`,
-                        `| \`${cmdPrefix}rules silent-list\` | Trạng thái silent tất cả groups |`,
-                        `| \`${cmdPrefix}rules silent <groupId> on/off\` | Silent group cụ thể |`,
-                        `| \`${cmdPrefix}rules silent all on/off\` | Silent tất cả |`,
-                        `| \`${cmdPrefix}rules welcome-list\` | Trạng thái welcome tất cả |`,
-                        `| \`${cmdPrefix}rules welcome <groupId> on/off\` | Welcome group cụ thể |`,
-                        `| \`${cmdPrefix}rules welcome all on/off\` | Welcome tất cả |`,
-                        `| \`${cmdPrefix}rules tracking-list\` | Trạng thái tracking tất cả |`,
-                        `| \`${cmdPrefix}rules tracking <groupId> on/off\` | Tracking group cụ thể |`,
-                        `| \`${cmdPrefix}rules tracking all on/off\` | Tracking tất cả |`,
-                        `| \`${cmdPrefix}rules follow-list\` | Theo dõi memory per-group |`,
-                        `| \`${cmdPrefix}rules follow <groupId> on/off\` | Follow group cụ thể |`,
-                        `| \`${cmdPrefix}rules follow all on/off\` | Follow tất cả |`,
-                        `| \`${cmdPrefix}rules dm-list\` | DM whitelist |`,
-                        `| \`${cmdPrefix}rules dm-add <tên>\` | Thêm vào DM whitelist |`,
-                        `| \`${cmdPrefix}rules dm-remove <tên>\` | Xóa khỏi DM whitelist |`,
-                        `| \`${cmdPrefix}rules groupid-list\` | Danh sách tất cả groups |`,
-                        `| \`${cmdPrefix}rules groupid-add <groupId>\` | Thêm group từ xa |`,
-                        `| \`${cmdPrefix}ownerid\` | Xem/đặt owner ID |`,
-                        '',
-                        '---',
-                        '',
-                        '## 🔇 Mute vs Silent',
-                        '',
-                        '| | Mute | Silent |',
-                        '|--|------|--------|',
-                        '| Bot im lặng | Hoàn toàn | Chỉ không tự reply |',
-                        '| Slash hoạt động | ❌ (chỉ /unmute) | ✅ |',
-                        '| @mention | ❌ | ✅ |',
-                        '| Welcome | ❌ | ✅ |',
-
-                        '',
-                    ].join('\n');
-                    await fs.writeFile(skillMdPath, skillContent, 'utf8');
-                    logger.info('[openclaw-zalo-mod] auto-created skills/zalo-group-admin/SKILL.md');
-                }
-
+                // Bước 1 (skill) chạy trễ ở dưới — host publish plugin-skills sau khi
+                // plugin register xong, kiểm tra ngay lúc này sẽ luôn thấy "chưa có".
                 // 2. Create memory INDEX.md cho mỗi group đang follow
                 for (const gId of watchGroupIds) {
                     if (!isFollowOn(gId)) continue;
@@ -1461,6 +1388,17 @@ YwIDAQAB
 
         // Fire-and-forget bootstrap (don't block plugin registration)
         bootstrapWorkspaceFiles();
+
+        // Skill fallback kiểm tra TRỄ: host publish <home>/plugin-skills/ sau khi
+        // plugin register xong, nên phải chờ mới biết có cần bản workspace hay không.
+        const _skillTimer = globalThis.__zaloModSkillTimer;
+        if (_skillTimer) clearTimeout(_skillTimer);
+        globalThis.__zaloModSkillTimer = setTimeout(() => {
+            ensureWorkspaceSkillFallback()
+                .then((r) => { if (r?.skipped) logger.info('[openclaw-zalo-mod] plugin skill zalo-mod-control đã được host publish — bỏ qua bản workspace'); })
+                .catch((e) => logger.warn(`[openclaw-zalo-mod] skill fallback failed: ${e.message}`));
+        }, 20000);
+        globalThis.__zaloModSkillTimer?.unref?.();
 
         // ── Memory Sync Helpers ──────────────────────────────────
         function nowShort() {
@@ -2420,6 +2358,47 @@ Quy tắc:
         }
 
         /**
+         * ĐƯỜNG GHI DUY NHẤT cho mọi toggle per-group.
+         *
+         * Trước đây slash command và dashboard có 2 implementation riêng và đã
+         * lệch thật: `/mute` ghi settings cho ĐÚNG MỘT groupId nhưng lại sync
+         * runtime cho toàn bộ sibling, còn dashboard thì ghi cho mọi sibling.
+         * Hệ quả: owner gõ `/rules mute <gid> on` với gid của bot A thì badge của
+         * cùng nhóm đó dưới bot B vẫn tắt → nhìn như "bot nói đã mute mà UI không
+         * đổi". Giờ slash, dashboard và agent tool dùng chung hàm này.
+         *
+         * Một nhóm Zalo có nhiều groupId — mỗi bot một id per-account. Không có
+         * `profile` = áp cho mọi bot trong nhóm đó (mặc định đúng cho owner);
+         * có `profile` = chỉ đúng id được truyền vào.
+         */
+        async function applyToggleSetting({ groupIds, key, value, profile, scope } = {}) {
+            const cleanKey = String(key || '').trim();
+            if (!TOGGLE_KEYS.includes(cleanKey)) throw new Error(`Invalid setting key: ${cleanKey || '(empty)'}`);
+            const ids = (Array.isArray(groupIds) ? groupIds : [groupIds]).map((g) => String(g || '').replace(/^group:/, '').trim()).filter(Boolean);
+            if (!ids.length) throw new Error('Invalid setting payload: empty groupIds');
+
+            // scope:'self' = chỉ đúng groupId truyền vào (dùng khi đăng ký group mới
+            // cho riêng bot này). Mặc định fan-out sang mọi bot cùng nhóm.
+            const perBot = scope === 'self' || (!!profile && String(profile).trim() !== '' && String(profile) !== 'all');
+            const targets = new Set();
+            for (const gid of ids) {
+                if (perBot) targets.add(gid);
+                else for (const sib of siblingGroupIds(gid)) targets.add(sib);
+            }
+            const val = !!value;
+            // follow/tracking đã gộp → set cả 2 key cho đồng bộ dữ liệu cũ.
+            for (const id of targets) {
+                if (cleanKey === 'follow' || cleanKey === 'tracking') setFollow(id, val);
+                else store.setSetting(id, cleanKey, val);
+            }
+            await store.saveSettings();
+            const runtimePolicy = (cleanKey === 'muted' || cleanKey === 'silent')
+                ? await syncZaloConnectRuntimePolicies([...targets])
+                : undefined;
+            return { key: cleanKey, value: val, count: targets.size, groupIds: [...targets], runtimePolicy };
+        }
+
+        /**
          * Sync group admins từ ZCA API → settings.json + groupNames config
          * Gọi khi /groupid-add hoặc ${cmdPrefix}rules groupid
          */
@@ -2944,7 +2923,7 @@ Quy tắc:
             const sub = args[0]?.toLowerCase();
             if (!sub) {
                 await sendDmMsg(ctx, senderId,
-                    `🔐 OWNER PANEL — ${cmdPrefix}rules\n━━━━━━━━━━━━━━━━━━\n\n🔇 Mute (tắt bot hoàn toàn):\n  ${cmdPrefix}rules mute-list\n  ${cmdPrefix}rules mute <groupId> on/off\n  ${cmdPrefix}rules mute all on/off\n\n🔕 Silent Mode (chỉ reply khi tag):\n  ${cmdPrefix}rules silent-list\n  ${cmdPrefix}rules silent <groupId> on/off\n  ${cmdPrefix}rules silent all on/off\n\n🎉 Welcome (chào mem mới):\n  ${cmdPrefix}rules welcome-list\n  ${cmdPrefix}rules welcome <groupId> on/off\n  ${cmdPrefix}rules welcome all on/off\n\n📋 Tracking (ghi lịch sử chat):\n  ${cmdPrefix}rules tracking-list\n  ${cmdPrefix}rules tracking <groupId> on/off\n  ${cmdPrefix}rules tracking all on/off\n\n👁️ Follow (theo dõi chat + memory):\n  ${cmdPrefix}rules follow-list\n  ${cmdPrefix}rules follow <groupId> on/off\n  ${cmdPrefix}rules follow all on/off\n\n💬 DM Whitelist:\n  ${cmdPrefix}rules dm-list\n  ${cmdPrefix}rules dm-add <tên member>\n  ${cmdPrefix}rules dm-remove <tên member>\n\n🆔 Group:\n  ${cmdPrefix}rules groupid-list\n  ${cmdPrefix}rules groupid-add <groupId>\n  ${cmdPrefix}rules groupid-add-all\n\n📊 ${cmdPrefix}rules status`
+                    renderRulesPanel(cmdPrefix)
                 );
                 return { handled: true };
             }
@@ -2967,12 +2946,10 @@ Quy tắc:
                 const toggle = args[2]?.toLowerCase();
                 if (toggle === 'on' || toggle === 'off') {
                     const val = toggle === 'on';
-                    for (const gId of watchGroupIds) { store.setSetting(gId, 'muted', val); }
-                    await store.saveSettings();
-                    await syncZaloConnectRuntimePolicies(watchGroupIds);
+                    await applyToggleSetting({ groupIds: watchGroupIds, key: 'muted', value: val });
                     await sendDmMsg(ctx, senderId, `${val ? '🔇' : '🔊'} Mute ${val ? 'BẬT' : 'TẮT'} cho TẤT CẢ ${watchGroupIds.length} groups`);
                 } else {
-                    await sendDmMsg(ctx, senderId, '⚠️ Cú pháp: ${cmdPrefix}rules mute all on/off');
+                    await sendDmMsg(ctx, senderId, `⚠️ Cú pháp: ${cmdPrefix}rules mute all on/off`);
                 }
                 return { handled: true };
             }
@@ -2982,17 +2959,13 @@ Quy tắc:
                 const targetGid = args[1].replace(/^<|>$/g, ''); // strip <>
                 const toggle = args[2]?.toLowerCase();
                 if (toggle === 'on') {
-                    store.setSetting(targetGid, 'muted', true);
-                    await store.saveSettings();
-                    await syncZaloConnectRuntimePolicies(siblingGroupIds(targetGid));
+                    await applyToggleSetting({ groupIds: [targetGid], key: 'muted', value: true });
                     await sendDmMsg(ctx, senderId, `🔇 Mute BẬT cho ${getGroupName(targetGid)} (${targetGid})\nBot sẽ im lặng hoàn toàn trong group này.`);
                 } else if (toggle === 'off') {
-                    store.setSetting(targetGid, 'muted', false);
-                    await store.saveSettings();
-                    await syncZaloConnectRuntimePolicies(siblingGroupIds(targetGid));
+                    await applyToggleSetting({ groupIds: [targetGid], key: 'muted', value: false });
                     await sendDmMsg(ctx, senderId, `🔊 Mute TẮT cho ${getGroupName(targetGid)} (${targetGid})\nBot hoạt động bình thường trở lại.`);
                 } else {
-                    await sendDmMsg(ctx, senderId, '⚠️ Cú pháp: ${cmdPrefix}rules mute <groupId> on/off');
+                    await sendDmMsg(ctx, senderId, `⚠️ Cú pháp: ${cmdPrefix}rules mute <groupId> on/off`);
                 }
                 return { handled: true };
             }
@@ -3016,12 +2989,10 @@ Quy tắc:
                 const toggle = args[2]?.toLowerCase();
                 if (toggle === 'on' || toggle === 'off') {
                     const val = toggle === 'on';
-                    for (const gId of watchGroupIds) { store.setSetting(gId, 'silent', val); }
-                    await store.saveSettings();
-                    await syncZaloConnectRuntimePolicies(watchGroupIds);
+                    await applyToggleSetting({ groupIds: watchGroupIds, key: 'silent', value: val });
                     await sendDmMsg(ctx, senderId, `${val ? '🔕' : '🔊'} Silent mode ${val ? 'BẬT' : 'TẮT'} cho TẤT CẢ ${watchGroupIds.length} groups`);
                 } else {
-                    await sendDmMsg(ctx, senderId, '⚠️ Cú pháp: ${cmdPrefix}rules silent all on/off');
+                    await sendDmMsg(ctx, senderId, `⚠️ Cú pháp: ${cmdPrefix}rules silent all on/off`);
                 }
                 return { handled: true };
             }
@@ -3031,17 +3002,13 @@ Quy tắc:
                 const targetGid = args[1].replace(/^<|>$/g, '');
                 const toggle = args[2]?.toLowerCase();
                 if (toggle === 'on') {
-                    store.setSetting(targetGid, 'silent', true);
-                    await store.saveSettings();
-                    await syncZaloConnectRuntimePolicies(siblingGroupIds(targetGid));
+                    await applyToggleSetting({ groupIds: [targetGid], key: 'silent', value: true });
                     await sendDmMsg(ctx, senderId, `🔕 Silent mode BẬT cho ${getGroupName(targetGid)} (${targetGid})`);
                 } else if (toggle === 'off') {
-                    store.setSetting(targetGid, 'silent', false);
-                    await store.saveSettings();
-                    await syncZaloConnectRuntimePolicies(siblingGroupIds(targetGid));
+                    await applyToggleSetting({ groupIds: [targetGid], key: 'silent', value: false });
                     await sendDmMsg(ctx, senderId, `🔊 Silent mode TẮT cho ${getGroupName(targetGid)} (${targetGid})`);
                 } else {
-                    await sendDmMsg(ctx, senderId, '⚠️ Cú pháp: ${cmdPrefix}rules silent <groupId> on/off');
+                    await sendDmMsg(ctx, senderId, `⚠️ Cú pháp: ${cmdPrefix}rules silent <groupId> on/off`);
                 }
                 return { handled: true };
             }
@@ -3065,11 +3032,10 @@ Quy tắc:
                 const toggle = args[2]?.toLowerCase();
                 if (toggle === 'on' || toggle === 'off') {
                     const val = toggle === 'on';
-                    for (const gId of watchGroupIds) { store.setSetting(gId, 'welcome', val); }
-                    await store.saveSettings();
+                    await applyToggleSetting({ groupIds: watchGroupIds, key: 'welcome', value: val });
                     await sendDmMsg(ctx, senderId, `${val ? '🎉' : '🔕'} Welcome ${val ? 'BẬT' : 'TẮT'} cho TẤT CẢ ${watchGroupIds.length} groups`);
                 } else {
-                    await sendDmMsg(ctx, senderId, '⚠️ Cú pháp: ${cmdPrefix}rules welcome all on/off');
+                    await sendDmMsg(ctx, senderId, `⚠️ Cú pháp: ${cmdPrefix}rules welcome all on/off`);
                 }
                 return { handled: true };
             }
@@ -3079,15 +3045,13 @@ Quy tắc:
                 const targetGid = args[1].replace(/^<|>$/g, ''); // strip <>
                 const toggle = args[2]?.toLowerCase();
                 if (toggle === 'on') {
-                    store.setSetting(targetGid, 'welcome', true);
-                    await store.saveSettings();
+                    await applyToggleSetting({ groupIds: [targetGid], key: 'welcome', value: true });
                     await sendDmMsg(ctx, senderId, `✅ Welcome BẬT cho ${getGroupName(targetGid)} (${targetGid})`);
                 } else if (toggle === 'off') {
-                    store.setSetting(targetGid, 'welcome', false);
-                    await store.saveSettings();
+                    await applyToggleSetting({ groupIds: [targetGid], key: 'welcome', value: false });
                     await sendDmMsg(ctx, senderId, `✅ Welcome TẮT cho ${getGroupName(targetGid)} (${targetGid})`);
                 } else {
-                    await sendDmMsg(ctx, senderId, '⚠️ Cú pháp: ${cmdPrefix}rules welcome <groupId> on/off');
+                    await sendDmMsg(ctx, senderId, `⚠️ Cú pháp: ${cmdPrefix}rules welcome <groupId> on/off`);
                 }
                 return { handled: true };
             }
@@ -3111,11 +3075,10 @@ Quy tắc:
                 const toggle = args[2]?.toLowerCase();
                 if (toggle === 'on' || toggle === 'off') {
                     const val = toggle === 'on';
-                    for (const gId of watchGroupIds) { setFollow(gId, val); }
-                    await store.saveSettings();
+                    await applyToggleSetting({ groupIds: watchGroupIds, key: 'follow', value: val });
                     await sendDmMsg(ctx, senderId, `${val ? '✅' : '❌'} Tracking ${val ? 'BẬT' : 'TẮT'} cho TẤT CẢ ${watchGroupIds.length} groups`);
                 } else {
-                    await sendDmMsg(ctx, senderId, '⚠️ Cú pháp: ${cmdPrefix}rules tracking all on/off');
+                    await sendDmMsg(ctx, senderId, `⚠️ Cú pháp: ${cmdPrefix}rules tracking all on/off`);
                 }
                 return { handled: true };
             }
@@ -3125,15 +3088,13 @@ Quy tắc:
                 const targetGid = args[1].replace(/^<|>$/g, '');
                 const toggle = args[2]?.toLowerCase();
                 if (toggle === 'on') {
-                    setFollow(targetGid, true);
-                    await store.saveSettings();
+                    await applyToggleSetting({ groupIds: [targetGid], key: 'follow', value: true });
                     await sendDmMsg(ctx, senderId, `✅ Follow BẬT cho ${getGroupName(targetGid)} (${targetGid})`);
                 } else if (toggle === 'off') {
-                    setFollow(targetGid, false);
-                    await store.saveSettings();
+                    await applyToggleSetting({ groupIds: [targetGid], key: 'follow', value: false });
                     await sendDmMsg(ctx, senderId, `✅ Follow TẮT cho ${getGroupName(targetGid)} (${targetGid})`);
                 } else {
-                    await sendDmMsg(ctx, senderId, '⚠️ Cú pháp: ${cmdPrefix}rules tracking <groupId> on/off');
+                    await sendDmMsg(ctx, senderId, `⚠️ Cú pháp: ${cmdPrefix}rules tracking <groupId> on/off`);
                 }
                 return { handled: true };
             }
@@ -3141,7 +3102,7 @@ Quy tắc:
             // ── dm-list: danh sách users được DM
             if (sub === 'dm-list') {
                 if (allowedDmUsers.size === 0) {
-                    await sendDmMsg(ctx, senderId, '💬 DM Whitelist: TRỐNG\n\nTất cả mọi người đều có thể DM bot.\nDùng ${cmdPrefix}rules dm-add <tên> để giới hạn.');
+                    await sendDmMsg(ctx, senderId, `💬 DM Whitelist: TRỐNG\n\nTất cả mọi người đều có thể DM bot.\nDùng ${cmdPrefix}rules dm-add <tên> để giới hạn.`);
                 } else {
                     const lines = [`💬 DM WHITELIST (${allowedDmUsers.size} users)\n━━━━━━━━━━━━━━━━━━`];
                     for (const uid of allowedDmUsers) {
@@ -3223,14 +3184,10 @@ Quy tắc:
                 const toggle = args[2]?.toLowerCase();
                 if (toggle === 'on' || toggle === 'off') {
                     const val = toggle === 'on';
-                    for (const gId of watchGroupIds) {
-                        store.setSetting(gId, 'follow', val);
-                        store.setSetting(gId, 'tracking', val);
-                    }
-                    await store.saveSettings();
+                    await applyToggleSetting({ groupIds: watchGroupIds, key: 'follow', value: val });
                     await sendDmMsg(ctx, senderId, `${val ? '👁️' : '🚫'} Follow ${val ? 'BẬT' : 'TẮT'} cho TẤT CẢ ${watchGroupIds.length} groups`);
                 } else {
-                    await sendDmMsg(ctx, senderId, '⚠️ Cú pháp: ${cmdPrefix}rules follow all on/off');
+                    await sendDmMsg(ctx, senderId, `⚠️ Cú pháp: ${cmdPrefix}rules follow all on/off`);
                 }
                 return { handled: true };
             }
@@ -3240,9 +3197,7 @@ Quy tắc:
                 const targetGid = args[1].replace(/^<|>$/g, ''); // strip <>
                 const toggle = args[2]?.toLowerCase();
                 if (toggle === 'on') {
-                    store.setSetting(targetGid, 'follow', true);
-                    store.setSetting(targetGid, 'tracking', true); // follow bật = tracking bật
-                    await store.saveSettings();
+                    await applyToggleSetting({ groupIds: [targetGid], key: 'follow', value: true });
                     // Bootstrap memory dir ngay lập tức
                     const mDir = getMemoryDir(targetGid);
                     try {
@@ -3263,12 +3218,10 @@ Quy tắc:
                     } catch { /* ok */ }
                     await sendDmMsg(ctx, senderId, `✅ Follow BẬT cho ${getGroupName(targetGid)} (${targetGid})\n📁 Memory: ${getMemorySlug(targetGid)}/`);
                 } else if (toggle === 'off') {
-                    store.setSetting(targetGid, 'follow', false);
-                    store.setSetting(targetGid, 'tracking', false);
-                    await store.saveSettings();
+                    await applyToggleSetting({ groupIds: [targetGid], key: 'follow', value: false });
                     await sendDmMsg(ctx, senderId, `✅ Follow TẮT cho ${getGroupName(targetGid)} (${targetGid})`);
                 } else {
-                    await sendDmMsg(ctx, senderId, '⚠️ Cú pháp: ${cmdPrefix}rules follow <groupId> on/off');
+                    await sendDmMsg(ctx, senderId, `⚠️ Cú pháp: ${cmdPrefix}rules follow <groupId> on/off`);
                 }
                 return { handled: true };
             }
@@ -3293,7 +3246,7 @@ Quy tắc:
                     const muted = store.getSetting(gId, 'muted', false);
                     lines.push(`${muted ? '🔇' : '🔊'} ${name}\n   ID: ${gId}`);
                 }
-                if (watchGroupIds.length === 0) lines.push('⚠️ Chưa có group nào. Gõ ${cmdPrefix}rules groupid trong group để thêm.');
+                if (watchGroupIds.length === 0) lines.push(`⚠️ Chưa có group nào. Gõ ${cmdPrefix}rules groupid trong group để thêm.`);
                 lines.push(`\n📊 Tổng: ${watchGroupIds.length} group(s)`);
                 await sendDmMsg(ctx, senderId, lines.join('\n'));
                 return { handled: true };
@@ -3338,7 +3291,7 @@ Quy tắc:
                 return { handled: true };
             }
             if (sub === 'groupid-add' && !args[1]) {
-                await sendDmMsg(ctx, senderId, '⚠️ Cú pháp: ${cmdPrefix}rules groupid-add <groupId>');
+                await sendDmMsg(ctx, senderId, `⚠️ Cú pháp: ${cmdPrefix}rules groupid-add <groupId>`);
                 return { handled: true };
             }
 
@@ -4616,48 +4569,53 @@ Quy tắc:
                 return { ok: result, license: getLicenseStatus() };
             }
 
+            // Chẩn đoán chỉ-đọc: với senderId này thì agent được cấp tool nào?
+            // Dùng để kiểm tra cổng owner mà không cần gửi tin Zalo thật. KHÔNG nằm
+            // trong allowlist của agent nên bot không tự dò được bằng zalo_mod_action.
+            if (action === 'agent-tools-status') {
+                const senderId = String(payload.senderId || '').trim();
+                const ownerIds = [...collectOwnerIds({ ...pluginCfg, ownerId: ownerId || pluginCfg.ownerId })];
+                const built = zaloModToolFactory({ requesterSenderId: senderId });
+                const out = {
+                    senderId: senderId || null,
+                    isOwner: ownerIds.includes(senderId),
+                    ownerIds,
+                    tools: built.map((t) => t.name),
+                    destructiveAllowed: pluginCfg.agentTools?.allowDestructive === true,
+                };
+                // probe: chạy THẬT tool chỉ-đọc zalo_mod_groups để xác nhận đường
+                // execute → dispatcher hoạt động, mà không cần gửi tin Zalo thật.
+                // Không lộ thêm gì: người có token dashboard vốn đọc được /api/state.
+                if (payload.probe) {
+                    const groupsTool = built.find((t) => t.name === 'zalo_mod_groups');
+                    out.probe = groupsTool
+                        ? JSON.parse((await groupsTool.execute('probe', { query: String(payload.query || '') })).content[0].text)
+                        : { skipped: 'tool không được cấp cho senderId này' };
+                }
+                return out;
+            }
+
             if (action === 'toggle-setting') {
                 const groupId = String(payload.groupId || '').trim();
-                const key = String(payload.key || '').trim();
-                if (!groupId || !['muted', 'silent', 'welcome', 'tracking', 'follow', 'pendingAuto', 'autoSummary'].includes(key)) {
-                    throw new Error('Invalid setting payload');
-                }
-                // Per-bot: khi dashboard chọn 1 bot cụ thể (payload.profile), CHỈ áp cho đúng
-                // groupId của bot đó — không lan sang bot khác cùng nhóm. Khi "tất cả bot"
-                // (không có profile), fan-out ra mọi ID cùng nhóm để bật/tắt cho mọi bot.
-                const profile = String(payload.profile || '').trim();
-                const ids = (profile && profile !== 'all') ? [groupId] : siblingGroupIds(groupId);
-                // follow/tracking đã gộp → set cả 2 key cho đồng bộ.
-                const applyOne = (id, v) => (key === 'follow' || key === 'tracking') ? setFollow(id, v) : store.setSetting(id, key, v);
-                for (const id of ids) applyOne(id, !!payload.value);
-                await store.saveSettings();
-                const runtimePolicy = (key === 'muted' || key === 'silent')
-                    ? await syncZaloConnectRuntimePolicies(ids)
-                    : undefined;
-                return { groupId, key, value: !!payload.value, applied: ids.length, runtimePolicy };
+                if (!groupId) throw new Error('Invalid setting payload');
+                const res = await applyToggleSetting({
+                    groupIds: [groupId],
+                    key: payload.key,
+                    value: payload.value,
+                    profile: payload.profile,
+                });
+                return { groupId, key: res.key, value: res.value, applied: res.count, runtimePolicy: res.runtimePolicy };
             }
 
             if (action === 'bulk-toggle-setting') {
                 const groupIds = Array.isArray(payload.groupIds) ? payload.groupIds.map(String).filter(Boolean) : [];
-                const key = String(payload.key || '').trim();
-                if (!groupIds.length || !['muted', 'silent', 'welcome', 'tracking', 'follow', 'pendingAuto', 'autoSummary'].includes(key)) {
-                    throw new Error('Invalid bulk setting payload');
-                }
-                // Per-bot khi chọn 1 bot cụ thể (payload.profile) → chỉ áp đúng các groupId
-                // được gửi; "tất cả bot" → fan-out ra mọi ID cùng nhóm cho từng group.
-                const profile = String(payload.profile || '').trim();
-                const perBot = profile && profile !== 'all';
-                const all = new Set();
-                for (const gid of groupIds) {
-                    if (perBot) all.add(gid);
-                    else for (const id of siblingGroupIds(gid)) all.add(id);
-                }
-                for (const id of all) (key === 'follow' || key === 'tracking') ? setFollow(id, !!payload.value) : store.setSetting(id, key, !!payload.value);
-                await store.saveSettings();
-                const runtimePolicy = (key === 'muted' || key === 'silent')
-                    ? await syncZaloConnectRuntimePolicies([...all])
-                    : undefined;
-                return { key, value: !!payload.value, count: all.size, runtimePolicy };
+                if (!groupIds.length) throw new Error('Invalid bulk setting payload');
+                return await applyToggleSetting({
+                    groupIds,
+                    key: payload.key,
+                    value: payload.value,
+                    profile: payload.profile,
+                });
             }
 
             if (action === 'get-name-triggers') {
@@ -5480,9 +5438,7 @@ Quy tắc:
                 // Only allow /unmute from admin to pass through
                 const unmuteMatch = content.match(new RegExp(`^${cmdPrefix}(unmute|bat-bot)$`, "i"));
                 if (unmuteMatch && isAdmin(senderId, groupId)) {
-                    store.setSetting(groupId, 'muted', false);
-                    await store.saveSettings();
-                    await syncZaloConnectRuntimePolicies(siblingGroupIds(groupId));
+                    await applyToggleSetting({ groupIds: [groupId], key: 'muted', value: false });
                     logger.info(`[openclaw-zalo-mod] group ${groupId} UNMUTED by ${senderName}`);
                     await sendGroupMsg(ctx, groupId, '🔊 Bot đã bật lại trong group này!');
                     return { handled: true };
@@ -5541,9 +5497,7 @@ Quy tắc:
                 // /mute — admin only: tắt bot hoàn toàn trong group
                 if (command === '/mute' || command === '/tat-bot') {
                     if (!isAdmin(senderId, groupId)) return { handled: true };
-                    store.setSetting(groupId, 'muted', true);
-                    await store.saveSettings();
-                    await syncZaloConnectRuntimePolicies(siblingGroupIds(groupId));
+                    await applyToggleSetting({ groupIds: [groupId], key: 'muted', value: true });
                     logger.info(`[openclaw-zalo-mod] group ${groupId} MUTED by ${senderName}`);
                     await sendGroupMsg(ctx, groupId, `🔇 Bot đã tắt trong group này.\nGõ ${cmdPrefix}unmute để bật lại.`);
                     return { handled: true };
@@ -5552,9 +5506,7 @@ Quy tắc:
                 // /unmute — admin only: bật lại bot (also handled in mute gate above, but kept here for non-muted state)
                 if (command === '/unmute' || command === '/bat-bot') {
                     if (!isAdmin(senderId, groupId)) return { handled: true };
-                    store.setSetting(groupId, 'muted', false);
-                    await store.saveSettings();
-                    await syncZaloConnectRuntimePolicies(siblingGroupIds(groupId));
+                    await applyToggleSetting({ groupIds: [groupId], key: 'muted', value: false });
                     await sendGroupMsg(ctx, groupId, '🔊 Bot đang hoạt động bình thường!');
                     return { handled: true };
                 }
@@ -5729,7 +5681,7 @@ Device ID: ${result.deviceId}`);
                     const sub = args[0]?.toLowerCase();
                     if (!sub) {
                         await sendGroupMsg(ctx, groupId,
-                            `⚙️ ADMIN COMMANDS — ${cmdPrefix}rules\n━━━━━━━━━━━━━━━━━━\n\n🔇 Mute (tắt bot hoàn toàn):\n  /mute   — Tắt bot\n  /unmute — Bật lại\n\n🔕 Silent Mode:\n  ${cmdPrefix}rules silent-on  — Bot chỉ reply khi @tag\n  ${cmdPrefix}rules silent-off — Bot reply mọi tin\n\n🎉 Welcome:\n  ${cmdPrefix}rules welcome-on  — Bật chào member mới\n  ${cmdPrefix}rules welcome-off — Tắt chào\n\n👁️ Follow (ghi lịch sử chat + memory):\n  ${cmdPrefix}rules follow-on  — Bật theo dõi nhóm\n  ${cmdPrefix}rules follow-off — Tắt theo dõi\n\n🆔 Quản lý ID:\n  ${cmdPrefix}rules groupid\n  ${cmdPrefix}rules groupid-list\n  ${cmdPrefix}rules groupid-add-all\n\n📊 ${cmdPrefix}rules status`
+                            renderCommandPanel(cmdPrefix, ['admin', 'admin-rules'], `⚙️ ADMIN COMMANDS — ${cmdPrefix}rules`)
                         );
                         return { handled: true };
                     }
@@ -5754,12 +5706,12 @@ Device ID: ${result.deviceId}`);
                             let autoEnabled = false;
                             const allAdmins = getGroupAdmins(groupId);
                             if (allAdmins.includes(currentOwnerId)) {
-                                store.setSetting(groupId, 'welcome', true);
-                                store.setSetting(groupId, 'follow', true);
-                                store.setSetting(groupId, 'tracking', true);
+                                // scope:'self' — đăng ký group cho ĐÚNG bot này,
+                                // không bật lây sang bot khác cùng nhóm.
+                                await applyToggleSetting({ groupIds: [groupId], key: 'welcome', value: true, scope: 'self' });
+                                await applyToggleSetting({ groupIds: [groupId], key: 'follow', value: true, scope: 'self' });
                                 autoEnabled = true;
                             }
-                            await store.saveSettings();
 
                             const adminNames = getGroupAdminNames(groupId);
                             const adminLine = adminNames.length > 0
@@ -5781,12 +5733,12 @@ Device ID: ${result.deviceId}`);
                         await processGroupidAddAll(ctx, groupId, true, groupId);
                         return { handled: true };
                     }
-                    if (sub === 'silent-on') { store.setSetting(groupId, 'silent', true); await store.saveSettings(); await syncZaloConnectRuntimePolicies(siblingGroupIds(groupId)); await sendGroupMsg(ctx, groupId, '✅ Silent mode: BẬT'); return { handled: true }; }
-                    if (sub === 'silent-off') { store.setSetting(groupId, 'silent', false); await store.saveSettings(); await syncZaloConnectRuntimePolicies(siblingGroupIds(groupId)); await sendGroupMsg(ctx, groupId, '✅ Silent mode: TẮT'); return { handled: true }; }
-                    if (sub === 'welcome-on') { store.setSetting(groupId, 'welcome', true); await store.saveSettings(); await sendGroupMsg(ctx, groupId, '✅ Welcome: BẬT'); return { handled: true }; }
-                    if (sub === 'welcome-off') { store.setSetting(groupId, 'welcome', false); await store.saveSettings(); await sendGroupMsg(ctx, groupId, '✅ Welcome: TẮT'); return { handled: true }; }
-                    if (sub === 'follow-on' || sub === 'tracking-on') { setFollow(groupId, true); await store.saveSettings(); await sendGroupMsg(ctx, groupId, '✅ Follow (theo dõi nhóm): BẬT\n📋 Ghi lịch sử chat + memory cho group này.'); return { handled: true }; }
-                    if (sub === 'follow-off' || sub === 'tracking-off') { setFollow(groupId, false); await store.saveSettings(); await sendGroupMsg(ctx, groupId, '✅ Follow (theo dõi nhóm): TẮT'); return { handled: true }; }
+                    if (sub === 'silent-on') { await applyToggleSetting({ groupIds: [groupId], key: 'silent', value: true }); await sendGroupMsg(ctx, groupId, '✅ Silent mode: BẬT'); return { handled: true }; }
+                    if (sub === 'silent-off') { await applyToggleSetting({ groupIds: [groupId], key: 'silent', value: false }); await sendGroupMsg(ctx, groupId, '✅ Silent mode: TẮT'); return { handled: true }; }
+                    if (sub === 'welcome-on') { await applyToggleSetting({ groupIds: [groupId], key: 'welcome', value: true }); await sendGroupMsg(ctx, groupId, '✅ Welcome: BẬT'); return { handled: true }; }
+                    if (sub === 'welcome-off') { await applyToggleSetting({ groupIds: [groupId], key: 'welcome', value: false }); await sendGroupMsg(ctx, groupId, '✅ Welcome: TẮT'); return { handled: true }; }
+                    if (sub === 'follow-on' || sub === 'tracking-on') { await applyToggleSetting({ groupIds: [groupId], key: 'follow', value: true }); await sendGroupMsg(ctx, groupId, '✅ Follow (theo dõi nhóm): BẬT\n📋 Ghi lịch sử chat + memory cho group này.'); return { handled: true }; }
+                    if (sub === 'follow-off' || sub === 'tracking-off') { await applyToggleSetting({ groupIds: [groupId], key: 'follow', value: false }); await sendGroupMsg(ctx, groupId, '✅ Follow (theo dõi nhóm): TẮT'); return { handled: true }; }
                     if (sub === 'status') {
                         const muted = store.getSetting(groupId, 'muted', false);
                         const silent = store.getSetting(groupId, 'silent', true);
@@ -5911,7 +5863,7 @@ Device ID: ${result.deviceId}`);
                     if (admins.length > 0) {
                         await sendGroupMsg(ctx, groupId, `👑 Admin group này:\n${admins.map(n => `• ${n}`).join('\n')}`);
                     } else {
-                        await sendGroupMsg(ctx, groupId, '👑 Chưa ghi nhận admin nào. Người tạo group gõ ${cmdPrefix}rules groupid để đăng ký.');
+                        await sendGroupMsg(ctx, groupId, `👑 Chưa ghi nhận admin nào. Người tạo group gõ ${cmdPrefix}rules groupid để đăng ký.`);
                     }
                     return { handled: true };
                 }
@@ -5985,6 +5937,63 @@ Device ID: ${result.deviceId}`);
             // Non-mention, non-slash, non-spam, non-silent → let LLM decide
             return;
         }; // registered below with priority 300, before relay plugin (200)
+
+        // ── Agent tool surface ──────────────────────────────────────────────
+        // Slash command là zero-token và LLM không thấy; dashboard thì token-gated.
+        // Nên khi owner nhắn "mute nhóm A, nhóm B" bằng lời, LLM không có cách nào
+        // ghi state → nó trả lời "đã mute rồi" mà badge dashboard đứng nguyên.
+        // 4 tool dưới đây là actuator còn thiếu, và chúng ghi qua ĐÚNG
+        // runDashboardAction mà nút dashboard gọi nên không thể lệch hành vi.
+        function agentGroupState(gid) {
+            const plain = String(gid || '').replace(/^group:/, '');
+            const info = groupNames[plain] || {};
+            const botCfg = getBotConfig(plain);
+            const follow = isFollowOn(plain);
+            return {
+                groupId: plain,
+                name: getGroupName(plain),
+                profile: info.profile || 'default',
+                botName: botCfg.botName,
+                cmdPrefix: botCfg.cmdPrefix,
+                muted: store.getSetting(plain, 'muted', false) === true,
+                silent: store.getSetting(plain, 'silent', true) !== false,
+                welcome: store.getSetting(plain, 'welcome', true) !== false,
+                tracking: follow,
+                follow,
+                pendingAuto: store.getSetting(plain, 'pendingAuto', false) === true,
+                autoSummary: store.getSetting(plain, 'autoSummary', false) === true,
+                runtimeMode: getZaloConnectRuntimeMode(plain),
+            };
+        }
+
+        const zaloModToolFactory = createZaloModAgentTools({
+            listGroups: async () => { await ensureStore(); return watchGroupIds.map(agentGroupState); },
+            getGroupState: agentGroupState,
+            runAction: (action, payload) => runDashboardAction(action, payload),
+            readHistory: (gid, date) => readChatHistory(gid, date),
+            listHistoryDates: (gid) => listChatHistoryDates(gid),
+            getNotes: (gid) => getNotes(gid),
+            getGroupMemories: (gid) => getGroupMemories(gid),
+            getSummary: (gid, date) => getSummary(gid, date),
+            generateSummary: (gid, date) => generateDailySummary(gid, date, { by: 'agent-tool' }),
+            vnDateStr: (d) => vnDateStr(d),
+            // Owner đọc live mỗi lần gọi: owner có thể vừa được ghi qua `im owner`.
+            getOwnerIds: () => collectOwnerIds({ ...pluginCfg, ownerId: ownerId || pluginCfg.ownerId }),
+            isDestructiveAllowed: () => pluginCfg.agentTools?.allowDestructive === true,
+            audit: (entry) => appendDashboardAudit(entry),
+            listCommands: () => watchGroupIds.length
+                ? listAllCommands(getBotConfig(watchGroupIds[0]).cmdPrefix)
+                : listAllCommands(cmdPrefix),
+            logger,
+        });
+        try {
+            api.registerTool(zaloModToolFactory, { names: ZALO_MOD_TOOL_NAMES });
+            logger.info(`[openclaw-zalo-mod] agent tools registered: ${ZALO_MOD_TOOL_NAMES.join(', ')}`);
+        } catch (e) {
+            // Host cũ chưa có registerTool → plugin vẫn chạy bình thường, chỉ
+            // mất khả năng điều khiển bằng ngôn ngữ tự nhiên.
+            logger.warn(`[openclaw-zalo-mod] agent tools unavailable on this host: ${e.message}`);
+        }
 
         // ── Fallback: before_model_resolve + before_agent_reply ─────────────
         // OpenClaw v2026.5.x: runtime plugins cannot register gateway-level hooks.

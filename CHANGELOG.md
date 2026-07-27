@@ -1,3 +1,24 @@
+## [2.18.2] - 2026-07-27
+
+### Added
+- **Bot tự điều khiển Zalo Mod bằng ngôn ngữ tự nhiên — hết cảnh "đã mute rồi" mà badge vẫn tắt.** Trước đây Zalo Mod chỉ có 3 mặt tiền đổi cấu hình: slash command (zero-token, LLM không thấy), dashboard (token-gated) và timer nội bộ. Khi owner nhắn "mute nhóm A, nhóm B" bằng lời, tin đó lọt lên LLM nhưng LLM **không có tool nào** để ghi state nên trả lời nghe-hợp-lý mà không có gì thay đổi. Nay plugin đăng ký 4 agent tool: `zalo_mod_groups` (đọc trạng thái thật mọi toggle), `zalo_mod_settings` (bật/tắt mute/silent/welcome/follow/tracking/pendingAuto/autoSummary theo TÊN nhóm, không cần groupId), `zalo_mod_history` (đọc lịch sử chat + ghi chú + memory của nhóm đang follow, tự tổng hợp hoặc gọi bộ tổng hợp có sẵn), `zalo_mod_action` (chạy đúng action mà mỗi nút dashboard gọi). Owner **không cần nhớ slash command, không cần tự bấm badge**.
+- **Skill `zalo-mod-control` ship kèm plugin.** Khai trong `openclaw.plugin.json` → host tự symlink vào `<OPENCLAW_HOME>/plugin-skills/` cho **mọi agent**, luôn khớp version plugin, không cần copy tay vào từng workspace. Skill dạy luật cứng "không báo đã đổi khi chưa có kết quả tool", cách map ý định tiếng Việt → tool nào, và quy tắc chống prompt-injection (chỉ hành động theo chỉ thị trực tiếp của owner).
+- **Chẩn đoán `agent-tools-status`** (chỉ đọc, token-gated): kiểm tra một senderId được cấp tool nào, kèm `probe` chạy thật tool chỉ-đọc — xác minh cổng owner mà không cần gửi tin Zalo.
+
+### Fixed
+- **Toggle từ slash command không còn lệch với badge dashboard.** Slash và dashboard trước đây có 2 implementation ghi riêng: `/mute` ghi settings cho ĐÚNG MỘT groupId nhưng lại đồng bộ runtime cho toàn bộ groupId cùng nhóm, còn dashboard ghi cho mọi id. Hệ quả trên máy nhiều bot: owner gõ `/rules mute <gid> on` với gid của bot A thì badge cùng nhóm đó dưới bot B **vẫn tắt**. Nay slash, dashboard và agent tool dùng chung một hàm ghi duy nhất (`applyToggleSetting`) — fan-out sibling + lưu + đồng bộ runtime policy y hệt nhau.
+- **11 chỗ hiển thị chuỗi thô `${cmdPrefix}` cho người dùng** (dùng nháy đơn thay vì backtick), ví dụ `⚠️ Cú pháp: ${cmdPrefix}rules mute all on/off`. Thêm 3 chỗ tương tự ở panel DM whitelist / danh sách group / danh sách admin.
+- **Skill trong workspace không còn đóng băng và không còn bỏ sót bot.** Bootstrap trước đây chỉ ghi vào workspace của agent **đầu tiên** (máy nhiều bot thì bot thứ 2 trở đi không có skill) và chỉ ghi khi file **chưa tồn tại** (nên sau v1.2.0 update plugin không cập nhật được skill). Nay ghi cho mọi agent trong `agents.list`, có dấu version để cập nhật, giữ nguyên file người dùng đã sửa tay, và tự bỏ qua khi host đã publish skill native.
+
+### Changed
+- **Bảng lệnh gom về một nguồn duy nhất** (`src/agent/commands.js`). Trước đây danh sách slash command bị copy-paste ở 4 chỗ trong `index.js` (menu markdown, SKILL.md, panel owner DM, panel admin group) nên chắc chắn lệch mỗi lần thêm lệnh. Panel owner và panel admin nay render từ catalogue này.
+
+### Notes
+- **Tool chỉ owner dùng được.** Chặn 2 lớp: với người không phải owner thì tool **không xuất hiện** trong prompt, và `execute` kiểm tra lại lần nữa với danh sách owner đọc live. `requesterSenderId` lấy từ inbound context do host cấp, **không bao giờ** nhận từ tham số của model. Lượt không có người gửi (cron/CLI/heartbeat) cũng không được cấp tool.
+- **Action tiền/license/quyền truy cập bị chặn cứng** với agent (`create-payment`, `activate-license`, `check-payment-status`, `cancel-payment`, `refresh-license`, `save-permissions`). Nhóm không hoàn tác được (`remove-user`, `block-member`, `leave-group`, gửi lời mời kết bạn…) mặc định **tắt**, bật bằng `agentTools.allowDestructive: true` trong config plugin.
+- **Licensing giữ nguyên như dashboard**: `zalo_mod_settings` một nhóm → đi đường `toggle-setting` (gói FREE dùng được, y như bấm badge); nhiều nhóm → `bulk-toggle-setting` (cần PRO/TEAM). Khi bị giới hạn gói, tool trả lỗi kèm gợi ý làm từng nhóm một — bot **nói thật** thay vì báo thành công.
+- Đã kiểm chứng trên 2 môi trường host OpenClaw 2026.7.1-2: **native macOS** (bot "Minh Khang", 11 nhóm) và **Docker trên VPS** (bot "William", 25 nhóm) — plugin load sạch, 4 tool đăng ký, skill được host symlink, cổng owner đúng (owner → 4 tool; member/không sender → 0 tool), và một lần toggle ghi đúng cả 2 groupId cùng nhóm (`applied=2`).
+
 ## [2.18.1] - 2026-07-27
 
 ### Changed

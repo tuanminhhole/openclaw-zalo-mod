@@ -73,11 +73,33 @@
         "type": "boolean",
         "default": false,
         "description": "Enable local debug logging. Message payload logging is disabled by default."
+      },
+      "agentTools": {
+        "type": "object",
+        "description": "Quyền của agent tool (zalo_mod_*). Tool chỉ owner dùng được.",
+        "properties": {
+          "allowDestructive": {
+            "type": "boolean",
+            "default": false,
+            "description": "Cho bot chạy action không hoàn tác được (kick, block, rời nhóm, gửi lời mời kết bạn) khi owner ra lệnh. Mặc định tắt."
+          }
+        },
+        "additionalProperties": false
       }
     },
     "additionalProperties": true
   },
-  "skills": [],
+  "contracts": {
+    "tools": [
+      "zalo_mod_groups",
+      "zalo_mod_settings",
+      "zalo_mod_history",
+      "zalo_mod_action"
+    ]
+  },
+  "skills": [
+    "skills/zalo-mod-control"
+  ],
   "providers": [],
   "channels": [],
   "compat": {

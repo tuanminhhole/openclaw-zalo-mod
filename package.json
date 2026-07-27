@@ -9,6 +9,7 @@
   "files": [
     "index.js",
     "src",
+    "skills",
     "docs",
     "openclaw.plugin.json",
     "README.md",

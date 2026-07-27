@@ -1,3 +1,12 @@
+## [2.18.1] - 2026-07-27
+
+### Changed
+- **Phát hành lại lên ClawHub sau khi gỡ gói `openclaw-zalo-mod` khỏi npm.** Nguyên nhân ClawHub kẹt ingest (2.17.9 và 2.18.0 báo "Version not found", `latest` đứng ở 2.17.8) đã được xác định là **xung đột với bản npm cũ 2.14.4** (`package-manifest-version-drift`): pipeline artifact của gói này đối chiếu integrity/shasum với npm nên bản npm lệch số chặn việc promote. Sau khi unpublish toàn bộ gói trên npm, ClawHub tự promote `latest` lên 2.17.9; bản 2.18.1 này bump để đẩy nốt phần metadata (icon/author/license/homepage/compat) lên `latest`.
+
+### Notes
+- **Không đổi hành vi runtime** — `index.js` giữ nguyên byte-for-byte so với 2.17.9/2.18.0. Bản vá owner-claim (2.17.9) và toàn bộ tính năng name-triggers/Silent (2.17.8) đều đã có sẵn. Đây là bump "plumbing" để ClawHub `latest` khớp mã nguồn mới nhất.
+- Gói cũ trên **npm đã được gỡ** (plugin phát hành qua ClawHub, `publishToNpm: false`) nên cảnh báo `package-manifest-version-drift` không còn nguồn phát sinh.
+
 ## [2.18.0] - 2026-07-27
 
 ### Changed

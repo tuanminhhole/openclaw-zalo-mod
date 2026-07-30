@@ -1,3 +1,13 @@
+## [2.22.1] - 2026-07-31
+
+### Changed
+- **Gọn hai nút trong khối "Lịch báo cáo cuối ngày" ở modal Chi tiết group.** Trước đó là 2 nút cùng kiểu `outline-primary` nằm 2 dòng khác nhau, không có phân cấp. Nay cùng MỘT dòng với tiêu đề, phân cấp rõ: `🗓️ Lịch báo cáo` là nút **chính** (nơi cài đặt thật), `Nhật ký` là nút **phụ**; nhãn ngắn lại, bỏ chữ "Mở trang".
+
+  Ba thứ phải làm cùng nhau, thiếu một là rớt dòng: (1) `.btn` có `min-height:38px` nên phải **ghi đè** — chỉ giảm `padding` là vô ích, nút vẫn cao 38px; (2) `white-space:nowrap` để nhãn không tự xé làm hai; (3) `flex-wrap:wrap` + `min-width` cho tiêu đề, để màn hẹp thì **cả cụm nút** xuống dòng dưới thay vì bóp tiêu đề thành 3 dòng. Đã xem bằng mắt trên trình duyệt thật ở cả desktop (một dòng) và mobile 375px (tiêu đề một dòng, cụm nút xuống dòng dưới).
+
+### Notes
+- 229 test xanh, không đổi hành vi nào ngoài trình bày.
+
 ## [2.22.0] - 2026-07-31
 
 ### Added

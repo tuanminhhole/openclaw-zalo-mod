@@ -10,7 +10,7 @@ const modalBody = document.getElementById('modalBody');
 const modalCancel = document.getElementById('modalCancel');
 const modalConfirm = document.getElementById('modalConfirm');
 const token = window.ZALO_DASHBOARD_TOKEN || '';
-const pluginVersion = '2.22.0';
+const pluginVersion = '2.22.1';
 let state = null;
 let activeGroupId = '';
 let lang = localStorage.getItem('zaloDashboardLang') || 'vi';
@@ -3437,14 +3437,24 @@ function groupDetailBody(detail) {
     ].map(([key, label]) => `<button class="feature-toggle ${detail.settings?.[key] ? 'on' : 'off'}" type="button" data-toggle="${esc(detail.botGroupId || detail.groupId)}:${key}:${!detail.settings?.[key]}" data-toggle-profile="${esc(selBotProfile())}">${label}</button>`).join('')}
           </div></div></div>
           <div class="item"><div style="width:100%">
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
-              <div class="item-title" style="font-size:15px;font-weight:700">🗓️ ${uiText('Lịch báo cáo cuối ngày', 'End-of-day report')}</div>
-              <button class="btn outline-primary" type="button" data-journal="${esc(detail.groupId)}" style="padding:5px 11px;font-size:12px;flex:none">${VIEW_ICON}${uiText('Xem nhật ký', 'View journal')}</button>
+            ${/* Hai nút CÙNG MỘT DÒNG với tiêu đề: chính (Lịch báo cáo — nơi cài đặt thật) + phụ
+                  (Nhật ký). Ba thứ phải làm cùng nhau, thiếu một là rớt dòng:
+                    · `.btn` có min-height:38px nên phải ghi đè, không thì giảm padding vô ích;
+                    · `white-space:nowrap` để nhãn nút không tự xé làm hai;
+                    · `flex-wrap:wrap` + `min-width` cho tiêu đề: màn hẹp thì cả CỤM nút xuống dòng
+                      dưới, thay vì bóp tiêu đề thành 3 dòng như bản trước. */''}
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
+              <div class="item-title" style="font-size:15px;font-weight:700;flex:1 1 auto;min-width:150px">🗓️ ${uiText('Lịch báo cáo cuối ngày', 'End-of-day report')}</div>
+              <div style="display:flex;align-items:center;gap:6px;flex:0 0 auto">
+                <button class="btn" type="button" data-journal="${esc(detail.groupId)}"
+                  style="min-height:0;height:28px;padding:0 9px;font-size:11.5px;white-space:nowrap;flex:none">${VIEW_ICON}${uiText('Nhật ký', 'Journal')}</button>
+                <button class="btn primary" type="button" data-goto-reports
+                  style="min-height:0;height:28px;padding:0 9px;font-size:11.5px;white-space:nowrap;flex:none">🗓️ ${uiText('Lịch báo cáo', 'Schedules')}</button>
+              </div>
             </div>
-            <div class="item-sub" style="margin:2px 0 8px">${uiText(
+            <div class="item-sub" style="margin:2px 0 0">${uiText(
               'Lịch báo cáo là thực thể riêng vì một lịch trải trên nhiều nhóm — cài ở trang Lịch báo cáo.',
               'Schedules are their own entity because one schedule spans many groups — set them on the Schedules page.')}</div>
-            <button class="btn outline-primary" type="button" data-goto-reports style="padding:6px 12px;font-size:12.5px">🗓️ ${uiText('Mở trang Lịch báo cáo', 'Open Schedules')}</button>
           </div></div>
           <div class="item">
             <div style="width:100%">

@@ -1,3 +1,16 @@
+## [2.20.0] - 2026-07-30
+
+### Added
+- **Tool riêng `zalo_mod_reports` cho lịch báo cáo — tham số PHẲNG.** Ba lần liên tiếp owner nhờ *"đổi lịch báo cáo tổng hợp thành 9h sáng vào nhóm ASACHINA ZALO"*, bot gọi vài action **đọc** rồi báo "đã đổi xong" trong khi lịch không đổi. Nguyên nhân không phải model lười: đường ghi duy nhất là `zalo_mod_action { action: "report-job-save", payload: { job: { … } } }` — model phải tự chọn đúng tên action giữa hơn 40 cái **rồi** lồng JSON ba lớp. Nó không làm nổi, kể cả sau khi 2.19.4 đưa tên action vào mô tả tool.
+
+  `zalo_mod_settings` thì luôn gọi đúng — vì phẳng, có `enum`, có `required`. Tool mới bắt chước y hệt: mỗi thứ owner hay nhờ là **một field ở tầng ngoài cùng** (`operation`, `id`, `time`, `kind`, `groups`, `toOwnerDm`, `toGroups`, `toEachGroup`, `enabled`). Việc lồng payload cho `runDashboardAction` do **code** làm, không bắt model làm.
+
+  Kèm hai thứ chống báo khống: `groups: ["all"]` tự thành `"*"`, và sau khi ghi tool **tự đọc lại** rồi trả về `jobs` thật để model đọc con số thay vì tin vào lời mình.
+
+### Notes
+- 205 test xanh (thêm 5 cho tool mới: schema phẳng, code lồng payload hộ model, `all`→`*`, thiếu `id` thì báo lỗi rõ, member thường không thấy tool).
+- Bài học: khi model liên tục không gọi được một đường ghi, đừng cố nhồi thêm chỉ dẫn — hãy làm hình dạng tham số đơn giản tới mức khó gọi sai. `contracts.tools` trong `openclaw.plugin.json` phải khai đủ tool, nếu không host không đăng ký.
+
 ## [2.19.4] - 2026-07-30
 
 ### Fixed

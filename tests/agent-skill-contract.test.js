@@ -50,7 +50,7 @@ test('SKILL.md có frontmatter hợp lệ và description đủ để host trigg
     }
 });
 
-test('SKILL.md dạy luật chống báo khống và liệt kê đủ 4 tool', () => {
+test('SKILL.md dạy luật chống báo khống và liệt kê đủ mọi tool', () => {
     assert.match(shippedSkill, /KHÔNG BAO GIỜ BÁO KHỐNG/);
     for (const name of ZALO_MOD_TOOL_NAMES) {
         assert.ok(shippedSkill.includes(name), `SKILL.md thiếu ${name}`);

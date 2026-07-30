@@ -27,6 +27,7 @@ export const ZALO_MOD_TOOL_NAMES = Object.freeze([
     'zalo_mod_groups',
     'zalo_mod_settings',
     'zalo_mod_history',
+    'zalo_mod_reports',
     'zalo_mod_action',
 ]);
 
@@ -202,6 +203,61 @@ const HISTORY_SCHEMA = {
         limit: { type: 'integer', minimum: 20, maximum: 400, description: `Số tin tối đa mỗi nhóm (mặc định ${MAX_HISTORY_MESSAGES}).` },
     },
     required: ['groups'],
+    additionalProperties: false,
+};
+
+/** "all"/"tất cả" → '*'; còn lại giữ nguyên tên nhóm để tầng dưới resolve. undefined = không đổi. */
+function normalizeReportGroups(groups) {
+    if (groups === undefined) return undefined;
+    const list = (Array.isArray(groups) ? groups : [groups]).map((v) => String(v ?? '').trim()).filter(Boolean);
+    if (!list.length) return undefined;
+    if (list.some((v) => ['all', 'tat ca', 'tất cả'].includes(foldGroupName(v)) || v === '*')) return '*';
+    return list;
+}
+
+/**
+ * Lịch báo cáo — schema PHẲNG, cố ý không lồng.
+ *
+ * Bug thật, ba lần liên tiếp: owner nhờ "đổi lịch báo cáo tổng hợp thành 9h sáng vào nhóm ASACHINA
+ * ZALO", bot gọi vài action ĐỌC rồi báo "đã đổi xong" trong khi lịch không đổi. Đường duy nhất để ghi
+ * là `zalo_mod_action { action: "report-job-save", payload: { job: { … } } }` — model phải tự chọn đúng
+ * tên action trong danh sách hơn 40 cái RỒI lồng JSON ba lớp. Nó không làm nổi, kể cả khi tên action đã
+ * nằm trong mô tả tool.
+ *
+ * `zalo_mod_settings` thì luôn gọi đúng, vì phẳng + có enum + có required. Tool này bắt chước y hệt:
+ * mỗi thứ owner hay nhờ là MỘT field ở tầng ngoài cùng.
+ */
+const REPORTS_SCHEMA = {
+    type: 'object',
+    properties: {
+        operation: {
+            type: 'string',
+            enum: ['list', 'save', 'run', 'preview'],
+            description: 'list = xem các lịch đang có (LÀM ĐẦU TIÊN để lấy id). save = tạo mới hoặc sửa. run = gửi ngay. preview = xem trước chuỗi sẽ gửi, không gửi.',
+        },
+        id: { type: 'string', description: 'id của lịch cần sửa (lấy từ operation="list"). Bỏ trống khi tạo lịch mới.' },
+        name: { type: 'string', description: 'Tên lịch, ví dụ "BC Tổng Hợp". Chỉ cần khi tạo mới.' },
+        time: { type: 'string', description: 'Giờ gửi mỗi ngày, dạng HH:MM giờ VN. Ví dụ "09:00".' },
+        kind: {
+            type: 'string',
+            enum: ['digest', 'group'],
+            description: 'digest = gộp tất cả nhóm vào MỘT tin ngắn. group = mỗi nhóm một tin đầy đủ.',
+        },
+        groups: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Các nhóm được tổng hợp. Tên nhóm có dấu cũng được, hoặc ["all"] cho tất cả nhóm đang follow.',
+        },
+        toOwnerDm: { type: 'boolean', description: 'true = gửi vào DM riêng của owner.' },
+        toGroups: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Gửi báo cáo vào (các) nhóm này — tên nhóm cũng được. Dùng khi owner nói "gửi vào nhóm X".',
+        },
+        toEachGroup: { type: 'boolean', description: 'true = mỗi nhóm tự nhận báo cáo của nó. Chỉ dùng với kind="group".' },
+        enabled: { type: 'boolean', description: 'false = tạm tắt lịch mà không xoá.' },
+    },
+    required: ['operation'],
     additionalProperties: false,
 };
 
@@ -436,6 +492,69 @@ export function createZaloModAgentTools(host) {
                     });
                     await logRun('zalo_mod_history', params, result);
                     return result;
+                },
+            },
+            {
+                name: 'zalo_mod_reports',
+                label: 'Zalo Mod — lịch báo cáo tổng hợp',
+                description: [
+                    'Xem / tạo / sửa lịch báo cáo lịch sử chat — TƯƠNG ĐƯƠNG trang "Nhật ký → Lịch báo cáo" trên dashboard.',
+                    'Dùng tool này khi owner nói kiểu "đổi lịch báo cáo tổng hợp thành 9h sáng", "gửi báo cáo vào nhóm X",',
+                    '"tạo lịch tổng hợp tất cả nhóm", "tắt lịch báo cáo", "gửi thử báo cáo cho tôi xem".',
+                    'Nhận TÊN nhóm, không cần groupId. Luôn gọi operation="list" trước để lấy id của lịch cần sửa.',
+                    'Sửa một phần là đủ: đổi giờ chỉ cần { operation:"save", id, time }.',
+                    'TUYỆT ĐỐI không tự nhận đã đổi xong khi chưa gọi operation="save" và chưa thấy ok trong kết quả.',
+                ].join(' '),
+                parameters: REPORTS_SCHEMA,
+                execute: async (_toolCallId, params = {}) => {
+                    const blocked = guard(requesterSenderId);
+                    if (blocked) return blocked;
+                    const op = String(params.operation || '').trim();
+                    try {
+                        if (op === 'list') {
+                            const result = await runAction('report-jobs', {});
+                            await logRun('zalo_mod_reports', params, result);
+                            return ok({ ok: true, ...result });
+                        }
+                        if (op === 'preview') {
+                            const groups = normalizeReportGroups(params.groups);
+                            const result = await runAction('report-digest-preview', { groups: groups ?? '*' });
+                            await logRun('zalo_mod_reports', params, result);
+                            return ok({ ok: true, ...result });
+                        }
+                        if (op === 'run') {
+                            if (!params.id) return fail('Thiếu id. Gọi operation="list" trước để lấy id của lịch.');
+                            const result = await runAction('report-job-run', { id: params.id });
+                            await logRun('zalo_mod_reports', params, result);
+                            return ok({ ok: true, ...result });
+                        }
+                        if (op !== 'save') return fail(`operation "${op}" không hợp lệ. Dùng: list | save | run | preview.`);
+
+                        // Dựng payload lồng cho runDashboardAction TỪ các field phẳng — chỗ model hay sai
+                        // nhất, nên để code làm thay vì bắt model tự lồng JSON.
+                        const job = { id: String(params.id || '').trim() || `job-${Date.now().toString(36)}` };
+                        if (params.name !== undefined) job.name = params.name;
+                        if (params.time !== undefined) job.time = params.time;
+                        if (params.kind !== undefined) job.kind = params.kind;
+                        if (params.enabled !== undefined) job.enabled = params.enabled;
+                        const groups = normalizeReportGroups(params.groups);
+                        if (groups !== undefined) job.groups = groups;
+                        const deliver = {};
+                        if (params.toOwnerDm !== undefined) deliver.ownerDm = params.toOwnerDm;
+                        if (params.toEachGroup !== undefined) deliver.eachGroup = params.toEachGroup;
+                        if (params.toGroups !== undefined) deliver.groups = Array.isArray(params.toGroups) ? params.toGroups : [params.toGroups];
+                        if (Object.keys(deliver).length) job.deliver = deliver;
+
+                        const saved = await runAction('report-job-save', { job });
+                        // Đọc lại NGAY và trả về state thật, để model không phải tự tin vào lời mình.
+                        const after = await runAction('report-jobs', {});
+                        const result = { ok: true, saved: saved?.job || saved, jobs: after?.jobs || [] };
+                        await logRun('zalo_mod_reports', params, result);
+                        return ok(result);
+                    } catch (err) {
+                        await logRun('zalo_mod_reports', params, { ok: false, error: err.message });
+                        return fail(err.message);
+                    }
                 },
             },
             {

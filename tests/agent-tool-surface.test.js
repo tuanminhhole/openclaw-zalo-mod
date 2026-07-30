@@ -287,3 +287,61 @@ test('mô tả zalo_mod_action nêu tên action GHI, không để trong skill', 
     assert.match(action.description, /chỉ cần id \+ field muốn đổi/, 'phải nói rõ là sửa được một phần');
     assert.match(action.description, /SAU KHI action GHI trả về ok/, 'phải có luật chống báo khống ngay trong mô tả');
 });
+
+// ── zalo_mod_reports: tool PHẲNG cho lịch báo cáo ─────────────────────────────────────────────
+// Bug thật ba lần liên tiếp: owner nhờ đổi giờ lịch, bot gọi vài action ĐỌC rồi báo "đã đổi xong".
+// Đường ghi duy nhất khi đó là zalo_mod_action { action:"report-job-save", payload:{ job:{…} } } —
+// model phải tự chọn tên action giữa hơn 40 cái RỒI lồng JSON ba lớp, và nó không làm nổi kể cả khi
+// tên action nằm sẵn trong mô tả tool. zalo_mod_settings luôn gọi đúng vì phẳng + enum + required.
+test('zalo_mod_reports phẳng: mọi thứ owner hay nhờ là một field ở tầng ngoài', () => {
+    const { host } = makeHost();
+    const tools = createZaloModAgentTools(host)({ requesterSenderId: OWNER });
+    const reports = tools.find((t) => t.name === 'zalo_mod_reports');
+    assert.ok(reports, 'phải có tool zalo_mod_reports');
+    const props = reports.parameters.properties;
+    for (const k of ['operation', 'id', 'time', 'kind', 'groups', 'toOwnerDm', 'toGroups', 'toEachGroup', 'enabled']) {
+        assert.ok(props[k], `thiếu field phẳng ${k}`);
+        assert.notEqual(props[k].type, 'object', `${k} phải phẳng, không lồng object`);
+    }
+    assert.deepEqual(reports.parameters.required, ['operation']);
+    assert.deepEqual(props.operation.enum, ['list', 'save', 'run', 'preview']);
+});
+
+test('save dựng payload lồng HỘ model, và tự đọc lại state sau khi ghi', async () => {
+    const { host, calls } = makeHost();
+    const tools = createZaloModAgentTools(host)({ requesterSenderId: OWNER });
+    const reports = tools.find((t) => t.name === 'zalo_mod_reports');
+
+    await reports.execute('c1', { operation: 'save', id: 'job-x', time: '09:00', toGroups: ['ASACHINA ZALO'] });
+
+    const save = calls.find((c) => c.action === 'report-job-save');
+    assert.ok(save, 'phải gọi report-job-save');
+    assert.equal(save.payload.job.id, 'job-x');
+    assert.equal(save.payload.job.time, '09:00');
+    assert.deepEqual(save.payload.job.deliver.groups, ['ASACHINA ZALO'], 'tên nhóm được chuyển nguyên xuống tầng resolve');
+    assert.equal(save.payload.job.groups, undefined, 'không gửi field mà owner không nhắc — tránh ghi đè groups');
+    assert.ok(calls.some((c) => c.action === 'report-jobs'), 'sau khi ghi phải đọc lại để trả state thật');
+});
+
+test('groups:["all"] thành "*" nên nhóm thêm sau tự vào lịch', async () => {
+    const { host, calls } = makeHost();
+    const tools = createZaloModAgentTools(host)({ requesterSenderId: OWNER });
+    const reports = tools.find((t) => t.name === 'zalo_mod_reports');
+    await reports.execute('c1', { operation: 'save', name: 'BC', kind: 'digest', groups: ['all'], time: '08:00', toOwnerDm: true });
+    const save = calls.find((c) => c.action === 'report-job-save');
+    assert.equal(save.payload.job.groups, '*');
+});
+
+test('run mà thiếu id thì báo lỗi rõ, không đoán', async () => {
+    const { host } = makeHost();
+    const tools = createZaloModAgentTools(host)({ requesterSenderId: OWNER });
+    const reports = tools.find((t) => t.name === 'zalo_mod_reports');
+    const res = parse(await reports.execute('c1', { operation: 'run' }));
+    assert.equal(res.ok, false);
+    assert.match(res.error, /Thiếu id/);
+});
+
+test('member thường không thấy zalo_mod_reports', () => {
+    const { host } = makeHost();
+    assert.deepEqual(createZaloModAgentTools(host)({ requesterSenderId: MEMBER }), []);
+});

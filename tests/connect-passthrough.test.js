@@ -139,3 +139,29 @@ test('lịch báo cáo cho một tập nhóm vẫn theo luật gói như dashboa
     // Tạo/sửa lịch là một thao tác trên MỘT lịch, không phải fan-out nhiều đích → Free làm được.
     assert.equal(requiredTierForAction('report-job-save', { job: { groups: ['a', 'b', 'c'] } }), 'free');
 });
+
+// ── Action đọc không được nhận payload kiểu ghi ───────────────────────────────────────────────
+// Bug thật: bot được nhờ đổi giờ đã gọi `report-jobs { id, time }` rồi `report-digest-preview
+// { time, deliver }`. Cả hai bỏ qua field lạ và trả ok:true → bot báo với owner "đã đổi xong" trong khi
+// lịch không đổi. Bot không bịa — chính API nói dối trước.
+test('action chỉ-đọc từ chối payload kiểu ghi, kèm chỉ dẫn sang report-job-save', () => {
+    const src = readFileSync(new URL('../index.js', import.meta.url), 'utf8');
+    assert.match(src, /function rejectMutationPayload/, 'phải có hàm chặn');
+    assert.match(src, /rejectMutationPayload\('report-jobs', payload\)/, 'report-jobs phải chặn');
+    assert.match(src, /rejectMutationPayload\('report-digest-preview', payload\)/, 'preview phải chặn');
+    // MUTATION_HINT_KEYS khai báo TRƯỚC hàm nên phải cắt từ đó, không thì bỏ sót đúng danh sách cần kiểm.
+    const fn = src.slice(src.indexOf('const MUTATION_HINT_KEYS'), src.indexOf("if (action === 'report-jobs')"));
+    for (const k of ['id', 'time', 'enabled', 'deliver', 'operation', 'kind']) {
+        assert.match(fn, new RegExp(`'${k}'`), `phải bắt field ${k} — bot thật đã gửi nó`);
+    }
+    assert.match(fn, /report-job-save/, 'lỗi phải chỉ đúng action cần dùng, không chỉ nói "sai"');
+});
+
+test('save nhận TÊN nhóm, tên lạ/nhập nhằng thì báo lỗi thay vì ghi bừa', () => {
+    const src = readFileSync(new URL('../index.js', import.meta.url), 'utf8');
+    const block = src.slice(src.indexOf("action === 'report-job-save'"), src.indexOf("action === 'report-job-delete'"));
+    assert.match(block, /resolveGroupTargets\(list, knownGroups\)/, 'phải dùng resolver tên nhóm sẵn có');
+    assert.match(block, /Không tìm thấy nhóm/, 'tên lạ phải báo lỗi');
+    assert.match(block, /nhập nhằng/, 'tên nhập nhằng phải báo lỗi kèm ứng viên');
+    assert.match(block, /job\.deliver\.groups = resolveNames/, 'deliver.groups cũng phải resolve — bot thật gửi tên vào đây');
+});

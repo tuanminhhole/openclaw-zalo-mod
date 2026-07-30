@@ -1,3 +1,13 @@
+## [2.19.3] - 2026-07-30
+
+### Fixed
+- **Bot báo "đã đổi lịch xong" trong khi lịch không đổi — vì API nói dối trước.** Được nhờ đổi giờ, bot gọi `report-jobs { id, time: "17:30" }` rồi `report-digest-preview { time, deliver }`. Cả hai là action **chỉ đọc**, chúng bỏ qua field lạ và trả `ok: true` — nên bot kết luận thành công và báo với owner. Đây không phải bot bịa: một endpoint chỉ-đọc trả `ok` cho yêu cầu-ghi là cái bẫy, cho cả LLM lẫn người. Nay `report-jobs` và `report-digest-preview` **từ chối** payload chứa `id`/`job`/`time`/`enabled`/`kind`/`deliver`/`operation`/`name`, kèm câu chỉ đúng sang `report-job-save` và cách truyền payload.
+- **`report-job-save` nhận TÊN nhóm, không chỉ groupId.** Bot thật đã gửi `deliver.groups: ["ASACHINA ZALO"]` — ghi thẳng thì lịch mang một groupId không tồn tại và im lặng không gửi được. Nay đổi tên → id qua đúng resolver dùng cho slash command; tên lạ hoặc nhập nhằng thì **báo lỗi kèm danh sách ứng viên** thay vì ghi bừa.
+
+### Notes
+- 199 test xanh (thêm 2 test khoá đúng hai cái bẫy trên).
+- Bài học chung: action đọc và action ghi không được nhận cùng một hình dạng payload. `ok: true` phải có nghĩa là "đã làm đúng việc bạn nhờ", không phải "request không crash".
+
 ## [2.19.2] - 2026-07-30
 
 ### Added

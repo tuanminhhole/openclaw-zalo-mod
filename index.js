@@ -30,7 +30,7 @@ import { handleCrmAction } from './src/crm/crm-api.js';
 import { createZcaFacade } from './src/integration/zca-facade.js';
 import { ReplyMentionCorrelator } from './src/messaging/reply-mention-correlator.js';
 import { matchesOwnerClaimDeviceId } from './src/integration/owner-claim.js';
-import { createZaloModAgentTools, collectOwnerIds, ZALO_MOD_TOOL_NAMES } from './src/agent/tool-surface.js';
+import { createZaloModAgentTools, collectOwnerIds, resolveGroupTargets, ZALO_MOD_TOOL_NAMES } from './src/agent/tool-surface.js';
 import { listAllCommands, renderCommandPanel, renderRulesPanel, TOGGLE_KEYS } from './src/agent/commands.js';
 import { buildWorkspaceSkillMarkdown, WORKSPACE_SKILL_VERSION } from './src/agent/skill-content.js';
 import { assertActionAllowed, capabilitiesForPlan, verifySignedEntitlement } from './src/licensing/entitlements.js';
@@ -4633,7 +4633,26 @@ Quy tắc:
             }
 
             // ── Lịch báo cáo ──
+            /**
+             * Chặn "gọi action ĐỌC bằng payload kiểu GHI".
+             *
+             * Bug thật gặp trên production: bot được nhờ đổi giờ đã gọi `report-jobs { id, time }` rồi
+             * `report-digest-preview { time, deliver }`. Hai action đó bỏ qua field lạ và trả `ok: true`,
+             * nên bot kết luận đã đổi xong và báo với owner — trong khi lịch không hề đổi. Bot không bịa:
+             * chính API nói dối trước. Endpoint chỉ-đọc mà trả ok cho một yêu cầu-ghi là cái bẫy.
+             */
+            const MUTATION_HINT_KEYS = ['id', 'job', 'time', 'enabled', 'kind', 'deliver', 'operation', 'name'];
+            function rejectMutationPayload(actionName, pl) {
+                const hits = MUTATION_HINT_KEYS.filter((k) => pl && pl[k] !== undefined);
+                if (!hits.length) return;
+                throw new Error(
+                    `"${actionName}" là action CHỈ ĐỌC nên không đổi được gì (payload có: ${hits.join(', ')}). `
+                    + 'Muốn tạo/sửa lịch thì gọi "report-job-save" với payload { job: { id, time, kind, groups, deliver } }; '
+                    + 'chỉ cần các field muốn đổi kèm id.'
+                );
+            }
             if (action === 'report-jobs') {
+                rejectMutationPayload('report-jobs', payload);
                 const jobs = await ensureReportJobsMigrated();
                 // Kèm danh sách nhóm đang follow để UI dựng bộ chọn mà không phải gọi thêm action.
                 const followed = watchGroupIds.filter(gid => isFollowOn(gid))
@@ -4660,6 +4679,22 @@ Quy tắc:
                     : incoming;
                 const job = normalizeReportJob(merged);
                 if (!job) throw new Error('job is required');
+                // Owner (và bot) nói TÊN nhóm, không đọc groupId. Bot thật đã gửi
+                // deliver.groups: ["ASACHINA ZALO"] — nếu ghi thẳng thì lịch mang một groupId không tồn
+                // tại và im lặng không gửi được. Đổi tên → id, tên lạ/nhập nhằng thì báo lỗi rõ.
+                const knownGroups = watchGroupIds.map((gid) => ({ groupId: gid, name: getGroupName(gid) }));
+                const resolveNames = (list, label) => {
+                    const { matched, unresolved, ambiguous } = resolveGroupTargets(list, knownGroups);
+                    if (unresolved.length) throw new Error(`Không tìm thấy nhóm: ${unresolved.join(', ')} (${label})`);
+                    if (ambiguous.length) {
+                        throw new Error(`Tên nhóm nhập nhằng ở ${label}: `
+                            + ambiguous.map((a) => `"${a.input}" → ${a.candidates.join(' / ')}`).join('; ')
+                            + '. Nói rõ tên đầy đủ hoặc dùng groupId.');
+                    }
+                    return matched;
+                };
+                if (Array.isArray(job.groups) && job.groups.length) job.groups = resolveNames(job.groups, 'groups');
+                if (job.deliver.groups.length) job.deliver.groups = resolveNames(job.deliver.groups, 'deliver.groups');
                 if (job.groups !== '*' && job.groups.length === 0) throw new Error('Chọn ít nhất một nhóm cho lịch này');
                 if (!job.deliver.ownerDm && !job.deliver.eachGroup && job.deliver.groups.length === 0) {
                     throw new Error('Chọn ít nhất một nơi nhận báo cáo');
@@ -4688,6 +4723,8 @@ Quy tắc:
                 return { ok: true, ...r, date };
             }
             if (action === 'report-digest-preview') {
+                // `groups` ở đây là PHẠM VI xem trước, không phải cấu hình lịch — nên vẫn chặn field ghi.
+                rejectMutationPayload('report-digest-preview', payload);
                 // Xem trước ĐÚNG chuỗi sẽ gửi, kể cả cách cắt phần — để owner biết trước có bị tách không.
                 const ids = payload.groups === '*'
                     ? watchGroupIds.filter(gid => isFollowOn(gid))

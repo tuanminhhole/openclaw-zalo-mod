@@ -47,6 +47,10 @@ Nội dung welcome dùng được các biến: `{memberName}`, `{groupName}`, `{
 
 ### Lịch báo cáo — tạo và sửa bằng lời
 
+⚠️ `report-jobs` và `report-digest-preview` là **CHỈ ĐỌC** — truyền `time`/`deliver`/`id` vào đó sẽ bị
+từ chối kèm lời nhắc. Chỉ `report-job-save` mới ghi được. Đừng suy ra "đã đổi xong" từ một `ok: true`
+của action đọc.
+
 ĐỌC trước để lấy `id` và `groupId` thật, rồi GHI. Sửa một phần là đủ, không cần gửi lại cả object:
 
 ```
@@ -74,6 +78,8 @@ zalo_mod_action { action: "report-job-run", payload: { id: "bc-tong-hop" } }    
 - `groups`: `"*"` = tất cả nhóm đang follow (nhóm mới thêm sau cũng tự vào lịch), hoặc mảng groupId.
 - `deliver`: `ownerDm` (DM owner) · `eachGroup` (chính nhóm đó nhận — chỉ dùng với `kind: "group"`)
   · `groups: ["<gid>"]` (một nhóm nhận báo cáo chung).
+- Tên nhóm dùng được thay cho groupId (`groups: ["ASACHINA ZALO"]`) — tên lạ hoặc nhập nhằng sẽ báo lỗi
+  rõ ràng, KHÔNG ghi bừa.
 - Đổi `id` mới = TẠO lịch mới. Trùng `id` = SỬA lịch đó. Sau khi ghi, gọi lại `report-jobs` để xác nhận
   rồi mới báo owner — đừng nói "đã đổi xong" khi chưa đọc lại.
 - XOÁ lịch mặc định bị chặn (cần `agentTools.allowDestructive`). Owner muốn xoá thì chỉ họ tự làm

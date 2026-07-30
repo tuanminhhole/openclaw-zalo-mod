@@ -10,7 +10,7 @@ const modalBody = document.getElementById('modalBody');
 const modalCancel = document.getElementById('modalCancel');
 const modalConfirm = document.getElementById('modalConfirm');
 const token = window.ZALO_DASHBOARD_TOKEN || '';
-const pluginVersion = '2.21.0';
+const pluginVersion = '2.22.0';
 let state = null;
 let activeGroupId = '';
 let lang = localStorage.getItem('zaloDashboardLang') || 'vi';
@@ -5007,6 +5007,20 @@ const REPORT_ICONS = {
   clock: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.9"/><path d="M12 7.5V12l3 2" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>',
 };
 
+/**
+ * Cảnh báo cấu hình tự đá nhau: giờ gửi buổi sáng mà nội dung lấy "hôm nay".
+ *
+ * Đây là cái bẫy im lặng — lịch vẫn chạy, vẫn gửi, nhưng tin gần như trống vì lúc 08:00 ngày mới chỉ
+ * có mấy tiếng đầu. Owner sẽ tưởng bot hỏng chứ không nghĩ là cấu hình.
+ */
+function reportMorningWarning(job) {
+  const hour = Number(String(job.time || '').slice(0, 2));
+  if (!Number.isFinite(hour) || hour >= 12 || job.reportFor === 'yesterday') return '';
+  return `<br><span style="color:var(--warn,#f59e0b)">⚠️ ${uiText(
+    `Gửi lúc ${job.time} nhưng nội dung lấy "hôm nay" — sẽ gần như trống. Sửa thành "Hôm qua".`,
+    `Runs at ${job.time} but covers "today" — will be nearly empty. Change it to "Yesterday".`)}</span>`;
+}
+
 function reportJobCardHtml(job) {
   const isDigest = job.kind === 'digest';
   const ran = reportsState.state[job.id];
@@ -5023,10 +5037,14 @@ function reportJobCardHtml(job) {
           <span class="chip" style="background:${isDigest ? 'rgba(96,165,250,.16)' : 'rgba(148,163,184,.16)'}">
             ${isDigest ? '📊 ' + uiText('Tổng hợp', 'Digest') : '📋 ' + uiText('Từng nhóm', 'Per group')}
           </span>
+          ${job.reportFor === 'yesterday'
+            ? `<span class="chip" style="background:rgba(52,211,153,.16)">🌅 ${uiText('Nội dung: hôm qua', 'Covers: yesterday')}</span>`
+            : ''}
         </div>
         <div class="item-sub" style="margin-top:8px;line-height:1.7">
           ${scope} &nbsp;·&nbsp; ${esc(reportDeliverSummary(job))}
           ${ran ? `<br>${uiText('Lần cuối', 'Last run')}: ${ran.date} ${ran.time}` : ''}
+          ${reportMorningWarning(job)}
         </div>
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex:0 0 auto">
@@ -5080,6 +5098,19 @@ function reportEditorHtml() {
 
     ${field(uiText('Giờ gửi mỗi ngày', 'Daily time'), `<input type="time" value="${j.time}" data-report-draft-time
       style="padding:9px 11px;border-radius:9px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font-size:13.5px"/>`)}
+
+    ${field(uiText('Báo cáo cho ngày nào', 'Report covers'), `
+      <select data-report-for style="width:100%;padding:9px 11px;border-radius:9px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font-size:13.5px">
+        <option value="today" ${j.reportFor !== 'yesterday' ? 'selected' : ''}>${uiText('Hôm nay — dùng cho lịch cuối ngày', 'Today — for end-of-day schedules')}</option>
+        <option value="yesterday" ${j.reportFor === 'yesterday' ? 'selected' : ''}>${uiText('Hôm qua — dùng cho lịch buổi sáng', 'Yesterday — for morning schedules')}</option>
+      </select>
+      <div class="item-sub" style="margin-top:5px;font-size:11.5px">${
+        j.reportFor === 'yesterday'
+          ? uiText('Đúng cho lịch sáng: 08:00 hôm nay sẽ báo cáo trọn ngày hôm qua.',
+            'Right for a morning run: 08:00 today reports all of yesterday.')
+          : uiText('⚠️ Nếu giờ gửi vào buổi sáng, chọn "Hôm qua" — không thì báo cáo chỉ có mấy tiếng đầu ngày, gần như trống.',
+            '⚠️ For a morning time, pick "Yesterday" — otherwise the report only covers the first hours of the day.')
+      }</div>`)}
 
     ${field(`${uiText('Nhóm áp dụng', 'Groups')} — ${all ? uiText('tất cả', 'all') : `${picked.size}/${reportsState.groups.length}`}`, `
       <label class="report-check report-check--center" style="padding:9px 11px;border-radius:9px;background:var(--surface-2);margin-bottom:8px">
@@ -5140,7 +5171,9 @@ async function openReportEditor(job) {
 function newReportJob() {
   return {
     id: `job-${Date.now().toString(36)}`,
-    name: '', enabled: true, kind: 'digest', groups: '*', time: '22:30',
+    // Mặc định 22:30 là lịch cuối ngày, nên nội dung 'today' mới đúng. Owner đổi sang giờ sáng thì
+    // thẻ lịch hiện cảnh báo (reportMorningWarning) nhắc đổi sang 'yesterday'.
+    name: '', enabled: true, kind: 'digest', groups: '*', time: '22:30', reportFor: 'today',
     deliver: { ownerDm: true, eachGroup: false, groups: [] },
   };
 }
@@ -5246,6 +5279,7 @@ document.addEventListener('change', async (ev) => {
   if (!d) return;
   if (t.hasAttribute?.('data-report-name')) { d.name = t.value; return; }
   if (t.hasAttribute?.('data-report-draft-time')) { d.time = t.value || d.time; return; }
+  if (t.hasAttribute?.('data-report-for')) { d.reportFor = t.value; reportsRerenderEditor(); return; }
   if (t.hasAttribute?.('data-report-all')) {
     d.groups = t.checked ? '*' : [];
     reportsRerenderEditor();

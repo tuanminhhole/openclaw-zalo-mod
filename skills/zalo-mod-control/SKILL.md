@@ -70,9 +70,9 @@ zalo_mod_reports { operation: "save", id: "job-x", time: "09:00" }
 // đổi nơi nhận sang một nhóm (dùng TÊN nhóm)
 zalo_mod_reports { operation: "save", id: "job-x", toOwnerDm: false, toGroups: ["ASACHINA ZALO"] }
 
-// tạo lịch tổng hợp tất cả nhóm, 8h sáng, DM owner
+// tạo lịch tổng hợp tất cả nhóm, 8h sáng, DM owner — lịch SÁNG phải reportFor: "yesterday"
 zalo_mod_reports { operation: "save", name: "BC Tổng Hợp", kind: "digest",
-                   groups: ["all"], time: "08:00", toOwnerDm: true }
+                   groups: ["all"], time: "08:00", reportFor: "yesterday", toOwnerDm: true }
 
 // tắt tạm mà không xoá
 zalo_mod_reports { operation: "save", id: "job-x", enabled: false }
@@ -88,6 +88,9 @@ zalo_mod_reports { operation: "delete", id: "job-x", confirm: true }    // sau k
 - `save` tự đọc lại và trả về `jobs` sau khi ghi — **đọc con số trong đó** rồi mới báo owner.
   Thấy `time` chưa đúng thì nói thẳng là chưa đổi được, đừng khẳng định theo ý mình.
 - `kind`: `digest` = gộp mọi nhóm vào một tin · `group` = mỗi nhóm một tin đầy đủ.
+- **`reportFor`**: lịch chạy buổi SÁNG thì phải `"yesterday"`, không thì báo cáo gần như trống và
+  hoạt động cả ngày hôm trước không bao giờ được báo. Lịch cuối ngày (sau ~20:00) dùng `"today"`.
+  Owner nói "báo cáo mỗi sáng" → tự đặt `reportFor: "yesterday"`, đừng hỏi lại.
 - `groups: ["all"]` = tất cả nhóm đang follow (nhóm mới thêm sau cũng tự vào lịch).
 - XOÁ lịch: gọi `delete` KHÔNG kèm `confirm` trước — nó trả về `willDelete` và không xoá gì.
   Đọc tên lịch đó cho owner, chờ owner đồng ý, rồi gọi lại kèm `confirm: true`. Không tự quyết.

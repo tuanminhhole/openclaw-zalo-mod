@@ -2555,6 +2555,10 @@ Quy tắc:
                 kind,
                 groups,
                 time: normReportTime(j.time),
+                // Lịch buổi SÁNG phải báo cáo ngày HÔM QUA, không thì nó tóm tắt mấy tiếng đầu ngày
+                // (gần như trống) và hoạt động cả ngày hôm trước không bao giờ được báo. Mặc định
+                // 'today' để mọi lịch cuối ngày đang chạy giữ nguyên hành vi.
+                reportFor: j.reportFor === 'yesterday' ? 'yesterday' : 'today',
                 deliver: {
                     ownerDm: d.ownerDm === true,
                     // Một digest không có "nhóm của chính nó" để gửi vào.
@@ -2562,6 +2566,19 @@ Quy tắc:
                     groups: Array.isArray(d.groups) ? d.groups.map(String).filter(Boolean) : [],
                 },
             };
+        }
+
+        /**
+         * Ngày mà nội dung báo cáo nói về — KHÁC ngày chạy khi `reportFor: 'yesterday'`.
+         *
+         * Tính bằng cách trừ đúng 1 ngày trên chuỗi YYYY-MM-DD của giờ VN (không dùng Date của máy),
+         * để không bị lệch khi máy chạy ở múi giờ khác.
+         */
+        function reportDateFor(job, runDate) {
+            if (job?.reportFor !== 'yesterday') return runDate;
+            const d = new Date(`${runDate}T00:00:00Z`);
+            d.setUTCDate(d.getUTCDate() - 1);
+            return d.toISOString().slice(0, 10);
         }
 
         async function readReportJobs() {
@@ -2786,8 +2803,11 @@ Quy tắc:
                 byJob[job.id] = { date: today, time: job.time };
                 await writePluginDataJson('report-state.json', { byJob, byGroup });
                 try {
-                    const r = await runReportJob(job, today);
-                    logger.info(`[openclaw-zalo-mod] [REPORT] lịch "${job.name}" (${job.kind}, giờ ${job.time}) → ${r.sent} tin cho ${r.groups} nhóm, ngày ${today}`);
+                    // Chốt-ngày dùng NGÀY CHẠY (`today`), còn nội dung dùng NGÀY ĐƯỢC BÁO CÁO. Trộn hai
+                    // cái này là sai: lịch 'yesterday' sẽ tự chốt vào ngày hôm qua rồi chạy lại mỗi phút.
+                    const reportDate = reportDateFor(job, today);
+                    const r = await runReportJob(job, reportDate);
+                    logger.info(`[openclaw-zalo-mod] [REPORT] lịch "${job.name}" (${job.kind}, giờ ${job.time}) → ${r.sent} tin cho ${r.groups} nhóm, ngày ${reportDate}`);
                 } catch (e) {
                     logger.warn(`[openclaw-zalo-mod] [REPORT] lỗi lịch "${job.name}": ${e.message}`);
                 }
@@ -4759,7 +4779,9 @@ Quy tắc:
                 const id = String(payload.id || '').trim();
                 const job = (await ensureReportJobsMigrated()).find(j => j.id === id);
                 if (!job) throw new Error('Không tìm thấy lịch này');
-                const date = String(payload.date || vnDateStr());
+                // "Gửi thử" phải cho ra ĐÚNG thứ lịch sẽ gửi thật, nên mặc định theo `reportFor` của
+                // lịch — không phải luôn luôn hôm nay. Lịch buổi sáng thử ra tin rỗng thì owner tưởng hỏng.
+                const date = String(payload.date || reportDateFor(job, vnDateStr()));
                 const r = await runReportJob(job, date);
                 await appendDashboardAudit({ action: 'report-job-run', jobId: id, sent: r.sent });
                 return { ok: true, ...r, date };

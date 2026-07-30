@@ -148,19 +148,22 @@ test('ghi lại lịch không được làm mất cờ đã có', () => {
 /** Chạy runDueReports() thật với clock + storage nạp vào; trả về các job đã gửi và state cuối. */
 async function runScheduler({ jobs, now, today, state = {} }) {
     const sent = [];
+    const reported = [];
+    const warns = [];
     const files = { 'report-state.json': state };
     return new Function('deps', `
-        const { jobs, now, today, files, sent } = deps;
+        const { jobs, now, today, files, sent, reported, warns } = deps;
         const ensureReportJobsMigrated = async () => jobs;
         const vnDateStr = () => today;
         const vnTimeStr = () => now;
         const readPluginDataJson = async (n) => files[n] || {};
         const writePluginDataJson = async (n, v) => { files[n] = v; };
-        const runReportJob = async (job) => { sent.push(job.id); return { sent: 1, groups: 28 }; };
-        const logger = { info() {}, warn() {} };
+        const runReportJob = async (job, date) => { sent.push(job.id); reported.push(date); return { sent: 1, groups: 28 }; };
+        const logger = { info() {}, warn(m) { warns.push(String(m)); } };
+        ${extract('reportDateFor')}
         ${extract('runDueReports')}
-        return runDueReports().then(() => ({ sent, state: files['report-state.json'] }));
-    `)({ jobs, now, today, files, sent });
+        return runDueReports().then(() => ({ sent, reported, warns, state: files['report-state.json'] }));
+    `)({ jobs, now, today, files, sent, reported, warns });
 }
 
 const job = (over = {}) => ({ id: 'j1', name: 'BC', enabled: true, kind: 'digest', time: '22:30', groups: '*', deliver: {}, ...over });
@@ -254,4 +257,65 @@ test('chốt ngày không ghi đè dấu đã có (giữ nguyên giờ đã gử
     });
     assert.equal(r.appliesFrom, 'tomorrow');
     assert.deepEqual(r.state.byJob.j1, { date: '2026-07-30', time: '22:30' });
+});
+
+// ── reportFor: lịch buổi sáng phải báo cáo NGÀY HÔM QUA ───────────────────────────────────────
+// Bẫy im lặng phát hiện trước khi kịp gây hại (2026-07-31): owner muốn báo cáo 08:00, nhưng digest
+// chỉ tóm tắt NGÀY HIỆN TẠI — nên 08:00 sẽ tóm tắt ~8 tiếng đầu ngày (preview ra "0 nhóm · 0 tin"),
+// còn trọn ngày hôm trước không bao giờ được báo. Lịch vẫn chạy, vẫn gửi → owner tưởng bot hỏng.
+const reportDateFor = new Function(`${extract('reportDateFor')}\nreturn reportDateFor;`)();
+
+test('reportFor "yesterday" trừ đúng một ngày, kể cả khi vắt qua tháng và năm', () => {
+    assert.equal(reportDateFor({ reportFor: 'yesterday' }, '2026-07-31'), '2026-07-30');
+    assert.equal(reportDateFor({ reportFor: 'yesterday' }, '2026-08-01'), '2026-07-31', 'vắt qua tháng');
+    assert.equal(reportDateFor({ reportFor: 'yesterday' }, '2026-01-01'), '2025-12-31', 'vắt qua năm');
+    assert.equal(reportDateFor({ reportFor: 'yesterday' }, '2028-03-01'), '2028-02-29', 'năm nhuận');
+});
+
+test('mặc định vẫn là hôm nay — lịch cuối ngày đang chạy không được đổi hành vi', () => {
+    assert.equal(reportDateFor({}, '2026-07-31'), '2026-07-31');
+    assert.equal(reportDateFor({ reportFor: 'today' }, '2026-07-31'), '2026-07-31');
+    assert.equal(reportDateFor({ reportFor: 'rác' }, '2026-07-31'), '2026-07-31', 'giá trị lạ → today');
+});
+
+test('normalizeReportJob chỉ nhận đúng hai giá trị cho reportFor', () => {
+    assert.equal(normalizeReportJob({ reportFor: 'yesterday' }).reportFor, 'yesterday');
+    assert.equal(normalizeReportJob({ reportFor: 'today' }).reportFor, 'today');
+    assert.equal(normalizeReportJob({}).reportFor, 'today', 'thiếu → today, giữ hành vi cũ');
+    assert.equal(normalizeReportJob({ reportFor: 'YESTERDAY' }).reportFor, 'today', 'không nhận hoa/thường lẫn');
+});
+
+test('chốt-ngày theo NGÀY CHẠY, không theo ngày được báo cáo', async () => {
+    // Trộn hai cái này là lịch 'yesterday' tự chốt vào hôm qua rồi chạy lại mỗi phút.
+    const r = await runScheduler({
+        jobs: [job({ time: '08:00', reportFor: 'yesterday' })],
+        now: '08:01', today: '2026-07-31',
+    });
+    assert.deepEqual(r.sent, ['j1']);
+    assert.equal(r.state.byJob.j1.date, '2026-07-31', 'dấu phải là ngày CHẠY');
+
+    const again = await runScheduler({
+        jobs: [job({ time: '08:00', reportFor: 'yesterday' })],
+        now: '08:02', today: '2026-07-31', state: r.state,
+    });
+    assert.deepEqual(again.sent, [], 'đã chốt hôm nay thì không chạy lại');
+});
+
+test('lịch sáng lấy nội dung NGÀY HÔM QUA, lịch cuối ngày lấy hôm nay', async () => {
+    const sang = await runScheduler({
+        jobs: [job({ time: '08:00', reportFor: 'yesterday' })], now: '08:00', today: '2026-07-31',
+    });
+    assert.deepEqual(sang.reported, ['2026-07-30'], 'runReportJob phải nhận ngày hôm qua');
+
+    const cuoiNgay = await runScheduler({
+        jobs: [job({ time: '22:30' })], now: '22:30', today: '2026-07-31',
+    });
+    assert.deepEqual(cuoiNgay.reported, ['2026-07-31'], 'lịch cuối ngày vẫn là hôm nay');
+});
+
+test('scheduler không ném lỗi ngầm — warns rỗng ở đường chạy bình thường', async () => {
+    const r = await runScheduler({
+        jobs: [job({ time: '08:00', reportFor: 'yesterday' })], now: '08:00', today: '2026-07-31',
+    });
+    assert.deepEqual(r.warns, [], 'có warn tức là runReportJob ném lỗi và bị try/catch nuốt');
 });

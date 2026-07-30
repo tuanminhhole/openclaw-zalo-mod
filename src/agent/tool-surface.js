@@ -263,6 +263,13 @@ const REPORTS_SCHEMA = {
         id: { type: 'string', description: 'id của lịch cần sửa (lấy từ operation="list"). Bỏ trống khi tạo lịch mới.' },
         name: { type: 'string', description: 'Tên lịch, ví dụ "BC Tổng Hợp". Chỉ cần khi tạo mới.' },
         time: { type: 'string', description: 'Giờ gửi mỗi ngày, dạng HH:MM giờ VN. Ví dụ "09:00".' },
+        reportFor: {
+            type: 'string',
+            enum: ['today', 'yesterday'],
+            description: 'Báo cáo nói về ngày nào. Lịch BUỔI SÁNG phải dùng "yesterday" — nếu để "today" thì '
+                + 'lúc 08:00 nó chỉ tóm tắt mấy tiếng đầu ngày (gần như trống) và cả ngày hôm trước không '
+                + 'bao giờ được báo. Lịch cuối ngày (sau ~20:00) thì dùng "today". Mặc định "today".',
+        },
         kind: {
             type: 'string',
             enum: ['digest', 'group'],
@@ -602,6 +609,7 @@ export function createZaloModAgentTools(host) {
                         const job = { id: String(params.id || '').trim() || `job-${Date.now().toString(36)}` };
                         if (params.name !== undefined) job.name = params.name;
                         if (params.time !== undefined) job.time = params.time;
+                        if (params.reportFor !== undefined) job.reportFor = params.reportFor;
                         if (params.kind !== undefined) job.kind = params.kind;
                         if (params.enabled !== undefined) job.enabled = params.enabled;
                         const groups = normalizeReportGroups(params.groups);

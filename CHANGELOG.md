@@ -1,3 +1,17 @@
+## [2.22.0] - 2026-07-31
+
+### Added
+- **Lịch báo cáo chọn được nội dung là ngày HÔM NAY hay HÔM QUA (`reportFor`).** Bắt được trước khi kịp gây hại: owner muốn báo cáo lúc 08:00, nhưng digest luôn tóm tắt **ngày hiện tại** — nên 08:00 chỉ có ~8 tiếng đầu ngày (`report-digest-preview` trả đúng *"0 nhóm · 0 tin"*), còn trọn ngày hôm trước **không bao giờ được báo**. Lịch vẫn chạy, vẫn gửi, chỉ là gửi tin rỗng → owner sẽ tưởng bot hỏng lần nữa. Digest vốn được thiết kế cho lịch cuối ngày (22:30), chỗ mà "hôm nay" là đúng; prompt cron cũ dùng LLM nên nói được *"cho NGÀY HÔM QUA"* — đó là thứ nó làm được mà digest chưa.
+
+  Nay mỗi lịch có `reportFor: 'today' | 'yesterday'`, **mặc định `'today'`** nên mọi lịch cuối ngày đang chạy không đổi hành vi. Ngày được báo cáo tính bằng cách trừ trên chuỗi `YYYY-MM-DD` của giờ VN, không dùng `Date` của máy, nên không lệch khi server chạy múi giờ khác — có test cho mốc vắt tháng, vắt năm và năm nhuận. **Chốt-ngày vẫn theo NGÀY CHẠY**, không theo ngày được báo cáo: trộn hai cái đó là lịch `'yesterday'` tự chốt vào hôm qua rồi chạy lại mỗi phút.
+- **"Gửi thử" ra đúng thứ lịch sẽ gửi thật.** `report-job-run` mặc định lấy ngày theo `reportFor` của lịch thay vì luôn là hôm nay — không thì owner bấm Gửi thử một lịch buổi sáng, thấy tin rỗng, và kết luận sai là tính năng hỏng.
+- **Dashboard cảnh báo cấu hình tự đá nhau.** Thẻ lịch nào giờ gửi trước 12:00 mà nội dung để `'today'` sẽ hiện `⚠️ Gửi lúc HH:MM nhưng nội dung lấy "hôm nay" — sẽ gần như trống. Sửa thành "Hôm qua".` Đây là loại lỗi im lặng mà không cảnh báo thì không ai phát hiện: không có exception, không có log, chỉ là tin gửi ra trống. Trình sửa lịch có thêm ô chọn kèm giải thích ngắn, và lịch `'yesterday'` có nhãn `🌅 Nội dung: hôm qua` trên thẻ.
+- **Bot đặt được `reportFor`.** Thêm vào `REPORTS_SCHEMA` (enum) + skill: *owner nói "báo cáo mỗi sáng" thì tự đặt `yesterday`, đừng hỏi lại*.
+
+### Notes
+- 229 test xanh (thêm 6: trừ ngày qua mốc tháng/năm/năm nhuận, mặc định giữ `today`, chốt-ngày theo ngày chạy, và nội dung lấy đúng ngày cho cả lịch sáng lẫn lịch cuối ngày). Cảnh báo UI kiểm 8 ca trên trình duyệt thật.
+- **Bài học:** một tính năng "đã chạy" vẫn có thể sai hoàn toàn về **phạm vi dữ liệu**. Digest chạy đúng, gửi đúng giờ, đúng nơi — chỉ tóm tắt sai ngày, và không có gì trong hệ thống báo lỗi. Khi bê một lịch từ buổi tối sang buổi sáng, phải hỏi lại "nó đang tóm tắt khoảng thời gian nào" trước khi đổi giờ.
+
 ## [2.21.0] - 2026-07-31
 
 ### Fixed

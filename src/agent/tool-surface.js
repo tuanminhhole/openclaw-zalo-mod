@@ -441,10 +441,32 @@ export function createZaloModAgentTools(host) {
             {
                 name: 'zalo_mod_action',
                 label: 'Zalo Mod — chạy action của dashboard',
+                // Mô tả tool LUÔN nằm trong prompt, còn SKILL.md là progressive-disclosure (model phải chủ
+                // động mở mới đọc). Bug thật: owner nhờ đổi giờ lịch báo cáo hai lần, model không mở skill
+                // nên không biết `report-job-save` tồn tại, chỉ gọi mấy action ĐỌC rồi báo "đã đổi xong"
+                // trong khi lịch không đổi. Vì vậy tên action ghi + hình dạng payload của những việc hay
+                // được nhờ phải nằm NGAY ĐÂY, không để trong skill.
                 description: [
-                    'Chạy đúng những action mà mỗi nút trên dashboard Zalo Mod gọi (sync-groups, scan-members, get-group-info,',
-                    'journal-data, generate-summary, send-message, custom modes, report schedule…).',
-                    'Dùng khi việc owner nhờ không khớp 3 tool kia. Gọi với action="list-actions" để xem danh sách được phép.',
+                    'Chạy đúng những action mà mỗi nút trên dashboard Zalo Mod gọi.',
+                    'Gọi action="list-actions" để xem danh sách đầy đủ được phép.',
+                    '',
+                    'ĐỌC: report-jobs (danh sách lịch báo cáo + danh sách nhóm), journal-data, get-templates,',
+                    'get-group-info, get-permissions, generate-summary.',
+                    '',
+                    'GHI — dùng ĐÚNG action này, đừng truyền field cấu hình vào action đọc (sẽ bị từ chối):',
+                    '• Lịch báo cáo: report-job-save, payload { job: { id, time, kind, groups, deliver } } —',
+                    '  chỉ cần id + field muốn đổi. VD đổi giờ: { job: { id: "job-x", time: "09:00" } }.',
+                    '  Nơi nhận: deliver { ownerDm, eachGroup, groups: ["Tên nhóm"] }. kind: "digest" | "group".',
+                    '  groups: "*" (tất cả nhóm follow) hoặc mảng tên nhóm/groupId.',
+                    '• Template (nội quy/welcome/menu…): save-templates, payload { key, content }; đọc key hợp lệ',
+                    '  bằng get-templates.',
+                    '• Thao tác Zalo khác (đổi tên nhóm, ảnh nhóm, phó nhóm, poll…): zalo-api,',
+                    '  payload { action: "rename-group", params: { … } }.',
+                    '',
+                    'BẮT BUỘC: chỉ được nói với owner là đã thay đổi SAU KHI action GHI trả về ok. Nếu chưa gọi',
+                    'action ghi, hoặc nó trả lỗi, thì phải nói thẳng là chưa làm được kèm lý do — tuyệt đối không',
+                    'suy ra thành công từ một action đọc.',
+                    '',
                     'Action liên quan tiền/license/quyền bị chặn cứng; action phá hoại cần owner bật riêng trong config.',
                 ].join(' '),
                 parameters: {

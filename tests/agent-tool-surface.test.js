@@ -272,3 +272,18 @@ test('mọi tool đều có parameters là JSON Schema object hợp lệ (host k
         assert.equal(typeof tool.execute, 'function');
     }
 });
+
+// Mô tả tool LUÔN nằm trong prompt; SKILL.md thì model phải chủ động mở mới đọc. Bug thật: owner nhờ
+// đổi giờ lịch hai lần, model không mở skill nên không biết `report-job-save` tồn tại — chỉ gọi action
+// ĐỌC rồi báo "đã đổi xong". Vì vậy action GHI của những việc hay được nhờ phải có tên ngay trong mô tả.
+test('mô tả zalo_mod_action nêu tên action GHI, không để trong skill', () => {
+    const { host } = makeHost();
+    const tools = createZaloModAgentTools(host)({ requesterSenderId: OWNER });
+    const action = tools.find((t) => t.name === 'zalo_mod_action');
+    assert.ok(action, 'phải có tool zalo_mod_action');
+    for (const needle of ['report-job-save', 'save-templates', 'get-templates', 'zalo-api']) {
+        assert.ok(action.description.includes(needle), `mô tả phải nêu ${needle}`);
+    }
+    assert.match(action.description, /chỉ cần id \+ field muốn đổi/, 'phải nói rõ là sửa được một phần');
+    assert.match(action.description, /SAU KHI action GHI trả về ok/, 'phải có luật chống báo khống ngay trong mô tả');
+});

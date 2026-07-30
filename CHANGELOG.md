@@ -1,3 +1,12 @@
+## [2.19.4] - 2026-07-30
+
+### Fixed
+- **Bot vẫn báo "đã đổi lịch" mà không gọi action ghi — vì nó không biết action đó tồn tại.** SKILL.md là *progressive disclosure*: model chỉ thấy `name` + `description` của skill, phải chủ động mở mới đọc thân bài. Model không mở, nên toàn bộ ví dụ `report-job-save` viết trong skill ở 2.19.2 nó chưa từng đọc; nó chỉ gọi vài action ĐỌC rồi kết luận thành công. Kênh **luôn** nằm trong prompt là **mô tả tool**, nên tên action GHI + hình dạng payload của những việc hay được nhờ giờ nằm ngay trong description của `zalo_mod_action`: `report-job-save` (kèm ví dụ đổi giờ chỉ cần `{ id, time }`), `save-templates` + `get-templates`, `zalo-api`. Kèm luật ngay tại đó: **chỉ được nói đã thay đổi SAU KHI action ghi trả về ok**, không suy ra thành công từ action đọc.
+
+### Notes
+- 200 test xanh (thêm 1 test khoá: mô tả tool phải nêu đủ tên các action ghi + câu luật chống báo khống).
+- Bài học: hướng dẫn nào bắt buộc model phải biết thì đặt trong tool description, không đặt trong skill — skill chỉ dành cho phần chi tiết mà model tự tìm khi cần.
+
 ## [2.19.3] - 2026-07-30
 
 ### Fixed

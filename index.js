@@ -2568,8 +2568,25 @@ Quy tắc:
             const raw = await readPluginDataJson(REPORT_JOBS_FILE);
             return (Array.isArray(raw?.jobs) ? raw.jobs : []).map(normalizeReportJob).filter(Boolean);
         }
-        async function writeReportJobs(jobs) {
-            await writePluginDataJson(REPORT_JOBS_FILE, { jobs: jobs.map(normalizeReportJob).filter(Boolean) });
+        /**
+         * Đã migrate lịch cũ chưa — cờ RIÊNG, không suy ra từ "có job hay không".
+         *
+         * Dùng "danh sách rỗng" làm dấu hiệu chưa-migrate là sai, vì đó cũng đúng là trạng thái sau khi
+         * owner XOÁ HẾT lịch: migration sẽ dựng lại đúng những lịch vừa xoá, và nút Xoá trông như không
+         * có tác dụng. Cờ này khiến migration chạy đúng một lần trong đời.
+         */
+        async function reportJobsMigrated() {
+            const raw = await readPluginDataJson(REPORT_JOBS_FILE);
+            return !!raw?.migratedLegacyAt;
+        }
+        async function writeReportJobs(jobs, { markMigrated = true } = {}) {
+            const raw = await readPluginDataJson(REPORT_JOBS_FILE);
+            await writePluginDataJson(REPORT_JOBS_FILE, {
+                // Giữ nguyên mốc cũ nếu đã có — ghi lại lịch không được làm mất cờ, không thì lần lưu
+                // sau lại mở đường cho migration chạy lần hai.
+                migratedLegacyAt: raw?.migratedLegacyAt || (markMigrated ? nowIso() : undefined),
+                jobs: jobs.map(normalizeReportJob).filter(Boolean),
+            });
         }
 
         /** '*' cố ý resolve lúc chạy, để nhóm mới thêm vào sau tự được lịch "tất cả" bao gồm. */
@@ -2587,9 +2604,15 @@ Quy tắc:
          */
         async function ensureReportJobsMigrated() {
             const existing = await readReportJobs();
-            if (existing.length) return existing;
+            // Cờ, không phải số lượng job: owner xoá hết lịch thì phải GIỮ NGUYÊN trạng thái rỗng.
+            if (await reportJobsMigrated()) return existing;
+            if (existing.length) { await writeReportJobs(existing); return existing; }
             const legacy = watchGroupIds.filter(gid => store.getSetting(gid, 'autoSummary', false) === true);
-            if (!legacy.length) return [];
+            if (!legacy.length) {
+                // Không có gì để chuyển, nhưng vẫn đóng cờ để lần sau khỏi quét lại mỗi phút.
+                await writeReportJobs([]);
+                return [];
+            }
             const buckets = new Map();
             for (const gid of legacy) {
                 const time = normReportTime(store.getSetting(gid, 'reportTime', '23:55'));
@@ -2599,9 +2622,12 @@ Quy tắc:
                 if (!buckets.has(key)) buckets.set(key, { time, toGroup, toOwner, gids: [] });
                 buckets.get(key).gids.push(gid);
             }
+            // Tên phải phân biệt được: cùng một giờ nhưng khác nơi nhận sẽ ra nhiều job, mà trùng tên
+            // thì owner nhìn danh sách không biết cái nào là cái nào.
+            const deliverLabel = (b) => [b.toOwner ? 'DM owner' : '', b.toGroup ? 'nhóm' : ''].filter(Boolean).join(' + ') || 'chưa có nơi nhận';
             const jobs = [...buckets.values()].map((b, i) => normalizeReportJob({
                 id: `legacy-${i + 1}`,
-                name: `Lịch cũ ${b.time}`,
+                name: `Lịch cũ ${b.time} · ${deliverLabel(b)}`,
                 kind: 'group',
                 groups: b.gids,
                 time: b.time,

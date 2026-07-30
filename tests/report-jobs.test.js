@@ -108,3 +108,33 @@ test('không nhóm nào có tin → nói rõ, không gửi tin rỗng', async ()
     assert.equal(texts.length, 1);
     assert.match(texts[0], /Không có nhóm nào có tin nhắn/);
 });
+
+// ── Migration chỉ chạy MỘT LẦN ────────────────────────────────────────────────────────────────
+// Bug thật gặp trên production (2026-07-30): owner xoá cả 2 lịch thì chúng hiện lại ngay. Vì
+// migration dùng "danh sách rỗng" làm dấu hiệu chưa-migrate — mà đó cũng đúng là trạng thái sau khi
+// xoá hết, nên nó dựng lại đúng những lịch vừa xoá và nút Xoá trông như không có tác dụng.
+// Phải là một CỜ riêng, độc lập với số lượng job.
+test('cờ migrate là trường riêng, không suy ra từ số lượng job', () => {
+    const readSrc = extract('reportJobsMigrated');
+    assert.match(readSrc, /migratedLegacyAt/, 'phải đọc cờ riêng');
+    assert.doesNotMatch(readSrc, /jobs\.length|existing\.length/, 'không được suy ra từ số job');
+});
+
+test('xoá hết lịch thì migration KHÔNG dựng lại', () => {
+    const src = extract('ensureReportJobsMigrated');
+    // Cờ phải được kiểm TRƯỚC nhánh nhìn vào existing.length.
+    const flagAt = src.indexOf('reportJobsMigrated()');
+    const lenAt = src.indexOf('existing.length');
+    assert.ok(flagAt > -1, 'phải kiểm cờ migrate');
+    assert.ok(flagAt < lenAt, 'phải kiểm cờ TRƯỚC khi nhìn vào số lượng job, không thì xoá hết là bị dựng lại');
+});
+
+test('không có gì để chuyển thì vẫn đóng cờ — khỏi quét lại mỗi phút', () => {
+    const src = extract('ensureReportJobsMigrated');
+    assert.match(src, /if \(!legacy\.length\) \{[\s\S]*?writeReportJobs\(\[\]\)/, 'phải ghi cờ khi không có lịch cũ');
+});
+
+test('ghi lại lịch không được làm mất cờ đã có', () => {
+    const src = extract('writeReportJobs');
+    assert.match(src, /raw\?\.migratedLegacyAt \|\|/, 'phải giữ mốc cũ nếu đã có');
+});

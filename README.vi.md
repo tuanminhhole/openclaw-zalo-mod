@@ -4,7 +4,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![OpenClaw Plugin](https://img.shields.io/badge/OpenClaw-Plugin-blue.svg)](https://openclaw.ai)
-[![Version](https://img.shields.io/badge/version-2.19.0-green.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.19.1-green.svg)](./CHANGELOG.md)
 
 **[🇺🇸 English](./README.md)**
 

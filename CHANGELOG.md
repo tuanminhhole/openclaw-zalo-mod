@@ -1,3 +1,12 @@
+## [2.19.1] - 2026-07-30
+
+### Fixed
+- **Xoá lịch báo cáo không có tác dụng — lịch vừa xoá hiện lại ngay.** Migration lịch cũ dùng *"danh sách lịch rỗng"* làm dấu hiệu **chưa migrate**, mà đó cũng đúng là trạng thái **sau khi owner xoá hết** — nên nó dựng lại đúng những lịch vừa bị xoá, mỗi phút một lần. Nay có cờ riêng `migratedLegacyAt` trong `report-jobs.json`, độc lập với số lượng lịch: migration chạy đúng một lần trong đời, và trạng thái "không có lịch nào" được tôn trọng. Ghi lại lịch cũng không làm mất cờ (không thì lần lưu sau lại mở đường cho migration chạy lần hai). Không có lịch cũ để chuyển thì vẫn đóng cờ, khỏi quét lại mỗi phút.
+- Tên lịch sinh từ migration nay kèm nơi nhận (`Lịch cũ 22:30 · DM owner`) — cùng một giờ nhưng khác nơi nhận sẽ ra nhiều lịch, trùng tên thì owner nhìn danh sách không phân biệt được.
+
+### Notes
+- 193 test xanh (thêm 4 test hồi quy khoá đúng ca "xoá rồi mọc lại").
+
 ## [2.19.0] - 2026-07-30
 
 ### Added

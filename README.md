@@ -4,7 +4,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![OpenClaw Plugin](https://img.shields.io/badge/OpenClaw-Plugin-blue.svg)](https://openclaw.ai)
-[![Version](https://img.shields.io/badge/version-2.18.3-green.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.19.0-green.svg)](./CHANGELOG.md)
 
 **[🇺🇸 English](./README.md)**
 
@@ -40,7 +40,14 @@
 
 The plugin features a built-in administrative graphical user interface **Zalo Owner Dashboard** crafted under **Premium Glassmorphism & High-Density Studio v1.5** design guidelines.
 
-- **Access URL:** `http://127.0.0.1:19790` (default) or your server IP on port `19790`.
+- **Access URL:** `http://127.0.0.1:19790` (the plugin's own default) or your server IP on port `19790`.
+
+> ⚠️ **Installed through OpenClaw Setup? The port is different.** Setup writes
+> `dashboardPort = gateway port + 1` so every project gets its own dashboard — gateway `18789` →
+> dashboard **`18790`**. When in doubt, read `plugins.entries["zalo-mod"].config.dashboardPort` from
+> `openclaw.json`, or click **Open** on the `openclaw-zalo-mod` card in Setup (that button derives the
+> right port). On a VPS you also have to forward that port over an SSH tunnel — the dashboard listens
+> on loopback only.
 - **Configuration inside `openclaw.json`:**
   ```json
   "dashboardEnabled": true,

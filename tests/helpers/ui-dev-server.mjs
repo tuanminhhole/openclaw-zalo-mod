@@ -24,6 +24,25 @@ const PORT = Number(process.argv[2]) || 19791;
 const DB_PATH = process.argv[3] || path.join(os.tmpdir(), 'zalo-mod-crm-dev.db');
 const TOKEN = 'openclaw-zalo-mod';
 
+// Fixture cho trang "Lịch báo cáo" — vài nhóm + 2 lịch để xem UI ở cả hai kiểu.
+const DEV_REPORT_JOBS = {
+    jobs: [
+        { id: 'job-1', name: 'Tổng hợp ASA cuối ngày', enabled: true, kind: 'digest', groups: '*', time: '22:30',
+          deliver: { ownerDm: true, eachGroup: false, groups: [] }, resolvedCount: 6 },
+        { id: 'job-2', name: 'Nội bộ — báo cáo lẻ', enabled: false, kind: 'group', groups: ['g1', 'g2'], time: '18:00',
+          deliver: { ownerDm: false, eachGroup: true, groups: ['g3'] }, resolvedCount: 2 },
+    ],
+    groups: [
+        { groupId: 'g1', name: 'Vọc Tech Không Cọc' },
+        { groupId: 'g2', name: 'ASA 7881 - [ORDER TQ] ME ME' },
+        { groupId: 'g3', name: 'ASA Điều hành' },
+        { groupId: 'g4', name: 'ASACHINA ZALO' },
+        { groupId: 'g5', name: '237.KẾ TOÁN ASA-VNLOGS' },
+        { groupId: 'g6', name: 'ASA Thiên Hà- AS2741' },
+    ],
+    state: { 'job-1': { date: '2026-07-29', time: '22:30' } },
+};
+
 const store = openStore(DB_PATH, { logger: console });
 if (store.kind !== 'sqlite') {
     console.error('Cần Node >= 22.5 (node:sqlite) để chạy CRM dev server.');
@@ -89,6 +108,38 @@ const server = http.createServer(async (req, res) => {
                 const r = handleCrmAction(crm, action, body.payload || {}, 'dev-ui');
                 if (!r.body.ok) return send(res, r.status, { ok: false, error: r.body.error });
                 return send(res, 200, { ok: true, result: r.body.data, state: STATE_STUB });
+            }
+            // Lịch báo cáo: stub có dữ liệu thật-như-thật để dựng UI được (stub rỗng thì trang trắng).
+            if (action === 'report-jobs') {
+                return send(res, 200, { ok: true, result: DEV_REPORT_JOBS, state: STATE_STUB });
+            }
+            if (action === 'report-job-save') {
+                const job = body.payload?.job;
+                const i = DEV_REPORT_JOBS.jobs.findIndex(j => j.id === job.id);
+                const resolved = { ...job, resolvedCount: job.groups === '*' ? DEV_REPORT_JOBS.groups.length : job.groups.length };
+                if (i >= 0) DEV_REPORT_JOBS.jobs[i] = resolved; else DEV_REPORT_JOBS.jobs.push(resolved);
+                return send(res, 200, { ok: true, result: { ok: true, job }, state: STATE_STUB });
+            }
+            if (action === 'report-job-delete') {
+                DEV_REPORT_JOBS.jobs = DEV_REPORT_JOBS.jobs.filter(j => j.id !== body.payload?.id);
+                return send(res, 200, { ok: true, result: { ok: true }, state: STATE_STUB });
+            }
+            if (action === 'report-digest-preview') {
+                const text = [
+                    '📊 TỔNG HỢP 2026-07-29 · 2 nhóm · 34 tin',
+                    '',
+                    '📋 Vọc Tech Không Cọc — 26 tin · 6 người',
+                    '  • Hướng dẫn cài OpenClaw + bot Zalo (Docker/WSL2)',
+                    '  • Thanhagg hỏi plugin memory xử lý PDF/Excel',
+                    '  • ⚠️ Hiếu: lỗi lưu API 9Router — CHƯA XONG',
+                    '',
+                    '📋 ASA 7881 ORDER TQ — 8 tin · 3 người',
+                    '  • Chốt đơn 2 kiện, hỏi giá vận chuyển',
+                    '  • ⚠️ Khách chờ báo giá',
+                    '',
+                    '🔗 2 link · 📅 1 hẹn lịch → xem chi tiết ở dashboard',
+                ].join('\n');
+                return send(res, 200, { ok: true, result: { date: '2026-07-29', parts: 1, texts: [text], chars: text.length }, state: STATE_STUB });
             }
             return send(res, 200, { ok: true, result: {}, state: STATE_STUB });
         }

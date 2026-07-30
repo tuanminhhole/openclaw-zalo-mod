@@ -1,3 +1,32 @@
+## [2.19.0] - 2026-07-30
+
+### Added
+- **Lịch báo cáo là thực thể riêng, có báo cáo TỔNG HỢP.** Trước đây lịch là 4 setting rời trên từng nhóm (`autoSummary`/`reportTime`/`reportDeliverThisGroup`/`reportDeliverOwnerDm`) nên không thể diễn tả "12 nhóm này gộp thành MỘT tin lúc 22:30, gửi DM owner" — mỗi nhóm bắn một tin dài, khó đọc và bị Zalo cắt giữa câu. Nay mỗi lịch chọn: tập nhóm (`*` = tất cả, resolve **lúc chạy** nên nhóm mới tự vào lịch) · giờ · kiểu (**lẻ từng nhóm** hoặc **tổng hợp**) · nơi nhận (DM owner / chính nhóm đó / một nhóm nhận chung). Tạo bao nhiêu lịch cũng được. Trang mới: **Nhật ký → Lịch báo cáo**.
+- **Digest không tốn thêm token.** Bản tóm tắt từng nhóm đã được model viết và lưu ở `summaries/<gid>/<date>.json`, nên digest chỉ chọn lọc lại (mỗi nhóm tối đa 3 điểm, ưu tiên `highlights`, việc có hẹn gắn ⚠️) — thêm digest là **0 lần gọi model**.
+- **Digest tự cắt theo ranh giới NHÓM.** Không chỗ nào trong code cắt tin, nên tin dài bị chính Zalo cắt giữa câu. Digest tự chia thành "phần 1/2" tại ranh giới nhóm, header lặp mỗi phần, footer chỉ ở phần cuối. Nút **Xem trước** hiện luôn số ký tự và số tin sẽ gửi.
+- **Bot thao tác được ~141 action của zalo-connect** qua cửa `zalo-api` (dùng `bridge.executeAction` đã có sẵn). Sửa đúng hai ca owner báo: *"kêu bot đổi tên nhóm nó nói không làm được"* (zalo-mod chỉ bọc 43/141 action nên thật sự không có `rename-group`) và *"kêu bot cập nhật welcome nó nói không làm được"* (thiếu action đọc — `save-templates` vốn đã cho phép nhưng bot không có cách nào biết `key` nào hợp lệ).
+- **`get-templates`**: đọc danh sách key hợp lệ + nội dung hiện tại của cả 6 template.
+
+### Security
+- **Cửa `zalo-api` deny-by-default.** 141 action xếp hạng tường minh trong `src/agent/connect-actions.js`: read 54 / write 73 / destructive 14. Action **chưa được xếp hạng** thì bot không gọi được — nhờ vậy zalo-connect thêm API mới ở bản sau **không tự động lọt** ra cho bot, phải có người đọc và xếp hạng trước.
+- **14 action không hoàn tác vẫn mặc định TẮT** (`disperse-group`, `change-group-owner`, `invite-to-groups`, `unfriend`…). Owner bật bằng `agentTools.allowDestructive` — cùng công tắc mà kick/block/leave đang dùng. Rủi ro ở đây không đối xứng: bot đọc sai một câu là giải tán nhóm khách, không có nút hoàn tác.
+- **Luật gói soi vào lời gọi thật, không chỉ tầng ngoài.** `zalo-api` gói lời gọi vào `payload.params`, nên nếu chỉ đếm đích ở tầng ngoài thì mọi thứ tụt xuống hạng free và **bot trở thành đường lách gói** — owner Free chỉ cần nhờ bot là làm được thao tác hàng loạt của PRO. `requiredTierForAction` nay đếm `threadIds`/`groupIds`/`userIds`/… **bên trong** `params`: một đích = Free làm được, nhiều đích = PRO, nhiều profile = TEAM.
+
+### Fixed
+- **Nhãn menu sidebar gán theo `data-section`, không theo thứ tự mảng.** `setAllText` gán nhãn theo index, nên thêm một mục menu là **toàn bộ nhãn phía sau lệch một bậc** — "Nhật ký" hiện ra kèm con là "Bạn bè"/"Tin nhắn". Giờ thêm/bớt/đổi chỗ mục menu bao nhiêu cũng không sai.
+- **Checkbox trong trang lịch báo cáo không còn bị rule toàn cục `input, select, textarea { width:100%; min-height:40px }` kéo thành khối rộng ~230px** (thêm class `.report-check`).
+- **Audit log hiện rõ bot đã gọi action nào**: `zalo-api → rename-group` kèm mức (read/write/destructive), thay vì 20 dòng "zalo-api" giống nhau.
+
+### Changed
+- Thanh tab trong **Nhật ký nhóm** còn 3 mục: Tóm tắt · Note · Memory. Bỏ "Chat thô" và "Lịch báo cáo" (lịch có trang riêng vì một lịch trải trên nhiều nhóm).
+- Tab lịch trong nhật ký nhóm thành **chỉ đọc** (hiện nhóm này thuộc lịch nào + đường sang trang sửa). Giữ hai trình sửa ghi hai mô hình khác nhau là tự tạo hai nguồn sự thật; đã xoá bộ chọn nhiều nhóm + handler cũ (~90 dòng).
+- `save-report-schedule` thành **legacy**: chỉ còn ghi 4 setting per-group mà scheduler không đọc nữa (giữ cho dashboard/script cũ + làm nguồn migrate), và **bỏ khỏi allowlist agent** — để bot gọi vào thì im lặng vô tác dụng, tệ hơn báo lỗi.
+- Cấu hình lịch cũ được **tự gộp thành lịch mới** khi chạy lần đầu, nhóm theo (giờ + nơi nhận) nên 24 nhóm cùng 22:30 ra **một** lịch chứ không phải 24 lịch vụn.
+
+### Notes
+- 189 test xanh (thêm 24: 11 cho lịch báo cáo/cắt digest, 13 cho phân hạng + luật gói của `zalo-api`).
+- Giới hạn gói không đổi: **Free = xem + thao tác lẻ, PRO = hàng loạt, TEAM = nhiều bot**; cài lần đầu vẫn được tặng PRO trial 30 ngày.
+
 ## [2.18.3] - 2026-07-27
 
 ### Fixed

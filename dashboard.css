@@ -5585,3 +5585,57 @@ textarea:focus {
   .crm-undo { flex-direction: column; align-items: flex-start; gap: 8px; }
 }
 /* ═══ END CRM MODULE ═══ */
+
+/* ── Lịch báo cáo ─────────────────────────────────────────────────────────────
+   Rule toàn cục `input, select, textarea { width:100%; min-height:40px; padding:0 11px }`
+   bắt luôn checkbox, khiến nó render thành khối rộng ~230px. Trang lịch báo cáo dùng checkbox
+   thật (không phải switch), nên phải cho chúng thoát khỏi rule đó.                            */
+.report-check {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  cursor: pointer;
+}
+.report-check input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  min-height: 0;
+  padding: 0;
+  margin: 2px 0 0;
+  flex: 0 0 auto;
+  accent-color: var(--primary);
+  cursor: inherit;
+}
+.report-check--center {
+  align-items: center;
+}
+.report-check--center input[type="checkbox"] {
+  margin-top: 0;
+}
+
+/* Ô giờ trên thẻ lịch: gọn, có icon đồng hồ, không bị rule `input { width:100% }` kéo giãn. */
+.report-time-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 9px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface-2);
+  color: var(--muted);
+  cursor: pointer;
+}
+.report-time-field input[type="time"] {
+  width: auto;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+.report-time-field input[type="time"]::-webkit-calendar-picker-indicator {
+  display: none;              /* đã có icon đồng hồ riêng bên trái */
+}

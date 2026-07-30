@@ -10,7 +10,7 @@ const modalBody = document.getElementById('modalBody');
 const modalCancel = document.getElementById('modalCancel');
 const modalConfirm = document.getElementById('modalConfirm');
 const token = window.ZALO_DASHBOARD_TOKEN || '';
-const pluginVersion = '2.18.3';
+const pluginVersion = '2.19.0';
 let state = null;
 let activeGroupId = '';
 let lang = localStorage.getItem('zaloDashboardLang') || 'vi';
@@ -162,6 +162,7 @@ function setSection(id) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
   if (id === 'permissions') renderPermissions();
   if (id === 'journal') renderJournal();
+  if (id === 'reports') renderReports();
   if (id === 'settings') renderSettings();
   if (id === 'contacts') renderCrmContacts();
   if (id === 'leads') renderCrmLeads();
@@ -175,6 +176,7 @@ function refreshActiveOnDemandSection() {
   switch (active?.id) {
     case 'permissions': renderPermissions(); break;
     case 'journal': renderJournal(); break;
+    case 'reports': renderReports(); break;
     case 'settings': renderSettings(); break;
     case 'contacts': renderCrmContacts(); break;
     case 'leads': renderCrmLeads(); break;
@@ -280,6 +282,43 @@ function setHtml(selector, vi, en) {
     node.innerHTML = t(vi, en);
   }
 }
+// Nhãn menu gán theo data-section, KHÔNG theo thứ tự.
+//
+// Trước đây dùng setAllText() với một mảng theo vị trí, nên chỉ cần thêm một nút vào sidebar là toàn
+// bộ nhãn phía sau lệch đi một bậc — "Nhật ký" hiện ra kèm con là "Bạn bè"/"Tin nhắn". Gán theo khoá
+// thì thêm/bớt/đổi chỗ mục menu bao nhiêu cũng không sai.
+const NAV_LABELS = {
+  overview: ['Tổng quan', 'Overview'],
+  groups: ['Nhóm', 'Groups'],
+  members: ['Thành viên', 'Members'],
+  journal: ['Theo nhóm', 'By group'],
+  reports: ['Lịch báo cáo', 'Schedules'],
+  friends: ['Bạn bè', 'Friends'],
+  messages: ['Tin nhắn', 'Messages'],
+  templates: ['Template', 'Templates'],
+  permissions: ['Phân quyền', 'Permissions'],
+  contacts: ['Khách hàng', 'Contacts'],
+  leads: ['Pipeline', 'Pipeline'],
+  tasks: ['Công việc', 'Tasks'],
+  upgrade: ['Nâng cấp', 'Upgrade'],
+  settings: ['Cài đặt', 'Settings'],
+};
+/** Nhãn của nút mở/đóng nhóm menu — khoá theo id của .nav-group vì nút này không có data-section. */
+const NAV_GROUP_LABELS = {
+  navGroupJournal: ['Nhật ký', 'Journal'],
+  navGroupCrm: ['CRM', 'CRM'],
+  navGroupUtilities: ['Tiện ích', 'Utilities'],
+};
+function applyNavLabels(scopeSelector) {
+  document.querySelectorAll(`${scopeSelector} button > span.nav-label`).forEach(span => {
+    const btn = span.parentElement;
+    const key = btn.getAttribute('data-section');
+    const pair = key
+      ? NAV_LABELS[key]
+      : NAV_GROUP_LABELS[btn.closest('.nav-group')?.id || ''];
+    if (pair) span.textContent = t(pair[0], pair[1]);
+  });
+}
 function setAllText(selector, pairs) {
   document.querySelectorAll(selector).forEach((node, index) => {
     const pair = pairs[index];
@@ -331,38 +370,8 @@ function applyI18n() {
 
   setText('.brand h1', 'Zalo Owner', 'Zalo Owner');
   setText('.brand p', 'Quản trị Bot Zalo', 'Zalo Bot Management');
-  setAllText('[data-nav] button > span.nav-label', [
-    ['Tổng quan', 'Overview'],
-    ['Nhóm', 'Groups'],
-    ['Thành viên', 'Members'],
-    ['Nhật ký', 'Journal'],
-    ['Bạn bè', 'Friends'],
-    ['Tin nhắn', 'Messages'],
-    ['Template', 'Templates'],
-    ['Phân quyền', 'Permissions'],
-    ['CRM', 'CRM'],
-    ['Khách hàng', 'Contacts'],
-    ['Pipeline', 'Pipeline'],
-    ['Công việc', 'Tasks'],
-    ['Tiện ích', 'Utilities'],
-    ['Nâng cấp', 'Upgrade'],
-    ['Cài đặt', 'Settings'],
-  ]);
-  setAllText('[data-drawer-nav] button > span.nav-label', [
-    ['Tổng quan', 'Overview'],
-    ['Nhóm', 'Groups'],
-    ['Thành viên', 'Members'],
-    ['Nhật ký', 'Journal'],
-    ['Bạn bè', 'Friends'],
-    ['Tin nhắn', 'Messages'],
-    ['Template', 'Templates'],
-    ['Phân quyền', 'Permissions'],
-    ['Khách hàng', 'Contacts'],
-    ['Pipeline', 'Pipeline'],
-    ['Công việc', 'Tasks'],
-    ['Nâng cấp', 'Upgrade'],
-    ['Cài đặt', 'Settings'],
-  ]);
+  applyNavLabels('[data-nav]');
+  applyNavLabels('[data-drawer-nav]');
   setAllText('[data-bottom-nav] button > span', [
     ['Trang chủ', 'Home'],
     ['Nhóm', 'Groups'],
@@ -2797,7 +2806,7 @@ function renderAudit() {
   if (!list) return;
   list.innerHTML = (state.audit || []).slice(0, 8).map(item => `
         <div class="item">
-          <div><div class="item-title">${esc(item.action)}</div><div class="item-sub">${esc(item.ts || '')}</div></div>
+          <div><div class="item-title">${esc(item.action)}${item.target ? ` <span style="opacity:.7;font-weight:500">→ ${esc(item.target)}</span>` : ''}</div><div class="item-sub">${esc(item.ts || '')}${item.kind ? ` · ${esc(item.kind)}` : ''}</div></div>
           <span class="status ${item.ok === false ? 'danger' : 'on'}">${item.ok === false ? 'ERR' : 'OK'}</span>
         </div>
       `).join('') || `<div class="item"><div class="item-title">${t('Chưa có action', 'No actions yet')}</div><div class="item-sub">${t('Các action từ dashboard sẽ hiện tại đây.', 'Dashboard actions will appear here.')}</div></div>`;
@@ -2895,12 +2904,13 @@ const JOURNAL_TAB_ICONS = {
   config: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" stroke="currentColor" stroke-width="2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 7 19.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9H3a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 4.7 7l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9.5A1.7 1.7 0 0 0 10.5 3V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v.1a1.7 1.7 0 0 0 1.6 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
 };
 function journalTabs() {
+  // 'chat' (chat thô) và 'config' (lịch báo cáo) đã bỏ khỏi thanh tab: lịch báo cáo có trang riêng
+  // vì một lịch trải trên nhiều nhóm. journalContentHtml vẫn xử lý 2 khoá này để state cũ lưu trong
+  // journalState không làm trắng panel.
   return [
     ['summary', uiText('Tóm tắt', 'Summary')],
     ['notes', 'Note'],
     ['memories', 'Memory'],
-    ['chat', uiText('Chat thô', 'Raw chat')],
-    ['config', uiText('Lịch báo cáo', 'Schedule')],
   ];
 }
 function journalContentHtml() {
@@ -3015,7 +3025,7 @@ function renderJournalBody() {
   const showDates = !!(js.groupId && d && (js.tab === 'summary' || js.tab === 'chat'));
   // Hàng 1: dropdown chọn nhóm + Tổng hợp lại. Hàng 2: tab ngày.
   const groupRow = `<div class="journal-group-row">
-    ${js.tab === 'config' ? journalReportGroupSelectHtml() : journalGroupSelectHtml()}
+    ${journalGroupSelectHtml()}
     ${showDates ? `<button type="button" class="btn" data-jgen="${d.date}" style="margin-left:auto">↻ ${uiText('Tổng hợp lại', 'Re-summarize')}</button>` : ''}
   </div>`;
   const dateRow = showDates ? `<div class="journal-daterow">${journalDateTabsHtml()}</div>` : '';
@@ -3027,7 +3037,7 @@ function renderJournalBody() {
     <nav class="card journal-vtabs" aria-label="${uiText('Mục nhật ký', 'Journal tabs')}">${tabMenu}</nav>
     <div class="card journal-card"><div class="journal-toolbar">${groupRow}${dateRow}</div><div class="journal-content">${content}</div></div>
   </div>`;
-  if (js.tab === 'config') wireJournalReportGroupSelect(); else wireJournalGroupSelect();
+  wireJournalGroupSelect();
 }
 async function renderJournal() {
   const section = document.getElementById('journal');
@@ -3139,80 +3149,30 @@ function wireSettingsRoot(root) {
   });
 }
 function journalConfigHtml(d) {
-  // Nút gạt bật/tắt hiện đại (checkbox ẩn + slider CSS)
-  const toggle = (id, checked, label) => `<label class="journal-toggle-row"><span class="journal-toggle-label">${label}</span><span class="journal-switch"><input type="checkbox" id="${id}" ${checked ? 'checked' : ''}/><span class="journal-slider"></span></span></label>`;
-  const SAVE_ICON = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M17 21v-8H7v8M7 3v5h7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  // CHỈ ĐỌC. Lịch báo cáo giờ là thực thể riêng ở mục Nhật ký → Lịch báo cáo, vì một lịch trải trên
+  // NHIỀU nhóm — không thể diễn tả bằng 4 setting nằm trên từng nhóm. Giữ hai trình sửa song song sẽ
+  // thành hai nguồn sự thật ghi vào hai mô hình khác nhau, nên ở đây chỉ hiển thị nhóm này đang thuộc
+  // lịch nào, kèm đường sang trang sửa.
+  const gid = String(journalState.groupId || activeGroupId || '');
+  const jobs = (reportsState.jobs || []).filter(j => j.groups === '*' || (Array.isArray(j.groups) && j.groups.includes(gid)));
+  const kindLabel = (j) => j.kind === 'digest' ? uiText('tổng hợp', 'digest') : uiText('từng nhóm', 'per group');
+  const rows = jobs.length
+    ? jobs.map(j => `<div class="journal-config-block" style="margin-bottom:8px">
+        <div class="item-title">${esc(j.name)} ${j.enabled ? '' : `<span class="item-sub">(${uiText('đang tắt', 'disabled')})</span>`}</div>
+        <div class="item-sub" style="line-height:1.7">
+          ${kindLabel(j)} · ${j.time} · ${esc(reportDeliverSummary(j))}
+          ${j.groups === '*' ? `<br>${uiText('Áp cho tất cả nhóm đang follow', 'Applies to all followed groups')}` : ''}
+        </div></div>`).join('')
+    : `<div class="item-sub">${uiText('Nhóm này chưa thuộc lịch báo cáo nào.', 'This group is not in any schedule yet.')}</div>`;
   return `<div class="journal-config">
-    <div class="item-sub" style="margin-bottom:12px">${uiText('Cấu hình bên dưới áp cho (các) nhóm đang chọn ở ô chọn nhóm phía trên. Giờ báo cáo theo từng nhóm — chọn "Tất cả nhóm" để đặt cùng một giờ. "Follow" là chức năng riêng, chỉ để ghi lịch sử chat.', 'The config below applies to the group(s) selected in the picker above. Report time is per group — pick "All groups" to set one shared time. "Follow" is separate and only records chat history.')}</div>
-    <div class="journal-config-block">
-      <div class="item-title">${uiText('Cấu hình báo cáo cuối ngày', 'End-of-day report config')}</div>
-      ${toggle('jcfgAuto', d.autoSummary, uiText('Tự động báo cáo cuối ngày', 'Auto end-of-day report'))}
-      <div class="journal-time-row"><span class="journal-toggle-label">${uiText('Giờ báo cáo (VN)', 'Report time (VN)')}</span><input type="time" id="jcfgTime" class="journal-time-input" value="${esc(d.reportTime || '23:55')}"/></div>
-      <div class="item-title" style="margin-top:12px">${uiText('Gửi tới', 'Deliver to')}</div>
-      ${toggle('jcfgThisGroup', d.reportDeliverThisGroup !== false, uiText('Đăng vào chính nhóm', 'Post into the group'))}
-      ${toggle('jcfgOwnerDm', d.reportDeliverOwnerDm === true, uiText('DM cho owner bot', 'DM the bot owner'))}
-    </div>
-    <button type="button" class="btn primary journal-save-btn" data-jsave="1">${SAVE_ICON}<span>${uiText('Lưu lịch báo cáo', 'Save report schedule')}</span></button>
+    <div class="item-sub" style="margin-bottom:12px">${uiText('Lịch báo cáo được quản lý ở một chỗ duy nhất vì một lịch có thể áp cho nhiều nhóm.', 'Schedules live in one place because a single schedule can cover many groups.')}</div>
+    ${rows}
+    <button type="button" class="btn primary journal-save-btn" data-goto-reports="1">
+      <span>${uiText('Mở Lịch báo cáo', 'Open Schedules')}</span></button>
   </div>`;
 }
 // Multi-select group dropdown for the report tab — reuses the .custom-select-* component
 // styling (same as the journal group picker) instead of a second bespoke dropdown.
-function journalReportGroupSelectHtml() {
-  const groups = (state && state.groups) || [];
-  const curGid = String(journalState.groupId || activeGroupId || (groups[0] && groups[0].groupId) || '');
-  const rows = groups.length
-    ? groups.map(g => {
-      const a = avatarMeta(g, g.name);
-      return `<label class="custom-select-option-pill jcfg-opt" style="cursor:pointer">
-        <input type="checkbox" class="jcfg-grp" value="${esc(g.groupId)}" ${String(g.groupId) === curGid ? 'checked' : ''} style="width:16px;height:16px;flex:none;accent-color:var(--primary)"/>
-        <div class="custom-select-avatar">${esc(a.initials)}</div>
-        <span class="custom-select-name">${esc(repairText(g.name))} ${getBotBadge(g.profile)}</span>
-        <span class="custom-select-badge">${g.memberCount} members</span>
-      </label>`;
-    }).join('')
-    : `<div class="item-sub" style="padding:10px">${uiText('Chưa có nhóm.', 'No groups.')}</div>`;
-  return `<div class="custom-select-container" id="journalRptSelectContainer">
-    <div class="custom-select-trigger" id="journalRptSelectTrigger">
-      <div class="custom-select-trigger-content">
-        <span class="custom-select-name" id="journalRptSelectLabel">${uiText('Chọn nhóm...', 'Select groups...')}</span>
-      </div>
-      <svg class="custom-select-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-    </div>
-    <div class="custom-select-dropdown" id="journalRptSelectDropdown">
-      <label class="custom-select-option-pill" style="cursor:pointer;font-weight:600;border-bottom:1px solid var(--border)">
-        <input type="checkbox" id="jcfgSelectAll" style="width:16px;height:16px;flex:none;accent-color:var(--primary)"/>
-        <span class="custom-select-name">${uiText('Tất cả nhóm', 'All groups')} (${groups.length})</span>
-      </label>
-      ${rows}
-    </div>
-  </div>`;
-}
-function updateRptSelectLabel() {
-  const label = document.getElementById('journalRptSelectLabel');
-  const boxes = [...document.querySelectorAll('#journalRptSelectDropdown .jcfg-grp')];
-  const checked = boxes.filter(b => b.checked);
-  const selectAll = document.getElementById('jcfgSelectAll');
-  if (selectAll) selectAll.checked = boxes.length > 0 && checked.length === boxes.length;
-  if (!label) return;
-  if (!checked.length) label.textContent = uiText('Chưa chọn nhóm', 'No groups selected');
-  else if (checked.length === boxes.length) label.textContent = uiText('Tất cả nhóm', 'All groups') + ` (${boxes.length})`;
-  else if (checked.length === 1) label.textContent = (checked[0].closest('.custom-select-option-pill')?.querySelector('.custom-select-name')?.textContent || '').trim() || ('1 ' + uiText('nhóm', 'group'));
-  else label.textContent = checked.length + uiText(' nhóm đã chọn', ' groups selected');
-}
-function wireJournalReportGroupSelect() {
-  const trigger = document.getElementById('journalRptSelectTrigger');
-  const container = document.getElementById('journalRptSelectContainer');
-  if (trigger && container) trigger.addEventListener('click', e => { e.stopPropagation(); container.classList.toggle('open'); });
-  const selectAll = document.getElementById('jcfgSelectAll');
-  if (selectAll) selectAll.addEventListener('change', () => {
-    document.querySelectorAll('#journalRptSelectDropdown .jcfg-grp').forEach(b => { b.checked = selectAll.checked; });
-    updateRptSelectLabel();
-  });
-  document.querySelectorAll('#journalRptSelectDropdown .jcfg-grp').forEach(b => b.addEventListener('change', updateRptSelectLabel));
-  // Keep the dropdown open while ticking (labels wrap the checkbox)
-  document.querySelectorAll('#journalRptSelectDropdown label').forEach(l => l.addEventListener('click', e => e.stopPropagation()));
-  updateRptSelectLabel();
-}
 function journalSummaryHtml(s) {
   if (!s) return `<div class="item-sub">${uiText('Chưa có tóm tắt cho ngày này. Bấm "Tổng hợp lại".', 'No summary yet. Click re-summarize.')}</div>`;
   const x = s.sections || {};
@@ -3690,24 +3650,6 @@ document.addEventListener('click', async event => {
         showToast(uiText('Lỗi tổng hợp', 'Summarize error') + ': ' + e.message, 'error');
         btn.textContent = '↻'; btn.disabled = false;
       }
-    }
-    if (target.dataset.jsave) {
-      const gid = journalState.groupId;
-      const groupIds = [...document.querySelectorAll('.jcfg-grp:checked')].map(el => el.value);
-      if (!groupIds.length) { showToast(uiText('Chọn ít nhất một nhóm', 'Select at least one group'), 'error'); return; }
-      const payload = {
-        groupIds,
-        enabled: !!document.getElementById('jcfgAuto')?.checked,
-        time: document.getElementById('jcfgTime')?.value || '23:55',
-        deliverThisGroup: !!document.getElementById('jcfgThisGroup')?.checked,
-        deliverOwnerDm: !!document.getElementById('jcfgOwnerDm')?.checked,
-      };
-      try {
-        await journalApi('save-report-schedule', payload);
-        await loadJournal(gid, journalState.date);
-        journalRerender();
-        showToast(uiText('Đã lưu lịch báo cáo', 'Report schedule saved') + ' (' + groupIds.length + ')', 'success');
-      } catch (e) { showToast(e.message, 'error'); }
     }
     if (target.dataset.leaveGroup) {
       const groupId = target.dataset.leaveGroup;
@@ -5059,3 +5001,336 @@ async function crmTaskModal() {
   } catch (err) { showToast(err.message, 'error'); }
 }
 // ═══ END CRM MODULE ═══
+
+// ══ LỊCH BÁO CÁO (menu con của Nhật ký) ═══════════════════════════════════════════════════════
+// Một lịch = tập nhóm + giờ + nơi nhận + kiểu (lẻ từng nhóm / tổng hợp một tin). Thay cho 4 setting
+// rời trên từng nhóm, vốn không thể diễn tả "12 nhóm này gộp một tin lúc 22:30".
+//
+// Thao tác hay làm nhất là ĐỔI GIỜ và THÊM/BỚT NHÓM, nên giờ sửa được ngay trên thẻ (không modal),
+// còn bộ chọn nhóm có ô tìm kiếm + "tất cả" vì danh sách thực tế là vài chục nhóm.
+let reportsState = { jobs: [], groups: [], state: {}, draft: null, search: '' };
+
+async function reportsApi(action, payload) {
+  const data = await api('/api/action', { method: 'POST', body: JSON.stringify({ action, payload }) });
+  return data.result;
+}
+
+async function renderReports() {
+  const body = document.getElementById('reportsBody');
+  if (!body) return;
+  body.innerHTML = `<div class="item-sub">${uiText('Đang tải...', 'Loading...')}</div>`;
+  try {
+    const d = await reportsApi('report-jobs', {});
+    reportsState.jobs = d.jobs || [];
+    reportsState.groups = d.groups || [];
+    reportsState.state = d.state || {};
+  } catch (e) {
+    body.innerHTML = `<div class="item-sub">${uiText('Lỗi tải lịch báo cáo', 'Failed to load schedules')}: ${esc(e.message)}</div>`;
+    return;
+  }
+  body.innerHTML = reportsListHtml();
+}
+
+function reportGroupName(gid) {
+  return (reportsState.groups.find(g => g.groupId === gid) || {}).name || gid;
+}
+
+function reportDeliverSummary(job) {
+  const bits = [];
+  if (job.deliver.ownerDm) bits.push(uiText('DM owner', 'Owner DM'));
+  if (job.deliver.eachGroup) bits.push(uiText('chính nhóm đó', 'the group itself'));
+  for (const gid of job.deliver.groups) bits.push(`→ ${reportGroupName(gid)}`);
+  return bits.length ? bits.join(' · ') : `⚠️ ${uiText('chưa chọn nơi nhận', 'no destination')}`;
+}
+
+function reportsListHtml() {
+  const jobs = reportsState.jobs;
+  if (!jobs.length) {
+    return `<div class="card" style="padding:22px;text-align:center">
+      <div style="font-size:15px;font-weight:600;margin-bottom:6px">${uiText('Chưa có lịch báo cáo nào', 'No report schedules yet')}</div>
+      <div class="item-sub" style="margin-bottom:14px">${uiText('Tạo một lịch để bot tự gửi tổng hợp lịch sử chat mỗi ngày.', 'Create a schedule so the bot sends a daily chat digest.')}</div>
+      <button class="btn primary" data-action="report-job-new">+ ${uiText('Tạo lịch', 'New schedule')}</button>
+    </div>`;
+  }
+  return `<div style="display:flex;flex-direction:column;gap:12px">${jobs.map(reportJobCardHtml).join('')}</div>`;
+}
+
+const REPORT_ICONS = {
+  preview: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.9"/></svg>',
+  edit: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true"><path d="M4 20h4L20 8a2.8 2.8 0 0 0-4-4L4 16v4Z" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="m14.5 5.5 4 4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>',
+  send: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true"><path d="M21.5 2.5 2 11l7 2.5L11.5 21l10-18.5Z" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 13.5 21.5 2.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>',
+  del: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true"><path d="M4 7h16M9 7V4.5h6V7m-8 0 1 13h8l1-13" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  clock: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.9"/><path d="M12 7.5V12l3 2" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>',
+};
+
+function reportJobCardHtml(job) {
+  const isDigest = job.kind === 'digest';
+  const ran = reportsState.state[job.id];
+  const scope = job.groups === '*'
+    ? `${uiText('Tất cả nhóm follow', 'All followed groups')} (${job.resolvedCount})`
+    : `${job.resolvedCount} ${uiText('nhóm', 'groups')}`;
+  // Nút gạt và giờ xếp dọc ở cột phải: bật/tắt là quyết định "có chạy không", giờ là "chạy lúc nào" —
+  // cùng một cột nên đọc theo thứ tự đó.
+  return `<div class="card" style="padding:14px 16px">
+    <div style="display:flex;align-items:flex-start;gap:12px">
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap">
+          <span style="font-weight:650;font-size:14.5px">${esc(job.name)}</span>
+          <span class="chip" style="background:${isDigest ? 'rgba(96,165,250,.16)' : 'rgba(148,163,184,.16)'}">
+            ${isDigest ? '📊 ' + uiText('Tổng hợp', 'Digest') : '📋 ' + uiText('Từng nhóm', 'Per group')}
+          </span>
+        </div>
+        <div class="item-sub" style="margin-top:8px;line-height:1.7">
+          ${scope} &nbsp;·&nbsp; ${esc(reportDeliverSummary(job))}
+          ${ran ? `<br>${uiText('Lần cuối', 'Last run')}: ${ran.date} ${ran.time}` : ''}
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex:0 0 auto">
+        <label class="journal-switch" title="${uiText('Bật/tắt lịch này', 'Enable/disable')}">
+          <input type="checkbox" data-report-toggle="${job.id}" ${job.enabled ? 'checked' : ''}/>
+          <span class="journal-slider"></span>
+        </label>
+        <label class="report-time-field">${REPORT_ICONS.clock}
+          <input type="time" value="${job.time}" data-report-time="${job.id}"/>
+        </label>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;justify-content:flex-end">
+      ${isDigest ? `<button class="btn" data-report-preview="${job.id}">${REPORT_ICONS.preview}<span>${uiText('Xem trước', 'Preview')}</span></button>` : ''}
+      <button class="btn outline-primary" data-report-edit="${job.id}">${REPORT_ICONS.edit}<span>${uiText('Sửa', 'Edit')}</span></button>
+      <button class="btn primary" data-report-run="${job.id}">${REPORT_ICONS.send}<span>${uiText('Gửi thử', 'Send now')}</span></button>
+      <button class="btn danger" data-report-delete="${job.id}">${REPORT_ICONS.del}<span>${uiText('Xoá', 'Delete')}</span></button>
+    </div>
+  </div>`;
+}
+
+// ── Trình sửa lịch ────────────────────────────────────────────────────────────────────────────
+function reportEditorHtml() {
+  const j = reportsState.draft;
+  const isDigest = j.kind === 'digest';
+  const all = j.groups === '*';
+  const q = reportsState.search.trim().toLowerCase();
+  const list = reportsState.groups.filter(g => !q || g.name.toLowerCase().includes(q));
+  const picked = new Set(all ? [] : j.groups);
+  const field = (label, inner) => `<div style="margin-bottom:14px">
+    <div style="font-size:12px;font-weight:650;letter-spacing:.02em;opacity:.72;margin-bottom:6px;text-transform:uppercase">${label}</div>${inner}</div>`;
+  const kindBtn = (k, icon, label, hint) => `<button type="button" data-report-kind="${k}"
+    style="flex:1;min-width:150px;text-align:left;padding:10px 12px;border-radius:10px;cursor:pointer;
+    border:1.5px solid ${j.kind === k ? 'var(--primary)' : 'var(--line)'};
+    background:${j.kind === k ? 'rgba(96,165,250,.10)' : 'var(--surface-2)'};color:var(--text)">
+    <div style="font-weight:650;font-size:13.5px">${icon} ${label}</div>
+    <div style="font-size:11.5px;opacity:.7;margin-top:3px;line-height:1.5">${hint}</div></button>`;
+  const check = (attr, on, label, hint = '', disabled = false) => `<label class="report-check" style="padding:8px 10px;border-radius:9px;
+    background:var(--surface-2);margin-bottom:6px;cursor:${disabled ? 'not-allowed' : 'pointer'};opacity:${disabled ? '.45' : '1'}">
+    <input type="checkbox" ${attr} ${on ? 'checked' : ''} ${disabled ? 'disabled' : ''}/>
+    <span><span style="font-size:13.5px">${label}</span>${hint ? `<br><span style="font-size:11.5px;opacity:.7">${hint}</span>` : ''}</span></label>`;
+
+  return `<div>
+    ${field(uiText('Tên lịch', 'Name'), `<input type="text" value="${esc(j.name)}" data-report-name
+      style="width:100%;padding:9px 11px;border-radius:9px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font-size:13.5px"/>`)}
+
+    ${field(uiText('Kiểu báo cáo', 'Report type'), `<div style="display:flex;gap:8px;flex-wrap:wrap">
+      ${kindBtn('group', '📋', uiText('Từng nhóm', 'Per group'), uiText('Mỗi nhóm một tin đầy đủ như hiện tại', 'One full report per group'))}
+      ${kindBtn('digest', '📊', uiText('Tổng hợp', 'Digest'), uiText('Gộp tất cả nhóm đã chọn vào một tin ngắn', 'All selected groups in one short message'))}
+    </div>`)}
+
+    ${field(uiText('Giờ gửi mỗi ngày', 'Daily time'), `<input type="time" value="${j.time}" data-report-draft-time
+      style="padding:9px 11px;border-radius:9px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font-size:13.5px"/>`)}
+
+    ${field(`${uiText('Nhóm áp dụng', 'Groups')} — ${all ? uiText('tất cả', 'all') : `${picked.size}/${reportsState.groups.length}`}`, `
+      <label class="report-check report-check--center" style="padding:9px 11px;border-radius:9px;background:var(--surface-2);margin-bottom:8px">
+        <input type="checkbox" data-report-all ${all ? 'checked' : ''}/>
+        <span style="font-size:13.5px">${uiText('Tất cả nhóm đang follow', 'All followed groups')}
+        <span style="opacity:.65">— ${uiText('nhóm mới thêm sau cũng tự vào lịch này', 'new groups join automatically')}</span></span>
+      </label>
+      <div style="opacity:${all ? '.4' : '1'};pointer-events:${all ? 'none' : 'auto'}">
+        <input type="search" placeholder="${uiText('Tìm nhóm...', 'Search groups...')}" value="${esc(reportsState.search)}" data-report-search
+          style="width:100%;padding:8px 11px;border-radius:9px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font-size:13px;margin-bottom:6px"/>
+        <div style="max-height:210px;overflow:auto;border:1px solid var(--line);border-radius:9px;padding:6px">
+          ${list.length ? list.map(g => `<label class="report-check report-check--center" style="padding:6px 8px;border-radius:7px">
+            <input type="checkbox" data-report-group="${g.groupId}" ${picked.has(g.groupId) ? 'checked' : ''}/>
+            <span style="font-size:13px">${esc(g.name)}</span></label>`).join('')
+            : `<div class="item-sub" style="padding:8px">${uiText('Không có nhóm khớp', 'No match')}</div>`}
+        </div>
+      </div>`)}
+
+    ${field(uiText('Nơi nhận báo cáo', 'Send to'), `
+      ${check('data-report-owner', j.deliver.ownerDm, `👤 ${uiText('DM riêng owner', 'Owner DM')}`)}
+      ${check('data-report-each', j.deliver.eachGroup, `💬 ${uiText('Chính nhóm đó nhận', 'The group itself')}`,
+        isDigest ? uiText('Không dùng được với báo cáo tổng hợp — một tin gộp không thuộc nhóm nào', 'Not available for a digest — one message has no single group') : '', isDigest)}
+      ${check('data-report-pickgroup', j.deliver.groups.length > 0, `📢 ${uiText('Nhóm nhận báo cáo chung', 'A dedicated group')}`)}
+      <div style="opacity:${j.deliver.groups.length ? '1' : '.4'};pointer-events:${j.deliver.groups.length ? 'auto' : 'none'};margin-left:28px">
+        <select data-report-target style="width:100%;padding:8px 10px;border-radius:9px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font-size:13px">
+          <option value="">${uiText('— chọn nhóm nhận —', '— pick a group —')}</option>
+          ${reportsState.groups.map(g => `<option value="${g.groupId}" ${j.deliver.groups[0] === g.groupId ? 'selected' : ''}>${esc(g.name)}</option>`).join('')}
+        </select>
+      </div>`)}
+  </div>`;
+}
+
+function reportsRerenderEditor() {
+  if (!modalBackdrop.classList.contains('open')) return;
+  modalBody.innerHTML = reportEditorHtml();
+}
+
+async function openReportEditor(job) {
+  reportsState.draft = JSON.parse(JSON.stringify(job));
+  reportsState.search = '';
+  const ok = await openModal({
+    title: job.id && reportsState.jobs.some(j => j.id === job.id)
+      ? uiText('Sửa lịch báo cáo', 'Edit schedule')
+      : uiText('Tạo lịch báo cáo', 'New schedule'),
+    body: reportEditorHtml(),
+    confirmText: uiText('Lưu', 'Save'),
+  });
+  if (!ok) return;
+  try {
+    await reportsApi('report-job-save', { job: reportsState.draft });
+    showToast(uiText('Đã lưu lịch báo cáo', 'Schedule saved'), 'success');
+    await renderReports();
+  } catch (e) {
+    showToast(uiText('Lưu thất bại', 'Save failed') + ': ' + e.message, 'error');
+  }
+}
+
+function newReportJob() {
+  return {
+    id: `job-${Date.now().toString(36)}`,
+    name: '', enabled: true, kind: 'digest', groups: '*', time: '22:30',
+    deliver: { ownerDm: true, eachGroup: false, groups: [] },
+  };
+}
+
+// ── Handler: uỷ quyền sự kiện cho cả thẻ lịch và trình sửa ────────────────────────────────────
+document.addEventListener('click', async (ev) => {
+  const t = ev.target;
+  const hit = (attr) => t.closest?.(`[${attr}]`)?.getAttribute(attr);
+
+  if (t.closest?.('[data-action="report-job-new"]')) { await openReportEditor(newReportJob()); return; }
+  if (t.closest?.('[data-goto-reports]')) { if (modalBackdrop.classList.contains('open')) modalResolve?.(false); setSection('reports'); return; }
+
+  const editId = hit('data-report-edit');
+  if (editId) {
+    const job = reportsState.jobs.find(j => j.id === editId);
+    if (job) await openReportEditor(job);
+    return;
+  }
+
+  const delId = hit('data-report-delete');
+  if (delId) {
+    const job = reportsState.jobs.find(j => j.id === delId);
+    const ok = await openModal({
+      title: uiText('Xoá lịch báo cáo?', 'Delete schedule?'),
+      desc: job ? job.name : '',
+      body: `<div class="item-sub">${uiText('Các nhóm trong lịch này sẽ không còn nhận báo cáo tự động.', 'Groups in this schedule stop receiving automatic reports.')}</div>`,
+      confirmText: uiText('Xoá', 'Delete'), danger: true, tone: 'warning',
+    });
+    if (!ok) return;
+    try { await reportsApi('report-job-delete', { id: delId }); showToast(uiText('Đã xoá', 'Deleted'), 'success'); await renderReports(); }
+    catch (e) { showToast(e.message, 'error'); }
+    return;
+  }
+
+  const runId = hit('data-report-run');
+  if (runId) {
+    const btn = t.closest('[data-report-run]');
+    btn.disabled = true; btn.textContent = uiText('Đang gửi...', 'Sending...');
+    try {
+      const r = await reportsApi('report-job-run', { id: runId });
+      showToast(uiText(`Đã gửi ${r.sent} tin cho ${r.groups} nhóm`, `Sent ${r.sent} message(s) for ${r.groups} group(s)`), 'success');
+    } catch (e) { showToast(uiText('Gửi thất bại', 'Send failed') + ': ' + e.message, 'error'); }
+    await renderReports();
+    return;
+  }
+
+  // Xem trước ĐÚNG chuỗi sẽ gửi, kèm số ký tự và số phần — để owner biết trước có bị tách tin không.
+  const prevId = hit('data-report-preview');
+  if (prevId) {
+    const job = reportsState.jobs.find(j => j.id === prevId);
+    if (!job) return;
+    try {
+      const r = await reportsApi('report-digest-preview', { groups: job.groups });
+      await openModal({
+        title: uiText('Xem trước báo cáo tổng hợp', 'Digest preview'),
+        desc: uiText(`${r.date} · ${r.chars} ký tự · ${r.parts} tin`, `${r.date} · ${r.chars} chars · ${r.parts} message(s)`),
+        body: r.texts.map((tx, i) => `<div style="margin-bottom:12px">
+          ${r.texts.length > 1 ? `<div style="font-size:11.5px;opacity:.7;margin-bottom:4px">${uiText('Tin', 'Message')} ${i + 1}/${r.texts.length}</div>` : ''}
+          <pre style="white-space:pre-wrap;word-break:break-word;font-size:12.5px;line-height:1.65;background:var(--surface-2);padding:12px;border-radius:9px;margin:0;font-family:inherit">${esc(tx)}</pre></div>`).join(''),
+        confirmText: uiText('Đóng', 'Close'),
+      });
+    } catch (e) { showToast(e.message, 'error'); }
+    return;
+  }
+
+  // ── Trong trình sửa ──
+  const kind = hit('data-report-kind');
+  if (kind && reportsState.draft) {
+    reportsState.draft.kind = kind;
+    // Một tin gộp không thuộc nhóm nào nên "chính nhóm đó nhận" mất nghĩa — tắt luôn để state không
+    // lưu một cấu hình không thể thực hiện.
+    if (kind === 'digest') reportsState.draft.deliver.eachGroup = false;
+    reportsRerenderEditor();
+    return;
+  }
+});
+
+document.addEventListener('change', async (ev) => {
+  const t = ev.target;
+  const d = reportsState.draft;
+
+  const toggleId = t.getAttribute?.('data-report-toggle');
+  if (toggleId) {
+    const job = reportsState.jobs.find(j => j.id === toggleId);
+    if (!job) return;
+    job.enabled = t.checked;
+    try { await reportsApi('report-job-save', { job }); showToast(job.enabled ? uiText('Đã bật lịch', 'Enabled') : uiText('Đã tắt lịch', 'Disabled'), 'success'); }
+    catch (e) { showToast(e.message, 'error'); await renderReports(); }
+    return;
+  }
+
+  // Đổi giờ ngay trên thẻ — việc hay làm nhất, không đáng phải mở modal.
+  const timeId = t.getAttribute?.('data-report-time');
+  if (timeId) {
+    const job = reportsState.jobs.find(j => j.id === timeId);
+    if (!job) return;
+    job.time = t.value || job.time;
+    try { await reportsApi('report-job-save', { job }); showToast(uiText(`Đã đổi giờ → ${job.time}`, `Time → ${job.time}`), 'success'); }
+    catch (e) { showToast(e.message, 'error'); }
+    return;
+  }
+
+  if (!d) return;
+  if (t.hasAttribute?.('data-report-name')) { d.name = t.value; return; }
+  if (t.hasAttribute?.('data-report-draft-time')) { d.time = t.value || d.time; return; }
+  if (t.hasAttribute?.('data-report-all')) {
+    d.groups = t.checked ? '*' : [];
+    reportsRerenderEditor();
+    return;
+  }
+  const gid = t.getAttribute?.('data-report-group');
+  if (gid) {
+    if (d.groups === '*') d.groups = [];
+    d.groups = t.checked ? [...new Set([...d.groups, gid])] : d.groups.filter(x => x !== gid);
+    reportsRerenderEditor();
+    return;
+  }
+  if (t.hasAttribute?.('data-report-owner')) { d.deliver.ownerDm = t.checked; return; }
+  if (t.hasAttribute?.('data-report-each')) { d.deliver.eachGroup = t.checked; return; }
+  if (t.hasAttribute?.('data-report-pickgroup')) {
+    d.deliver.groups = t.checked ? (d.deliver.groups.length ? d.deliver.groups : [reportsState.groups[0]?.groupId].filter(Boolean)) : [];
+    reportsRerenderEditor();
+    return;
+  }
+  if (t.hasAttribute?.('data-report-target')) { d.deliver.groups = t.value ? [t.value] : []; return; }
+});
+
+document.addEventListener('input', (ev) => {
+  if (ev.target.hasAttribute?.('data-report-search')) {
+    reportsState.search = ev.target.value;
+    const box = modalBody.querySelector('[data-report-search]');
+    const sel = box && box.selectionStart;
+    reportsRerenderEditor();
+    const again = modalBody.querySelector('[data-report-search]');
+    if (again) { again.focus(); try { again.setSelectionRange(sel, sel); } catch {} }
+  }
+});

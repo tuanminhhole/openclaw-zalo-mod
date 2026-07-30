@@ -46,12 +46,22 @@
             <path d="M15 8a4 4 0 1 1-8 0 4 4 0 0 1 8 0Zm-12 13a8 8 0 0 1 16 0m0-13h3m-1.5-1.5v3" stroke="currentColor"
               stroke-width="2" stroke-linecap="round" />
           </svg><span class="nav-label">Thành viên</span></button>
-        <button data-section="journal"><svg viewBox="0 0 24 24" fill="none">
-            <path d="M4 5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5Z" stroke="currentColor" stroke-width="2"
-              stroke-linejoin="round" />
-            <path d="M14 3v5h5M8 13h8M8 17h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-              stroke-linejoin="round" />
-          </svg><span class="nav-label">Nhật ký</span></button>
+        <div class="nav-group open" id="navGroupJournal">
+          <button class="nav-group-trigger" type="button" onclick="this.parentElement.classList.toggle('open')">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M4 5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5Z" stroke="currentColor" stroke-width="2"
+                stroke-linejoin="round" />
+              <path d="M14 3v5h5M8 13h8M8 17h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round" />
+            </svg>
+            <span class="nav-label">Nhật ký</span>
+            <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left: auto; width: 12px; height: 12px; transition: transform 0.2s; flex-shrink: 0;"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="sidebar-submenu">
+            <button data-section="journal" class="submenu-item" type="button"><span class="submenu-dot"></span><span class="nav-label">Theo nhóm</span></button>
+            <button data-section="reports" class="submenu-item" type="button"><span class="submenu-dot"></span><span class="nav-label">Lịch báo cáo</span></button>
+          </div>
+        </div>
         <button data-section="friends"><svg viewBox="0 0 24 24" fill="none">
             <path d="M8 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm8 10v-2a6 6 0 0 0-12 0v2m15-9v6m3-3h-6" stroke="currentColor"
               stroke-width="2" stroke-linecap="round" />
@@ -110,7 +120,7 @@
             log.</span>
         </div>
         <div class="plugin-meta">
-          <strong>zalo-mod <span id="pluginVersion">v2.18.3</span></strong>
+          <strong>zalo-mod <span id="pluginVersion">v2.19.0</span></strong>
           <span>Được làm ❤️ bởi tuanminhole</span>
           <div class="socials" aria-label="Author links">
             <a href="https://www.facebook.com/holeminhtuan.it/" target="_blank" rel="noreferrer"
@@ -570,6 +580,20 @@
         </div>
         <div style="width: 100%; margin-top: 14px;">
           <div id="journalBody"></div>
+        </div>
+      </section>
+      <section class="section" id="reports">
+        <div class="page-head">
+          <div>
+            <h2>Lịch báo cáo</h2>
+            <p>Mỗi lịch chọn một tập nhóm, một giờ và nơi nhận. Báo cáo lẻ gửi riêng từng nhóm; báo cáo tổng hợp gộp tất cả nhóm đã chọn vào một tin.</p>
+          </div>
+          <div class="actions">
+            <button class="btn primary" data-action="report-job-new">+ Tạo lịch</button>
+          </div>
+        </div>
+        <div style="width: 100%; margin-top: 14px;">
+          <div id="reportsBody"></div>
         </div>
       </section>
       <section class="section" id="friends">
@@ -1113,7 +1137,11 @@
             stroke-linejoin="round" />
           <path d="M14 3v5h5M8 13h8M8 17h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
             stroke-linejoin="round" />
-        </svg><span class="nav-label">Nhật ký</span></button>
+        </svg><span class="nav-label">Theo nhóm</span></button>
+      <button data-section="reports"><svg viewBox="0 0 24 24" fill="none">
+          <path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg><span class="nav-label">Lịch báo cáo</span></button>
       <button data-section="friends"><svg viewBox="0 0 24 24" fill="none">
           <path d="M8 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm8 10v-2a6 6 0 0 0-12 0v2m15-9v6m3-3h-6" stroke="currentColor"
             stroke-width="2" stroke-linecap="round" />

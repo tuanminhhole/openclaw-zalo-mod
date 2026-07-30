@@ -45,6 +45,23 @@ function countValues(value) {
   return value ? 1 : 0;
 }
 
+/**
+ * Tham số mang nhiều đích trong payload của passthrough `zalo-api`.
+ *
+ * Passthrough gói lời gọi thật vào `payload.params` theo tên của zca-js, nên đếm ở tầng ngoài sẽ ra 0
+ * đích và mọi thứ tụt xuống hạng free — tức là bot trở thành đường lách gói. Phải đếm bên trong.
+ */
+const PASSTHROUGH_TARGET_KEYS = [
+  'threadIds', 'groupIds', 'userIds', 'memberIds', 'members', 'targets', 'uids', 'phoneNumbers',
+];
+
+function passthroughTargetCount(params) {
+  if (!params || typeof params !== 'object') return 0;
+  let max = 0;
+  for (const key of PASSTHROUGH_TARGET_KEYS) max = Math.max(max, countValues(params[key]));
+  return max;
+}
+
 export function requiredTierForAction(action, payload = {}, context = {}) {
   const profiles = countValues(payload.profiles || payload.profile);
   if (payload.profile === 'all' || profiles > 1) return 'team';
@@ -52,11 +69,14 @@ export function requiredTierForAction(action, payload = {}, context = {}) {
 
   const targetCount = Math.max(
     countValues(payload.targets), countValues(payload.groupIds),
-    countValues(payload.members), countValues(payload.userIds)
+    countValues(payload.members), countValues(payload.userIds),
+    // `zalo-api` là một cửa cho ~141 action của zalo-connect; luật gói phải soi vào lời gọi thật bên
+    // trong, không thì "gửi cho 30 nhóm" đi qua passthrough sẽ được tính là một thao tác lẻ.
+    action === 'zalo-api' ? passthroughTargetCount(payload.params) : 0
   );
   if (
     String(action).startsWith('bulk-') || action === 'send-messages' ||
-    payload.all === true || targetCount > 1
+    payload.all === true || payload?.params?.all === true || targetCount > 1
   ) return 'pro';
 
   return 'free';

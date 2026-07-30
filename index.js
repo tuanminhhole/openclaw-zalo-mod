@@ -34,6 +34,7 @@ import { createZaloModAgentTools, collectOwnerIds, ZALO_MOD_TOOL_NAMES } from '.
 import { listAllCommands, renderCommandPanel, renderRulesPanel, TOGGLE_KEYS } from './src/agent/commands.js';
 import { buildWorkspaceSkillMarkdown, WORKSPACE_SKILL_VERSION } from './src/agent/skill-content.js';
 import { assertActionAllowed, capabilitiesForPlan, verifySignedEntitlement } from './src/licensing/entitlements.js';
+import { classifyConnectAction, listConnectActions } from './src/agent/connect-actions.js';
 import crypto from 'node:crypto';
 import zlib from 'node:zlib';
 
@@ -2529,37 +2530,213 @@ Quy tắc:
                 if (oid) await sendDmMsg({ accountId: prof }, oid, text);
             }
         }
-        // Quét mỗi phút: mỗi nhóm bật autoSummary có GIỜ RIÊNG. Tới giờ nhóm nào thì báo
-        // cáo nhóm đó — một lần/ngày/nhóm, chống lặp qua report-state.json (theo từng nhóm).
-        // Lưu ý: 'follow' chỉ bật ghi lịch sử chat; việc có báo cáo hay không do autoSummary.
+        // ══ LỊCH BÁO CÁO (report jobs) ═══════════════════════════════════════════════════════
+        // Trước đây lịch là 4 setting rời trên TỪNG nhóm (autoSummary/reportTime/reportDeliver*),
+        // nên không thể diễn tả "12 nhóm này gộp thành MỘT tin lúc 22:30, DM owner". Nay lịch là
+        // một thực thể riêng: chọn tập nhóm + giờ + nơi nhận + kiểu (lẻ / tổng hợp).
+        //   kind 'group'  → mỗi nhóm một báo cáo riêng (hành vi cũ)
+        //   kind 'digest' → MỘT báo cáo gộp cho cả tập nhóm
+        // deliver.eachGroup chỉ có nghĩa với kind 'group' (một tin gộp không có "nhóm của nó").
+        const REPORT_JOBS_FILE = 'report-jobs.json';
+        // Zalo tự cắt tin quá dài, cắt giữa câu, nên digest tự cắt trước theo ranh giới NHÓM.
+        // ~3500 ký tự là ngưỡng an toàn quan sát được cho một tin nhóm.
+        const DIGEST_SAFE_CHARS = 3500;
+
+        function normalizeReportJob(j) {
+            if (!j || typeof j !== 'object') return null;
+            const id = String(j.id || '').trim() || `job-${Math.random().toString(36).slice(2, 10)}`;
+            const kind = j.kind === 'digest' ? 'digest' : 'group';
+            const groups = j.groups === '*' ? '*' : (Array.isArray(j.groups) ? j.groups.map(String).filter(Boolean) : []);
+            const d = j.deliver || {};
+            return {
+                id,
+                name: String(j.name || '').trim() || (kind === 'digest' ? 'Báo cáo tổng hợp' : 'Báo cáo từng nhóm'),
+                enabled: j.enabled !== false,
+                kind,
+                groups,
+                time: normReportTime(j.time),
+                deliver: {
+                    ownerDm: d.ownerDm === true,
+                    // Một digest không có "nhóm của chính nó" để gửi vào.
+                    eachGroup: kind === 'group' && d.eachGroup === true,
+                    groups: Array.isArray(d.groups) ? d.groups.map(String).filter(Boolean) : [],
+                },
+            };
+        }
+
+        async function readReportJobs() {
+            const raw = await readPluginDataJson(REPORT_JOBS_FILE);
+            return (Array.isArray(raw?.jobs) ? raw.jobs : []).map(normalizeReportJob).filter(Boolean);
+        }
+        async function writeReportJobs(jobs) {
+            await writePluginDataJson(REPORT_JOBS_FILE, { jobs: jobs.map(normalizeReportJob).filter(Boolean) });
+        }
+
+        /** '*' cố ý resolve lúc chạy, để nhóm mới thêm vào sau tự được lịch "tất cả" bao gồm. */
+        function resolveJobGroups(job) {
+            const all = watchGroupIds.filter(gid => isFollowOn(gid));
+            if (job.groups === '*') return all;
+            return job.groups.filter(gid => watchGroupIds.includes(gid));
+        }
+
+        /**
+         * Gộp cấu hình per-group cũ thành job, một lần.
+         *
+         * Nhóm theo (giờ + nơi nhận) nên 24 nhóm cùng 22:30 cùng cách gửi trở thành MỘT job thay vì
+         * 24 job vụn. Không chạy nếu đã có job — người dùng sửa tay rồi thì không được ghi đè.
+         */
+        async function ensureReportJobsMigrated() {
+            const existing = await readReportJobs();
+            if (existing.length) return existing;
+            const legacy = watchGroupIds.filter(gid => store.getSetting(gid, 'autoSummary', false) === true);
+            if (!legacy.length) return [];
+            const buckets = new Map();
+            for (const gid of legacy) {
+                const time = normReportTime(store.getSetting(gid, 'reportTime', '23:55'));
+                const toGroup = store.getSetting(gid, 'reportDeliverThisGroup', true) === true;
+                const toOwner = store.getSetting(gid, 'reportDeliverOwnerDm', false) === true;
+                const key = `${time}|${toGroup}|${toOwner}`;
+                if (!buckets.has(key)) buckets.set(key, { time, toGroup, toOwner, gids: [] });
+                buckets.get(key).gids.push(gid);
+            }
+            const jobs = [...buckets.values()].map((b, i) => normalizeReportJob({
+                id: `legacy-${i + 1}`,
+                name: `Lịch cũ ${b.time}`,
+                kind: 'group',
+                groups: b.gids,
+                time: b.time,
+                deliver: { ownerDm: b.toOwner, eachGroup: b.toGroup, groups: [] },
+            }));
+            await writeReportJobs(jobs);
+            logger.info(`[openclaw-zalo-mod] [REPORT] đã chuyển ${legacy.length} nhóm cấu hình cũ thành ${jobs.length} lịch báo cáo`);
+            return jobs;
+        }
+
+        /**
+         * Dựng báo cáo tổng hợp — KHÔNG gọi model thêm lần nào.
+         *
+         * Bản tóm tắt từng nhóm đã được model viết và lưu ở summaries/<gid>/<date>.json, nên digest chỉ
+         * chọn lọc lại: mỗi nhóm lấy tối đa 3 điểm (ưu tiên highlights của model), việc có hẹn/chưa xong
+         * gắn ⚠️. Nhờ vậy thêm digest tốn 0 token — quan trọng vì mỗi request đang ~26k prompt token.
+         */
+        async function buildDigestParts(groupIds, date) {
+            const blocks = [];
+            let totalMsgs = 0, totalLinks = 0, totalAppts = 0;
+            for (const gid of groupIds) {
+                let s = await getSummary(gid, date);
+                if (!s) s = await generateDailySummary(gid, date, { by: 'auto' }).catch(() => null);
+                if (!s || !s.messageCount) continue;
+                const x = s.sections || {};
+                totalMsgs += s.messageCount;
+                totalLinks += (x.links || []).length;
+                totalAppts += (x.appointments || []).length;
+                const bullets = [];
+                for (const h of (x.highlights || [])) {
+                    if (bullets.length >= 3) break;
+                    bullets.push(`  • ${h}`);
+                }
+                for (const a of (x.appointments || [])) {
+                    if (bullets.length >= 3) break;
+                    bullets.push(`  • ⚠️ ${a.name ? `${a.name}: ` : ''}${a.what}${a.when ? ` (${a.when})` : ''}`);
+                }
+                if (!bullets.length && x.overview) bullets.push(`  • ${String(x.overview).split(/(?<=[.!?])\s/)[0]}`);
+                blocks.push(`📋 ${getGroupName(gid)} — ${s.messageCount} tin · ${(x.participants || []).length} người\n${bullets.join('\n')}`);
+            }
+            return { blocks, totalMsgs, totalLinks, totalAppts, groupCount: blocks.length };
+        }
+
+        /** Digest đã format, cắt sẵn theo ranh giới nhóm để Zalo không cắt giữa câu. */
+        async function buildDigestMessages(groupIds, date) {
+            const { blocks, totalMsgs, totalLinks, totalAppts, groupCount } = await buildDigestParts(groupIds, date);
+            const head = `📊 TỔNG HỢP ${date} · ${groupCount} nhóm · ${totalMsgs} tin`;
+            if (!groupCount) return [`${head}\n\n(Không có nhóm nào có tin nhắn được ghi trong ngày này.)`];
+            const foot = [
+                totalLinks ? `🔗 ${totalLinks} link` : '',
+                totalAppts ? `📅 ${totalAppts} hẹn lịch` : '',
+            ].filter(Boolean).join(' · ');
+            const tail = foot ? `\n\n${foot} → xem chi tiết ở dashboard` : '';
+
+            // Gom block cho tới ngưỡng an toàn, rồi sang phần mới. Cắt GIỮA CÁC NHÓM, không giữa câu.
+            const pages = [];
+            let cur = [];
+            let len = head.length + tail.length;
+            for (const b of blocks) {
+                if (cur.length && len + b.length + 2 > DIGEST_SAFE_CHARS) {
+                    pages.push(cur); cur = []; len = head.length + tail.length;
+                }
+                cur.push(b); len += b.length + 2;
+            }
+            if (cur.length) pages.push(cur);
+            return pages.map((page, i) => {
+                const label = pages.length > 1 ? `${head}  (phần ${i + 1}/${pages.length})` : head;
+                const isLast = i === pages.length - 1;
+                return `${label}\n\n${page.join('\n\n')}${isLast ? tail : ''}`;
+            });
+        }
+
+        /** Gửi một danh sách tin tới các đích của job (DM owner / nhóm nhận chỉ định). */
+        async function deliverReportTexts(job, texts, { selfGroupId = '' } = {}) {
+            const prof = primaryProfile(groupNames[selfGroupId]?.profile);
+            const send = async (fn) => {
+                for (const t of texts) { await fn(t); await new Promise(r => setTimeout(r, 1200)); }
+            };
+            if (job.deliver.eachGroup && selfGroupId) {
+                await send((t) => sendGroupMsg({ accountId: prof }, selfGroupId, t));
+            }
+            if (job.deliver.ownerDm) {
+                const oid = getBotConfig(selfGroupId).ownerId || ownerId;
+                if (oid) await send((t) => sendDmMsg({ accountId: prof }, oid, t));
+            }
+            for (const gid of job.deliver.groups) {
+                await send((t) => sendGroupMsg({ accountId: primaryProfile(groupNames[gid]?.profile) }, gid, t));
+            }
+        }
+
+        /** Chạy một job ngay (dùng cho scheduler và cho nút "Gửi thử" trên dashboard). */
+        async function runReportJob(job, date) {
+            const gids = resolveJobGroups(job);
+            if (!gids.length) return { sent: 0, groups: 0 };
+            if (job.kind === 'digest') {
+                const texts = await buildDigestMessages(gids, date);
+                await deliverReportTexts(job, texts);
+                return { sent: texts.length, groups: gids.length };
+            }
+            let sent = 0;
+            for (const gid of gids) {
+                const summary = await generateDailySummary(gid, date, { by: 'auto' });
+                await deliverReportTexts(job, [formatSummaryText(summary)], { selfGroupId: gid });
+                sent++;
+                await new Promise(r => setTimeout(r, 2000)); // tránh rate limit
+            }
+            return { sent, groups: gids.length };
+        }
+
+        // Quét mỗi phút: tới giờ của job nào thì chạy job đó — một lần/ngày/job, chống lặp qua
+        // report-state.json khoá theo (NGÀY + GIỜ đã hẹn) nên đổi giờ trong ngày vẫn chạy lịch mới.
+        // Lưu ý: 'follow' chỉ bật ghi lịch sử chat; việc có báo cáo hay không do lịch báo cáo.
         async function runDueReports() {
-            const targets = watchGroupIds.filter(gid => store.getSetting(gid, 'autoSummary', false) === true);
-            if (targets.length === 0) return;
+            const jobs = (await ensureReportJobsMigrated()).filter(j => j.enabled);
+            if (!jobs.length) return;
             const today = vnDateStr();
             const now = vnTimeStr();
             const raw = await readPluginDataJson('report-state.json');
+            const byJob = (raw && typeof raw === 'object' && raw.byJob && typeof raw.byJob === 'object') ? raw.byJob : {};
             const byGroup = (raw && typeof raw === 'object' && raw.byGroup && typeof raw.byGroup === 'object') ? raw.byGroup : {};
-            for (const gid of targets) {
-                const time = normReportTime(store.getSetting(gid, 'reportTime', '23:55'));
-                if (now < time) continue;             // chưa tới giờ của nhóm này
-                // Guard chống lặp khoá theo (NGÀY + GIỜ đã hẹn), không chỉ theo ngày. Nhờ vậy khi
-                // owner ĐỔI giờ hẹn trong cùng ngày (vd 18:50 → 20:08) thì lịch mới vẫn chạy;
-                // lưu lại đúng giờ cũ thì không bắn trùng. Format cũ (chỉ lưu chuỗi ngày) coi như
-                // CHƯA chạy cho giờ hiện tại → tự chữa ngay trong ngày chuyển đổi.
-                const ran = byGroup[gid];
-                const ranThisSlot = ran && typeof ran === 'object' && ran.date === today && ran.time === time;
-                if (ranThisSlot) continue;            // nhóm này đã báo cáo đúng khung giờ này hôm nay
-                byGroup[gid] = { date: today, time };
-                await writePluginDataJson('report-state.json', { byGroup });
+            for (const job of jobs) {
+                if (now < job.time) continue;
+                const ran = byJob[job.id];
+                if (ran && ran.date === today && ran.time === job.time) continue;
+                byJob[job.id] = { date: today, time: job.time };
+                await writePluginDataJson('report-state.json', { byJob, byGroup });
                 try {
-                    await runOneGroupReport(gid, today);
-                    logger.info(`[openclaw-zalo-mod] [REPORT] đã gửi báo cáo nhóm ${gid} (giờ ${time}) ngày ${today}`);
+                    const r = await runReportJob(job, today);
+                    logger.info(`[openclaw-zalo-mod] [REPORT] lịch "${job.name}" (${job.kind}, giờ ${job.time}) → ${r.sent} tin cho ${r.groups} nhóm, ngày ${today}`);
                 } catch (e) {
-                    logger.warn(`[openclaw-zalo-mod] [REPORT] lỗi group ${gid}: ${e.message}`);
+                    logger.warn(`[openclaw-zalo-mod] [REPORT] lỗi lịch "${job.name}": ${e.message}`);
                 }
-                await new Promise(r => setTimeout(r, 2000)); // tránh rate limit
             }
         }
+
         // ── Auto-duyệt member chờ (pendingAuto) — CHỈ khi bot là admin nhóm; lọc theo từ khoá tên ──
         // Lọc: pluginCfg.pendingBlockKeywords (mảng) — tên chứa từ khoá này thì BỎ QUA (không duyệt).
         async function autoApprovePending() {
@@ -4403,6 +4580,84 @@ Quy tắc:
                 const date = String(payload.date || vnDateStr());
                 return { summary: await generateDailySummary(groupId, date, { by: 'dashboard' }) };
             }
+            // ── Passthrough zalo-connect ────────────────────────────────────────────────────────
+            // zalo-connect phơi ~141 action (zca-js) còn zalo-mod chỉ bọc lại vài chục, nên owner nhờ
+            // bot "đổi tên nhóm" thì bot trả lời không làm được — đúng, vì nó không có tay. Bridge đã
+            // có executeAction, nên mở MỘT cửa có kiểm soát thay vì bọc tay từng action.
+            //
+            // Ba lớp gác, không lớp nào bỏ được:
+            //   1. classifyConnectAction — DENY-BY-DEFAULT. Action lạ (kể cả API mới của zalo-connect
+            //      bản sau) không lọt; action không hoàn tác cần agentTools.allowDestructive.
+            //   2. assertActionAllowed ở đầu runDashboardAction — luật gói, đã soi vào payload.params
+            //      nên "gửi 30 nhóm" qua cửa này vẫn tính là hàng loạt → PRO.
+            //   3. Audit log — mọi lời gọi đều ghi lại, giống nút dashboard.
+            if (action === 'zalo-api') {
+                const target = String(payload.action || '').trim();
+                const allowDestructive = pluginCfg?.agentTools?.allowDestructive === true;
+                if (target === 'list-actions' || !target) {
+                    return { ok: true, ...listConnectActions({ allowDestructive }) };
+                }
+                const verdict = classifyConnectAction(target, { allowDestructive });
+                if (!verdict.allowed) throw new Error(verdict.reason);
+                const params = (payload.params && typeof payload.params === 'object') ? payload.params : {};
+                const profile = primaryProfile(payload.profile || groupNames[params.threadId]?.profile);
+                await appendDashboardAudit({ action: 'zalo-api', target, kind: verdict.kind, params: Object.keys(params) });
+                const result = await zEngine.bridge.execute(profile, { action: target, ...params });
+                return { ok: result?.ok !== false, action: target, kind: verdict.kind, result };
+            }
+
+            // ── Lịch báo cáo ──
+            if (action === 'report-jobs') {
+                const jobs = await ensureReportJobsMigrated();
+                // Kèm danh sách nhóm đang follow để UI dựng bộ chọn mà không phải gọi thêm action.
+                const followed = watchGroupIds.filter(gid => isFollowOn(gid))
+                    .map(gid => ({ groupId: gid, name: getGroupName(gid) }))
+                    .sort((a, b) => a.name.localeCompare(b.name, 'vi'));
+                return {
+                    jobs: jobs.map(j => ({ ...j, resolvedCount: resolveJobGroups(j).length })),
+                    groups: followed,
+                    state: (await readPluginDataJson('report-state.json')).byJob || {},
+                };
+            }
+            if (action === 'report-job-save') {
+                const job = normalizeReportJob(payload.job);
+                if (!job) throw new Error('job is required');
+                if (job.groups !== '*' && job.groups.length === 0) throw new Error('Chọn ít nhất một nhóm cho lịch này');
+                if (!job.deliver.ownerDm && !job.deliver.eachGroup && job.deliver.groups.length === 0) {
+                    throw new Error('Chọn ít nhất một nơi nhận báo cáo');
+                }
+                const jobs = await ensureReportJobsMigrated();
+                const i = jobs.findIndex(j => j.id === job.id);
+                if (i >= 0) jobs[i] = job; else jobs.push(job);
+                await writeReportJobs(jobs);
+                await appendDashboardAudit({ action: 'report-job-save', jobId: job.id, name: job.name });
+                return { ok: true, job };
+            }
+            if (action === 'report-job-delete') {
+                const id = String(payload.id || '').trim();
+                const jobs = (await ensureReportJobsMigrated()).filter(j => j.id !== id);
+                await writeReportJobs(jobs);
+                await appendDashboardAudit({ action: 'report-job-delete', jobId: id });
+                return { ok: true };
+            }
+            if (action === 'report-job-run') {
+                const id = String(payload.id || '').trim();
+                const job = (await ensureReportJobsMigrated()).find(j => j.id === id);
+                if (!job) throw new Error('Không tìm thấy lịch này');
+                const date = String(payload.date || vnDateStr());
+                const r = await runReportJob(job, date);
+                await appendDashboardAudit({ action: 'report-job-run', jobId: id, sent: r.sent });
+                return { ok: true, ...r, date };
+            }
+            if (action === 'report-digest-preview') {
+                // Xem trước ĐÚNG chuỗi sẽ gửi, kể cả cách cắt phần — để owner biết trước có bị tách không.
+                const ids = payload.groups === '*'
+                    ? watchGroupIds.filter(gid => isFollowOn(gid))
+                    : (Array.isArray(payload.groups) ? payload.groups.map(String) : []);
+                const date = String(payload.date || vnDateStr());
+                const texts = await buildDigestMessages(ids, date);
+                return { date, parts: texts.length, texts, chars: texts.reduce((n, t) => n + t.length, 0) };
+            }
             if (action === 'get-permissions') {
                 const perms = livePermissions();
                 const memberDir = await readPluginDataJson('group-members.json');
@@ -4465,6 +4720,10 @@ Quy tắc:
                 return { permissions: clean };
             }
             if (action === 'save-report-schedule') {
+                // ⚠️ LEGACY. Lịch báo cáo giờ là thực thể riêng (report-jobs.json) vì một lịch trải trên
+                // nhiều nhóm. Action này chỉ còn ghi 4 setting per-group mà scheduler KHÔNG đọc nữa —
+                // giữ lại để dashboard/script cũ không lỗi, và để ensureReportJobsMigrated() còn nguồn
+                // chuyển đổi cho máy chưa migrate. Cấu hình mới phải đi qua report-job-save.
                 // Cấu hình lịch báo cáo THEO NHÓM: áp cho 1/nhiều/tất cả nhóm được chọn.
                 const rawIds = Array.isArray(payload.groupIds) ? payload.groupIds.map(String).map(s => s.trim()).filter(Boolean) : [];
                 if (!rawIds.length) throw new Error('Chọn ít nhất một nhóm');
@@ -4680,6 +4939,23 @@ Quy tắc:
                 return { groupId, ...result };
             }
 
+            // Đọc template + KEY hợp lệ. Thiếu action này là lý do bot báo "không cập nhật được
+            // welcome": `save-templates` vốn đã cho bot gọi, nhưng bot không có cách nào biết key nào
+            // hợp lệ hay nội dung hiện tại đang là gì, nên chỉ còn nước đoán.
+            if (action === 'get-templates') {
+                const commands = templateCommandsFrom(pluginCfg);
+                const items = [];
+                for (const d of TEMPLATE_DEFS) {
+                    items.push({
+                        key: d.key,
+                        label: d.label,
+                        kind: d.kind,
+                        command: commands[d.key] || '',
+                        content: await loadTemplateContent(dataDir, d.key),
+                    });
+                }
+                return { keys: TEMPLATE_KEYS, templates: items };
+            }
             if (action === 'save-templates') {
                 const key = String(payload.key || '').trim();
                 const content = String(payload.content || '');

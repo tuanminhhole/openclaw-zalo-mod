@@ -38,7 +38,17 @@ export const AGENT_SAFE_ACTIONS = Object.freeze([
     'get-group-info', 'get-user-info', 'get-friends', 'get-pending', 'get-blocked',
     'get-permissions', 'get-name-triggers', 'group-detail', 'journal-data',
     'scan-members', 'sync-groups', 'generate-summary', 'send-message',
-    'toggle-setting', 'bulk-toggle-setting', 'save-report-schedule',
+    'toggle-setting', 'bulk-toggle-setting',
+    // Lịch báo cáo: owner nhắn "tổng hợp 5 nhóm ASA hôm nay" là bot dựng được, không phải mở dashboard.
+    // `report-digest-preview` chỉ dựng chuỗi (không gửi) nên an toàn; `report-job-run` GỬI thật nhưng
+    // chỉ tới các đích đã cấu hình sẵn trong lịch, không nhận đích tuỳ ý từ agent.
+    'report-jobs', 'report-digest-preview', 'report-job-run',
+    // get-templates: bot đọc được KEY hợp lệ + nội dung hiện tại, nên "cập nhật welcome" mới làm được
+    // (trước đây chỉ có save-templates nên bot phải đoán key → báo không làm được).
+    'get-templates',
+    // zalo-api: một cửa sang ~141 action của zalo-connect. Tự có deny-by-default + phân loại
+    // read/write/destructive trong src/agent/connect-actions.js, và vẫn qua luật gói như mọi action.
+    'zalo-api',
     'toggle-custom-mode', 'upsert-custom-mode', 'delete-custom-mode',
     'set-name-triggers', 'save-templates',
 ]);

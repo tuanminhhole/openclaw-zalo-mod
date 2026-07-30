@@ -33,6 +33,37 @@ Bốn tool này **chỉ owner của bot dùng được** — host tự chặn, b
 | `zalo_mod_history` | Đọc lịch sử chat đã ghi của các nhóm đang bật follow, kèm ghi chú admin + memory. Dùng để tự tổng hợp. |
 | `zalo_mod_action` | Chạy đúng action mà nút dashboard gọi: `sync-groups`, `scan-members`, `get-group-info`, `journal-data`, `generate-summary`, `send-message`, custom modes, lịch báo cáo… Gọi `action: "list-actions"` để xem danh sách được phép. |
 
+### Sửa template (nội quy, hướng dẫn, menu, welcome, cảnh báo spam, bảo trì)
+
+ĐỌC trước, GHI sau — đừng đoán key:
+
+```
+zalo_mod_action { action: "get-templates" }
+  → { keys: ["noi-quy","huong-dan","menu","welcome","spam-warning","maintenance"], templates: [...] }
+zalo_mod_action { action: "save-templates", payload: { key: "welcome", content: "..." } }
+```
+
+Nội dung welcome dùng được các biến: `{memberName}`, `{groupName}`, `{botName}`, `{cmdPrefix}`.
+
+### Thao tác Zalo mà dashboard không có nút
+
+Đổi tên nhóm, đổi ảnh nhóm, thêm/bớt phó nhóm, tạo poll, tạo nhắc nhở, đổi hồ sơ bot… đi qua cửa
+`zalo-api` (khoảng 141 action của zalo-connect):
+
+```
+zalo_mod_action { action: "zalo-api", payload: { action: "list-actions" } }        // xem được phép làm gì
+zalo_mod_action { action: "zalo-api", payload: { action: "rename-group",
+                                                params: { groupId: "...", name: "Tên mới" } } }
+```
+
+`params` dùng ĐÚNG tên tham số của zalo-connect. Ba điều luôn đúng:
+
+- Action chưa được xếp hạng an toàn thì bị chặn — nói thật là chưa làm được, đừng thử biến thể khác.
+- Action không hoàn tác được (giải tán nhóm, nhường quyền chủ nhóm, mời hàng loạt…) mặc định TẮT.
+  Owner muốn thì tự bật `agentTools.allowDestructive` trong config, hoặc tự làm trên dashboard.
+- Nhiều đích trong một lời gọi (`groupIds`, `userIds`, `threadIds`…) là thao tác HÀNG LOẠT nên cần
+  gói PRO. Gói Free làm được từng thao tác lẻ — nếu bị chặn, nói rõ là do gói, đừng lặp lại lời gọi.
+
 ### Ý nghĩa từng toggle
 
 | Key | Nghĩa |

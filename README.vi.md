@@ -4,7 +4,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![OpenClaw Plugin](https://img.shields.io/badge/OpenClaw-Plugin-blue.svg)](https://openclaw.ai)
-[![Version](https://img.shields.io/badge/version-2.18.3-green.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.19.0-green.svg)](./CHANGELOG.md)
 
 **[🇺🇸 English](./README.md)**
 
@@ -40,7 +40,13 @@
 
 Plugin tích hợp sẵn giao diện quản trị đồ họa **Zalo Owner Dashboard** được thiết kế theo chuẩn **Premium Glassmorphism & High-Density Studio v1.5** siêu sang trọng.
 
-- **Cách truy cập:** `http://127.0.0.1:19790` (mặc định) hoặc IP máy chủ của bạn trên cổng `19790`.
+- **Cách truy cập:** `http://127.0.0.1:19790` (mặc định của plugin) hoặc IP máy chủ của bạn trên cổng `19790`.
+
+> ⚠️ **Cài qua OpenClaw Setup thì cổng KHÁC.** Setup tự ghi `dashboardPort = cổng gateway + 1` để mỗi
+> project có dashboard riêng — gateway `18789` → dashboard **`18790`**. Không chắc thì mở
+> `openclaw.json` xem `plugins.entries["zalo-mod"].config.dashboardPort`, hoặc bấm **Mở web** trên
+> card `openclaw-zalo-mod` trong Setup (nút đó tự suy ra cổng đúng). Trên VPS còn phải forward cổng
+> đó qua SSH tunnel vì dashboard chỉ nghe trên loopback.
 - **Cấu hình trong `openclaw.json`:**
   ```json
   "dashboardEnabled": true,

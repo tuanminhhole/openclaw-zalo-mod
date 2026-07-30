@@ -39,10 +39,11 @@ export const AGENT_SAFE_ACTIONS = Object.freeze([
     'get-permissions', 'get-name-triggers', 'group-detail', 'journal-data',
     'scan-members', 'sync-groups', 'generate-summary', 'send-message',
     'toggle-setting', 'bulk-toggle-setting',
-    // Lịch báo cáo: owner nhắn "tổng hợp 5 nhóm ASA hôm nay" là bot dựng được, không phải mở dashboard.
-    // `report-digest-preview` chỉ dựng chuỗi (không gửi) nên an toàn; `report-job-run` GỬI thật nhưng
+    // Lịch báo cáo — bot ĐỌC + TẠO + SỬA được, để owner sai bằng lời thay vì tự vào dashboard.
+    // `report-digest-preview` chỉ dựng chuỗi (không gửi) nên an toàn. `report-job-run` GỬI thật nhưng
     // chỉ tới các đích đã cấu hình sẵn trong lịch, không nhận đích tuỳ ý từ agent.
-    'report-jobs', 'report-digest-preview', 'report-job-run',
+    // `report-job-save` sửa MỘT PHẦN (gửi {id, time} là đủ) và vẫn qua đúng kiểm tra hợp lệ như dashboard.
+    'report-jobs', 'report-digest-preview', 'report-job-run', 'report-job-save',
     // get-templates: bot đọc được KEY hợp lệ + nội dung hiện tại, nên "cập nhật welcome" mới làm được
     // (trước đây chỉ có save-templates nên bot phải đoán key → báo không làm được).
     'get-templates',
@@ -58,6 +59,9 @@ export const AGENT_SAFE_ACTIONS = Object.freeze([
  * `agentTools.allowDestructive: true` trong plugin config.
  */
 export const AGENT_DESTRUCTIVE_ACTIONS = Object.freeze([
+    // Tạo/sửa lịch thì cho thoải mái, còn XOÁ lịch cần owner bật công tắc: nó là cấu hình owner
+    // đã dựng, bot đọc sai một câu mà xoá thì phải dựng lại từ đầu.
+    'report-job-delete',
     'remove-user', 'block-member', 'unblock-member', 'leave-group',
     'send-friend-request', 'accept-friend', 'reject-friend', 'review-pending',
     'send-messages', 'bulk-friend-request',

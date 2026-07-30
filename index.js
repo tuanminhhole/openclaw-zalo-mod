@@ -4646,7 +4646,19 @@ Quy tắc:
                 };
             }
             if (action === 'report-job-save') {
-                const job = normalizeReportJob(payload.job);
+                // Cho phép SỬA MỘT PHẦN: `{ id, time: "17:30" }` là đủ để đổi giờ.
+                //
+                // Dashboard luôn gửi object đầy đủ (nó sửa trên bản nháp) nên thay-toàn-bộ không sao.
+                // Nhưng bot được nhờ "đổi giờ lịch BC Tổng Hợp sang 17:30" sẽ gửi đúng hai field đó —
+                // thay-toàn-bộ khi ấy làm rỗng `groups` rồi ném lỗi "Chọn ít nhất một nhóm", tức bot
+                // không thể sửa lịch dù đã được cấp quyền. Merge lên bản hiện có theo id.
+                const incoming = (payload.job && typeof payload.job === 'object') ? payload.job : null;
+                if (!incoming) throw new Error('job is required');
+                const current = (await ensureReportJobsMigrated()).find(j => j.id === String(incoming.id || '').trim());
+                const merged = current
+                    ? { ...current, ...incoming, deliver: { ...current.deliver, ...(incoming.deliver || {}) } }
+                    : incoming;
+                const job = normalizeReportJob(merged);
                 if (!job) throw new Error('job is required');
                 if (job.groups !== '*' && job.groups.length === 0) throw new Error('Chọn ít nhất một nhóm cho lịch này');
                 if (!job.deliver.ownerDm && !job.deliver.eachGroup && job.deliver.groups.length === 0) {

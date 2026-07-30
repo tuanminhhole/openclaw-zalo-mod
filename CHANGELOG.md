@@ -1,3 +1,15 @@
+## [2.19.2] - 2026-07-30
+
+### Added
+- **Sai bot tạo và sửa lịch báo cáo bằng lời.** Owner nhờ bot đổi giờ thì bot trả lời *"phần điều khiển hiện tại chưa nhận lệnh cập nhật, sếp vào dashboard đổi giúp"* — đúng, vì `report-job-save` **không** nằm trong allowlist của agent: bot đọc được lịch mà không ghi được. Nay bot đọc (`report-jobs`), **tạo/sửa** (`report-job-save`), xem trước (`report-digest-preview`) và gửi thử (`report-job-run`) được. Skill có ví dụ cụ thể cho: đổi giờ, tạo lịch tổng hợp cho tất cả nhóm, tạo lịch cho vài nhóm chỉ định.
+- **XOÁ lịch vẫn cần `agentTools.allowDestructive`.** Tạo/sửa thì thoải mái, nhưng lịch là cấu hình owner đã dựng — bot đọc sai một câu mà xoá thì phải dựng lại từ đầu.
+
+### Fixed
+- **`report-job-save` sửa được MỘT PHẦN.** Handler cũ **thay toàn bộ** job, nên dù có quyền, bot gửi `{ id, time: "17:30" }` (cách tự nhiên để đổi giờ) sẽ làm rỗng `groups` rồi ném lỗi *"Chọn ít nhất một nhóm"*. Dashboard không gặp vì nó luôn gửi object đầy đủ. Nay merge lên bản hiện có theo `id`, kể cả merge sâu `deliver` — bật `ownerDm` không làm mất `eachGroup`/`groups`.
+
+### Notes
+- 197 test xanh (thêm 4: quyền tạo/sửa, xoá phải bật công tắc, merge một phần không mất `groups`, và luật gói của lịch báo cáo).
+
 ## [2.19.1] - 2026-07-30
 
 ### Fixed

@@ -5,6 +5,8 @@ import {
     CONNECT_READ_ACTIONS, CONNECT_WRITE_ACTIONS, CONNECT_DESTRUCTIVE_ACTIONS,
 } from '../src/agent/connect-actions.js';
 import { requiredTierForAction, assertActionAllowed } from '../src/licensing/entitlements.js';
+import { AGENT_SAFE_ACTIONS, AGENT_DESTRUCTIVE_ACTIONS, classifyAction } from '../src/agent/tool-surface.js';
+import { readFileSync } from 'node:fs';
 
 const FREE = { tier: 'free', plan: 'free', isPro: false };
 const PRO = { tier: 'pro', plan: 'personal', isPro: true };
@@ -104,4 +106,36 @@ test('luật cũ của dashboard không bị đổi', () => {
     assert.equal(requiredTierForAction('scan-members', { groupId: 'g1' }), 'free');
     assert.equal(requiredTierForAction('bulk-toggle-setting', { groupIds: ['a', 'b'] }), 'pro');
     assert.equal(requiredTierForAction('send-messages', { targets: ['a'] }), 'pro');
+});
+
+// ── Bot phải TẠO/SỬA được lịch báo cáo ────────────────────────────────────────────────────────
+// Bug thật gặp trên production: owner nhờ bot đổi giờ lịch, bot trả lời "phần điều khiển hiện tại
+// chưa nhận lệnh cập nhật, sếp vào dashboard đổi giúp". Hai nguyên nhân, phải sửa cả hai:
+//   1. `report-job-save` KHÔNG có trong allowlist → bot đọc được lịch mà không ghi được.
+//   2. Handler THAY toàn bộ job, nên bot gửi {id, time} là mất `groups` rồi ném lỗi.
+test('bot được phép đọc, tạo/sửa, xem trước và gửi thử lịch báo cáo', () => {
+    for (const a of ['report-jobs', 'report-job-save', 'report-digest-preview', 'report-job-run']) {
+        assert.ok(AGENT_SAFE_ACTIONS.includes(a), `${a} phải nằm trong allowlist`);
+        assert.equal(classifyAction(a).allowed, true);
+    }
+});
+
+test('XOÁ lịch cần owner bật công tắc — cấu hình owner dựng không để bot xoá theo lời nói', () => {
+    assert.ok(AGENT_DESTRUCTIVE_ACTIONS.includes('report-job-delete'));
+    assert.equal(classifyAction('report-job-delete').allowed, false);
+    assert.equal(classifyAction('report-job-delete', { allowDestructive: true }).allowed, true);
+});
+
+test('save merge lên bản hiện có nên sửa một phần không làm mất groups', () => {
+    const src = readFileSync(new URL('../index.js', import.meta.url), 'utf8');
+    const block = src.slice(src.indexOf("action === 'report-job-save'"), src.indexOf("action === 'report-job-delete'"));
+    assert.match(block, /\.\.\.current, \.\.\.incoming/, 'phải merge incoming lên current');
+    assert.match(block, /deliver: \{ \.\.\.current\.deliver, \.\.\.\(incoming\.deliver \|\| \{\}\) \}/,
+        'deliver phải merge sâu, không thì bật ownerDm là mất eachGroup/groups');
+    assert.match(block, /find\(j => j\.id ===/, 'phải tìm bản hiện có theo id');
+});
+
+test('lịch báo cáo cho một tập nhóm vẫn theo luật gói như dashboard', () => {
+    // Tạo/sửa lịch là một thao tác trên MỘT lịch, không phải fan-out nhiều đích → Free làm được.
+    assert.equal(requiredTierForAction('report-job-save', { job: { groups: ['a', 'b', 'c'] } }), 'free');
 });

@@ -1,3 +1,24 @@
+## [2.21.0] - 2026-07-31
+
+### Fixed
+- **★ GỐC THẬT của chuỗi "bot báo đã đổi lịch mà không đổi" (2.19.2 → 2.19.4 → 2.20.0): gate owner bỏ qua tín hiệu `senderIsOwner` của host.** Bốn bản trước đều chẩn sai vào phía model — payload khó lồng, skill không được đọc, API chỉ-đọc trả `ok`. Đều là triệu chứng. Sự thật: `OpenClawPluginToolContext` cấp **hai** tín hiệu owner, và cả hai chỉ được cấp khi gateway client có `ADMIN_SCOPE` (xem `canSupplyTrustedRequester` trong core) nên **đều đáng tin**: `requesterSenderId?: string` và `senderIsOwner?: boolean` — *"trusted owner bit from inbound context"*. `tool-surface.js` **chỉ so id** với `collectOwnerIds()`.
+
+  Hệ quả: trong **DM**, host cấp id khớp `ownerId` đã cấu hình → bot có đủ tool. Trong **NHÓM**, host cấp `senderIsOwner: true` nhưng **không cấp id** → `isOwnerRequester(undefined)` = `false` → factory trả **0 tool**. Owner thật, ngồi trong nhóm của chính mình, mà bot không có một tool nào.
+
+  Mất cả đường đọc lẫn đường ghi thì model buộc phải ứng biến, và nó ứng biến hợp lý: không ghi được lịch thì dùng tool `cron` mà nó *có* (sinh lịch ẩn mà dashboard không hiện), không đọc được trạng thái thì trả lời bằng ký ức hội thoại (nói "08:00" khi lịch thật là 09:00 và đang tắt). Cả ba triệu chứng là **một dòng gate**. Nay có `isTrustedOwnerContext()` nhận bit của host, vẫn giữ so-id làm dự phòng, và bit đó đi xuyên tới `guard()` lúc execute — không thì tool cấp xong lại bị chính guard chặn.
+- **Từ chối cấp tool giờ LOG.** `return []` im lặng là thứ khiến lỗi trên tốn nhiều giờ và bốn bản phát hành: bot ứng biến, log trống trơn, biểu hiện ra ngoài giống hệt "AI bịa". Warn giờ nêu `requesterSenderId`, `senderIsOwner`, danh sách `ownerId` đang cấu hình và `sessionKey` — đủ để so bằng mắt trong một lần grep.
+- **Đổi giờ lịch báo cáo không còn biến thành "gửi ngay bây giờ".** `runDueReports` khoá chống trùng theo `{date, time}`, nên mỗi lần owner sửa giờ là khoá đổi → job đã gửi hôm nay bị coi như chưa gửi → phút kế tiếp 28 nhóm nhận thêm một báo cáo. Log vps_asa: đặt 17:30 lúc 22:02 giờ VN thì 22:03 gửi luôn; đặt 08:00 lúc 22:32 thì 22:33 gửi luôn. Nay chốt theo **job + ngày** (một job gửi tối đa một lần mỗi ngày), và lúc LƯU nếu giờ mới đã qua thì đóng dấu hôm nay đã chốt để lịch mới có hiệu lực từ ngày kế tiếp. Gửi bù sau khi bot sập vẫn nguyên, vì chỉ lần lưu mới đóng dấu. `report-job-save` trả thêm `appliesFrom` + `note` để bot thuật đúng cho owner thay vì chỉ thấy `ok: true`.
+- **Bỏ khối "Lịch báo cáo cuối ngày" trong modal chi tiết nhóm — nó lưu vào chỗ không ai đọc.** Ô "Giờ báo cáo (VN)" ghi qua `save-report-schedule`, mà scheduler đã chuyển sang `report-jobs.json` từ 2.19.0 và **không đọc 4 setting per-group đó nữa**. Owner sửa giờ, thấy toast thành công, lịch không đổi. Nay thay bằng dòng dẫn sang trang Lịch báo cáo. Action cũ giữ lại phía server vì `ensureReportJobsMigrated()` còn cần làm nguồn chuyển đổi cho máy chưa migrate.
+
+### Added
+- **`zalo_mod_reports` thêm `operation: "delete"`, xác nhận hai nhịp.** Gọi lần đầu không kèm `confirm` thì **không xoá gì**, chỉ trả `needsConfirm` + `willDelete` (tên, giờ, kiểu) để bot đọc cho owner nghe; xoá thật chỉ khi gọi lại kèm `confirm: true`. `report-job-delete` chuyển từ nhóm `destructive` sang `safe`: phanh là bước xác nhận, **không phải** cờ `allowDestructive` — cờ đó mở kèm `remove-user`/`block-member`/`leave-group`, bắt owner mở cả chùm đó chỉ để xoá một lịch báo cáo là đổi phanh nhỏ lấy rủi ro lớn. Tool giờ phủ đúng mọi việc UI làm được.
+- **Luật chống nhầm tool, đặt ở chỗ luôn nằm trong prompt.** `AGENTS.md` do openclaw-setup sinh có mục *"Cron khi: cần giờ chính xác… kết quả gửi thẳng vào channel"* — khớp từng chữ với *"đổi lịch báo cáo thành 8h, gửi vào nhóm X"*. Hướng dẫn luôn-bật đó thắng SKILL.md phải-đi-tìm, nên mô tả `zalo_mod_reports` giờ nói thẳng: đây là đường **duy nhất** để đặt lịch báo cáo, tuyệt đối không dùng `cron`, vì cron sinh lịch ẩn dashboard không hiện. Kèm luật thứ hai: **phải `list` trước khi trả lời bất cứ gì về lịch**, kể cả khi model nhớ là lượt trước đã làm rồi — lời mình ở lượt trước không phải bằng chứng về trạng thái.
+
+### Notes
+- 223 test xanh (thêm 18: 9 cho luật lịch mới, 5 cho gate owner theo ngữ cảnh + log khi từ chối, 4 cho delete hai nhịp).
+- Đã kiểm trên bot thật (vps_asa, native): owner nhắn **trong nhóm** → bot gọi `agent:zalo_mod_reports` `list` → `save` tạo được lịch mới, rồi `list` lại trước khi trả lời trạng thái và nói đúng "09:00, đang tắt". 0 dòng từ chối cấp tool, 0 cron job phát sinh.
+- **Bài học:** gate phân quyền mà fail **im lặng** thì biểu hiện ra ngoài là "AI bịa" — và sẽ bị chẩn sai về phía model, nhiều bản liên tiếp. Khi thu hồi năng lực của agent, luôn log lý do; và khi host đã cấp sẵn một tín hiệu đáng tin thì dùng nó, đừng tự dựng lại phép kiểm bằng dữ liệu hẹp hơn.
+
 ## [2.20.0] - 2026-07-30
 
 ### Added

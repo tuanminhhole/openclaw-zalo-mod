@@ -120,10 +120,16 @@ test('bot được phép đọc, tạo/sửa, xem trước và gửi thử lịc
     }
 });
 
-test('XOÁ lịch cần owner bật công tắc — cấu hình owner dựng không để bot xoá theo lời nói', () => {
-    assert.ok(AGENT_DESTRUCTIVE_ACTIONS.includes('report-job-delete'));
-    assert.equal(classifyAction('report-job-delete').allowed, false);
-    assert.equal(classifyAction('report-job-delete', { allowDestructive: true }).allowed, true);
+// Phanh cho việc xoá lịch là bước XÁC NHẬN HAI NHỊP trong zalo_mod_reports, KHÔNG phải cờ
+// allowDestructive. Cờ đó mở kèm remove-user/block-member/leave-group — bắt owner mở cả chùm đó
+// chỉ để xoá một lịch báo cáo là đổi phanh nhỏ lấy rủi ro lớn.
+test('xoá lịch không bị khoá sau allowDestructive — phanh là bước xác nhận, không phải cờ chùm', () => {
+    assert.ok(AGENT_SAFE_ACTIONS.includes('report-job-delete'));
+    assert.equal(classifyAction('report-job-delete').allowed, true);
+    for (const a of ['remove-user', 'block-member', 'leave-group']) {
+        assert.ok(AGENT_DESTRUCTIVE_ACTIONS.includes(a), `${a} phải vẫn nằm sau cờ allowDestructive`);
+        assert.equal(classifyAction(a).allowed, false);
+    }
 });
 
 test('save merge lên bản hiện có nên sửa một phần không làm mất groups', () => {

@@ -2589,6 +2589,32 @@ Quy tắc:
             });
         }
 
+        /**
+         * Chốt ngày hôm nay khi LƯU job, nếu giờ mới đã qua. Trả 'today' | 'tomorrow'.
+         *
+         * Đổi giờ sang mốc ĐÃ QUA không được biến thành "gửi ngay bây giờ" — đó là hành vi cũ:
+         * owner đổi 22:30 → 08:00 lúc 22:35 thì phút kế tiếp 28 nhóm nhận báo cáo.
+         *
+         * Chỉ lần LƯU mới đóng dấu, nên gửi bù sau khi bot sập vẫn nguyên: lúc đó không ai gọi hàm
+         * này, byJob trống, scheduler thấy quá giờ mà chưa chốt ngày → gửi bù.
+         */
+        async function settleReportDayOnSave(job) {
+            const today = vnDateStr();
+            const st = await readPluginDataJson('report-state.json');
+            const byJob = (st && typeof st === 'object' && st.byJob && typeof st.byJob === 'object') ? st.byJob : {};
+            const byGroup = (st && typeof st === 'object' && st.byGroup && typeof st.byGroup === 'object') ? st.byGroup : {};
+            const settledToday = !!(byJob[job.id] && byJob[job.id].date === today);
+            if (vnTimeStr() >= job.time) {
+                if (!settledToday) {
+                    byJob[job.id] = { date: today, time: job.time };
+                    await writePluginDataJson('report-state.json', { byJob, byGroup });
+                }
+                return 'tomorrow';
+            }
+            // Giờ mới còn ở tương lai, nhưng job đã gửi báo cáo của hôm nay rồi → vẫn là mai.
+            return settledToday ? 'tomorrow' : 'today';
+        }
+
         /** '*' cố ý resolve lúc chạy, để nhóm mới thêm vào sau tự được lịch "tất cả" bao gồm. */
         function resolveJobGroups(job) {
             const all = watchGroupIds.filter(gid => isFollowOn(gid));
@@ -2749,9 +2775,14 @@ Quy tắc:
             const byJob = (raw && typeof raw === 'object' && raw.byJob && typeof raw.byJob === 'object') ? raw.byJob : {};
             const byGroup = (raw && typeof raw === 'object' && raw.byGroup && typeof raw.byGroup === 'object') ? raw.byGroup : {};
             for (const job of jobs) {
+                // `>=` chứ không `===` là có chủ ý: bot sập ngang giờ hẹn, bật lại lúc nào thì gửi bù
+                // lúc đó, không mất báo cáo của ngày.
                 if (now < job.time) continue;
                 const ran = byJob[job.id];
-                if (ran && ran.date === today && ran.time === job.time) continue;
+                // Chốt theo job + NGÀY, không kèm `time`. Kèm `time` thì mỗi lần owner sửa giờ là khoá
+                // đổi → job đã gửi hôm nay bị coi là chưa gửi → 28 nhóm nhận thêm một báo cáo nữa
+                // ngay phút kế tiếp. Một job gửi tối đa một lần mỗi ngày.
+                if (ran && ran.date === today) continue;
                 byJob[job.id] = { date: today, time: job.time };
                 await writePluginDataJson('report-state.json', { byJob, byGroup });
                 try {
@@ -4703,8 +4734,19 @@ Quy tắc:
                 const i = jobs.findIndex(j => j.id === job.id);
                 if (i >= 0) jobs[i] = job; else jobs.push(job);
                 await writeReportJobs(jobs);
+                const appliesFrom = await settleReportDayOnSave(job);
                 await appendDashboardAudit({ action: 'report-job-save', jobId: job.id, name: job.name });
-                return { ok: true, job };
+                // Nói thẳng lịch mới bắt đầu từ khi nào. Bot đọc `note` rồi thuật lại cho owner; thiếu
+                // nó thì bot chỉ thấy ok:true và báo "đã đổi giờ", owner ngồi chờ báo cáo hôm nay.
+                return {
+                    ok: true,
+                    job,
+                    appliesFrom,
+                    note: appliesFrom === 'tomorrow'
+                        ? `Đã lưu. Hôm nay đã chốt nên giờ ${job.time} có hiệu lực từ ngày mai. `
+                          + 'Muốn gửi thử ngay thì gọi "report-job-run".'
+                        : `Đã lưu. Hôm nay sẽ gửi lúc ${job.time} (giờ VN).`,
+                };
             }
             if (action === 'report-job-delete') {
                 const id = String(payload.id || '').trim();

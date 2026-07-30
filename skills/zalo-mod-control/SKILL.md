@@ -48,7 +48,17 @@ Nội dung welcome dùng được các biến: `{memberName}`, `{groupName}`, `{
 
 ### Lịch báo cáo — dùng `zalo_mod_reports`
 
-LUÔN `list` trước để lấy `id`, rồi `save`. Sửa một phần là đủ.
+**⛔ KHÔNG BAO GIỜ dùng tool `cron` để đặt lịch báo cáo Zalo.** Kể cả khi owner nói giờ chính xác
+và nói gửi vào nhóm nào — nghe rất giống việc của cron, nhưng không phải. Lịch báo cáo phải nằm
+trong `report-jobs` để hiện trên dashboard cho owner sửa. Tạo cron job cho việc này = tạo lịch ẩn:
+owner mở dashboard thấy giờ cũ, tưởng bạn báo sai. Đã xảy ra thật. Cron dành cho việc hẹn giờ KHÁC.
+
+**⛔ LUÔN `list` TRƯỚC KHI TRẢ LỜI**, kể cả khi owner chỉ hỏi, kể cả khi bạn nhớ lượt trước đã làm rồi.
+Không bao giờ nói "lịch hiện đã đúng" dựa vào lời chính mình ở lượt trước — lịch sử hội thoại không phải
+trạng thái. Owner có thể đã sửa trên dashboard, hoặc lượt trước bạn tưởng xong mà chưa xong. Đã xảy ra
+thật: bot báo "đã đúng 08:00" trong khi lịch đang 09:00 và đang tắt.
+
+Rồi mới `save`. Sửa một phần là đủ.
 
 ```
 zalo_mod_reports { operation: "list" }
@@ -64,15 +74,24 @@ zalo_mod_reports { operation: "save", id: "job-x", toOwnerDm: false, toGroups: [
 zalo_mod_reports { operation: "save", name: "BC Tổng Hợp", kind: "digest",
                    groups: ["all"], time: "08:00", toOwnerDm: true }
 
+// tắt tạm mà không xoá
+zalo_mod_reports { operation: "save", id: "job-x", enabled: false }
+
 zalo_mod_reports { operation: "preview", groups: ["all"] }   // xem trước, KHÔNG gửi
 zalo_mod_reports { operation: "run", id: "job-x" }           // gửi ngay để owner xem thử
+
+// xoá — HAI NHỊP, bắt buộc
+zalo_mod_reports { operation: "delete", id: "job-x" }                  // → needsConfirm + willDelete
+zalo_mod_reports { operation: "delete", id: "job-x", confirm: true }    // sau khi owner đồng ý
 ```
 
 - `save` tự đọc lại và trả về `jobs` sau khi ghi — **đọc con số trong đó** rồi mới báo owner.
   Thấy `time` chưa đúng thì nói thẳng là chưa đổi được, đừng khẳng định theo ý mình.
 - `kind`: `digest` = gộp mọi nhóm vào một tin · `group` = mỗi nhóm một tin đầy đủ.
 - `groups: ["all"]` = tất cả nhóm đang follow (nhóm mới thêm sau cũng tự vào lịch).
-- XOÁ lịch: bot không được xoá (cần `agentTools.allowDestructive`). Owner tự làm trên dashboard.
+- XOÁ lịch: gọi `delete` KHÔNG kèm `confirm` trước — nó trả về `willDelete` và không xoá gì.
+  Đọc tên lịch đó cho owner, chờ owner đồng ý, rồi gọi lại kèm `confirm: true`. Không tự quyết.
+- Owner muốn tạm dừng chứ không mất cấu hình thì dùng `enabled: false`, đừng xoá.
 
 ### Thao tác Zalo mà dashboard không có nút
 

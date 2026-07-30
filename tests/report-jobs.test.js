@@ -138,3 +138,120 @@ test('ghi lại lịch không được làm mất cờ đã có', () => {
     const src = extract('writeReportJobs');
     assert.match(src, /raw\?\.migratedLegacyAt \|\|/, 'phải giữ mốc cũ nếu đã có');
 });
+
+// ── Đổi giờ lịch không được biến thành "gửi ngay" ─────────────────────────────────────────────
+// Lỗi thật trên production (vps_asa, 2026-07-30): owner nhờ bot đổi giờ báo cáo, bot lưu đúng,
+// nhưng phút kế tiếp 28 nhóm nhận luôn báo cáo thay vì chờ giờ mới — log 15:02:17 gửi "giờ 17:30"
+// lúc VN đang 22:02, rồi 15:32:03 gửi "giờ 08:00" lúc VN đang 22:32. Hai nguyên nhân:
+// khoá chống trùng kèm cả `time`, và không ai chốt ngày lúc lưu.
+
+/** Chạy runDueReports() thật với clock + storage nạp vào; trả về các job đã gửi và state cuối. */
+async function runScheduler({ jobs, now, today, state = {} }) {
+    const sent = [];
+    const files = { 'report-state.json': state };
+    return new Function('deps', `
+        const { jobs, now, today, files, sent } = deps;
+        const ensureReportJobsMigrated = async () => jobs;
+        const vnDateStr = () => today;
+        const vnTimeStr = () => now;
+        const readPluginDataJson = async (n) => files[n] || {};
+        const writePluginDataJson = async (n, v) => { files[n] = v; };
+        const runReportJob = async (job) => { sent.push(job.id); return { sent: 1, groups: 28 }; };
+        const logger = { info() {}, warn() {} };
+        ${extract('runDueReports')}
+        return runDueReports().then(() => ({ sent, state: files['report-state.json'] }));
+    `)({ jobs, now, today, files, sent });
+}
+
+const job = (over = {}) => ({ id: 'j1', name: 'BC', enabled: true, kind: 'digest', time: '22:30', groups: '*', deliver: {}, ...over });
+
+test('đã gửi hôm nay rồi thì đổi giờ KHÔNG làm gửi thêm lần nữa', async () => {
+    // Đây chính là hồi quy: khoá cũ là {date, time} nên time đổi → job coi như chưa gửi.
+    const r = await runScheduler({
+        jobs: [job({ time: '08:00' })],
+        now: '22:32', today: '2026-07-30',
+        state: { byJob: { j1: { date: '2026-07-30', time: '22:30' } }, byGroup: {} },
+    });
+    assert.deepEqual(r.sent, [], 'một job chỉ gửi tối đa một lần mỗi ngày');
+});
+
+test('sửa giờ nhiều lần trong ngày vẫn không sinh thêm báo cáo', async () => {
+    let state = { byJob: {}, byGroup: {} };
+    const first = await runScheduler({ jobs: [job({ time: '22:30' })], now: '22:31', today: '2026-07-30', state });
+    assert.deepEqual(first.sent, ['j1'], 'lần đúng giờ đầu tiên phải gửi');
+    state = first.state;
+    for (const t of ['08:00', '17:30', '09:15']) {
+        const again = await runScheduler({ jobs: [job({ time: t })], now: '22:40', today: '2026-07-30', state });
+        assert.deepEqual(again.sent, [], `đổi giờ sang ${t} không được gửi lại`);
+        state = again.state;
+    }
+});
+
+test('bot sập ngang giờ hẹn, bật lại thì vẫn gửi bù đúng một lần', async () => {
+    // Không ai chốt ngày trong lúc bot chết → byJob trống → quá giờ mà chưa chốt = gửi bù.
+    const first = await runScheduler({ jobs: [job({ time: '08:00' })], now: '09:40', today: '2026-07-30' });
+    assert.deepEqual(first.sent, ['j1'], 'phải gửi bù sau khi bật lại');
+    const second = await runScheduler({ jobs: [job({ time: '08:00' })], now: '09:41', today: '2026-07-30', state: first.state });
+    assert.deepEqual(second.sent, [], 'bù đúng một lần, không lặp mỗi phút');
+});
+
+test('chưa tới giờ thì không gửi; job tắt thì không gửi', async () => {
+    const early = await runScheduler({ jobs: [job({ time: '22:30' })], now: '21:59', today: '2026-07-30' });
+    assert.deepEqual(early.sent, []);
+    const off = await runScheduler({ jobs: [job({ time: '08:00', enabled: false })], now: '22:00', today: '2026-07-30' });
+    assert.deepEqual(off.sent, []);
+});
+
+test('sang ngày mới thì lịch chạy lại theo giờ mới', async () => {
+    const r = await runScheduler({
+        jobs: [job({ time: '08:00' })],
+        now: '08:00', today: '2026-07-31',
+        state: { byJob: { j1: { date: '2026-07-30', time: '22:30' } }, byGroup: {} },
+    });
+    assert.deepEqual(r.sent, ['j1']);
+    assert.deepEqual(r.state.byJob.j1, { date: '2026-07-31', time: '08:00' });
+});
+
+/** Chạy settleReportDayOnSave() thật; trả về appliesFrom và state cuối. */
+async function runSave({ job: j, now, today, state = {} }) {
+    const files = { 'report-state.json': state };
+    return new Function('deps', `
+        const { j, now, today, files } = deps;
+        const vnDateStr = () => today;
+        const vnTimeStr = () => now;
+        const readPluginDataJson = async (n) => files[n] || {};
+        const writePluginDataJson = async (n, v) => { files[n] = v; };
+        ${extract('settleReportDayOnSave')}
+        return settleReportDayOnSave(j).then(appliesFrom => ({ appliesFrom, state: files['report-state.json'] }));
+    `)({ j, now, today, files });
+}
+
+test('lưu giờ ĐÃ QUA hôm nay → chốt ngày, có hiệu lực từ mai', async () => {
+    const r = await runSave({ job: job({ time: '08:00' }), now: '22:35', today: '2026-07-30' });
+    assert.equal(r.appliesFrom, 'tomorrow');
+    assert.deepEqual(r.state.byJob.j1, { date: '2026-07-30', time: '08:00' },
+        'phải đóng dấu hôm nay, không thì scheduler gửi ngay phút sau');
+});
+
+test('lưu giờ còn ở TƯƠNG LAI → hôm nay vẫn gửi, không chốt ngày', async () => {
+    const r = await runSave({ job: job({ time: '23:00' }), now: '22:35', today: '2026-07-30' });
+    assert.equal(r.appliesFrom, 'today');
+    assert.equal(r.state.byJob, undefined, 'không được chốt ngày khi giờ chưa tới');
+});
+
+test('đã gửi hôm nay rồi thì dù đặt giờ tương lai cũng là mai', async () => {
+    const r = await runSave({
+        job: job({ time: '23:00' }), now: '22:35', today: '2026-07-30',
+        state: { byJob: { j1: { date: '2026-07-30', time: '08:00' } }, byGroup: {} },
+    });
+    assert.equal(r.appliesFrom, 'tomorrow', 'một báo cáo mỗi ngày — không gửi thêm lần hai');
+});
+
+test('chốt ngày không ghi đè dấu đã có (giữ nguyên giờ đã gửi thật)', async () => {
+    const r = await runSave({
+        job: job({ time: '07:00' }), now: '22:35', today: '2026-07-30',
+        state: { byJob: { j1: { date: '2026-07-30', time: '22:30' } }, byGroup: {} },
+    });
+    assert.equal(r.appliesFrom, 'tomorrow');
+    assert.deepEqual(r.state.byJob.j1, { date: '2026-07-30', time: '22:30' });
+});

@@ -10,7 +10,7 @@ const modalBody = document.getElementById('modalBody');
 const modalCancel = document.getElementById('modalCancel');
 const modalConfirm = document.getElementById('modalConfirm');
 const token = window.ZALO_DASHBOARD_TOKEN || '';
-const pluginVersion = '2.20.0';
+const pluginVersion = '2.21.0';
 let state = null;
 let activeGroupId = '';
 let lang = localStorage.getItem('zaloDashboardLang') || 'vi';
@@ -3413,24 +3413,9 @@ async function openGroupDetailModal(groupId) {
   }
   currentDetailGroupId = groupId;
   currentDetailPayload = detail;
-  // Footer "Lưu" (thay cho "Đóng") gộp luôn việc lưu lịch báo cáo — bỏ nút "Lưu lịch
-  // báo cáo" riêng cho gọn. Feature toggle (Mute/Silent/Follow…) vẫn lưu tức thì khi
-  // bấm; footer chỉ chốt phần form lịch báo cáo (auto/giờ/nơi gửi).
-  const saved = await openModal({ title: uiText('Chi tiết group', 'Group details'), body: groupDetailBody(detail), confirmText: uiText('Lưu', 'Save') });
-  if (!saved) return;
-  // closeModal không xoá innerHTML nên các input vẫn còn trong DOM để đọc giá trị cuối.
-  const auto = document.getElementById('mrpAuto');
-  if (!auto) return;
-  const payload = {
-    groupIds: [groupId],
-    enabled: !!auto.checked,
-    time: document.getElementById('mrpTime')?.value || '23:55',
-    deliverThisGroup: !!document.getElementById('mrpThisGroup')?.checked,
-    deliverOwnerDm: !!document.getElementById('mrpOwnerDm')?.checked,
-  };
-  try {
-    await runAction('save-report-schedule', payload, uiText('Đã lưu lịch báo cáo', 'Report schedule saved'));
-  } catch (e) { showToast(e.message, 'error'); }
+  // Footer là "Đóng", không phải "Lưu": modal này không còn form nào cần chốt. Mọi feature toggle
+  // (Mute/Silent/Follow…) lưu tức thì khi bấm, còn lịch báo cáo đã chuyển sang trang riêng.
+  await openModal({ title: uiText('Chi tiết group', 'Group details'), body: groupDetailBody(detail), confirmText: uiText('Đóng', 'Close') });
 }
 function groupDetailBody(detail) {
   const pending = pendingMembersFromDetail(detail);
@@ -3456,11 +3441,10 @@ function groupDetailBody(detail) {
               <div class="item-title" style="font-size:15px;font-weight:700">🗓️ ${uiText('Lịch báo cáo cuối ngày', 'End-of-day report')}</div>
               <button class="btn outline-primary" type="button" data-journal="${esc(detail.groupId)}" style="padding:5px 11px;font-size:12px;flex:none">${VIEW_ICON}${uiText('Xem nhật ký', 'View journal')}</button>
             </div>
-            <div class="item-sub" style="margin:2px 0 6px">${uiText('Báo cáo tóm tắt chat cuối ngày cho riêng nhóm này.', 'End-of-day chat summary for this group only.')}</div>
-            <label class="journal-toggle-row"><span class="journal-toggle-label">${uiText('Tự động báo cáo cuối ngày', 'Auto end-of-day report')}</span><span class="journal-switch"><input type="checkbox" id="mrpAuto" ${detail.settings?.autoSummary ? 'checked' : ''}/><span class="journal-slider"></span></span></label>
-            <div class="journal-time-row"><span class="journal-toggle-label">${uiText('Giờ báo cáo (VN)', 'Report time (VN)')}</span><input type="time" id="mrpTime" class="journal-time-input" value="${esc(detail.settings?.reportTime || '23:55')}"/></div>
-            <label class="journal-toggle-row"><span class="journal-toggle-label">${uiText('Đăng vào chính nhóm', 'Post into the group')}</span><span class="journal-switch"><input type="checkbox" id="mrpThisGroup" ${detail.settings?.reportDeliverThisGroup !== false ? 'checked' : ''}/><span class="journal-slider"></span></span></label>
-            <label class="journal-toggle-row"><span class="journal-toggle-label">${uiText('DM cho owner bot', 'DM the bot owner')}</span><span class="journal-switch"><input type="checkbox" id="mrpOwnerDm" ${detail.settings?.reportDeliverOwnerDm === true ? 'checked' : ''}/><span class="journal-slider"></span></span></label>
+            <div class="item-sub" style="margin:2px 0 8px">${uiText(
+              'Lịch báo cáo là thực thể riêng vì một lịch trải trên nhiều nhóm — cài ở trang Lịch báo cáo.',
+              'Schedules are their own entity because one schedule spans many groups — set them on the Schedules page.')}</div>
+            <button class="btn outline-primary" type="button" data-goto-reports style="padding:6px 12px;font-size:12.5px">🗓️ ${uiText('Mở trang Lịch báo cáo', 'Open Schedules')}</button>
           </div></div>
           <div class="item">
             <div style="width:100%">
@@ -3487,36 +3471,6 @@ navButtons.forEach(button => {
   button.addEventListener('click', () => setSection(button.dataset.section));
 });
 document.getElementById('permBtn')?.addEventListener('click', () => setSection('permissions'));
-document.addEventListener('change', async event => {
-  // Bật "Tự động báo cáo cuối ngày" trong modal → tự bật Follow (cần lịch sử chat).
-  if (event.target.id === 'mrpAuto' && event.target.checked) {
-    const gid = currentDetailGroupId;
-    if (!gid) return;
-    const g = state.groups && state.groups.find(x => x.groupId === gid);
-    if (g && g.settings && (g.settings.follow || g.settings.tracking)) return;
-    // Mutate before the API call: runAction() calls refreshDetailModal() once the request
-    // resolves, which rebuilds this modal from state. Doing the mutation after the await left
-    // the rebuild reading the pre-toggle value, so Follow visually reverted to off.
-    if (g) { g.settings = g.settings || {}; g.settings.follow = true; g.settings.tracking = true; }
-    // That same rebuild also redraws the schedule form from `state`, where autoSummary is still
-    // false (only Follow changed) — snapshot the form so unsaved edits (including the checkbox
-    // the user just ticked) survive the rebuild instead of resetting to their pre-edit values.
-    const timeVal = document.getElementById('mrpTime')?.value;
-    const thisGroupVal = document.getElementById('mrpThisGroup')?.checked;
-    const ownerDmVal = document.getElementById('mrpOwnerDm')?.checked;
-    try { await runAction('toggle-setting', { groupId: gid, key: 'follow', value: true }, uiText('Đã bật Follow để ghi lịch sử chat', 'Follow enabled to record chat history')); } catch (_) { }
-    const autoBox = document.getElementById('mrpAuto');
-    if (autoBox) autoBox.checked = true;
-    const timeBox = document.getElementById('mrpTime');
-    if (timeBox && timeVal) timeBox.value = timeVal;
-    const thisGroupBox = document.getElementById('mrpThisGroup');
-    if (thisGroupBox) thisGroupBox.checked = thisGroupVal;
-    const ownerDmBox = document.getElementById('mrpOwnerDm');
-    if (ownerDmBox) ownerDmBox.checked = ownerDmVal;
-    const badge = document.querySelector(`[data-toggle="${gid}:follow:true"]`);
-    if (badge) { badge.classList.add('on'); badge.classList.remove('off'); badge.setAttribute('data-toggle', `${gid}:follow:false`); }
-  }
-});
 document.addEventListener('click', async event => {
   const target = event.target.closest('button');
   if (!target) return;
@@ -3696,8 +3650,6 @@ document.addEventListener('click', async event => {
         x.groupId === groupId
         || (x.groupIdByProfile && Object.values(x.groupIdByProfile).includes(groupId))
         || (Array.isArray(x.siblingIds) && x.siblingIds.includes(groupId)));
-      const gSettings = (g && profile && g.settingsByProfile && g.settingsByProfile[profile]) || (g && g.settings) || {};
-      const hadAutoSummary = !!gSettings.autoSummary;
       if (g) {
         // Per-bot toggle must NOT leak to sibling bots. seed()/merge make
         // settingsByProfile[winnerProfile] the SAME object as g.settings, and other bots
@@ -3716,14 +3668,6 @@ document.addEventListener('click', async event => {
       await runAction('toggle-setting', { groupId, key, value, profile }, t(`${key} đã cập nhật`, `${key} updated`));
       renderGroups();
       updateBulkBar();
-      // Bật Follow (từ group card) → mở modal chi tiết để cài lịch báo cáo nếu nhóm chưa set,
-      // và chưa có modal nào đang mở (tránh mở chồng). Checking modalBackdrop's open state
-      // instead of an element inside it — closeModal() never clears modalBody.innerHTML, so
-      // an element id like 'mrpAuto' stays in the DOM (just hidden) after the first time this
-      // modal is shown, permanently defeating a "does this element exist" check.
-      if (key === 'follow' && value && !hadAutoSummary && !modalBackdrop.classList.contains('open')) {
-        await openGroupDetailModal(groupId);
-      }
       // Bật Silent → mở modal diễn giải + cho sửa "tên gọi" (name triggers) của bot.
       // Name triggers theo TÀI KHOẢN: dùng profile của toggle, hoặc profile đầu của nhóm.
       if (key === 'silent' && value && !modalBackdrop.classList.contains('open')) {

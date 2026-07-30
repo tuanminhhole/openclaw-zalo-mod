@@ -45,6 +45,11 @@ export const AGENT_SAFE_ACTIONS = Object.freeze([
     // chỉ tới các đích đã cấu hình sẵn trong lịch, không nhận đích tuỳ ý từ agent.
     // `report-job-save` sửa MỘT PHẦN (gửi {id, time} là đủ) và vẫn qua đúng kiểm tra hợp lệ như dashboard.
     'report-jobs', 'report-digest-preview', 'report-job-run', 'report-job-save',
+    // XOÁ lịch cũng cho, nhưng phanh là bước XÁC NHẬN HAI NHỊP trong `zalo_mod_reports`
+    // (operation="delete" không kèm confirm=true thì chỉ trả về sẽ xoá gì rồi bắt hỏi lại owner),
+    // KHÔNG phải cờ `allowDestructive`. Cờ đó mở kèm remove-user/block-member/leave-group —
+    // bắt owner mở cả chùm đó chỉ để xoá một lịch báo cáo là đổi phanh nhỏ lấy rủi ro lớn.
+    'report-job-delete',
     // get-templates: bot đọc được KEY hợp lệ + nội dung hiện tại, nên "cập nhật welcome" mới làm được
     // (trước đây chỉ có save-templates nên bot phải đoán key → báo không làm được).
     'get-templates',
@@ -60,9 +65,6 @@ export const AGENT_SAFE_ACTIONS = Object.freeze([
  * `agentTools.allowDestructive: true` trong plugin config.
  */
 export const AGENT_DESTRUCTIVE_ACTIONS = Object.freeze([
-    // Tạo/sửa lịch thì cho thoải mái, còn XOÁ lịch cần owner bật công tắc: nó là cấu hình owner
-    // đã dựng, bot đọc sai một câu mà xoá thì phải dựng lại từ đầu.
-    'report-job-delete',
     'remove-user', 'block-member', 'unblock-member', 'leave-group',
     'send-friend-request', 'accept-friend', 'reject-friend', 'review-pending',
     'send-messages', 'bulk-friend-request',
@@ -112,6 +114,25 @@ export function isOwnerRequester(requesterSenderId, ownerIds) {
     const id = String(requesterSenderId || '').trim();
     if (!id) return false; // lượt không có sender (cron/heartbeat) → không phải owner
     return ownerIds instanceof Set ? ownerIds.has(id) : new Set(ownerIds || []).has(id);
+}
+
+/**
+ * Owner theo NGỮ CẢNH INBOUND, không chỉ theo id khớp bảng.
+ *
+ * Host cấp hai tín hiệu, và CẢ HAI chỉ được cấp khi gateway client có ADMIN_SCOPE (xem
+ * `canSupplyTrustedRequester` trong core) — nên `senderIsOwner` đáng tin y như `requesterSenderId`:
+ *   requesterSenderId?: string   — id người gửi
+ *   senderIsOwner?: boolean      — "trusted owner bit from inbound context"
+ *
+ * Trước đây chỉ so id, và đó là lỗi thật trên vps_asa (2026-07-31): trong DM thì id khớp `ownerId`
+ * đã cấu hình nên bot có tool; trong NHÓM host gửi `senderIsOwner: true` nhưng id không khớp bảng →
+ * plugin trả về 0 tool. Bot mất cả đường ĐỌC lẫn đường GHI nên nó tự ứng biến: lấy `cron` để đặt
+ * lịch (thành lịch ẩn), và trả lời trạng thái bằng ký ức hội thoại (nói 08:00 khi thật là 09:00).
+ * Mọi triệu chứng đêm đó đều từ một dòng gate này.
+ */
+export function isTrustedOwnerContext(toolContext, ownerIds) {
+    if (toolContext?.senderIsOwner === true) return true;
+    return isOwnerRequester(toolContext?.requesterSenderId, ownerIds);
 }
 
 /**
@@ -232,8 +253,12 @@ const REPORTS_SCHEMA = {
     properties: {
         operation: {
             type: 'string',
-            enum: ['list', 'save', 'run', 'preview'],
-            description: 'list = xem các lịch đang có (LÀM ĐẦU TIÊN để lấy id). save = tạo mới hoặc sửa. run = gửi ngay. preview = xem trước chuỗi sẽ gửi, không gửi.',
+            enum: ['list', 'save', 'run', 'preview', 'delete'],
+            description: 'list = xem các lịch đang có (LÀM ĐẦU TIÊN để lấy id). save = tạo mới hoặc sửa. run = gửi ngay. preview = xem trước chuỗi sẽ gửi, không gửi. delete = xoá vĩnh viễn, cần confirm=true.',
+        },
+        confirm: {
+            type: 'boolean',
+            description: 'Chỉ dùng với operation="delete". Gọi lần đầu KHÔNG có confirm để biết sẽ xoá lịch nào, hỏi lại owner, rồi mới gọi lại với confirm=true.',
         },
         id: { type: 'string', description: 'id của lịch cần sửa (lấy từ operation="list"). Bỏ trống khi tạo lịch mới.' },
         name: { type: 'string', description: 'Tên lịch, ví dụ "BC Tổng Hợp". Chỉ cần khi tạo mới.' },
@@ -278,9 +303,14 @@ export function createZaloModAgentTools(host) {
         { requester: senderId ? String(senderId) : null },
     );
 
-    /** Kiểm tra owner lần 2 lúc execute, với danh sách owner đọc live. */
-    const guard = (requesterSenderId) => {
-        if (isOwnerRequester(requesterSenderId, getOwnerIds())) return null;
+    /**
+     * Kiểm tra owner lần 2 lúc execute, với danh sách owner đọc live.
+     *
+     * `hostSaysOwner` là bit đáng tin của host, đã kiểm ở factory và đi kèm suốt vòng đời tool —
+     * phải xét lại ở đây, không thì tool cấp cho owner-trong-nhóm lại bị chính guard này chặn.
+     */
+    const guard = (requesterSenderId, hostSaysOwner = false) => {
+        if (isTrustedOwnerContext({ requesterSenderId, senderIsOwner: hostSaysOwner }, getOwnerIds())) return null;
         logger?.warn?.(`[openclaw-zalo-mod] agent tool bị từ chối — requester=${requesterSenderId || 'unknown'} không phải owner`);
         return denied(requesterSenderId);
     };
@@ -294,7 +324,7 @@ export function createZaloModAgentTools(host) {
     /** Đọc lại state sau khi ghi — bot phải báo sự thật, không báo ý định. */
     const readBack = (groupIds) => groupIds.map((id) => getGroupState(id));
 
-    function buildTools(requesterSenderId) {
+    function buildTools(requesterSenderId, hostSaysOwner = false) {
         return [
             {
                 name: 'zalo_mod_groups',
@@ -314,7 +344,7 @@ export function createZaloModAgentTools(host) {
                     additionalProperties: false,
                 },
                 execute: async (_toolCallId, params = {}) => {
-                    const blocked = guard(requesterSenderId);
+                    const blocked = guard(requesterSenderId, hostSaysOwner);
                     if (blocked) return blocked;
                     const all = await groupsSnapshot();
                     const folded = foldGroupName(params.query);
@@ -341,7 +371,7 @@ export function createZaloModAgentTools(host) {
                 ].join(' '),
                 parameters: SETTINGS_SCHEMA,
                 execute: async (_toolCallId, params = {}) => {
-                    const blocked = guard(requesterSenderId);
+                    const blocked = guard(requesterSenderId, hostSaysOwner);
                     if (blocked) return blocked;
                     const all = await groupsSnapshot();
                     const { matched, unresolved, ambiguous } = resolveGroupTargets(params.groups, all);
@@ -403,7 +433,7 @@ export function createZaloModAgentTools(host) {
                 ].join(' '),
                 parameters: HISTORY_SCHEMA,
                 execute: async (_toolCallId, params = {}) => {
-                    const blocked = guard(requesterSenderId);
+                    const blocked = guard(requesterSenderId, hostSaysOwner);
                     if (blocked) return blocked;
                     const all = await groupsSnapshot();
                     const { matched, unresolved, ambiguous } = resolveGroupTargets(params.groups, all);
@@ -498,16 +528,30 @@ export function createZaloModAgentTools(host) {
                 name: 'zalo_mod_reports',
                 label: 'Zalo Mod — lịch báo cáo tổng hợp',
                 description: [
-                    'Xem / tạo / sửa lịch báo cáo lịch sử chat — TƯƠNG ĐƯƠNG trang "Nhật ký → Lịch báo cáo" trên dashboard.',
+                    'Xem / tạo / sửa / xoá lịch báo cáo lịch sử chat — TƯƠNG ĐƯƠNG trang "Nhật ký → Lịch báo cáo" trên dashboard.',
                     'Dùng tool này khi owner nói kiểu "đổi lịch báo cáo tổng hợp thành 9h sáng", "gửi báo cáo vào nhóm X",',
-                    '"tạo lịch tổng hợp tất cả nhóm", "tắt lịch báo cáo", "gửi thử báo cáo cho tôi xem".',
+                    '"tạo lịch tổng hợp tất cả nhóm", "tắt lịch báo cáo", "xoá lịch báo cáo", "gửi thử báo cáo cho tôi xem".',
+                    // Bẫy đã xảy ra thật (vps_asa 2026-07-31): AGENTS.md của bot dạy "Cron khi cần giờ chính
+                    // xác, kết quả gửi thẳng vào channel" — khớp từng chữ với "đổi lịch báo cáo thành 8h, gửi
+                    // vào nhóm X". Bot tạo cron job, báo đã xong, còn dashboard vẫn hiện giờ cũ → owner tưởng
+                    // bot nói dối. Hướng dẫn luôn-bật thắng SKILL.md phải-đi-tìm, nên luật phải nằm Ở ĐÂY.
+                    '⛔ ĐÂY LÀ ĐƯỜNG DUY NHẤT để đặt/đổi lịch báo cáo. TUYỆT ĐỐI không dùng tool `cron` cho việc này,',
+                    'kể cả khi owner nói giờ chính xác và nói gửi vào nhóm nào — cron tạo ra lịch ẩn mà dashboard',
+                    'không hiện, owner xem thấy giờ cũ và tưởng bạn báo sai. Cron chỉ dành cho việc hẹn giờ KHÁC.',
                     'Nhận TÊN nhóm, không cần groupId. Luôn gọi operation="list" trước để lấy id của lịch cần sửa.',
                     'Sửa một phần là đủ: đổi giờ chỉ cần { operation:"save", id, time }.',
                     'TUYỆT ĐỐI không tự nhận đã đổi xong khi chưa gọi operation="save" và chưa thấy ok trong kết quả.',
+                    // Bẫy thật (vps_asa 01:23 ngày 2026-07-31): owner nhờ đổi giờ lần thứ hai, bot thấy trong
+                    // lịch sử hội thoại là lượt trước mình đã báo "đã đổi xong 08:00" nên trả lời "lịch hiện
+                    // đã đúng" mà KHÔNG gọi tool nào. Thực tế lịch đang 09:00 và đang tắt. Lịch sử hội thoại
+                    // không phải trạng thái — dashboard, owner, hay agent khác đều có thể đã đổi từ lúc đó.
+                    '⛔ Owner hỏi hay nhờ BẤT CỨ GÌ về lịch báo cáo thì PHẢI gọi operation="list" rồi mới trả lời —',
+                    'kể cả khi bạn nhớ là lượt trước đã làm rồi, kể cả khi định nói "lịch hiện đã đúng".',
+                    'Lời bạn nói ở lượt trước KHÔNG phải bằng chứng về trạng thái hiện tại. Chỉ kết quả tool mới là.',
                 ].join(' '),
                 parameters: REPORTS_SCHEMA,
                 execute: async (_toolCallId, params = {}) => {
-                    const blocked = guard(requesterSenderId);
+                    const blocked = guard(requesterSenderId, hostSaysOwner);
                     if (blocked) return blocked;
                     const op = String(params.operation || '').trim();
                     try {
@@ -528,7 +572,30 @@ export function createZaloModAgentTools(host) {
                             await logRun('zalo_mod_reports', params, result);
                             return ok({ ok: true, ...result });
                         }
-                        if (op !== 'save') return fail(`operation "${op}" không hợp lệ. Dùng: list | save | run | preview.`);
+                        if (op === 'delete') {
+                            const id = String(params.id || '').trim();
+                            if (!id) return fail('Thiếu id. Gọi operation="list" trước để lấy id của lịch cần xoá.');
+                            const before = await runAction('report-jobs', {});
+                            const target = (before?.jobs || []).find((j) => j.id === id);
+                            if (!target) return fail(`Không có lịch nào id "${id}". Gọi operation="list" để xem lại.`);
+                            // Xoá lịch là không hoàn tác được và owner phải cài lại từ đầu, nên chặn một nhịp:
+                            // lần gọi đầu chỉ trả về SẼ xoá cái gì, buộc bot hỏi lại owner rồi mới xoá thật.
+                            if (params.confirm !== true) {
+                                return ok({
+                                    ok: false,
+                                    needsConfirm: true,
+                                    willDelete: { id: target.id, name: target.name, time: target.time, kind: target.kind },
+                                    note: `Chưa xoá gì. Hỏi lại owner có chắc xoá lịch "${target.name}" (${target.time}) không, `
+                                        + 'rồi gọi lại operation="delete" kèm confirm=true. Không tự quyết.',
+                                });
+                            }
+                            const result = await runAction('report-job-delete', { id });
+                            const after = await runAction('report-jobs', {});
+                            const out = { ok: true, deleted: { id: target.id, name: target.name }, jobs: after?.jobs || [], ...result };
+                            await logRun('zalo_mod_reports', params, out);
+                            return ok(out);
+                        }
+                        if (op !== 'save') return fail(`operation "${op}" không hợp lệ. Dùng: list | save | run | preview | delete.`);
 
                         // Dựng payload lồng cho runDashboardAction TỪ các field phẳng — chỗ model hay sai
                         // nhất, nên để code làm thay vì bắt model tự lồng JSON.
@@ -598,7 +665,7 @@ export function createZaloModAgentTools(host) {
                     additionalProperties: false,
                 },
                 execute: async (_toolCallId, params = {}) => {
-                    const blocked = guard(requesterSenderId);
+                    const blocked = guard(requesterSenderId, hostSaysOwner);
                     if (blocked) return blocked;
                     const action = String(params.action || '').trim();
                     if (action === 'list-actions') {
@@ -633,7 +700,17 @@ export function createZaloModAgentTools(host) {
      */
     return function zaloModToolFactory(toolContext) {
         const requesterSenderId = toolContext?.requesterSenderId;
-        if (!isOwnerRequester(requesterSenderId, getOwnerIds())) return [];
-        return buildTools(requesterSenderId);
+        if (!isTrustedOwnerContext(toolContext, getOwnerIds())) {
+            // KHÔNG được im lặng. Trả [] mà không log là thứ đã tốn nhiều giờ chẩn đoán: bot mất tool,
+            // rồi tự ứng biến (dùng cron, trả lời bằng ký ức), còn log thì trống trơn nên trông y như
+            // model bịa. Một dòng warn là đủ để lần sau grep ra ngay.
+            logger?.warn?.('[openclaw-zalo-mod] KHÔNG cấp agent tool: người gửi không phải owner'
+                + ` — requesterSenderId=${requesterSenderId || '(host không cấp)'}`
+                + ` senderIsOwner=${toolContext?.senderIsOwner === undefined ? '(host không cấp)' : toolContext.senderIsOwner}`
+                + ` ownerId đã cấu hình=[${[...getOwnerIds()].join(', ') || '(chưa set)'}]`
+                + ` sessionKey=${toolContext?.sessionKey || '-'}`);
+            return [];
+        }
+        return buildTools(requesterSenderId, toolContext?.senderIsOwner === true);
     };
 }

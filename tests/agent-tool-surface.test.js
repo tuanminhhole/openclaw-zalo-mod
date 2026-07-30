@@ -10,6 +10,7 @@ import {
     createZaloModAgentTools,
     foldGroupName,
     isOwnerRequester,
+    isTrustedOwnerContext,
     resolveGroupTargets,
 } from '../src/agent/tool-surface.js';
 
@@ -299,12 +300,74 @@ test('zalo_mod_reports phẳng: mọi thứ owner hay nhờ là một field ở 
     const reports = tools.find((t) => t.name === 'zalo_mod_reports');
     assert.ok(reports, 'phải có tool zalo_mod_reports');
     const props = reports.parameters.properties;
-    for (const k of ['operation', 'id', 'time', 'kind', 'groups', 'toOwnerDm', 'toGroups', 'toEachGroup', 'enabled']) {
+    for (const k of ['operation', 'id', 'time', 'kind', 'groups', 'toOwnerDm', 'toGroups', 'toEachGroup', 'enabled', 'confirm']) {
         assert.ok(props[k], `thiếu field phẳng ${k}`);
         assert.notEqual(props[k].type, 'object', `${k} phải phẳng, không lồng object`);
     }
     assert.deepEqual(reports.parameters.required, ['operation']);
-    assert.deepEqual(props.operation.enum, ['list', 'save', 'run', 'preview']);
+    assert.deepEqual(props.operation.enum, ['list', 'save', 'run', 'preview', 'delete']);
+});
+
+// Bot đọc AGENTS.md mỗi lượt, và AGENTS.md dạy "Cron khi cần giờ chính xác, kết quả gửi thẳng vào
+// channel" — khớp từng chữ với "đổi lịch báo cáo thành 8h, gửi vào nhóm X". Trên vps_asa bot đã tạo
+// cron job rồi báo đã xong, còn dashboard vẫn hiện giờ cũ. Mô tả tool là chỗ LUÔN nằm trong prompt,
+// nên luật chống-cron phải ở đó mới thắng được, không thể chỉ nằm trong SKILL.md.
+test('mô tả tool zalo_mod_reports phải cấm dùng cron cho lịch báo cáo', () => {
+    const { host } = makeHost();
+    const tools = createZaloModAgentTools(host)({ requesterSenderId: OWNER });
+    const reports = tools.find((t) => t.name === 'zalo_mod_reports');
+    assert.match(reports.description, /cron/i, 'mô tả phải nhắc tên tool cron để model liên hệ được');
+    assert.match(reports.description, /không dùng|KHÔNG dùng|duy nhất/i, 'phải nói rõ là cấm / là đường duy nhất');
+});
+
+/** Host có lịch báo cáo thật, để kiểm luồng xoá. */
+function makeReportsHost() {
+    const calls = [];
+    const { host } = makeHost({
+        runAction: async (action, payload) => {
+            calls.push({ action, payload });
+            if (action === 'report-jobs') {
+                return { jobs: [{ id: 'job-x', name: 'BC Tổng Hợp', time: '22:30', kind: 'digest' }], groups: [] };
+            }
+            return { echoed: payload };
+        },
+    });
+    return { host, calls };
+}
+
+test('delete hai nhịp: lần đầu không xoá, chỉ trả về sẽ xoá gì', async () => {
+    const { host, calls } = makeReportsHost();
+    const tools = createZaloModAgentTools(host)({ requesterSenderId: OWNER });
+    const reports = tools.find((t) => t.name === 'zalo_mod_reports');
+
+    const first = await reports.execute('c1', { operation: 'delete', id: 'job-x' });
+    assert.equal(calls.filter((c) => c.action === 'report-job-delete').length, 0,
+        'chưa confirm thì TUYỆT ĐỐI không được gọi report-job-delete');
+    const body = JSON.parse(first.content[0].text);
+    assert.equal(body.needsConfirm, true);
+    assert.equal(body.willDelete.name, 'BC Tổng Hợp', 'phải nói rõ tên lịch sắp xoá để bot đọc cho owner');
+
+    const second = await reports.execute('c2', { operation: 'delete', id: 'job-x', confirm: true });
+    assert.equal(calls.filter((c) => c.action === 'report-job-delete').length, 1, 'có confirm thì mới xoá thật');
+    assert.equal(JSON.parse(second.content[0].text).ok, true);
+});
+
+test('delete id không tồn tại thì báo lỗi, không xoá bừa', async () => {
+    const { host, calls } = makeReportsHost();
+    const tools = createZaloModAgentTools(host)({ requesterSenderId: OWNER });
+    const reports = tools.find((t) => t.name === 'zalo_mod_reports');
+    const r = await reports.execute('c1', { operation: 'delete', id: 'khong-co', confirm: true });
+    assert.ok(r.content[0].isError, 'phải là lỗi');
+    assert.equal(calls.filter((c) => c.action === 'report-job-delete').length, 0);
+});
+
+test('delete thiếu id thì đòi list trước, không đoán', async () => {
+    const { host, calls } = makeReportsHost();
+    const tools = createZaloModAgentTools(host)({ requesterSenderId: OWNER });
+    const reports = tools.find((t) => t.name === 'zalo_mod_reports');
+    const r = await reports.execute('c1', { operation: 'delete', confirm: true });
+    assert.ok(r.content[0].isError);
+    assert.equal(calls.filter((c) => c.action === 'report-job-delete').length, 0);
 });
 
 test('save dựng payload lồng HỘ model, và tự đọc lại state sau khi ghi', async () => {
@@ -344,4 +407,57 @@ test('run mà thiếu id thì báo lỗi rõ, không đoán', async () => {
 test('member thường không thấy zalo_mod_reports', () => {
     const { host } = makeHost();
     assert.deepEqual(createZaloModAgentTools(host)({ requesterSenderId: MEMBER }), []);
+});
+
+// ── Owner trong NHÓM: host nói owner nhưng id không khớp bảng ──────────────────────────────────
+// Lỗi thật vps_asa 2026-07-31, và là gốc của mọi triệu chứng đêm đó. Trong DM, host cấp
+// requesterSenderId khớp `ownerId` đã cấu hình → bot có tool. Trong NHÓM, host cấp
+// `senderIsOwner: true` nhưng id không khớp bảng → plugin trả 0 tool. Bot mất cả đường đọc lẫn ghi
+// nên tự ứng biến: lấy `cron` đặt lịch (thành lịch ẩn dashboard không thấy), và trả lời trạng thái
+// bằng ký ức hội thoại (nói 08:00 khi lịch thật là 09:00 và đang tắt).
+const OTHER = '9999999999999999999';
+
+test('host nói senderIsOwner=true thì là owner, dù id không khớp bảng', () => {
+    const ids = new Set([OWNER]);
+    assert.equal(isTrustedOwnerContext({ senderIsOwner: true, requesterSenderId: OTHER }, ids), true);
+    assert.equal(isTrustedOwnerContext({ senderIsOwner: true }, ids), true, 'nhóm: host không cấp id');
+    assert.equal(isTrustedOwnerContext({ requesterSenderId: OWNER }, ids), true, 'DM: id khớp bảng');
+});
+
+test('không có tín hiệu owner nào thì KHÔNG phải owner — không nới lỏng bảo mật', () => {
+    const ids = new Set([OWNER]);
+    assert.equal(isTrustedOwnerContext({ requesterSenderId: OTHER }, ids), false);
+    assert.equal(isTrustedOwnerContext({ senderIsOwner: false, requesterSenderId: OTHER }, ids), false);
+    assert.equal(isTrustedOwnerContext({}, ids), false, 'cron/heartbeat: không sender, không bit');
+    assert.equal(isTrustedOwnerContext(undefined, ids), false);
+    assert.equal(isTrustedOwnerContext({ senderIsOwner: 'true' }, ids), false, 'chỉ nhận boolean true');
+});
+
+test('owner trong nhóm được cấp đủ tool, và tool chạy được (guard không chặn lại)', async () => {
+    const { host, calls } = makeReportsHost();
+    // Đúng shape host gửi trong nhóm: có bit owner, KHÔNG có id.
+    const tools = createZaloModAgentTools(host)({ senderIsOwner: true });
+    assert.deepEqual(tools.map((t) => t.name), [...ZALO_MOD_TOOL_NAMES],
+        'owner trong nhóm phải thấy đủ tool, không thì bot đi tìm cron');
+    const reports = tools.find((t) => t.name === 'zalo_mod_reports');
+    const r = await reports.execute('c1', { operation: 'list' });
+    assert.ok(!r.content[0].isError, 'guard lúc execute không được chặn owner đã qua factory');
+    assert.ok(calls.some((c) => c.action === 'report-jobs'));
+});
+
+test('người thường trong nhóm vẫn không thấy tool nào', () => {
+    const { host } = makeReportsHost();
+    assert.deepEqual(createZaloModAgentTools(host)({ senderIsOwner: false, requesterSenderId: OTHER }), []);
+    assert.deepEqual(createZaloModAgentTools(host)({ requesterSenderId: OTHER }), []);
+});
+
+test('từ chối cấp tool phải LOG — im lặng là thứ đã tốn nhiều giờ chẩn đoán', () => {
+    const warns = [];
+    const { host } = makeReportsHost();
+    host.logger = { warn: (m) => warns.push(String(m)), info() {} };
+    createZaloModAgentTools(host)({ requesterSenderId: OTHER });
+    assert.equal(warns.length, 1, 'phải có đúng một dòng warn');
+    assert.match(warns[0], /requesterSenderId/, 'log phải nêu id nhận được');
+    assert.match(warns[0], /senderIsOwner/, 'và bit owner host cấp');
+    assert.match(warns[0], new RegExp(OWNER), 'và ownerId đang cấu hình, để so được ngay');
 });

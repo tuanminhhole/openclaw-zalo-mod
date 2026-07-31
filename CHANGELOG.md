@@ -1,3 +1,25 @@
+## [2.25.0] - 2026-07-31
+
+### Added
+- **CRM nối được với nhóm và người Zalo có sẵn — hết cảnh sổ tay gõ tay.** Owner nói thẳng: *"vẫn là demo không có giá trị vì không chọn được group hay user nào từ danh sách có sẵn cả"*. Khảo sát ra đúng bốn chỗ: (1) `contacts`/`leads`/`tasks` **không có cột nào trỏ tới nhóm Zalo**, (2) form khách hàng chỉ gõ tay nên bản ghi mới **không bao giờ có `zalo_uid`** — mất luôn khả năng nối về sau, (3) import là all-or-nothing, (4) khách import xong nằm rời, không biết đến từ nhóm nào.
+
+  Migration **v3**: bảng nối `contact_groups` (một khách ở NHIỀU nhóm nên phải là bảng nối, không phải cột) + `leads.group_id` + `tasks.group_id`. Store thêm `setContactGroups` (replace, để bỏ tick trên UI là bỏ liên kết thật), `listContactGroups`, `listContactsByGroup`, và `listContacts` lọc thêm theo `groupId` + `linked=only|none`.
+- **Bộ chọn người Zalo ngay trong form khách hàng.** Gộp member mọi nhóm thành một danh sách, tìm **không dấu**, mỗi dòng hiện avatar + tên + các nhóm người đó đang ở. Chọn xong thì tự điền tên, tự đặt nguồn `zalo-group`, và **tự tick sẵn mọi nhóm** người đó đang ở.
+
+  **Hiển thị theo tên nhưng lưu `uid`** — owner đề nghị nối theo tên cho dễ, nhưng tên Zalo trùng nhau và đổi được, nối theo tên sẽ sai âm thầm; `uid` đã có ngay khi bấm chọn nên trải nghiệm vẫn là "gõ tên rồi chọn".
+- **Chọn nhóm ở form Pipeline và Công việc** bằng `<select>` từ danh sách nhóm thật, không gõ groupId.
+- **Thẻ khách hàng nói rõ trạng thái nối**: có `🔗 uid`, hoặc nhãn *"chưa nối Zalo"* — tức khách đó không mở được lịch sử chat. Kèm chip nhóm bấm được để lọc ra mọi khách trong nhóm đó, và ô lọc `Nối Zalo: tất cả / đã nối / chưa nối`.
+- **Import từ Zalo giờ nối luôn nhóm**, và import lại từ nhóm khác thì **gộp** chứ không xoá nhóm cũ.
+
+### Fixed
+- **Bỏ modal lồng trong modal.** `openModal` dùng một biến `modalResolve` toàn cục, nên mở modal thứ hai sẽ ghi đè nó và promise của modal ngoài **treo mãi không resolve**. Bộ chọn người vì thế nằm inline trong form, không phải modal riêng.
+- **Handler phải gắn TRƯỚC khi `await openModal`** — `openModal` dựng DOM đồng bộ rồi mới trả promise; gắn sau thì owner đã đóng form xong và bộ chọn chưa bao giờ hoạt động.
+- `setContactGroups` báo lỗi bằng đúng cụm "không tồn tại" như phần còn lại, để `handleCrmAction` phân loại thành **400** thay vì 500.
+
+### Notes
+- 244 test xanh (thêm 9 cho phần nối nhóm: replace bỏ được nhóm sai, groupId rỗng bị lọc, import gộp không mất nhóm cũ, lọc theo nhóm và theo đã-nối, lead/task gắn + bỏ gắn nhóm, và 400 vs 500 qua handler). Kiểm trên trình duyệt thật: gộp người đa nhóm, tìm không dấu (gồm cả chữ `đ`), tự điền + tự tick nhóm, bỏ nối, và luồng lưu gọi đủ `crm-contact-save` → `crm-contact-tags` → `crm-contact-groups`.
+- **Bài học:** một tính năng có schema tốt vẫn vô dụng nếu không có đường nối tới dữ liệu sẵn có. `contacts.zalo_uid` đã tồn tại từ v2 và đã idempotent — thiếu đúng một bộ chọn để owner điền được nó.
+
 ## [2.24.0] - 2026-07-31
 
 > Số 2.23.0 đã bị tag và push nhưng **chưa bao giờ publish được** — ClawHub Plugin Inspector

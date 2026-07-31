@@ -104,7 +104,54 @@ export class CrmStore {
         if (!row) return null;
         row.tags = this.db.prepare('SELECT tag FROM contact_tags WHERE contact_id = ? ORDER BY tag')
             .all(id).map(r => r.tag);
+        row.groups = this.listContactGroups(id);
         return row;
+    }
+
+    // ── Nối khách hàng ↔ nhóm Zalo ───────────────────────────────────────
+
+    listContactGroups(contactId) {
+        return this.db.prepare('SELECT group_id, group_name FROM contact_groups WHERE contact_id = ? ORDER BY group_name')
+            .all(contactId)
+            .map(r => ({ groupId: r.group_id, name: r.group_name || r.group_id }));
+    }
+
+    /**
+     * Đặt LẠI toàn bộ nhóm của một khách (replace, không merge).
+     *
+     * Replace vì UI là bộ chọn nhiều nhóm: bỏ tick một nhóm phải thành bỏ liên kết. Merge thì
+     * không bao giờ bỏ được nhóm đã nối sai.
+     */
+    setContactGroups(contactId, groups, actor = 'system') {
+        // Dùng đúng cụm "không tồn tại" như các lỗi khác: handleCrmAction phân loại 400 vs 500 bằng
+        // regex trên message, lệch chữ là lỗi nhập liệu bị trả về thành 500.
+        if (!this.getContact(contactId)) throw new Error('contact không tồn tại');
+        const now = this._now();
+        const rows = (Array.isArray(groups) ? groups : [])
+            .map(g => (typeof g === 'string' ? { groupId: g, name: '' } : g))
+            .map(g => ({ groupId: s(String(g?.groupId || '')).trim(), name: s(String(g?.name || '')) }))
+            .filter(g => g.groupId);
+        this.db.exec('BEGIN');
+        try {
+            this.db.prepare('DELETE FROM contact_groups WHERE contact_id = ?').run(contactId);
+            const ins = this.db.prepare('INSERT OR REPLACE INTO contact_groups (contact_id, group_id, group_name, linked_at) VALUES (?, ?, ?, ?)');
+            for (const g of rows) ins.run(contactId, g.groupId, g.name || null, now);
+            this.db.exec('COMMIT');
+        } catch (e) {
+            this.db.exec('ROLLBACK');
+            throw e;
+        }
+        this._audit(actor, 'contact.groups', contactId, rows.map(g => g.name || g.groupId).join(', '));
+        return this.listContactGroups(contactId);
+    }
+
+    /** Khách hàng thuộc một nhóm — để mở nhóm ra là thấy ai trong đó đã là khách. */
+    listContactsByGroup(groupId, limit = 200) {
+        const rows = this.db.prepare(`SELECT c.* FROM contacts c
+            JOIN contact_groups g ON g.contact_id = c.id
+            WHERE g.group_id = ? ORDER BY c.display_name LIMIT ?`).all(String(groupId), Math.min(num(limit, 200), 500));
+        for (const r of rows) r.groups = this.listContactGroups(r.id);
+        return rows;
     }
 
     /**
@@ -125,13 +172,25 @@ export class CrmStore {
             where.push('id IN (SELECT contact_id FROM contact_tags WHERE tag = ?)');
             params.push(s(opts.tag, 50));
         }
+        if (opts.groupId) {
+            where.push('id IN (SELECT contact_id FROM contact_groups WHERE group_id = ?)');
+            params.push(s(opts.groupId));
+        }
+        // `linked=only|none` — lọc theo việc khách đã nối được với người Zalo thật hay chưa. Chính chỗ
+        // này cho owner thấy phần dữ liệu còn là sổ tay gõ tay: contact không có `zalo_uid` thì không
+        // mở được lịch sử chat, không biết ở nhóm nào.
+        if (opts.linked === 'only') where.push('zalo_uid IS NOT NULL');
+        if (opts.linked === 'none') where.push('zalo_uid IS NULL');
         const cond = where.length ? `WHERE ${where.join(' AND ')}` : '';
         const rows = this.db.prepare(
             `SELECT * FROM contacts ${cond} ORDER BY updated_at DESC LIMIT ? OFFSET ?`)
             .all(...params, limit, offset);
         const total = this.db.prepare(`SELECT COUNT(*) AS n FROM contacts ${cond}`).all(...params)[0].n;
         const tagStmt = this.db.prepare('SELECT tag FROM contact_tags WHERE contact_id = ? ORDER BY tag');
-        for (const r of rows) r.tags = tagStmt.all(r.id).map(t => t.tag);
+        for (const r of rows) {
+            r.tags = tagStmt.all(r.id).map(t => t.tag);
+            r.groups = this.listContactGroups(r.id);
+        }
         return { contacts: rows, total, limit, offset };
     }
 
@@ -156,14 +215,20 @@ export class CrmStore {
         return true;
     }
 
-    /** Sync member Zalo (từ group-members.json) → contacts. Idempotent. */
+    /**
+     * Sync member Zalo (từ group-members.json) → contacts. Idempotent.
+     *
+     * `m.groups` (mảng `{groupId, name}`) được nối luôn — đây là điểm khác so với bản cũ: trước đây
+     * import xong thì khách nằm rời, không biết đến từ nhóm nào, nên CRM không dùng được dữ liệu mà
+     * bot vốn đã có. Nối theo `uid` chứ không theo tên: tên Zalo trùng nhau và đổi được.
+     */
     importMembers(members, accountId = 'default', actor = 'sync') {
-        let created = 0, updated = 0;
+        let created = 0, updated = 0, linked = 0;
         for (const m of members || []) {
             if (!m?.uid || !m?.name) continue;
             const before = this.db.prepare('SELECT id FROM contacts WHERE account_id = ? AND zalo_uid = ?')
                 .get(String(accountId), String(m.uid));
-            this.upsertContact({
+            const saved = this.upsertContact({
                 accountId,
                 zaloUid: String(m.uid),
                 displayName: String(m.name),
@@ -172,8 +237,18 @@ export class CrmStore {
                 lastContactAt: m.lastSeen,
             }, actor);
             if (before) updated++; else created++;
+            if (Array.isArray(m.groups) && m.groups.length) {
+                // Gộp với nhóm đã nối trước đó — import từng nhóm nhiều lần không được xoá nhóm cũ.
+                const merged = new Map(this.listContactGroups(saved.id).map(g => [g.groupId, g]));
+                for (const g of m.groups) {
+                    const gid = String(g?.groupId || g || '').trim();
+                    if (gid) merged.set(gid, { groupId: gid, name: String(g?.name || merged.get(gid)?.name || '') });
+                }
+                this.setContactGroups(saved.id, [...merged.values()], actor);
+                linked += m.groups.length;
+            }
         }
-        return { created, updated };
+        return { created, updated, linked };
     }
 
     // ── Leads pipeline ───────────────────────────────────────────────────
@@ -191,10 +266,11 @@ export class CrmStore {
         const now = this._now();
         const id = crypto.randomUUID();
         this.db.prepare(`INSERT INTO leads
-            (id, contact_id, title, stage, value, currency, expected_close, product, source,
+            (id, contact_id, group_id, title, stage, value, currency, expected_close, product, source,
              assignee, loss_reason, next_action, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-            .run(id, fields.contactId || null, title, stage, value, s(fields.currency, 10) || 'VND',
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+            .run(id, fields.contactId || null, s(fields.groupId) || null, title, stage, value,
+                s(fields.currency, 10) || 'VND',
                 num(fields.expectedClose), s(fields.product), s(fields.source),
                 s(fields.assignee), null, s(fields.nextAction), now, now);
         this.db.prepare('INSERT INTO lead_stage_history (id, lead_id, from_stage, to_stage, actor, at) VALUES (?, ?, ?, ?, ?, ?)')
@@ -225,13 +301,14 @@ export class CrmStore {
             loss_reason: fields.lossReason !== undefined ? s(fields.lossReason) : lead.loss_reason,
             next_action: fields.nextAction !== undefined ? s(fields.nextAction) : lead.next_action,
             contact_id: fields.contactId !== undefined ? (fields.contactId || null) : lead.contact_id,
+            group_id: fields.groupId !== undefined ? (s(fields.groupId) || null) : lead.group_id,
         };
         if (patch.contact_id && !this.getContact(patch.contact_id)) throw new Error('contact không tồn tại');
         this.db.prepare(`UPDATE leads SET title=?, value=?, currency=?, expected_close=?, product=?,
-            source=?, assignee=?, loss_reason=?, next_action=?, contact_id=?, updated_at=? WHERE id=?`)
+            source=?, assignee=?, loss_reason=?, next_action=?, contact_id=?, group_id=?, updated_at=? WHERE id=?`)
             .run(patch.title, patch.value, patch.currency, patch.expected_close, patch.product,
                 patch.source, patch.assignee, patch.loss_reason, patch.next_action, patch.contact_id,
-                this._now(), id);
+                patch.group_id, this._now(), id);
         this._audit(actor, 'lead.update', id, patch.title);
         return this.getLead(id);
     }
@@ -298,10 +375,11 @@ export class CrmStore {
         if (fields.leadId && !this.getLead(fields.leadId)) throw new Error('lead không tồn tại');
         const now = this._now();
         const id = crypto.randomUUID();
-        this.db.prepare(`INSERT INTO tasks (id, title, note, due_at, done_at, contact_id, lead_id, assignee, created_at, updated_at)
-            VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?, ?)`)
+        this.db.prepare(`INSERT INTO tasks (id, title, note, due_at, done_at, contact_id, lead_id, group_id, assignee, created_at, updated_at)
+            VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?)`)
             .run(id, title, s(fields.note, 2000) || '', num(fields.dueAt),
-                fields.contactId || null, fields.leadId || null, s(fields.assignee), now, now);
+                fields.contactId || null, fields.leadId || null, s(fields.groupId) || null,
+                s(fields.assignee), now, now);
         this._audit(actor, 'task.create', id, title);
         return this.getTask(id);
     }

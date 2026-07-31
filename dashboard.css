@@ -5647,3 +5647,19 @@ textarea:focus {
 @media (max-width: 720px) {
   .rlog-side { flex: 1 1 100%; }
 }
+
+/* Bộ chọn người Zalo trong form CRM — dòng bấm được, avatar tròn, tên trên nhóm dưới. */
+.crm-pick-row {
+  display: flex; align-items: center; gap: 9px; width: 100%;
+  padding: 6px 8px; border-radius: 8px; cursor: pointer;
+  border: 1px solid transparent; background: transparent; color: var(--text);
+}
+.crm-pick-row:hover { background: var(--surface-2); border-color: var(--line); }
+.crm-pick-ava {
+  width: 30px; height: 30px; border-radius: 50%; flex: none; object-fit: cover;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.crm-pick-ava-empty {
+  background: var(--surface-2); border: 1px solid var(--line);
+  font-size: 12px; font-weight: 700; opacity: .75;
+}

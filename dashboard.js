@@ -10,7 +10,7 @@ const modalBody = document.getElementById('modalBody');
 const modalCancel = document.getElementById('modalCancel');
 const modalConfirm = document.getElementById('modalConfirm');
 const token = window.ZALO_DASHBOARD_TOKEN || '';
-const pluginVersion = '2.24.0';
+const pluginVersion = '2.25.0';
 let state = null;
 let activeGroupId = '';
 let lang = localStorage.getItem('zaloDashboardLang') || 'vi';
@@ -4405,6 +4405,7 @@ window.addEventListener('resize', () => {
 
 const crmState = {
   contacts: null, contactsTotal: 0, contactsPage: 1, contactsSearch: '', contactsTag: '',
+  contactsGroup: '', contactsLinked: '',
   pipeline: null, tasks: null, taskFilter: 'open', undoLead: null,
 };
 const CRM_PAGE_SIZE = 50;
@@ -4477,6 +4478,8 @@ async function renderCrmContacts() {
     const res = await crmAction('crm-contacts-list', {
       search: crmState.contactsSearch || undefined,
       tag: crmState.contactsTag || undefined,
+      groupId: crmState.contactsGroup || undefined,
+      linked: crmState.contactsLinked || undefined,
       limit: CRM_PAGE_SIZE,
       offset: (crmState.contactsPage - 1) * CRM_PAGE_SIZE,
     });
@@ -4498,9 +4501,17 @@ function crmRenderContactsTable(body) {
           ${c.avatar_url
             ? `<img src="${crmEsc(c.avatar_url)}" alt="" style="width:32px;height:32px;border-radius:50%;object-fit:cover">`
             : `<span style="width:32px;height:32px;border-radius:50%;background:var(--primary-soft);color:var(--primary-deep);display:inline-flex;align-items:center;justify-content:center;font-weight:600">${crmEsc((c.display_name || '?')[0].toUpperCase())}</span>`}
-          <div>
+          <div style="min-width:0">
             <div style="font-weight:600">${crmEsc(c.display_name)}</div>
-            <div style="color:var(--muted);font-size:12px">${crmEsc(c.zalo_uid || '')}</div>
+            ${/* Nói rõ khách nào CHƯA nối được với người Zalo — đó là khách không mở được lịch sử
+                  chat, tức phần dữ liệu vẫn là sổ tay gõ tay. */''}
+            <div style="color:var(--muted);font-size:12px">${c.zalo_uid
+              ? `🔗 ${crmEsc(c.zalo_uid)}`
+              : `<span style="opacity:.8">${t('chưa nối Zalo', 'not linked')}</span>`}</div>
+            ${(c.groups || []).length ? `<div class="chips" style="margin-top:4px">${(c.groups || []).slice(0, 3).map(g =>
+              `<span class="chip" data-crm-group-filter="${crmEsc(g.groupId)}" title="${crmEsc(g.name)}"
+                style="cursor:pointer;font-size:10.5px;background:rgba(96,165,250,.14)">${crmEsc(g.name)}</span>`).join('')}${
+              (c.groups || []).length > 3 ? `<span class="chip" style="font-size:10.5px">+${(c.groups || []).length - 3}</span>` : ''}</div>` : ''}
           </div>
         </div>
       </td>
@@ -4519,6 +4530,13 @@ function crmRenderContactsTable(body) {
     <div class="crm-toolbar">
       <input type="search" id="crmContactSearch" class="crm-search" placeholder="${t('Tìm tên / SĐT / UID…', 'Search name / phone / UID…')}" value="${crmEsc(crmState.contactsSearch)}">
       ${crmState.contactsTag ? `<span class="chip" id="crmTagClear" style="cursor:pointer">🏷 ${crmEsc(crmState.contactsTag)} ✕</span>` : ''}
+      ${crmState.contactsGroup ? `<span class="chip" id="crmGroupClear" style="cursor:pointer;background:rgba(96,165,250,.16)">👥 ${crmEsc(
+        (state.groups || []).find(g => g.groupId === crmState.contactsGroup)?.name || crmState.contactsGroup)} ✕</span>` : ''}
+      <select id="crmLinkedFilter" style="padding:6px 9px;border-radius:8px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font-size:12.5px">
+        <option value="">${t('Nối Zalo: tất cả', 'Zalo link: all')}</option>
+        <option value="only" ${crmState.contactsLinked === 'only' ? 'selected' : ''}>${t('Đã nối Zalo', 'Linked')}</option>
+        <option value="none" ${crmState.contactsLinked === 'none' ? 'selected' : ''}>${t('Chưa nối Zalo', 'Not linked')}</option>
+      </select>
       <span style="margin-left:auto;color:var(--muted);font-size:13px">${t(`${crmState.contactsTotal} khách`, `${crmState.contactsTotal} contacts`)}</span>
     </div>
     <div class="card">
@@ -4552,10 +4570,27 @@ function crmRenderContactsTable(body) {
     crmState.contactsTag = '';
     renderCrmContacts();
   });
+  body.querySelector('#crmGroupClear')?.addEventListener('click', () => {
+    crmState.contactsGroup = '';
+    crmState.contactsPage = 1;
+    renderCrmContacts();
+  });
+  body.querySelector('#crmLinkedFilter')?.addEventListener('change', (e) => {
+    crmState.contactsLinked = e.target.value;
+    crmState.contactsPage = 1;
+    renderCrmContacts();
+  });
   body.querySelector('#crmPrevPage')?.addEventListener('click', () => { crmState.contactsPage--; renderCrmContacts(); });
   body.querySelector('#crmNextPage')?.addEventListener('click', () => { crmState.contactsPage++; renderCrmContacts(); });
   body.querySelectorAll('[data-crm-tag]').forEach(el => el.addEventListener('click', () => {
     crmState.contactsTag = el.dataset.crmTag;
+    crmState.contactsPage = 1;
+    renderCrmContacts();
+  }));
+  // Bấm chip nhóm trên một khách → lọc ra mọi khách thuộc nhóm đó. Đây là đường đi tự nhiên:
+  // "khách này ở nhóm ASA 7881" → "còn ai trong nhóm đó đã là khách?"
+  body.querySelectorAll('[data-crm-group-filter]').forEach(el => el.addEventListener('click', () => {
+    crmState.contactsGroup = el.dataset.crmGroupFilter;
     crmState.contactsPage = 1;
     renderCrmContacts();
   }));
@@ -4584,19 +4619,81 @@ async function crmContactModal(contact) {
   const f = (id, label, value, type = 'text', placeholder = '') => `
     <label class="crm-field"><span>${label}</span>
       <input type="${type}" id="${id}" value="${crmEsc(value ?? '')}" placeholder="${crmEsc(placeholder)}"></label>`;
-  const ok = await openModal({
+  // `draft` là nguồn sự thật cho phần liên kết trong lúc form đang mở — các ô input khác giữ giá trị
+  // trong DOM, còn uid thì không có input nào để giữ.
+  const draft = { zaloUid: contact?.zalo_uid || '' };
+  const people = crmZaloPeople();
+
+  const linkBoxHtml = () => draft.zaloUid
+    ? `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span class="chip" style="background:rgba(52,211,153,.18)">🔗 ${t('Đã nối Zalo', 'Linked')}</span>
+        <code style="font-size:11.5px;opacity:.7">${crmEsc(draft.zaloUid)}</code>
+        <button class="btn" type="button" data-crm-unlink style="min-height:0;height:26px;padding:0 9px;font-size:11.5px">${t('Bỏ nối', 'Unlink')}</button>
+      </div>`
+    : crmPersonPickerHtml();
+
+  // openModal dựng DOM ĐỒNG BỘ rồi mới trả promise, nên phải gắn handler TRƯỚC khi await — gắn sau
+  // thì owner đã đóng form xong, bộ chọn chưa bao giờ hoạt động.
+  const pending = openModal({
     title: contact ? t('Sửa khách hàng', 'Edit contact') : t('Thêm khách hàng', 'Add contact'),
     body: `<div class="crm-form">
+      <label class="crm-field"><span>${t('Người Zalo', 'Zalo person')}</span>
+        <div data-crm-linkbox>${linkBoxHtml()}</div></label>
       ${f('crmFName', t('Tên hiển thị *', 'Display name *'), contact?.display_name)}
       ${f('crmFPhone', t('SĐT', 'Phone'), contact?.phone)}
       ${f('crmFTags', 'Tags', (contact?.tags || []).join(', '), 'text', t('vd: vip, khách sỉ', 'e.g. vip, wholesale'))}
       ${f('crmFSource', t('Nguồn', 'Source'), contact?.source, 'text', t('vd: zalo-group, giới thiệu', 'e.g. zalo-group, referral'))}
+      <label class="crm-field"><span>${t('Thuộc nhóm', 'In groups')}</span>
+        ${crmGroupChecklist((contact?.groups || []).map(g => g.groupId))}</label>
       <label class="crm-field"><span>${t('Ghi chú', 'Notes')}</span>
         <textarea id="crmFNotes" rows="3">${crmEsc(contact?.notes ?? '')}</textarea></label>
     </div>`,
     confirmText: t('Lưu', 'Save'),
   });
+
+  const redrawLink = () => {
+    const box = modalBody.querySelector('[data-crm-linkbox]');
+    if (box) box.innerHTML = linkBoxHtml();
+  };
+  const onClick = (ev) => {
+    if (ev.target.closest?.('[data-crm-unlink]')) { draft.zaloUid = ''; redrawLink(); return; }
+    const uid = ev.target.closest?.('[data-crm-pick]')?.getAttribute('data-crm-pick');
+    if (!uid) return;
+    const person = people.find(p => p.uid === uid);
+    if (!person) return;
+    draft.zaloUid = person.uid;
+    // Chọn người thì điền hộ tên (nếu owner chưa gõ gì) và tick sẵn các nhóm người đó đang ở —
+    // đúng thứ owner muốn 99% trường hợp, vẫn sửa lại được.
+    const nameEl = document.getElementById('crmFName');
+    if (nameEl && !nameEl.value.trim()) nameEl.value = person.name;
+    const srcEl = document.getElementById('crmFSource');
+    if (srcEl && !srcEl.value.trim()) srcEl.value = 'zalo-group';
+    const want = new Set(person.groups.map(g => String(g.groupId)));
+    for (const cb of modalBody.querySelectorAll('[data-crm-group]')) {
+      if (want.has(String(cb.getAttribute('data-crm-group')))) cb.checked = true;
+    }
+    redrawLink();
+  };
+  const onInput = (ev) => {
+    if (!ev.target.closest?.('[data-crm-pick-q]')) return;
+    const needle = foldVi(ev.target.value);
+    const hit = needle ? people.filter(p => foldVi(p.name).includes(needle)) : people;
+    const list = modalBody.querySelector('[data-crm-pick-list]');
+    if (list) {
+      list.innerHTML = hit.length ? hit.slice(0, 50).map(crmPersonRowHtml).join('')
+        : `<div class="item-sub" style="padding:10px;font-size:12px">${t('Không tìm thấy ai', 'No match')}</div>`;
+    }
+  };
+  modalBody.addEventListener('click', onClick);
+  modalBody.addEventListener('input', onInput);
+  const ok = await pending;
+  modalBody.removeEventListener('click', onClick);
+  modalBody.removeEventListener('input', onInput);
   if (!ok) return;
+  const pickedGroups = [...modalBody.querySelectorAll('[data-crm-group]:checked')].map(el => {
+    const gid = el.getAttribute('data-crm-group');
+    return { groupId: gid, name: (state.groups || []).find(g => g.groupId === gid)?.name || gid };
+  });
   const name = document.getElementById('crmFName')?.value.trim();
   if (!name) { showToast(t('Tên là bắt buộc', 'Name is required'), 'error'); return; }
   try {
@@ -4606,13 +4703,108 @@ async function crmContactModal(contact) {
       phone: document.getElementById('crmFPhone').value.trim(),
       source: document.getElementById('crmFSource').value.trim(),
       notes: document.getElementById('crmFNotes').value,
-      zaloUid: contact?.zalo_uid,
+      zaloUid: draft.zaloUid || null,
     });
     const tags = document.getElementById('crmFTags').value.split(',').map(s => s.trim()).filter(Boolean);
     await crmAction('crm-contact-tags', { id: saved.id, tags });
+    await crmAction('crm-contact-groups', { id: saved.id, groups: pickedGroups });
     showToast(t('Đã lưu khách hàng', 'Contact saved'), 'success');
     renderCrmContacts();
   } catch (err) { showToast(err.message, 'error'); }
+}
+
+// ── Bộ chọn người Zalo dùng chung ─────────────────────────────────────────────────────────────
+// Vì sao CRM trước đây "không có giá trị": form khách hàng chỉ gõ tay, nên contact mới KHÔNG BAO GIỜ
+// có `zalo_uid` — mất luôn khả năng nối về sau (mở lịch sử chat, biết ở nhóm nào). Bộ chọn này lấy
+// người từ dữ liệu bot ĐANG CÓ.
+//
+// Hiển thị theo TÊN nhưng lưu `uid`: tên Zalo trùng nhau và đổi được, nối theo tên sẽ sai âm thầm.
+
+/** Các nhóm mà một uid đang có mặt, lấy từ state.members. */
+function crmPersonGroups(uid) {
+  const membersMap = (state && state.members) || {};
+  const out = [];
+  for (const groupId of Object.keys(membersMap)) {
+    if (!membersMap[groupId]?.[uid]) continue;
+    out.push({ groupId, name: (state.groups || []).find(g => g.groupId === groupId)?.name || groupId });
+  }
+  return out;
+}
+
+/** Gộp member mọi nhóm thành danh sách người, kèm các nhóm họ đang ở. */
+function crmZaloPeople() {
+  const membersMap = (state && state.members) || {};
+  const byUid = new Map();
+  for (const groupId of Object.keys(membersMap)) {
+    const gname = (state.groups || []).find(g => g.groupId === groupId)?.name || groupId;
+    for (const [uid, raw] of Object.entries(membersMap[groupId] || {})) {
+      const name = raw?.name || raw?.displayName || raw?.dName || raw?.zaloName || '';
+      if (!uid || !name) continue;
+      const cur = byUid.get(uid) || {
+        uid, name, avatar: raw?.avatar || raw?.avatarUrl || raw?.avatar_url || raw?.photo || '', groups: [],
+      };
+      if (!cur.groups.some(g => g.groupId === groupId)) cur.groups.push({ groupId, name: gname });
+      byUid.set(uid, cur);
+    }
+  }
+  return [...byUid.values()].sort((a, b) => a.name.localeCompare(b.name, 'vi'));
+}
+
+/** Một dòng người trong bộ chọn — tên to, các nhóm đang ở nhỏ bên dưới. */
+function crmPersonRowHtml(p) {
+  return `<button type="button" data-crm-pick="${crmEsc(p.uid)}" class="crm-pick-row">
+    ${p.avatar
+      ? `<img src="${crmEsc(p.avatar)}" alt="" class="crm-pick-ava"/>`
+      : `<span class="crm-pick-ava crm-pick-ava-empty">${crmEsc(p.name.slice(0, 1).toUpperCase())}</span>`}
+    <span style="flex:1;min-width:0;text-align:left">
+      <span style="display:block;font-weight:600;font-size:13.5px">${crmEsc(p.name)}</span>
+      <span style="display:block;font-size:11.5px;opacity:.65;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+        ${p.groups.length} ${t('nhóm', 'groups')} · ${crmEsc(p.groups.map(g => g.name).join(', '))}</span>
+    </span></button>`;
+}
+
+/**
+ * Bộ chọn người dạng INLINE, không phải modal riêng.
+ *
+ * `openModal` dùng một biến `modalResolve` toàn cục, nên mở modal lồng nhau sẽ ghi đè nó và promise
+ * của modal ngoài treo mãi không resolve. Đặt bộ chọn ngay trong form vừa tránh hẳn lỗi đó, vừa đỡ
+ * cho owner một nhịp bấm.
+ */
+function crmPersonPickerHtml() {
+  const people = crmZaloPeople();
+  if (!people.length) {
+    return `<div class="item-sub" style="font-size:12px">${t(
+      'Chưa có member nào trong state — mở trang Thành viên để sync trước.',
+      'No members in state — open the Members page to sync first.')}</div>`;
+  }
+  return `<input type="search" data-crm-pick-q placeholder="${t('Gõ tên (không dấu cũng được)', 'Type a name')}"
+      style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font-size:13px;margin-bottom:6px"/>
+    <div data-crm-pick-list style="max-height:190px;overflow:auto;display:flex;flex-direction:column;gap:4px">
+      ${people.slice(0, 50).map(crmPersonRowHtml).join('')}</div>
+    <div class="item-sub" style="margin-top:5px;font-size:11px">${t(
+      `${people.length} người từ các nhóm bot đang theo · lưu theo uid, không theo tên`,
+      `${people.length} people from followed groups · linked by uid, not by name`)}</div>`;
+}
+
+/** Ô chọn nhiều nhóm — dùng đúng danh sách nhóm bot đang theo, không gõ tay groupId. */
+function crmGroupChecklist(selectedIds = []) {
+  const groups = (state.groups || []).slice().sort((a, b) => String(a.name).localeCompare(String(b.name), 'vi'));
+  if (!groups.length) return `<div class="item-sub">${t('Chưa có nhóm nào trong state.', 'No groups in state.')}</div>`;
+  const sel = new Set(selectedIds.map(String));
+  return `<div style="max-height:150px;overflow:auto;border:1px solid var(--line);border-radius:9px;padding:6px;background:var(--surface-2)">
+    ${groups.map(g => `<label style="display:flex;align-items:center;gap:8px;padding:4px 6px;border-radius:6px;cursor:pointer;font-size:13px">
+      <input type="checkbox" data-crm-group="${crmEsc(g.groupId)}" ${sel.has(String(g.groupId)) ? 'checked' : ''}/>
+      <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${crmEsc(g.name)}</span>
+    </label>`).join('')}</div>`;
+}
+
+/** Một <select> nhóm cho lead/task — chỉ chọn được MỘT nhóm nên dùng select, không dùng checklist. */
+function crmGroupSelect(id, current = '') {
+  const groups = (state.groups || []).slice().sort((a, b) => String(a.name).localeCompare(String(b.name), 'vi'));
+  return `<select id="${id}">
+    <option value="">${t('— không gắn nhóm —', '— no group —')}</option>
+    ${groups.map(g => `<option value="${crmEsc(g.groupId)}" ${String(current) === String(g.groupId) ? 'selected' : ''}>${crmEsc(g.name)}</option>`).join('')}
+  </select>`;
 }
 
 async function crmImportFromZalo() {
@@ -4628,6 +4820,9 @@ async function crmImportFromZalo() {
         name,
         avatar: raw?.avatar || raw?.avatarUrl || raw?.avatar_url || raw?.photo || '',
         source: 'zalo-group',
+        // Nối luôn nhóm — trước đây import xong khách nằm rời, không biết đến từ nhóm nào, nên CRM
+        // không dùng được chính dữ liệu bot đã có.
+        groups: crmPersonGroups(uid),
       });
     }
   }
@@ -4792,6 +4987,8 @@ async function crmLeadModal(lead) {
         <input type="number" min="0" id="crmLValue" value="${crmEsc(lead?.value ?? 0)}"></label>
       <label class="crm-field"><span>${t('Khách hàng', 'Contact')}</span>
         <select id="crmLContact">${contactOptions}</select></label>
+      <label class="crm-field"><span>${t('Nhóm Zalo', 'Zalo group')}</span>
+        ${crmGroupSelect('crmLGroup', lead?.group_id)}</label>
       <label class="crm-field"><span>${t('Sản phẩm', 'Product')}</span>
         <input type="text" id="crmLProduct" value="${crmEsc(lead?.product ?? '')}"></label>
       <label class="crm-field"><span>${t('Người phụ trách', 'Assignee')}</span>
@@ -4811,6 +5008,7 @@ async function crmLeadModal(lead) {
     title: document.getElementById('crmLTitle')?.value.trim(),
     value: Number(document.getElementById('crmLValue')?.value || 0),
     contactId: document.getElementById('crmLContact')?.value || null,
+    groupId: document.getElementById('crmLGroup')?.value || null,
     product: document.getElementById('crmLProduct')?.value.trim(),
     assignee: document.getElementById('crmLAssignee')?.value.trim(),
     nextAction: document.getElementById('crmLNext')?.value.trim(),
@@ -4937,6 +5135,8 @@ async function crmTaskModal() {
         <input type="datetime-local" id="crmTDue"></label>
       <label class="crm-field"><span>${t('Khách hàng', 'Contact')}</span>
         <select id="crmTContact">${contactOptions}</select></label>
+      <label class="crm-field"><span>${t('Nhóm Zalo', 'Zalo group')}</span>
+        ${crmGroupSelect('crmTGroup')}</label>
       <label class="crm-field"><span>${t('Ghi chú', 'Note')}</span>
         <textarea id="crmTNote" rows="2"></textarea></label>
     </div>`,
@@ -4951,6 +5151,7 @@ async function crmTaskModal() {
       title,
       dueAt: dueRaw ? new Date(dueRaw).getTime() : null,
       contactId: document.getElementById('crmTContact')?.value || null,
+      groupId: document.getElementById('crmTGroup')?.value || null,
       note: document.getElementById('crmTNote')?.value || '',
     });
     showToast(t('Đã tạo công việc', 'Task created'), 'success');

@@ -84,7 +84,12 @@ const STATE_STUB = {
     license: { isPro: true, canBulk: true, canMultiBot: false, tier: 'pro', plan: 'personal', expiry: '2026-08-18', isTrial: true },
     bot: { botName: 'DevBot', ownerId: '', ownerName: 'Owner', profile: 'default' },
     bots: [{ profile: 'default', botName: 'DevBot', avatar: '' }],
-    groups: [],
+    // Có nhóm thật + người ở NHIỀU nhóm (uid-1002) để thử phần nối CRM ↔ nhóm.
+    groups: [
+        { groupId: 'group-demo', name: 'ASA 7881 - [ORDER TQ] ME ME' },
+        { groupId: 'group-kt', name: '237.KẾ TOÁN ASA-VNLOGS' },
+        { groupId: 'group-x3', name: 'X3 Diamond_ Gia đình Kim Cương X3' },
+    ],
     friends: [], pendingByGroup: {}, warnings: {}, violations: {},
     members: {
         'group-demo': {
@@ -92,6 +97,10 @@ const STATE_STUB = {
             'uid-1002': { name: 'Trần Thị Bích', avatar: '' },
             'uid-1003': { name: 'Lê Minh Châu', avatar: '' },
             'uid-1004': { name: 'Phạm Quốc Dũng', avatar: '' },
+        },
+        'group-kt': {
+            'uid-1002': { name: 'Trần Thị Bích', avatar: '' },
+            'uid-2001': { name: 'Đặng Đình Đạt', avatar: '' },
         },
     },
     settings: {}, permissions: {}, reports: [], apis: [], audit: [], templates: {},

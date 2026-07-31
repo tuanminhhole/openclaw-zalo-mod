@@ -128,6 +128,30 @@ export const MIGRATIONS = [
             );
         `,
     },
+    {
+        version: 3,
+        name: 'crm-group-links',
+        // CRM v2 không có đường nào trỏ tới NHÓM Zalo: khách hàng, deal, việc đều đứng rời khỏi thứ
+        // duy nhất bot đang quan sát được. Nên nó chỉ là một sổ tay gõ tay, không dùng được dữ liệu
+        // sẵn có. Bảng nối riêng (không phải cột trên contacts) vì một khách có mặt ở NHIỀU nhóm.
+        //
+        // `group_name` là bản sao có chủ ý: CRM phải hiển thị được tên nhóm kể cả khi danh sách nhóm
+        // chưa nạp hoặc bot đã rời nhóm đó. Nó là nhãn tại thời điểm nối, làm mới mỗi lần nối lại.
+        sql: `
+            CREATE TABLE IF NOT EXISTS contact_groups (
+                contact_id TEXT NOT NULL,
+                group_id TEXT NOT NULL,
+                group_name TEXT,
+                linked_at INTEGER NOT NULL,
+                PRIMARY KEY (contact_id, group_id)
+            );
+            CREATE INDEX IF NOT EXISTS idx_contact_groups_group ON contact_groups(group_id);
+            ALTER TABLE leads ADD COLUMN group_id TEXT;
+            ALTER TABLE tasks ADD COLUMN group_id TEXT;
+            CREATE INDEX IF NOT EXISTS idx_leads_group ON leads(group_id);
+            CREATE INDEX IF NOT EXISTS idx_tasks_group ON tasks(group_id);
+        `,
+    },
 ];
 
 /**

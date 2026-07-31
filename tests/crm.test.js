@@ -239,3 +239,117 @@ test('handleCrmAction: happy path + lỗi 400/404/503 + action lạ', (t) => {
 
     assert.ok(CRM_ACTIONS.length >= 15);
 });
+
+// ── Nối khách hàng ↔ nhóm Zalo ────────────────────────────────────────────
+// Vì sao CRM v2 vô dụng với owner: không có đường nào trỏ tới NHÓM Zalo, nên khách hàng đứng rời
+// khỏi thứ duy nhất bot đang quan sát. Và form chỉ gõ tay nên contact mới không có `zalo_uid` →
+// không bao giờ nối lại được.
+
+test('nhóm: nối, đọc lại, và replace bỏ được nhóm đã nối sai', (t) => {
+    const { crm, close } = makeCrm();
+    t.after(close);
+    const c = crm.upsertContact({ displayName: 'Chị Lê', zaloUid: 'uid-le' });
+
+    crm.setContactGroups(c.id, [
+        { groupId: 'g1', name: 'ASA 7570' },
+        { groupId: 'g2', name: 'ASACHINA ZALO' },
+    ]);
+    assert.deepEqual(crm.getContact(c.id).groups.map(g => g.groupId).sort(), ['g1', 'g2']);
+
+    // Replace, KHÔNG merge — bỏ tick trên UI phải bỏ liên kết thật.
+    crm.setContactGroups(c.id, [{ groupId: 'g2', name: 'ASACHINA ZALO' }]);
+    assert.deepEqual(crm.getContact(c.id).groups.map(g => g.groupId), ['g2']);
+
+    crm.setContactGroups(c.id, []);
+    assert.deepEqual(crm.getContact(c.id).groups, []);
+});
+
+test('nhóm: groupId rỗng bị bỏ, chuỗi thuần cũng nhận được', (t) => {
+    const { crm, close } = makeCrm();
+    t.after(close);
+    const c = crm.upsertContact({ displayName: 'X' });
+    crm.setContactGroups(c.id, ['g9', '', null, { groupId: '  ', name: 'rác' }, { groupId: 'g8', name: 'Tám' }]);
+    assert.deepEqual(crm.getContact(c.id).groups.map(g => g.groupId).sort(), ['g8', 'g9']);
+});
+
+test('nhóm: khách không tồn tại thì báo lỗi, không ghi mồ côi', (t) => {
+    const { crm, close } = makeCrm();
+    t.after(close);
+    assert.throws(() => crm.setContactGroups('khong-co', [{ groupId: 'g1' }]), /không tồn tại/i);
+});
+
+test('listContactsByGroup: mở nhóm ra thấy ai trong đó đã là khách', (t) => {
+    const { crm, close } = makeCrm();
+    t.after(close);
+    const a = crm.upsertContact({ displayName: 'A', zaloUid: 'u-a' });
+    const b = crm.upsertContact({ displayName: 'B', zaloUid: 'u-b' });
+    crm.upsertContact({ displayName: 'C', zaloUid: 'u-c' });
+    crm.setContactGroups(a.id, [{ groupId: 'g1', name: 'Nhóm 1' }]);
+    crm.setContactGroups(b.id, [{ groupId: 'g1', name: 'Nhóm 1' }, { groupId: 'g2', name: 'Nhóm 2' }]);
+    assert.deepEqual(crm.listContactsByGroup('g1').map(c => c.display_name), ['A', 'B']);
+    assert.deepEqual(crm.listContactsByGroup('g2').map(c => c.display_name), ['B']);
+    assert.deepEqual(crm.listContactsByGroup('g-trong'), []);
+});
+
+test('listContacts: lọc theo nhóm và theo đã-nối-Zalo hay chưa', (t) => {
+    const { crm, close } = makeCrm();
+    t.after(close);
+    const linked = crm.upsertContact({ displayName: 'Có uid', zaloUid: 'u-1' });
+    crm.upsertContact({ displayName: 'Gõ tay' }); // không uid → không mở được lịch sử chat
+    crm.setContactGroups(linked.id, [{ groupId: 'g1', name: 'Nhóm 1' }]);
+
+    assert.deepEqual(crm.listContacts({ groupId: 'g1' }).contacts.map(c => c.display_name), ['Có uid']);
+    assert.deepEqual(crm.listContacts({ linked: 'only' }).contacts.map(c => c.display_name), ['Có uid']);
+    assert.deepEqual(crm.listContacts({ linked: 'none' }).contacts.map(c => c.display_name), ['Gõ tay']);
+    assert.equal(crm.listContacts({}).total, 2);
+});
+
+test('importMembers nối luôn nhóm, và import lại KHÔNG mất nhóm cũ', (t) => {
+    const { crm, close } = makeCrm();
+    t.after(close);
+    const r1 = crm.importMembers([
+        { uid: 'u-1', name: 'Người Một', groups: [{ groupId: 'g1', name: 'Nhóm 1' }] },
+    ]);
+    assert.equal(r1.created, 1);
+    const c = crm.listContacts({}).contacts[0];
+    assert.deepEqual(c.groups.map(g => g.groupId), ['g1']);
+
+    // Import lần hai từ nhóm KHÁC: phải gộp, không xoá g1.
+    const r2 = crm.importMembers([
+        { uid: 'u-1', name: 'Người Một', groups: [{ groupId: 'g2', name: 'Nhóm 2' }] },
+    ]);
+    assert.equal(r2.updated, 1);
+    assert.equal(r2.created, 0, 'cùng uid thì không nhân đôi');
+    assert.deepEqual(crm.getContact(c.id).groups.map(g => g.groupId).sort(), ['g1', 'g2']);
+});
+
+test('lead và task gắn được nhóm Zalo, sửa và bỏ gắn được', (t) => {
+    const { crm, close } = makeCrm();
+    t.after(close);
+    const lead = crm.createLead({ title: 'Đơn Mai Anh', groupId: 'g7' });
+    assert.equal(lead.group_id, 'g7');
+    assert.equal(crm.updateLead(lead.id, { groupId: 'g8' }).group_id, 'g8');
+    assert.equal(crm.updateLead(lead.id, { groupId: '' }).group_id, null, 'bỏ gắn nhóm được');
+    assert.equal(crm.updateLead(lead.id, { title: 'Đổi tên' }).group_id, null, 'không truyền groupId thì giữ nguyên');
+
+    const task = crm.createTask({ title: 'Gọi khách', groupId: 'g7' });
+    assert.equal(task.group_id, 'g7');
+    assert.equal(crm.createTask({ title: 'Không nhóm' }).group_id, null);
+});
+
+test('API: crm-contact-groups và crm-contacts-by-group đi qua handler', (t) => {
+    const { crm, close } = makeCrm();
+    t.after(close);
+    const c = crm.upsertContact({ displayName: 'Qua API', zaloUid: 'u-api' });
+    const r = handleCrmAction(crm, 'crm-contact-groups', { id: c.id, groups: [{ groupId: 'g1', name: 'Nhóm 1' }] }, 'owner');
+    assert.equal(r.status, 200);
+    assert.deepEqual(r.body.data.groups.map(g => g.groupId), ['g1']);
+    const list = handleCrmAction(crm, 'crm-contacts-by-group', { groupId: 'g1' }, 'owner');
+    assert.equal(list.status, 200);
+    assert.deepEqual(list.body.data.contacts.map(x => x.display_name), ['Qua API']);
+    assert.ok(CRM_ACTIONS.includes('crm-contact-groups'));
+
+    // Khách không tồn tại là lỗi NHẬP LIỆU → phải 400, không phải 500.
+    const bad = handleCrmAction(crm, 'crm-contact-groups', { id: 'khong-co', groups: [] }, 'owner');
+    assert.equal(bad.status, 400);
+});

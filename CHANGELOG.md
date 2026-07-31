@@ -1,4 +1,8 @@
-## [2.23.0] - 2026-07-31
+## [2.24.0] - 2026-07-31
+
+> Số 2.23.0 đã bị tag và push nhưng **chưa bao giờ publish được** — ClawHub Plugin Inspector
+> hỏng phía họ (`ENOENT: mkdir '/home/sbx_user1051'`) chặn publish, script release chạy lại nên
+> bump tiếp lên 2.24.0. Nội dung hai bản y hệt nhau; 2.23.0 coi như bỏ.
 
 ### Added
 - **Lưu lại bản báo cáo ĐÃ GỬI + trang "Nhật ký → Lịch sử báo cáo".** Owner hỏi *"sáng nay bot gửi gì"* và không có chỗ nào xem: gateway chat không hiện tin do plugin gửi, còn digest thì tính lúc chạy rồi thả đi. Nay mỗi lần gửi ghi lại **đúng chuỗi đã gửi** kèm giờ gửi, ngày nội dung, phạm vi nhóm, đích nhận và số ký tự vào `report-sent/<ngày gửi>.json`, giữ 90 ngày (prune bằng cách xoá nguyên file theo ngày).

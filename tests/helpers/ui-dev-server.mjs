@@ -25,6 +25,33 @@ const DB_PATH = process.argv[3] || path.join(os.tmpdir(), 'zalo-mod-crm-dev.db')
 const TOKEN = 'openclaw-zalo-mod';
 
 // Fixture cho trang "Lịch báo cáo" — vài nhóm + 2 lịch để xem UI ở cả hai kiểu.
+// Lịch sử báo cáo đã gửi — đủ đa dạng để thử mọi trục lọc: 2 loại, 2 lịch, nhiều nhóm, có bản
+// "Gửi thử", có bản nhiều phần, và trải nhiều ngày để lọc theo thời gian có tác dụng.
+const dayAgo = (n) => new Date(Date.now() - n * 86400000).toISOString();
+const dstr = (n) => dayAgo(n).slice(0, 10);
+const DEV_REPORT_SENT = [
+    { id: 's1', jobId: 'job-1', jobName: 'Tổng hợp ASA cuối ngày', kind: 'digest', reportFor: 'yesterday',
+      date: dstr(1), time: '08:00', trigger: 'schedule', sentAt: dayAgo(0), sentDate: dstr(0),
+      scope: [{ groupId: 'g1', name: 'Vọc Tech Không Cọc' }, { groupId: 'g2', name: 'ASA 7881 - [ORDER TQ] ME ME' }],
+      targets: [{ type: 'group', id: 'g4', name: 'ASACHINA ZALO' }], chars: 420,
+      texts: ['📊 TỔNG HỢP ' + dstr(1) + ' · 2 nhóm · 39 tin\n\n📋 Vọc Tech Không Cọc — 10 tin\n  • Cần kiểm tra mã vận đơn 1371101854581 tại kho.\n\n📋 ASA 7881 — 4 tin\n  • Phí ship thanh toán gộp một lượt.'] },
+    { id: 's2', jobId: 'job-2', jobName: 'Nội bộ — báo cáo lẻ', kind: 'group', reportFor: 'today',
+      date: dstr(0), time: '18:00', trigger: 'manual', sentAt: dayAgo(0), sentDate: dstr(0),
+      scope: [{ groupId: 'g3', name: 'ASA Điều hành' }],
+      targets: [{ type: 'dm', id: 'o1', name: 'DM owner' }], chars: 160,
+      texts: ['📋 ASA Điều hành — ' + dstr(0) + '\n  • Chốt lịch họp tuần.'] },
+    { id: 's3', jobId: 'job-1', jobName: 'Tổng hợp ASA cuối ngày', kind: 'digest', reportFor: 'yesterday',
+      date: dstr(4), time: '08:00', trigger: 'schedule', sentAt: dayAgo(3), sentDate: dstr(3),
+      scope: [{ groupId: 'g5', name: '237.KẾ TOÁN ASA-VNLOGS' }],
+      targets: [{ type: 'group', id: 'g4', name: 'ASACHINA ZALO' }], chars: 300,
+      texts: ['📊 TỔNG HỢP ' + dstr(4) + ' · phần 1', '📊 TỔNG HỢP ' + dstr(4) + ' · phần 2 (tiếp)'] },
+    { id: 's4', jobId: 'job-1', jobName: 'Tổng hợp ASA cuối ngày', kind: 'digest', reportFor: 'yesterday',
+      date: dstr(21), time: '08:00', trigger: 'schedule', sentAt: dayAgo(20), sentDate: dstr(20),
+      scope: [{ groupId: 'g6', name: 'ASA Thiên Hà- AS2741' }],
+      targets: [{ type: 'group', id: 'g4', name: 'ASACHINA ZALO' }], chars: 90,
+      texts: ['📊 TỔNG HỢP ' + dstr(21) + ' · 1 nhóm · 5 tin'] },
+];
+
 const DEV_REPORT_JOBS = {
     jobs: [
         { id: 'job-1', name: 'Tổng hợp ASA cuối ngày', enabled: true, kind: 'digest', groups: '*', time: '22:30',
@@ -110,6 +137,9 @@ const server = http.createServer(async (req, res) => {
                 return send(res, 200, { ok: true, result: r.body.data, state: STATE_STUB });
             }
             // Lịch báo cáo: stub có dữ liệu thật-như-thật để dựng UI được (stub rỗng thì trang trắng).
+            if (action === 'report-sent') {
+                return send(res, 200, { ok: true, result: { ok: true, entries: DEV_REPORT_SENT, keepDays: 90 }, state: STATE_STUB });
+            }
             if (action === 'report-jobs') {
                 return send(res, 200, { ok: true, result: DEV_REPORT_JOBS, state: STATE_STUB });
             }

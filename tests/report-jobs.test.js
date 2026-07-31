@@ -319,3 +319,30 @@ test('scheduler không ném lỗi ngầm — warns rỗng ở đường chạy b
     });
     assert.deepEqual(r.warns, [], 'có warn tức là runReportJob ném lỗi và bị try/catch nuốt');
 });
+
+// ── Lưu bản đã gửi ────────────────────────────────────────────────────────────────────────────
+// Owner hỏi "sáng nay bot gửi gì" và không có chỗ nào xem: gateway chat không hiện tin do plugin
+// gửi, digest thì tính lúc chạy rồi thả đi. Phải lưu ĐÚNG chuỗi đã gửi, không phải dựng lại —
+// dựng lại sau khi đổi danh sách nhóm sẽ ra kết quả khác bản thật.
+const reportDeliveryTargets = new Function('groupNames', 'ownerId', 'getBotConfig', `
+    ${extract('reportDeliveryTargets')}
+    return reportDeliveryTargets;
+`)({ g1: { name: 'Nhóm Một' }, g4: { name: 'ASACHINA ZALO' } }, 'owner-1', () => ({}));
+
+test('đích gửi ghi lại tên nhóm thật, không bắt owner suy từ groupId', () => {
+    const t = reportDeliveryTargets({ deliver: { ownerDm: false, eachGroup: false, groups: ['g4'] } });
+    assert.deepEqual(t, [{ type: 'group', id: 'g4', name: 'ASACHINA ZALO' }]);
+});
+
+test('đích gửi gồm cả DM owner và chính nhóm, đúng thứ tự đã gửi', () => {
+    const t = reportDeliveryTargets(
+        { deliver: { ownerDm: true, eachGroup: true, groups: ['g4'] } }, 'g1');
+    assert.deepEqual(t.map(x => x.type), ['group', 'dm', 'group']);
+    assert.equal(t[0].name, 'Nhóm Một', 'eachGroup phải là chính nhóm đang báo cáo');
+    assert.equal(t[2].name, 'ASACHINA ZALO');
+});
+
+test('groupId lạ thì vẫn ghi lại được, lấy id làm tên thay vì rỗng', () => {
+    const t = reportDeliveryTargets({ deliver: { ownerDm: false, eachGroup: false, groups: ['g-la'] } });
+    assert.equal(t[0].name, 'g-la');
+});

@@ -1,3 +1,21 @@
+## [2.23.0] - 2026-07-31
+
+### Added
+- **Lưu lại bản báo cáo ĐÃ GỬI + trang "Nhật ký → Lịch sử báo cáo".** Owner hỏi *"sáng nay bot gửi gì"* và không có chỗ nào xem: gateway chat không hiện tin do plugin gửi, còn digest thì tính lúc chạy rồi thả đi. Nay mỗi lần gửi ghi lại **đúng chuỗi đã gửi** kèm giờ gửi, ngày nội dung, phạm vi nhóm, đích nhận và số ký tự vào `report-sent/<ngày gửi>.json`, giữ 90 ngày (prune bằng cách xoá nguyên file theo ngày).
+
+  Cố ý lưu bản thật thay vì để owner bấm "Xem trước" lại: nếu sau này đổi danh sách nhóm thì dựng lại sẽ ra kết quả **khác** bản đã gửi. Bản "Gửi thử" được đánh dấu `trigger: manual` để phân biệt với lịch tự chạy. Ghi lịch sử hỏng thì chỉ log warn — **không được** làm hỏng việc gửi.
+- **Trang lịch sử có cột lọc theo 4 trục** owner cần: thời gian (hôm nay / 7 / 30 ngày / tất cả), loại báo cáo, theo lịch, và "có chứa nhóm X" — cộng ô tìm trong nội dung. Bấm vào xem nguyên văn, tin nhiều phần hiện rõ "Tin 1/2", "Tin 2/2".
+- **Bot đọc được lịch sử** qua action chỉ-đọc `report-sent`, nên hỏi "sáng nay gửi gì" thì nó trả lời bằng bản đã lưu chứ không dựng lại.
+
+### Fixed
+- **Tìm không dấu bỏ sót chữ `đ`.** `NFD` không tách `đ` thành `d` + dấu (nó không phải dấu tổ hợp), nên "van don" không bao giờ khớp "vận đơn" trong khi "tong hop" vẫn khớp "Tổng Hợp" — kiểu lỗi lúc được lúc không, rất khó nhận ra. Thêm bước thay `đ→d` sau khi hạ chữ.
+- **Ô tìm kiếm không bị mất con trỏ.** Lọc theo từng phím mà vẽ lại cả trang thì input bị thay mới, gõ được đúng một ký tự; nay chỉ vẽ lại phần danh sách.
+- **Cột lọc không còn đứng lẻ loi trên mobile.** `max-width` inline chặn luôn cả khi đã xuống dòng, nên phải là media query thật (`.rlog-side` trong dashboard.css): desktop 214px cạnh danh sách, dưới 720px chiếm trọn chiều ngang.
+
+### Notes
+- 235 test xanh (thêm 3 cho việc ghi đích gửi). Bộ lọc kiểm trên trình duyệt thật: 4 trục lọc + giao nhau giữa các trục + tìm có dấu/không dấu + giữ con trỏ + xem bản nhiều phần, ở cả desktop và mobile 375px.
+- **Bài học:** tính năng gửi đi mà không lưu lại thì owner không có cách nào kiểm chứng, và khi nghi ngờ sẽ nghĩ là bot bịa. Cái gì bot gửi thay mặt owner thì phải xem lại được.
+
 ## [2.22.1] - 2026-07-31
 
 ### Changed

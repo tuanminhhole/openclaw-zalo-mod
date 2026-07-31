@@ -45,6 +45,9 @@ export const AGENT_SAFE_ACTIONS = Object.freeze([
     // chỉ tới các đích đã cấu hình sẵn trong lịch, không nhận đích tuỳ ý từ agent.
     // `report-job-save` sửa MỘT PHẦN (gửi {id, time} là đủ) và vẫn qua đúng kiểm tra hợp lệ như dashboard.
     'report-jobs', 'report-digest-preview', 'report-job-run', 'report-job-save',
+    // `report-sent` chỉ đọc lịch sử đã gửi — để owner hỏi "sáng nay bot gửi gì" thì bot đọc được
+    // đúng bản đã gửi, thay vì dựng lại (dựng lại ra kết quả khác nếu lịch đã đổi từ lúc đó).
+    'report-sent',
     // XOÁ lịch cũng cho, nhưng phanh là bước XÁC NHẬN HAI NHỊP trong `zalo_mod_reports`
     // (operation="delete" không kèm confirm=true thì chỉ trả về sẽ xoá gì rồi bắt hỏi lại owner),
     // KHÔNG phải cờ `allowDestructive`. Cờ đó mở kèm remove-user/block-member/leave-group —

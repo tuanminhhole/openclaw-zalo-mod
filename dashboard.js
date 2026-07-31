@@ -10,7 +10,7 @@ const modalBody = document.getElementById('modalBody');
 const modalCancel = document.getElementById('modalCancel');
 const modalConfirm = document.getElementById('modalConfirm');
 const token = window.ZALO_DASHBOARD_TOKEN || '';
-const pluginVersion = '2.22.1';
+const pluginVersion = '2.23.0';
 let state = null;
 let activeGroupId = '';
 let lang = localStorage.getItem('zaloDashboardLang') || 'vi';
@@ -163,6 +163,7 @@ function setSection(id) {
   if (id === 'permissions') renderPermissions();
   if (id === 'journal') renderJournal();
   if (id === 'reports') renderReports();
+  if (id === 'reportlog') renderReportLog();
   if (id === 'settings') renderSettings();
   if (id === 'contacts') renderCrmContacts();
   if (id === 'leads') renderCrmLeads();
@@ -177,6 +178,7 @@ function refreshActiveOnDemandSection() {
     case 'permissions': renderPermissions(); break;
     case 'journal': renderJournal(); break;
     case 'reports': renderReports(); break;
+    case 'reportlog': renderReportLog(); break;
     case 'settings': renderSettings(); break;
     case 'contacts': renderCrmContacts(); break;
     case 'leads': renderCrmLeads(); break;
@@ -293,6 +295,7 @@ const NAV_LABELS = {
   members: ['Thành viên', 'Members'],
   journal: ['Theo nhóm', 'By group'],
   reports: ['Lịch báo cáo', 'Schedules'],
+  reportlog: ['Lịch sử báo cáo', 'Report log'],
   friends: ['Bạn bè', 'Friends'],
   messages: ['Tin nhắn', 'Messages'],
   templates: ['Template', 'Templates'],
@@ -4969,6 +4972,183 @@ async function reportsApi(action, payload) {
   return data.result;
 }
 
+// ── Lịch sử báo cáo ───────────────────────────────────────────────────────────────────────────
+// Owner hỏi "sáng nay bot gửi gì" và không có chỗ nào xem: gateway chat không hiện tin do plugin
+// gửi, còn digest thì tính lúc chạy rồi thả đi. Trang này đọc bản ĐÃ LƯU lúc gửi — khác với bấm
+// "Xem trước" lại, vì đổi danh sách nhóm về sau sẽ dựng ra kết quả khác bản đã gửi thật.
+const reportLogState = { entries: [], keepDays: 90, f: { range: '7', kind: '', jobId: '', groupId: '', q: '' } };
+
+async function renderReportLog() {
+  const body = document.getElementById('reportLogBody');
+  if (!body) return;
+  body.innerHTML = `<div class="item-sub">${uiText('Đang tải...', 'Loading...')}</div>`;
+  try {
+    const d = await reportsApi('report-sent', { days: 90 });
+    reportLogState.entries = d.entries || [];
+    reportLogState.keepDays = d.keepDays || 90;
+  } catch (e) {
+    body.innerHTML = `<div class="item-sub">${uiText('Lỗi tải lịch sử', 'Failed to load log')}: ${esc(e.message)}</div>`;
+    return;
+  }
+  reportLogRender();
+}
+
+/** Lọc theo đúng 4 trục owner cần: thời gian · loại · lịch · nhóm, cộng ô tìm trong nội dung. */
+function reportLogFiltered() {
+  const { range, kind, jobId, groupId, q } = reportLogState.f;
+  const needle = foldVi(q);
+  let cutoff = '';
+  if (range !== 'all') {
+    const d = new Date();
+    d.setUTCDate(d.getUTCDate() - (Number(range) - 1));
+    cutoff = d.toISOString().slice(0, 10);
+  }
+  return reportLogState.entries.filter((e) => {
+    if (cutoff && String(e.sentDate || '') < cutoff) return false;
+    if (kind && e.kind !== kind) return false;
+    if (jobId && e.jobId !== jobId) return false;
+    if (groupId && !(e.scope || []).some(g => g.groupId === groupId)) return false;
+    if (needle && !foldVi([(e.jobName || ''), (e.texts || []).join(' ')].join(' ')).includes(needle)) return false;
+    return true;
+  });
+}
+
+/**
+ * Bỏ dấu + hạ chữ — owner gõ "tong hop" phải tìm ra "Tổng Hợp".
+ *
+ * `đ` KHÔNG phải dấu tổ hợp nên `NFD` không tách nó: thiếu dòng thay `đ→d` thì "van don" không bao
+ * giờ khớp "vận đơn", trong khi "tong hop" vẫn khớp — kiểu lỗi tìm-kiếm-lúc-được-lúc-không.
+ */
+function foldVi(v) {
+  return String(v || '')
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/đ/g, 'd')
+    .trim();
+}
+
+function reportLogRender() {
+  const body = document.getElementById('reportLogBody');
+  if (!body) return;
+  const all = reportLogState.entries;
+  const rows = reportLogFiltered();
+  const jobs = [...new Map(all.map(e => [e.jobId, e.jobName])).entries()];
+  const groups = [...new Map(all.flatMap(e => (e.scope || []).map(g => [g.groupId, g.name]))).entries()]
+    .sort((a, b) => String(a[1]).localeCompare(String(b[1]), 'vi'));
+  const f = reportLogState.f;
+
+  const sel = (attr, cur, opts, allLabel) => `<select data-rlog="${attr}"
+    style="width:100%;padding:7px 9px;border-radius:8px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font-size:12.5px">
+    <option value="">${allLabel}</option>
+    ${opts.map(([v, l]) => `<option value="${esc(v)}" ${cur === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}
+  </select>`;
+  const fBlock = (label, inner) => `<div style="margin-bottom:12px">
+    <div style="font-size:11px;font-weight:650;letter-spacing:.03em;opacity:.6;margin-bottom:5px;text-transform:uppercase">${label}</div>${inner}</div>`;
+
+  // Bề ngang cột lọc do class `.rlog-side` trong dashboard.css quyết định (có media query): desktop
+  // 214px đứng cạnh danh sách, dưới 720px thì chiếm trọn chiều ngang. Inline style không làm được
+  // vì `max-width` chặn luôn cả khi đã xuống dòng.
+  const sidebar = `<aside class="rlog-side">
+    <div class="card" style="padding:14px">
+      ${fBlock(uiText('Thời gian', 'Time range'), sel('range', f.range, [
+        ['1', uiText('Hôm nay', 'Today')], ['7', uiText('7 ngày qua', 'Last 7 days')],
+        ['30', uiText('30 ngày qua', 'Last 30 days')], ['all', uiText('Tất cả', 'All')],
+      ], uiText('Tất cả', 'All')).replace('<option value=""', '<option value="all" hidden'))}
+      ${fBlock(uiText('Loại báo cáo', 'Type'), sel('kind', f.kind, [
+        ['digest', '📊 ' + uiText('Tổng hợp', 'Digest')], ['group', '📋 ' + uiText('Từng nhóm', 'Per group')],
+      ], uiText('Mọi loại', 'All types')))}
+      ${fBlock(uiText('Theo lịch', 'Schedule'), sel('jobId', f.jobId, jobs, uiText('Mọi lịch', 'All schedules')))}
+      ${fBlock(uiText('Có nhóm', 'Includes group'), sel('groupId', f.groupId, groups, uiText('Mọi nhóm', 'All groups')))}
+      ${fBlock(uiText('Tìm trong nội dung', 'Search text'), `<input type="search" data-rlog="q" value="${esc(f.q)}"
+        placeholder="${uiText('vd: mã vận đơn', 'e.g. tracking code')}"
+        style="width:100%;padding:7px 9px;border-radius:8px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font-size:12.5px"/>`)}
+      <button class="btn" type="button" data-rlog-reset style="width:100%;min-height:0;height:30px;font-size:12px">${uiText('Bỏ lọc', 'Clear filters')}</button>
+      <div id="reportLogCount" class="item-sub" style="margin-top:10px;font-size:11px;line-height:1.6">${uiText(
+        `Hiện ${rows.length}/${all.length} bản · lưu ${reportLogState.keepDays} ngày`,
+        `Showing ${rows.length}/${all.length} · kept ${reportLogState.keepDays} days`)}</div>
+    </div>
+  </aside>`;
+
+  body.innerHTML = `<div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap">
+    ${sidebar}
+    <div id="reportLogList" style="flex:1 1 380px;min-width:0;display:flex;flex-direction:column;gap:10px">${reportLogListHtml(rows, all.length)}</div>
+  </div>`;
+}
+
+function reportLogListHtml(rows, total) {
+  if (rows.length) return rows.map(reportLogCard).join('');
+  return `<div class="card" style="padding:22px;text-align:center">
+    <div style="font-size:14px;font-weight:600;margin-bottom:4px">${total
+      ? uiText('Không có bản nào khớp bộ lọc', 'No entries match these filters')
+      : uiText('Chưa có báo cáo nào được gửi', 'No reports sent yet')}</div>
+    <div class="item-sub">${total
+      ? uiText('Thử bỏ bớt điều kiện ở cột bên trái.', 'Try clearing some filters on the left.')
+      : uiText('Bản ghi được tạo từ lần gửi kế tiếp trở đi.', 'Entries appear from the next send onward.')}</div>
+  </div>`;
+}
+
+/**
+ * Vẽ lại CHỈ danh sách, giữ nguyên sidebar.
+ *
+ * Ô tìm kiếm lọc theo từng phím, mà vẽ lại cả trang thì input bị thay mới → mất con trỏ, gõ được
+ * đúng một ký tự. Nên phần đang được gõ phải đứng yên.
+ */
+function reportLogRenderList() {
+  const el = document.getElementById('reportLogList');
+  if (!el) return;
+  const rows = reportLogFiltered();
+  el.innerHTML = reportLogListHtml(rows, reportLogState.entries.length);
+  const counter = document.getElementById('reportLogCount');
+  if (counter) {
+    counter.textContent = uiText(
+      `Hiện ${rows.length}/${reportLogState.entries.length} bản · lưu ${reportLogState.keepDays} ngày`,
+      `Showing ${rows.length}/${reportLogState.entries.length} · kept ${reportLogState.keepDays} days`);
+  }
+}
+
+function reportLogCard(e) {
+  const isDigest = e.kind === 'digest';
+  const full = (e.texts || []).join('\n\n');
+  const preview = full.split('\n').slice(0, 3).join(' · ').slice(0, 150);
+  const when = `${String(e.sentAt || '').slice(0, 10)} ${String(e.sentAt || '').slice(11, 16)}`;
+  return `<div class="card" style="padding:13px 15px">
+    <div style="display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap">
+      <div style="flex:1 1 200px;min-width:0">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span style="font-weight:650;font-size:14px">${esc(e.jobName || e.jobId)}</span>
+          <span class="chip" style="background:${isDigest ? 'rgba(96,165,250,.16)' : 'rgba(148,163,184,.16)'}">
+            ${isDigest ? '📊 ' + uiText('Tổng hợp', 'Digest') : '📋 ' + uiText('Từng nhóm', 'Per group')}</span>
+          ${e.trigger === 'manual' ? `<span class="chip" style="background:rgba(251,191,36,.18)">${uiText('Gửi thử', 'Manual')}</span>` : ''}
+        </div>
+        <div class="item-sub" style="margin-top:6px;line-height:1.65">
+          ${uiText('Gửi', 'Sent')} <b>${esc(when)}</b> · ${uiText('nội dung ngày', 'covers')} <b>${esc(e.date || '')}</b>
+          · ${(e.scope || []).length} ${uiText('nhóm', 'groups')} · ${e.chars || 0} ${uiText('ký tự', 'chars')}
+          <br>${uiText('Tới', 'To')}: ${(e.targets || []).map(t => esc(t.name)).join(', ') || '—'}
+        </div>
+      </div>
+      <button class="btn" type="button" data-rlog-view="${esc(e.id)}"
+        style="min-height:0;height:28px;padding:0 10px;font-size:11.5px;white-space:nowrap;flex:none">${uiText('Xem nội dung', 'View')}</button>
+    </div>
+    <div class="item-sub" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--line);opacity:.8;font-size:12px">${esc(preview)}${full.length > 150 ? '…' : ''}</div>
+  </div>`;
+}
+
+function reportLogOpen(id) {
+  const e = reportLogState.entries.find(x => x.id === id);
+  if (!e) return;
+  const body = (e.texts || []).map((t, i) => `${(e.texts.length > 1)
+    ? `<div style="font-size:11.5px;font-weight:650;opacity:.6;margin:${i ? '14px' : '0'} 0 6px">${uiText('Tin', 'Message')} ${i + 1}/${e.texts.length}</div>` : ''}
+    <pre style="white-space:pre-wrap;word-break:break-word;margin:0;font-family:inherit;font-size:13px;line-height:1.65;
+      background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:12px">${esc(t)}</pre>`).join('');
+  openModal({
+    title: `${e.jobName || e.jobId} — ${e.date}`,
+    body: `<div class="item-sub" style="margin-bottom:10px">${uiText('Gửi lúc', 'Sent at')} ${esc(String(e.sentAt || '').replace('T', ' ').slice(0, 16))}
+      · ${uiText('tới', 'to')} ${(e.targets || []).map(t => esc(t.name)).join(', ') || '—'}</div>${body}`,
+    confirmText: uiText('Đóng', 'Close'),
+  });
+}
+
 async function renderReports() {
   const body = document.getElementById('reportsBody');
   if (!body) return;
@@ -5193,6 +5373,15 @@ document.addEventListener('click', async (ev) => {
   const t = ev.target;
   const hit = (attr) => t.closest?.(`[${attr}]`)?.getAttribute(attr);
 
+  const rlogView = hit('data-rlog-view');
+  if (rlogView) { reportLogOpen(rlogView); return; }
+  if (t.closest?.('[data-goto-reportlog]')) { setSection('reportlog'); return; }
+  if (t.closest?.('[data-rlog-reset]')) {
+    reportLogState.f = { range: '7', kind: '', jobId: '', groupId: '', q: '' };
+    reportLogRender();
+    return;
+  }
+
   if (t.closest?.('[data-action="report-job-new"]')) { await openReportEditor(newReportJob()); return; }
   if (t.closest?.('[data-goto-reports]')) { if (modalBackdrop.classList.contains('open')) modalResolve?.(false); setSection('reports'); return; }
 
@@ -5261,9 +5450,26 @@ document.addEventListener('click', async (ev) => {
   }
 });
 
+// Ô tìm trong lịch sử báo cáo lọc theo TỪNG PHÍM; `change` chỉ nổ khi blur nên phải nghe `input`.
+document.addEventListener('input', (ev) => {
+  if (ev.target?.getAttribute?.('data-rlog') !== 'q') return;
+  reportLogState.f.q = ev.target.value;
+  reportLogRenderList();
+});
+
 document.addEventListener('change', async (ev) => {
   const t = ev.target;
   const d = reportsState.draft;
+
+  // Bộ lọc lịch sử báo cáo — lọc ngay ở client (mỗi ngày vài bản ghi) nên không gọi lại server.
+  const rlogKey = t.getAttribute?.('data-rlog');
+  if (rlogKey) {
+    reportLogState.f[rlogKey] = t.value;
+    // Đổi <select> thì vẽ lại cả trang (danh sách nhóm/lịch trong sidebar không đổi nên an toàn);
+    // riêng ô tìm kiếm chỉ vẽ lại danh sách để không cướp con trỏ.
+    if (rlogKey === 'q') reportLogRenderList(); else reportLogRender();
+    return;
+  }
 
   const toggleId = t.getAttribute?.('data-report-toggle');
   if (toggleId) {

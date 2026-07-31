@@ -5639,3 +5639,11 @@ textarea:focus {
 .report-time-field input[type="time"]::-webkit-calendar-picker-indicator {
   display: none;              /* đã có icon đồng hồ riêng bên trái */
 }
+
+/* Cột lọc của Lịch sử báo cáo — desktop đứng cạnh danh sách, màn hẹp thì chiếm trọn chiều ngang.
+   Không ép được bằng inline style: `max-width` chặn luôn cả lúc đã xuống dòng, nên cột lọc đứng
+   lẻ loi rộng 260px cạnh khoảng trống. Phải là media query thật. */
+.rlog-side { flex: 0 0 214px; min-width: 0; }
+@media (max-width: 720px) {
+  .rlog-side { flex: 1 1 100%; }
+}

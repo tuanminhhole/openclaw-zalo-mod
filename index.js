@@ -2761,19 +2761,80 @@ Quy tắc:
             }
         }
 
+        const SENT_KEEP_DAYS = 90;
+
+        /** Thư mục lưu bản báo cáo ĐÃ GỬI, tách theo ngày gửi để prune bằng cách xoá cả file. */
+        function reportSentDir() { return path.join(dataDir, 'report-sent'); }
+
+        /**
+         * Ghi lại ĐÚNG chuỗi đã gửi đi.
+         *
+         * Không dựng lại được từ đâu khác: digest tính lúc chạy rồi thả đi, mà nếu sau này owner đổi
+         * danh sách nhóm thì dựng lại sẽ ra kết quả KHÁC bản đã gửi. Owner hỏi "sáng nay bot gửi gì"
+         * mà không có chỗ nào xem là mất niềm tin vào cả tính năng.
+         */
+        async function recordReportSent(rec) {
+            try {
+                const sentDate = vnDateStr();
+                const dir = reportSentDir();
+                await fs.mkdir(dir, { recursive: true });
+                const file = path.join(dir, `${sentDate}.json`);
+                const prev = await safeReadJson(file);
+                const list = Array.isArray(prev) ? prev : [];
+                list.unshift({ id: `${rec.jobId}-${rec.date}-${Date.now().toString(36)}`, sentAt: nowIso(), sentDate, ...rec });
+                await safeWriteJson(file, list);
+                // Prune theo NGÀY GỬI: quá hạn thì xoá nguyên file, rẻ hơn lọc từng bản ghi.
+                const keep = new Set();
+                for (let i = 0; i < SENT_KEEP_DAYS; i++) {
+                    const d = new Date(`${sentDate}T00:00:00Z`);
+                    d.setUTCDate(d.getUTCDate() - i);
+                    keep.add(`${d.toISOString().slice(0, 10)}.json`);
+                }
+                for (const f of await fs.readdir(dir)) {
+                    if (f.endsWith('.json') && !keep.has(f)) await fs.rm(path.join(dir, f), { force: true });
+                }
+            } catch (e) {
+                // Lưu lịch sử hỏng thì KHÔNG được làm hỏng việc gửi báo cáo.
+                logger.warn(`[openclaw-zalo-mod] [REPORT] không ghi được lịch sử gửi: ${e.message}`);
+            }
+        }
+
+        /** Đích thật sự đã nhận, để lịch sử nói rõ "gửi vào đâu" chứ không bắt owner suy từ cấu hình. */
+        function reportDeliveryTargets(job, selfGroupId = '') {
+            const out = [];
+            if (job.deliver.eachGroup && selfGroupId) out.push({ type: 'group', id: selfGroupId, name: groupNames[selfGroupId]?.name || selfGroupId });
+            if (job.deliver.ownerDm) out.push({ type: 'dm', id: getBotConfig(selfGroupId).ownerId || ownerId, name: 'DM owner' });
+            for (const gid of job.deliver.groups) out.push({ type: 'group', id: gid, name: groupNames[gid]?.name || gid });
+            return out;
+        }
+
         /** Chạy một job ngay (dùng cho scheduler và cho nút "Gửi thử" trên dashboard). */
-        async function runReportJob(job, date) {
+        async function runReportJob(job, date, { trigger = 'schedule' } = {}) {
             const gids = resolveJobGroups(job);
             if (!gids.length) return { sent: 0, groups: 0 };
+            const scope = gids.map(g => ({ groupId: g, name: groupNames[g]?.name || g }));
             if (job.kind === 'digest') {
                 const texts = await buildDigestMessages(gids, date);
                 await deliverReportTexts(job, texts);
+                await recordReportSent({
+                    jobId: job.id, jobName: job.name, kind: job.kind, reportFor: job.reportFor,
+                    date, time: job.time, trigger, scope, texts,
+                    targets: reportDeliveryTargets(job),
+                    chars: texts.reduce((n, t) => n + t.length, 0),
+                });
                 return { sent: texts.length, groups: gids.length };
             }
             let sent = 0;
             for (const gid of gids) {
                 const summary = await generateDailySummary(gid, date, { by: 'auto' });
-                await deliverReportTexts(job, [formatSummaryText(summary)], { selfGroupId: gid });
+                const text = formatSummaryText(summary);
+                await deliverReportTexts(job, [text], { selfGroupId: gid });
+                await recordReportSent({
+                    jobId: job.id, jobName: job.name, kind: job.kind, reportFor: job.reportFor,
+                    date, time: job.time, trigger,
+                    scope: [{ groupId: gid, name: groupNames[gid]?.name || gid }],
+                    texts: [text], targets: reportDeliveryTargets(job, gid), chars: text.length,
+                });
                 sent++;
                 await new Promise(r => setTimeout(r, 2000)); // tránh rate limit
             }
@@ -4782,9 +4843,24 @@ Quy tắc:
                 // "Gửi thử" phải cho ra ĐÚNG thứ lịch sẽ gửi thật, nên mặc định theo `reportFor` của
                 // lịch — không phải luôn luôn hôm nay. Lịch buổi sáng thử ra tin rỗng thì owner tưởng hỏng.
                 const date = String(payload.date || reportDateFor(job, vnDateStr()));
-                const r = await runReportJob(job, date);
+                const r = await runReportJob(job, date, { trigger: 'manual' });
                 await appendDashboardAudit({ action: 'report-job-run', jobId: id, sent: r.sent });
                 return { ok: true, ...r, date };
+            }
+            if (action === 'report-sent') {
+                // Chỉ đọc. Trả nguyên bản ghi kèm text — mỗi ngày vài bản, vài KB, nên lọc nốt ở
+                // client cho tức thì thay vì đẩy mọi bộ lọc thành tham số server.
+                const dir = reportSentDir();
+                let files = [];
+                try { files = (await fs.readdir(dir)).filter(f => f.endsWith('.json')).sort().reverse(); } catch { files = []; }
+                const days = Math.max(1, Math.min(90, Number(payload.days) || 30));
+                const out = [];
+                for (const f of files.slice(0, days)) {
+                    const rows = await safeReadJson(path.join(dir, f));
+                    if (Array.isArray(rows)) out.push(...rows);
+                }
+                out.sort((a, b) => String(b.sentAt).localeCompare(String(a.sentAt)));
+                return { ok: true, entries: out.slice(0, 500), keepDays: SENT_KEEP_DAYS };
             }
             if (action === 'report-digest-preview') {
                 // `groups` ở đây là PHẠM VI xem trước, không phải cấu hình lịch — nên vẫn chặn field ghi.

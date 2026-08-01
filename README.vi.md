@@ -22,7 +22,15 @@
 
 ## ✨ Tính năng
 
+| Tính năng | Token | Mô tả |
+| --------- | ----- | ----- |
 | **Zalo Owner Dashboard** | 0 | UI Dashboard đồ họa tuyệt đẹp (Premium Glassmorphism), quản lý group, duyệt member, soạn gửi tin nhắn trực tiếp qua ZCA API! |
+| **Khung chat** | 0 | Đọc và trả lời tin nhắn Zalo ngay trong dashboard: danh sách hội thoại, luồng tin hai chiều, ô soạn tin, chỉ báo "đang soạn tin" |
+| **Lịch sử chat** | 0 | Kéo tin cũ từ Zalo về `context.db` (cả nhóm lẫn tin riêng) để khung chat không bắt đầu từ con số 0 |
+| **CRM Liên hệ** | 0 | Bạn bè + khách hàng chưa kết bạn trong một trang: SĐT, giới tính, sinh nhật, nhóm chung, tách theo từng bot |
+| **Nhãn Zalo** | 0 | Đồng bộ nhãn phân loại đã gán sẵn trên app Zalo (giữ nguyên màu), lọc và gắn nhãn hàng loạt |
+| **Nhập / tải CSV** | 0 | Đưa danh sách liên hệ ra Excel và nạp ngược lại, tự gộp trùng theo SĐT → tên+ngày sinh → tên |
+| **Trợ lý AI trong chat** | LLM | Soạn hộ · Tóm tắt · Gợi ý · Phân tích cho đúng hội thoại đang mở (chỉ chạy khi bấm) |
 | **Slash Commands** | 0 | `/[botname]-noi-quy`, `/[botname]-menu`, `/[botname]-huong-dan`, v.v. |
 | **Warn System** | 0 | `/[botname]-warn @name [lý do]` — theo dõi vi phạm theo member |
 | **Anti-Spam** | 0 | Tự phát hiện tin nhắn lặp, spam link, emoji flood |
@@ -60,7 +68,13 @@ Plugin tích hợp sẵn giao diện quản trị đồ họa **Zalo Owner Dashb
 2. **👥 Quản lý Nhóm**: Cấu hình chế độ Silent Mode, Welcome message, xem link mời nhóm, xem danh sách Admin từng nhóm.
 3. **⏳ Thành viên & Duyệt**: Duyệt nhanh thành viên xin vào nhóm, theo dõi member vi phạm/cảnh cáo.
 4. **✍️ Gửi tin nhắn (Composer)**: Soạn thảo tin nhắn và gửi trực tiếp đến các nhóm nhanh chóng, hỗ trợ preview hình ảnh trước khi gửi.
-5. **🔌 Danh mục API**: Tra cứu toàn bộ các ZCA API khả dụng và các ví dụ thực tế.
+5. **💬 Khung chat**: Ba cột kiểu Zalo Web — danh sách hội thoại (lọc theo bot), luồng tin hai chiều kèm chỉ báo *đang soạn tin*, và cột trợ lý AI (Soạn hộ · Tóm tắt · Gợi ý · Phân tích). Ô soạn tin chỉ mở ở tin nhắn riêng; nhóm chuyển sang trang Gửi hàng loạt.
+6. **🗂️ Liên hệ (CRM)**: Bạn bè và khách hàng chưa kết bạn chung một trang — SĐT, giới tính, sinh nhật, nhóm chung, nhãn Zalo có màu. Lọc theo nhãn / loại / sinh nhật sắp tới, chọn hàng loạt để gắn nhãn hoặc xoá, nhập-tải CSV.
+7. **🔌 Danh mục API**: Tra cứu toàn bộ các ZCA API khả dụng và các ví dụ thực tế.
+
+> **Dữ liệu tách theo từng bot.** Mỗi tài khoản Zalo là một hộp thư riêng, nên khung chat và trang
+> Liên hệ luôn lọc theo bot đang chọn. Chế độ "tất cả bot" có gộp trùng người (Zalo cấp uid khác
+> nhau cho cùng một người ở hai tài khoản) nhưng **không** trộn hội thoại.
 
 ---
 
@@ -89,6 +103,12 @@ Tin nhắn Zalo đến
                               ├─ lệnh local, anti-spam (0 token)
                               └─ agent reply → tự tag đúng người gửi
                                                 → Zalo Connect gửi mention native
+
+Khung chat + CRM (dashboard)
+    │  Zalo Connect phát 3 kênh riêng qua bridge: inbound · lịch sử · đang-soạn-tin
+    ├─ inbound + lịch sử  → ghi vào `context.db` (theo từng tài khoản Zalo)
+    ├─ đang-soạn-tin      → giữ trong RAM, hết 3 giây là bỏ
+    └─ dashboard poll một dấu-vân-tay ~68 byte mỗi 2s để biết có gì mới
 ```
 
 OpenClaw Zalo Connect là channel/runtime Zalo duy nhất trong production. Zalo Mod
@@ -103,6 +123,7 @@ Kiến trúc kỹ thuật và bridge contract nằm trong thư mục nội bộ 
 Gói phát hành dùng mã nguồn rõ để người dùng và ClawHub có thể kiểm tra đầy đủ.
 
 - **Dữ liệu local:** chỉ đọc cấu hình OpenClaw và dữ liệu Zalo Mod trong project; chỉ ghi thiết lập plugin, audit, memory/lịch sử và một mã cài đặt ngẫu nhiên 16 ký tự được lưu bền vững.
+- **Lịch sử chat và liên hệ:** khung chat và CRM lưu tin nhắn cùng thông tin liên hệ vào `context.db` **nằm trong project OpenClaw của bạn** — chính máy đang chạy bot. Không có gì được tải lên, máy chủ bản quyền không hề nhận. Xoá file đó là mất sạch dữ liệu. Riêng chỉ báo "đang soạn tin" không bao giờ ghi xuống đĩa.
 - **Kết nối Zalo:** dùng bridge của OpenClaw Zalo Connect đã cài trên cùng máy. Zalo Mod không thu thập cookie đăng nhập Zalo và không tạo phiên Zalo thứ hai.
 - **Máy chủ bản quyền:** chỉ gửi mã cài đặt ngẫu nhiên cùng trạng thái license/order tới `https://zalo-mod-server.monkeytech.io.vn` để cấp 30 ngày Pro, kích hoạt đơn hàng và làm mới entitlement có chữ ký. Không gửi hostname, thông tin phần cứng, cookie trình duyệt, lịch sử chat hay thông tin đăng nhập Zalo.
 - **Tóm tắt AI:** chỉ khi người dùng bật/chạy tính năng tóm tắt, phần text liên quan mới được gửi tới endpoint tương thích OpenAI/9Router mà chính Owner đã cấu hình trong OpenClaw; plugin không dùng endpoint bí mật khác.

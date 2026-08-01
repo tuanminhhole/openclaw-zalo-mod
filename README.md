@@ -25,6 +25,12 @@
 | Tính năng                | Token | Mô tả                                                                                                                                          |
 | ------------------------ | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Zalo Owner Dashboard** | 0     | Stunning graphical UI Dashboard (Premium Glassmorphism), manage groups, approve pending members, and compose direct messages via real ZCA API! |
+| **Chat workspace**       | 0     | Read and reply to Zalo threads inside the dashboard: conversation list, two-way message thread, composer, typing indicator                      |
+| **Chat history sync**    | 0     | Pulls older Zalo messages (groups *and* DMs) into `context.db` so the chat workspace does not start empty                                       |
+| **CRM Contacts**         | 0     | Friends and not-yet-friend customers in one page: phone, gender, birthday, shared groups, scoped per bot                                        |
+| **Zalo labels**          | 0     | Syncs the classification labels you already set in the Zalo app (colors preserved), filter and bulk-tag by them                                 |
+| **CSV import / export**  | 0     | Round-trip contacts through Excel, de-duplicating by phone → name+birthday → name                                                              |
+| **AI assistant column**  | LLM   | Draft · Summarize · Suggest · Analyze scoped to the open conversation (runs only when clicked)                                                  |
 | **Slash Commands**       | 0     | `/noi-quy`, `/menu`, `/huong-dan`, `/groupid`, `/ownerid`, `/report`, `/rules`                                                                 |
 | **Warn System**          | 0     | `/warn @name [reason]` — member violation tracker                                                                                              |
 | **Anti-Spam**            | 0     | Detect repeated messages, suspicious links, emoji floods                                                                                       |
@@ -61,7 +67,13 @@ The plugin features a built-in administrative graphical user interface **Zalo Ow
 2. **👥 Group Management**: Configure Silent Mode, Welcome messages, view invite links, and track group administrators.
 3. **⏳ Member Approvals**: Quickly accept pending group membership requests and watch flagged members.
 4. **✍️ Message Composer**: Write and dispatch raw text or image announcements directly to chosen groups with immediate preview.
-5. **🔌 API Directory**: Inspect fully documented ZCA JavaScript APIs with real integration examples.
+5. **💬 Chat workspace**: A three-column, Zalo-Web-style view — conversation list (filtered per bot), two-way message thread with a *typing* indicator, and an AI assistant column (Draft · Summarize · Suggest · Analyze). The composer is enabled for DMs only; groups point you to the bulk-send page.
+6. **🗂️ Contacts (CRM)**: Friends and not-yet-friend customers in one page — phone, gender, birthday, shared groups, colored Zalo labels. Filter by label / type / upcoming birthday, bulk-select to tag or delete, import and export CSV.
+7. **🔌 API Directory**: Inspect fully documented ZCA JavaScript APIs with real integration examples.
+
+> **Data is scoped per bot.** Each Zalo account is its own mailbox, so the chat workspace and the
+> Contacts page always filter by the selected bot. "All bots" mode merges duplicate *people* (Zalo
+> issues a different uid per account for the same person) but never merges conversations.
 
 ---
 
@@ -90,6 +102,12 @@ Tin nhắn Zalo đến
                               ├─ local command, anti-spam (0 tokens)
                               └─ agent reply → tag triggering sender
                                                 → Zalo Connect native mention
+
+Chat workspace + CRM (dashboard)
+    │  Zalo Connect publishes 3 bridge channels: inbound · history · typing
+    ├─ inbound + history  → written to `context.db`, keyed per Zalo account
+    ├─ typing             → kept in RAM only, expires after 3s
+    └─ dashboard polls a ~68-byte fingerprint every 2s to detect changes
 ```
 
 OpenClaw Zalo Connect is the only Zalo channel/runtime used in production. Zalo Mod
@@ -104,6 +122,7 @@ directory and are intentionally not included in public releases.
 The published package is intentionally auditable and ships readable source code.
 
 - **Local data:** reads OpenClaw configuration plus Zalo Mod state under the local OpenClaw project; writes only plugin settings, audit records, memory/history, and a random persistent 16-character installation ID.
+- **Chat history and contacts:** the chat workspace and CRM store messages and contact details in `context.db` **inside your own OpenClaw project** — the same machine the bot already runs on. Nothing is uploaded; the license server never receives them. Delete the file and the data is gone. Typing indicators are never written to disk at all.
 - **Zalo access:** uses the locally installed OpenClaw Zalo Connect bridge. Zalo Mod does not collect Zalo login cookies or create a second Zalo session.
 - **License service:** sends the random installation ID and license/order state only to `https://zalo-mod-server.monkeytech.io.vn` to issue the 30-day trial, activate purchases, and refresh signed entitlements. It does not send hostname, hardware identifiers, browser cookies, chat history, or Zalo credentials.
 - **AI summaries:** only when a summary feature is used, the relevant text is sent to the 9Router/OpenAI-compatible endpoint already configured by the OpenClaw owner. No hidden endpoint is used.

@@ -1,6 +1,103 @@
-## [Unreleased]
+## [2.28.0] - 2026-08-02
+
+### Added
+
+- **★ Chỉ báo "đang soạn tin" như Zalo Web.** Ba chấm nảy trong luồng tin, và dòng xem-trước trong
+  danh sách đổi thành *đang soạn tin…*. Đi kèm **nhịp poll sẵn có** thay vì dựng thêm một đường
+  truyền riêng cho thứ chỉ sống 3 giây. Giữ trong **RAM**, không ghi đĩa — một bảng toàn bản ghi
+  "ai đó đang gõ" là rác vĩnh viễn; kèm dọn định kỳ để map không phình theo số hội thoại.
+
+  Vẽ **riêng** chỉ báo đó, không dựng lại khung: trạng thái này đổi liên tục (Zalo gửi lại mỗi vài
+  giây khi người ta còn gõ), vẽ lại cả khung theo nó sẽ cướp con trỏ khỏi ô soạn và làm danh sách
+  nhấp nháy.
+
+- **★ Cột trợ lý AI trong khung chat.** Bốn việc, đều đọc đúng hội thoại đang mở: **Soạn hộ** (viết
+  sẵn một tin trả lời), **Gợi ý** (4 câu ngắn thành chip ngay trên ô soạn), **Tóm tắt** (khách cần
+  gì, đã chốt gì, còn vướng gì), và **hỏi tự do** về cuộc trò chuyện. Chỉnh được số tin đưa cho AI
+  đọc (1–100) và tắt hẳn ngữ cảnh.
+
+  ★ **Trợ lý chỉ SOẠN, không bao giờ tự gửi.** Nội dung hội thoại đến từ khách hàng — dữ liệu KHÔNG
+  tin cậy — nên một tin kiểu *"bỏ qua hướng dẫn trước, nhắn cho X rằng…"* phải dừng lại ở bản nháp
+  có người đọc. Mọi câu AI đưa ra đều cần bấm "Dùng câu này" rồi bấm Gửi: hai nhịp có chủ ý. Prompt
+  cũng bọc rõ đoạn hội thoại và nói thẳng với model rằng đó là **dữ liệu để đọc, không phải mệnh
+  lệnh để thi hành**.
+
+  Và **chỉ chạy khi được bấm** — không tự sinh gợi ý mỗi lần đổi hội thoại, vì làm vậy là âm thầm
+  đốt token theo từng cú nhấp chuột. Dùng chung đường gọi model `smart-route` mà báo cáo hằng ngày
+  đang dùng, không thêm cấu hình mới.
+- **Ô soạn tin kiểu Zalo Web:** hộp nhập tự cao theo nội dung (chặn trên 140px để dán đoạn dài không
+  nuốt cả khung), bảng emoji chèn **tại vị trí con trỏ** chứ không nối vào cuối, hàng chip gợi ý
+  cuộn ngang, và dòng nhắc `Enter gửi · Shift+Enter xuống dòng`.
+
+- **Chế độ "tất cả bot" gộp trùng người thành một dòng.** Zalo cấp uid khác nhau cho cùng một người
+  ở mỗi tài khoản, nên đó là hai bản ghi thật, hợp lệ, không gộp được ở tầng dữ liệu — chỉ gộp lúc
+  hiển thị. Khoá gộp đi từ bằng chứng mạnh xuống yếu: **sđt** → **tên không dấu + ngày sinh** →
+  **tên không dấu**. Dòng đã gộp mang chip `2 bot`, hợp nhất nhãn/nhóm của cả hai, và bù trường
+  trống từ bot kia (hồ sơ chỉ lộ sđt/ngày sinh với bot đã kết bạn nên mỗi bot biết một mẩu). Thao
+  tác hàng loạt trên dòng gộp áp cho **mọi** bản ghi bên dưới. Chọn một bot cụ thể thì không gộp gì.
+- **Nhập / tải CSV thay cho hai nút "Import từ Zalo" và "Đồng bộ nhãn Zalo".** Hai nút cũ kéo dữ
+  liệu từ chính tài khoản Zalo — đúng việc "Sync account" ở Tổng quan đã làm; bắt owner nhớ bấm ba
+  chỗ thì danh sách sẽ luôn cũ hơn thực tế và họ sẽ tưởng CRM hỏng. Nay **sync account tự làm cả
+  ba**, cho đúng phạm vi bot đang chọn. Chỗ hai nút đó dành cho việc mà sync không làm được: đưa
+  danh sách khách có sẵn từ ngoài vào và mang dữ liệu ra.
+
+  CSV chứ không phải `.xlsx`: Excel mở thẳng `.csv`, và bộ sinh chỉ là vài dòng chuỗi thay vì kéo bộ
+  đóng gói zip/XML vào một plugin đang không có dependency nào. Tải về theo **đúng bộ lọc đang xem**.
+  Có BOM UTF-8 (thiếu nó Excel trên Windows đọc tiếng Việt ra ký tự rác), nhận cả `,` lẫn `;`, và
+  chèn `'` trước ô bắt đầu bằng `=+-@` — tên Zalo do người ngoài đặt, một liên hệ tên `=cmd|...` là
+  đường tuồn lệnh vào máy người mở file. Nhập vào tự khớp bản trùng theo `uid` → **sđt** → **tên**,
+  không thì nhập lại cùng một file lần thứ hai là nhân đôi danh bạ.
+- **Cột "Nhóm" riêng; nhãn Zalo chuyển về cột "Liên hệ".** Cột tên trước đó thừa cả một khoảng trống
+  trong khi nhãn nằm tít bên phải. Nhãn là cách owner đã tự phân loại người này nên phải đọc được
+  cùng lúc với tên; còn chip nhóm gom về một cột.
+
+- **★ Trang "Bạn bè" gộp vào "Khách hàng", đổi tên thành "Liên hệ" (CRM lớp 2).** Owner nói thẳng:
+  *"trang bạn bè t thấy đang chưa sử dụng được gì"* — và đúng: nó chỉ là **3 thẻ tĩnh mô tả API**
+  (`Friend requests` / `Sent requests` / `All friends`) với nút gọi API thô, **không có danh sách
+  nào**. Thứ owner thật sự cần — DANH SÁCH bạn bè — nay nằm ngay trong bảng Liên hệ nhờ cờ
+  `is_friend` của lớp 1. Ba thao tác kết bạn còn lại thu về một khối gấp dưới bảng, **vẫn khoá theo
+  Pro** như trang cũ: gộp giao diện không được phép nới giấy phép.
+- **Đồng bộ nhãn phân loại có sẵn của Zalo, kèm màu.** Owner đã phân loại chat trên app Zalo rồi
+  (Khách hàng · Gia đình · Công việc · Bạn bè · Trả lời sau · Đồng nghiệp, mỗi nhãn một màu), bắt
+  phân loại lại lần hai trong CRM là việc thừa. `get-labels` trả `{id, text, color, emoji,
+  conversations[]}` nên biết luôn ai mang nhãn nào. Đọc từ **mọi tài khoản bot**, trùng tên thì gộp
+  `conversations` — cùng một nhãn "Khách hàng" ở hai bot là cùng một ý định phân loại.
+- **Migration v5 — danh mục nhãn `crm_tags`** (`name`, `color`, `emoji`, `zalo_label_id`, `source`).
+  Nối với `contact_tags` theo **tên**, không thêm khoá ngoại: mọi tag gõ tay từ trước vẫn chạy
+  nguyên vẹn, chỉ là rơi về màu mặc định. `zalo_label_id` để dành cho việc ghi ngược lên Zalo
+  (`updateLabels`) về sau.
+- **Chọn hàng loạt + Thao tác**: tick từng dòng hoặc cả trang, rồi gắn nhãn / bỏ nhãn / xoá cho cả
+  lô. Lựa chọn giữ theo **id** chứ không theo chỉ số dòng — đổi bộ lọc hay sang trang khác thì vẫn
+  đúng người, điều kiện để "gắn nhãn cho 300 liên hệ trải nhiều trang" không thành trò may rủi.
+- **Lọc theo Nhãn** (kèm số liên hệ mỗi nhãn, để thấy nhãn nào còn dùng) và **theo Loại** (bạn bè
+  Zalo / từ nhóm Zalo), cộng **sắp xếp Tên A→Z**.
+
+- **★ Khách hàng import từ Zalo giờ CÓ sđt · ngày sinh · giới tính · cờ đã-kết-bạn (CRM lớp 1).**
+  Owner nói CRM *"vẫn là demo không có giá trị"*. Đối chiếu với một CRM Zalo khác cho thấy sự thật
+  ngược với giả định: CRM của họ **mỏng hơn** (không có deal/pipeline/task), nhưng **trông** hữu ích
+  vì danh sách của họ tự đầy và giàu trường — lọc theo giới tính, sinh nhật, lần tương tác cuối.
+  Của mình thì đủ tính năng mà bảng `contacts` chỉ có tên + avatar. *Danh sách nghèo trường thì bộ
+  lọc nào cũng lọc trên bảng trống.*
+
+  Chỗ đau nhất: **dữ liệu đã có sẵn từ lâu, chỉ chưa có đường nối**. `zalo-profiles-cache.json` (job
+  sync nền ghi) vẫn giữ `sdob` + `phoneNumber` cho từng uid, còn `get-friends` biết ai đã kết bạn.
+  Nhưng bản import cũ gom danh sách ở **trình duyệt** từ `state.members` — nơi chỉ có tên và avatar,
+  vì hồ sơ giàu trường nằm ở đĩa của gateway. Nay việc gộp chạy **phía server** (`crm-zalo-people` +
+  `crm-import-zalo`), lấy đủ ba nguồn.
+- **Migration v4**: `contacts` thêm `gender`, `birthday`, `is_friend`. `birthday` để **chuỗi thô**
+  đúng như Zalo trả: định dạng của họ không đảm bảo, ép kiểu lúc ghi sẽ nuốt mất dữ liệu không parse
+  được — chuẩn hoá ở tầng đọc thay vì tầng ghi.
+- **Bộ lọc mới trên trang Khách hàng**: kết bạn (đã/chưa), giới tính, và **🎂 sinh nhật hôm nay /
+  7 ngày / 30 ngày tới** — sắp theo ngày gần nhất, thẻ ghi rõ *"còn N ngày"*. Cột "Hồ sơ" hiện ngày
+  sinh + giới tính; ai đã kết bạn có nhãn `bạn bè` cạnh tên.
+- **Bạn bè KHÔNG ở nhóm nào cũng vào danh sách** (`source: zalo-friend`). Bản cũ chỉ quét member
+  nhóm nên bỏ sót trọn nhóm khách chỉ nhắn riêng.
+- **Hộp xác nhận import nói trước sẽ nhập được bao nhiêu TRƯỜNG**, không chỉ bao nhiêu người: hồ sơ
+  đồng bộ dần ở nền và chỉ lộ với bot đã kết bạn, nên import sớm sẽ ra danh sách nghèo trường mà
+  owner không hiểu vì sao.
 
 ### Changed
+
 - **★ Hết "chớp" giao diện khi có tin mới.** Nhịp poll thấy dữ liệu đổi là dựng lại **toàn bộ**
   `innerHTML` của khung chat — xoá rồi tạo lại cả ô soạn tin, luồng tin, danh sách và cột trợ lý.
   Đó mới là cú chớp; thêm hiệu ứng lên trên nó chỉ làm mọi bong bóng cùng nhấp nháy một lượt.
@@ -15,7 +112,62 @@
   cảnh cả luồng cùng nhấp nháy. Có `prefers-reduced-motion`: với một số người chuyển động gây chóng
   mặt thật sự, không phải chuyện thẩm mỹ.
 
+- **Nhịp làm mới 4s → 2s.** Nhịp poll chỉ hỏi một dấu-vân-tay (68 byte, ~31ms cả HTTP) nên dày gấp
+  đôi vẫn rẻ hơn nhiều so với bản 12 giây ban đầu. Đây cũng là mức cần thiết để chỉ báo gõ phím
+  không nhấp nháy.
+
+- **★ Khung chat làm mới nhanh gấp 3 mà tốn ít hơn trước — và KHÔNG dùng SSE.** Đo trên William
+  (7038 tin · 30 hội thoại): dựng lại cả danh sách hết `0.48ms`, còn lấy một **dấu-vân-tay**
+  (`MAX(last_message_at)` + tổng số tin) chỉ `0.01ms` — rẻ hơn **48 lần**. Nên nhịp poll giờ chỉ hỏi
+  dấu đó mỗi **4 giây** (trước là dựng cả danh sách mỗi 12 giây), đổi mới gọi tiếp.
+
+  Cân nhắc SSE rồi bỏ, có lý do: polling cũ tốn `0.48ms / 12s` ≈ **0,004% một nhân CPU** — gọi nó
+  "nặng" là không đúng sự thật. Thứ SSE mua được chỉ là độ trễ, mà 4 giây đã đủ để trực chat; đổi
+  lại phải trả bằng bus sự kiện, heartbeat chống proxy cắt kết nối nhàn rỗi, dọn dẹp nhiều tab, và
+  rủi ro Traefik đứng trước đệm mất luồng — loại lỗi chỉ lộ ra trên production.
+
+  `chat-conversations` trả kèm luôn dấu-vân-tay: thiếu nó thì nhịp poll ĐẦU TIÊN sau khi mở trang
+  luôn thấy "có đổi" và vẽ lại — đúng lúc owner có thể đang gõ dở tin nhắn.
+- **★ Action kiểu thăm dò được miễn `state` + audit — đây mới là phần đắt thật.** Tối ưu SQL ở trên
+  suýt thành vô nghĩa: đo qua HTTP thì `chat-version` vẫn tốn **146ms**, gần bằng
+  `chat-conversations` (138ms). Lý do là **mọi** phản hồi `/api/action` đều gọi
+  `buildDashboardState()` và ghi một dòng audit — chứ không phải truy vấn. Poll 4 giây tức là dựng
+  lại toàn bộ state và ghi đĩa mỗi 4 giây, tệ hơn hẳn bản 12 giây cũ.
+
+  Nay có danh sách `POLL_ACTIONS` đi đường nhẹ: không `state`, không audit. Kết quả đo lại trên
+  William:
+
+  | | Trước | Sau |
+  |---|---|---|
+  | Kích thước phản hồi | 202.304 byte | **68 byte** |
+  | Thời gian mỗi lượt | 146 ms | **31 ms** |
+
+  Tính theo phút: cũ ≈ 690ms CPU + 1MB truyền; mới ≈ 465ms CPU + 1KB — poll dày gấp 3 mà vẫn rẻ hơn
+  cả hai mặt. Bỏ audit là có đánh đổi (mất dấu vết), nên danh sách đó cố ý chỉ chứa action **chỉ
+  đọc, không đổi gì, và bị gọi lặp**.
+
+- **Thanh lọc trang Liên hệ về ĐÚNG MỘT dòng** (cao 84px → 40px). Gốc không phải ô tìm quá rộng mà
+  là quy tắc chung `select { width: 100% }` — mỗi ô lọc đòi rộng cả dòng (đo được 342px cho ô chỉ
+  cần ~120px). Cùng họ với bẫy checkbox: quy tắc dựng cho form dọc rò sang thứ nằm ngang. Kèm rút
+  nhãn mặc định cho gọn: `Nhãn: tất cả` → `Nhãn`, `Loại: tất cả` → `Loại`…
+- **Badge bot ghi TÊN bot thay vì đếm số.** `2 bot` không cho biết là bot nào; nay dùng chung
+  `getBotBadge` với trang Nhóm nên đọc một kiểu ở mọi trang. Chỉ hiện khi thật sự có nhiều bot.
+- **Cột "Loại" thành badge**, **bỏ cột "Tương tác cuối"** (mọi dòng cùng một mốc import nên không
+  phân biệt được gì), và **cột thao tác thêm nút 💬 nhắn riêng + ➕ kết bạn**. Hai nút chỉ hiện khi
+  đã nối được người Zalo — không có uid thì cả hai đều vô nghĩa; nút kết bạn tự ẩn với người đã là
+  bạn.
+- **Form Liên hệ: khối "Thuộc nhóm" chuyển sang CHỈ HIỂN THỊ.** Trước đó là checklist tick tay mọi
+  nhóm bot đang theo — nó hứa một chuyện rồi nuốt lời, vì `importMembers` dựng lại liên kết nhóm
+  theo đúng thực tế ở mỗi lần Sync account, nên nhóm tick tay bị ghi đè mà không báo gì. Bỏ luôn lời
+  gọi `crm-contact-groups` lúc lưu: form không còn ô tick thì nó sẽ gửi mảng rỗng và **xoá sạch**
+  liên kết nhóm mà sync vừa dựng.
+- **Chân sidebar không trôi theo cuộn trang nữa.** Sidebar cao 100vh và là flex dọc, nhưng menu dài
+  hơn màn hình thì cả cụm tràn xuống dưới. Nay vùng menu cuộn riêng (`flex:1;min-height:0;
+  overflow-y:auto` — thiếu `min-height:0` thì flex item không co và `overflow` không bao giờ kích
+  hoạt), chân sidebar đứng yên.
+
 ### Fixed
+
 - **★ Dashboard trả lỗi 500 `database is not open`.** Gateway đăng ký lại plugin nhiều lần trong
   cùng một tiến trình — đo trên production: **22 lần trong 40 phút**. Mỗi lần lại mở thêm một
   `DatabaseSync` trên cùng `context.db` mà không đóng cái cũ (rò rỉ handle), và
@@ -33,22 +185,6 @@
   action. Chính dòng này chỉ thẳng ra `chat-messages` báo `statement has been finalized` — bằng
   chứng quyết định rằng handle SQLite đã bị đóng chứ không phải dữ liệu hỏng.
 
-### Added
-- **★ Chỉ báo "đang soạn tin" như Zalo Web.** Ba chấm nảy trong luồng tin, và dòng xem-trước trong
-  danh sách đổi thành *đang soạn tin…*. Đi kèm **nhịp poll sẵn có** thay vì dựng thêm một đường
-  truyền riêng cho thứ chỉ sống 3 giây. Giữ trong **RAM**, không ghi đĩa — một bảng toàn bản ghi
-  "ai đó đang gõ" là rác vĩnh viễn; kèm dọn định kỳ để map không phình theo số hội thoại.
-
-  Vẽ **riêng** chỉ báo đó, không dựng lại khung: trạng thái này đổi liên tục (Zalo gửi lại mỗi vài
-  giây khi người ta còn gõ), vẽ lại cả khung theo nó sẽ cướp con trỏ khỏi ô soạn và làm danh sách
-  nhấp nháy.
-
-### Changed
-- **Nhịp làm mới 4s → 2s.** Nhịp poll chỉ hỏi một dấu-vân-tay (68 byte, ~31ms cả HTTP) nên dày gấp
-  đôi vẫn rẻ hơn nhiều so với bản 12 giây ban đầu. Đây cũng là mức cần thiết để chỉ báo gõ phím
-  không nhấp nháy.
-
-### Fixed
 - **★ Khung chat chỉ thấy MỘT chiều — câu bot trả lời không hiện.** Tin bot tự gửi không đi qua
   đường inbound (zalo-connect bắt self-echo rồi `return` ngay sau khi ghi `cliMsgId`), nên không ai
   ghi chúng vào `context.db`. Nay zalo-connect phát chúng qua **kênh lịch sử** — hợp đồng "chỉ lưu,
@@ -99,64 +235,60 @@
   lấy tên. Thêm **CRM `contacts`** làm nguồn tên thứ ba — sau khi Sync account bảng đó có tên của
   hàng trăm người mà cache hồ sơ chưa kịp đồng bộ tới.
 
-### Changed
-- **★ Khung chat làm mới nhanh gấp 3 mà tốn ít hơn trước — và KHÔNG dùng SSE.** Đo trên William
-  (7038 tin · 30 hội thoại): dựng lại cả danh sách hết `0.48ms`, còn lấy một **dấu-vân-tay**
-  (`MAX(last_message_at)` + tổng số tin) chỉ `0.01ms` — rẻ hơn **48 lần**. Nên nhịp poll giờ chỉ hỏi
-  dấu đó mỗi **4 giây** (trước là dựng cả danh sách mỗi 12 giây), đổi mới gọi tiếp.
+- **★ Liên hệ không tách theo bot: bot này thấy liên hệ của bot kia, và một người thành hai dòng.**
+  Owner báo hai triệu chứng, chung một gốc: CRM **chưa bao giờ truyền `accountId`**. Import luôn ghi
+  `'default'` bất kể liên hệ đến từ nhóm của bot nào, còn danh sách thì không lọc gì — nên bot `mkt`
+  hiện đủ 376 người kể cả người chỉ có trong nhóm của `william`. Bảng `contacts` vốn đã unique theo
+  `(account_id, zalo_uid)` từ v2; thiếu đúng một thứ là ai đó truyền `account_id` cho đúng.
 
-  Cân nhắc SSE rồi bỏ, có lý do: polling cũ tốn `0.48ms / 12s` ≈ **0,004% một nhân CPU** — gọi nó
-  "nặng" là không đúng sự thật. Thứ SSE mua được chỉ là độ trễ, mà 4 giây đã đủ để trực chat; đổi
-  lại phải trả bằng bus sự kiện, heartbeat chống proxy cắt kết nối nhàn rỗi, dọn dẹp nhiều tab, và
-  rủi ro Traefik đứng trước đệm mất luồng — loại lỗi chỉ lộ ra trên production.
+  Nay import chạy **riêng từng bot**, mỗi bot chỉ quét nhóm của mình (`groupNames[gid].profile`) và
+  danh sách bạn bè của chính tài khoản đó. Đồng bộ nhãn cũng giới hạn theo `accountId` — không thì
+  bước "thay thế" xoá-theo-tên của bot A sẽ gỡ sạch nhãn bot B vừa gắn, hai bot thay nhau xoá của
+  nhau. Việc dọn nhãn đã biến mất tách thành `pruneZaloTags`, chỉ chạy sau khi đọc được **mọi** tài
+  khoản, vì một nhãn chỉ thật sự bị xoá khi không tài khoản nào còn nó.
+- **Ô tick trong form Liên hệ phình hết dòng, nuốt mất tên nhóm.** Khối "Thuộc nhóm" hiện ra mấy ô
+  vuông trống không có chữ. Quy tắc chung `input { width:100%; min-height:40px }` áp cho **mọi**
+  input, kể cả checkbox — cùng họ với bẫy `.btn { min-height:38px }`. Thêm rule đè cho
+  `input[type=checkbox|radio]` (sửa cho toàn dashboard), và đặt cỡ **inline** ngay tại chỗ dựng
+  checklist để không lệ thuộc thứ tự cascade lẫn bộ nhớ đệm CSS.
+- **Sửa CSS/JS mà không đổi dấu vân bản thì người dùng vẫn thấy bản cũ.** `index.html` nạp
+  `dashboard.css?v=20260703f`; trình duyệt giữ bản cũ nên bản vá ô tick ở trên không tới nơi. Đây là
+  bước bắt buộc mỗi lần đụng hai file đó — đã bump lên `?v=20260801a`.
+- **Một bot thiếu `id`/`name` là giết cả `renderState()`.** `getBotBadge` gọi thẳng `bot.id.includes`
+  nên ném ngay, mà nó nằm trong `renderState()` — hệ quả là đổi bot xong **không trang nào cập nhật**
+  và không có lỗi nào hiện ra. Triệu chứng là "bộ lọc không chạy", rất xa nguyên nhân.
 
-  `chat-conversations` trả kèm luôn dấu-vân-tay: thiếu nó thì nhịp poll ĐẦU TIÊN sau khi mở trang
-  luôn thấy "có đổi" và vẽ lại — đúng lúc owner có thể đang gõ dở tin nhắn.
-- **★ Action kiểu thăm dò được miễn `state` + audit — đây mới là phần đắt thật.** Tối ưu SQL ở trên
-  suýt thành vô nghĩa: đo qua HTTP thì `chat-version` vẫn tốn **146ms**, gần bằng
-  `chat-conversations` (138ms). Lý do là **mọi** phản hồi `/api/action` đều gọi
-  `buildDashboardState()` và ghi một dòng audit — chứ không phải truy vấn. Poll 4 giây tức là dựng
-  lại toàn bộ state và ghi đĩa mỗi 4 giây, tệ hơn hẳn bản 12 giây cũ.
+- **Sắp xếp tên tiếng Việt không còn vứt Đ/Ê/Ô xuống sau chữ Z.** `COLLATE NOCASE` của SQLite so
+  theo ASCII nên "Đặng" rơi xuống tận cuối danh bạ — với app tiếng Việt thì đó là danh sách sai,
+  nhìn phát ra ngay. Nay sắp bằng `localeCompare('vi')` trong JS, dùng chung đường đọc-hết-rồi-cắt-
+  trang vốn đã có cho bộ lọc sinh nhật. Đổi lại là mất phân trang ở tầng SQL; chấp nhận được với
+  danh bạ cỡ vài nghìn người, và nếu lên hàng chục nghìn thì thêm cột khoá-sắp-xếp đã bỏ dấu chứ
+  đừng quay lại `COLLATE`.
+- **Xoá liên hệ giờ dọn luôn bảng nối nhóm.** `contact_groups` thêm ở v3 nhưng `deleteContact`
+  không được cập nhật theo, để lại bản ghi mồ côi — xoá lẻ thì không lộ, nhưng xoá hàng loạt 500
+  người thì `listContactsByGroup` đếm cả người đã xoá.
+- **Tick một ô không còn vẽ lại cả bảng.** Mỗi lần tick mà dựng lại 500 dòng thì giật, nhảy vị trí
+  cuộn, và ô định tick tiếp đã là một node khác. Nay chỉ vẽ lại đúng thanh Thao tác.
 
-  Nay có danh sách `POLL_ACTIONS` đi đường nhẹ: không `state`, không audit. Kết quả đo lại trên
-  William:
-
-  | | Trước | Sau |
-  |---|---|---|
-  | Kích thước phản hồi | 202.304 byte | **68 byte** |
-  | Thời gian mỗi lượt | 146 ms | **31 ms** |
-
-  Tính theo phút: cũ ≈ 690ms CPU + 1MB truyền; mới ≈ 465ms CPU + 1KB — poll dày gấp 3 mà vẫn rẻ hơn
-  cả hai mặt. Bỏ audit là có đánh đổi (mất dấu vết), nên danh sách đó cố ý chỉ chứa action **chỉ
-  đọc, không đổi gì, và bị gọi lặp**.
+- **Sync lại từ Zalo không còn xoá dữ liệu đã có.** Zalo chỉ lộ sđt/ngày sinh với bot **đã kết bạn**,
+  nên cùng một người, bot khác đọc ra rỗng. Ghi đè bằng rỗng thì một lần sync sai làm mất luôn dữ
+  liệu import được lần trước. Nay rỗng nghĩa là *"lần này không biết"*, không phải *"đã bị xoá"*.
+  Tương tự, `get-friends` hỏng → cờ bạn bè giữ nguyên chứ không bị đặt hết thành "chưa kết bạn"
+  (phân biệt `null` = không biết với `[]` = biết và không có ai).
+- **Giới tính không còn mất một nửa số hồ sơ.** Zalo mã hoá nam = `0`, mà `0` là falsy nên
+  `acc.gender || f.gender` vứt sạch hồ sơ nam. Job sync nền giờ kiểm tra tường minh.
+- **Bốn bộ lọc không còn xếp thành tường dọc.** Luật chung `input, select, textarea { width: 100%;
+  min-height: 40px }` khiến mỗi ô chiếm trọn một dòng — cùng loại bẫy với `.btn { min-height: 38px }`
+  ở 2.22.1. Phải ghi đè cả `width` lẫn `min-height`; dưới 768px thì 4 ô thành lưới 2×2.
 
 ### Notes
+
 - Kiểm bằng cách đếm lượt gọi thật trong 13 giây (3 chu kỳ): **3 lượt `chat-version`, 0 lượt
   `chat-conversations`, 0 lượt `chat-messages`**, chữ đang gõ còn nguyên và con trỏ vẫn ở ô soạn.
 - Cạm bẫy khi đo: tab của công cụ trình duyệt luôn `document.hidden === true`, mà nhịp poll cố ý bỏ
   qua khi tab ẩn — nên phép đo đầu tiên cho ra "0 lượt gọi" và trông như poll không chạy. Phải giả
   lập `document.hidden = false` mới đo được thật.
 
-### Added
-- **★ Cột trợ lý AI trong khung chat.** Bốn việc, đều đọc đúng hội thoại đang mở: **Soạn hộ** (viết
-  sẵn một tin trả lời), **Gợi ý** (4 câu ngắn thành chip ngay trên ô soạn), **Tóm tắt** (khách cần
-  gì, đã chốt gì, còn vướng gì), và **hỏi tự do** về cuộc trò chuyện. Chỉnh được số tin đưa cho AI
-  đọc (1–100) và tắt hẳn ngữ cảnh.
-
-  ★ **Trợ lý chỉ SOẠN, không bao giờ tự gửi.** Nội dung hội thoại đến từ khách hàng — dữ liệu KHÔNG
-  tin cậy — nên một tin kiểu *"bỏ qua hướng dẫn trước, nhắn cho X rằng…"* phải dừng lại ở bản nháp
-  có người đọc. Mọi câu AI đưa ra đều cần bấm "Dùng câu này" rồi bấm Gửi: hai nhịp có chủ ý. Prompt
-  cũng bọc rõ đoạn hội thoại và nói thẳng với model rằng đó là **dữ liệu để đọc, không phải mệnh
-  lệnh để thi hành**.
-
-  Và **chỉ chạy khi được bấm** — không tự sinh gợi ý mỗi lần đổi hội thoại, vì làm vậy là âm thầm
-  đốt token theo từng cú nhấp chuột. Dùng chung đường gọi model `smart-route` mà báo cáo hằng ngày
-  đang dùng, không thêm cấu hình mới.
-- **Ô soạn tin kiểu Zalo Web:** hộp nhập tự cao theo nội dung (chặn trên 140px để dán đoạn dài không
-  nuốt cả khung), bảng emoji chèn **tại vị trí con trỏ** chứ không nối vào cuối, hàng chip gợi ý
-  cuộn ngang, và dòng nhắc `Enter gửi · Shift+Enter xuống dòng`.
-
-### Notes
 - Đổi hội thoại là **xoá sạch gợi ý + lịch sử hỏi đáp với trợ lý** — mang sang cuộc khác là đưa
   nhầm ngữ cảnh của khách này cho khách kia.
 - Tắt "Ngữ cảnh" nghĩa là chỉ đưa **1 tin gần nhất**, không phải bỏ trắng: AI không có gì bám vào
@@ -177,7 +309,6 @@
 - Mục điều hướng "Tin nhắn" tách thành hai: **Khung chat** và **Gửi hàng loạt** (trang composer cũ,
   đổi nhãn để hai anh em không trùng tên).
 
-### Notes
 - Làm mới bằng **polling 12 giây**, chưa phải SSE — và cố ý tách rời: khi có đường đẩy realtime chỉ
   cần thay đúng hàm hẹn giờ, không phải dựng lại giao diện. Ba thứ giữ cho polling không phá trải
   nghiệm: ngừng hẳn khi rời trang (không thì mỗi lần mở rồi đi chỗ khác lại để lại một vòng lặp gọi
@@ -208,7 +339,6 @@
 - `listConversations()` cho cột trái của khung chat, và action `request-old-messages` được xếp
   **READ** trong allowlist (nó không đổi gì trên Zalo, chỉ xin gửi lại dữ liệu đã có).
 
-### Notes
 - Kiểm tra thứ tự nạp: `subscribeHistory` được hỏi lúc **gọi** chứ không lúc dựng adapter — hai
   plugin nạp không đảm bảo thứ tự, quyết định "có hỗ trợ không" ngay lúc khởi tạo sẽ khoá cứng
   thành "không" nếu hôm đó zalo-mod nạp trước, và hỏng im lặng.
@@ -218,110 +348,6 @@
   RAM" và "kéo lại lần hai không nhân đôi").
 
 
-### Changed
-- **Thanh lọc trang Liên hệ về ĐÚNG MỘT dòng** (cao 84px → 40px). Gốc không phải ô tìm quá rộng mà
-  là quy tắc chung `select { width: 100% }` — mỗi ô lọc đòi rộng cả dòng (đo được 342px cho ô chỉ
-  cần ~120px). Cùng họ với bẫy checkbox: quy tắc dựng cho form dọc rò sang thứ nằm ngang. Kèm rút
-  nhãn mặc định cho gọn: `Nhãn: tất cả` → `Nhãn`, `Loại: tất cả` → `Loại`…
-- **Badge bot ghi TÊN bot thay vì đếm số.** `2 bot` không cho biết là bot nào; nay dùng chung
-  `getBotBadge` với trang Nhóm nên đọc một kiểu ở mọi trang. Chỉ hiện khi thật sự có nhiều bot.
-- **Cột "Loại" thành badge**, **bỏ cột "Tương tác cuối"** (mọi dòng cùng một mốc import nên không
-  phân biệt được gì), và **cột thao tác thêm nút 💬 nhắn riêng + ➕ kết bạn**. Hai nút chỉ hiện khi
-  đã nối được người Zalo — không có uid thì cả hai đều vô nghĩa; nút kết bạn tự ẩn với người đã là
-  bạn.
-- **Form Liên hệ: khối "Thuộc nhóm" chuyển sang CHỈ HIỂN THỊ.** Trước đó là checklist tick tay mọi
-  nhóm bot đang theo — nó hứa một chuyện rồi nuốt lời, vì `importMembers` dựng lại liên kết nhóm
-  theo đúng thực tế ở mỗi lần Sync account, nên nhóm tick tay bị ghi đè mà không báo gì. Bỏ luôn lời
-  gọi `crm-contact-groups` lúc lưu: form không còn ô tick thì nó sẽ gửi mảng rỗng và **xoá sạch**
-  liên kết nhóm mà sync vừa dựng.
-- **Chân sidebar không trôi theo cuộn trang nữa.** Sidebar cao 100vh và là flex dọc, nhưng menu dài
-  hơn màn hình thì cả cụm tràn xuống dưới. Nay vùng menu cuộn riêng (`flex:1;min-height:0;
-  overflow-y:auto` — thiếu `min-height:0` thì flex item không co và `overflow` không bao giờ kích
-  hoạt), chân sidebar đứng yên.
-
-### Fixed
-- **★ Liên hệ không tách theo bot: bot này thấy liên hệ của bot kia, và một người thành hai dòng.**
-  Owner báo hai triệu chứng, chung một gốc: CRM **chưa bao giờ truyền `accountId`**. Import luôn ghi
-  `'default'` bất kể liên hệ đến từ nhóm của bot nào, còn danh sách thì không lọc gì — nên bot `mkt`
-  hiện đủ 376 người kể cả người chỉ có trong nhóm của `william`. Bảng `contacts` vốn đã unique theo
-  `(account_id, zalo_uid)` từ v2; thiếu đúng một thứ là ai đó truyền `account_id` cho đúng.
-
-  Nay import chạy **riêng từng bot**, mỗi bot chỉ quét nhóm của mình (`groupNames[gid].profile`) và
-  danh sách bạn bè của chính tài khoản đó. Đồng bộ nhãn cũng giới hạn theo `accountId` — không thì
-  bước "thay thế" xoá-theo-tên của bot A sẽ gỡ sạch nhãn bot B vừa gắn, hai bot thay nhau xoá của
-  nhau. Việc dọn nhãn đã biến mất tách thành `pruneZaloTags`, chỉ chạy sau khi đọc được **mọi** tài
-  khoản, vì một nhãn chỉ thật sự bị xoá khi không tài khoản nào còn nó.
-- **Ô tick trong form Liên hệ phình hết dòng, nuốt mất tên nhóm.** Khối "Thuộc nhóm" hiện ra mấy ô
-  vuông trống không có chữ. Quy tắc chung `input { width:100%; min-height:40px }` áp cho **mọi**
-  input, kể cả checkbox — cùng họ với bẫy `.btn { min-height:38px }`. Thêm rule đè cho
-  `input[type=checkbox|radio]` (sửa cho toàn dashboard), và đặt cỡ **inline** ngay tại chỗ dựng
-  checklist để không lệ thuộc thứ tự cascade lẫn bộ nhớ đệm CSS.
-- **Sửa CSS/JS mà không đổi dấu vân bản thì người dùng vẫn thấy bản cũ.** `index.html` nạp
-  `dashboard.css?v=20260703f`; trình duyệt giữ bản cũ nên bản vá ô tick ở trên không tới nơi. Đây là
-  bước bắt buộc mỗi lần đụng hai file đó — đã bump lên `?v=20260801a`.
-- **Một bot thiếu `id`/`name` là giết cả `renderState()`.** `getBotBadge` gọi thẳng `bot.id.includes`
-  nên ném ngay, mà nó nằm trong `renderState()` — hệ quả là đổi bot xong **không trang nào cập nhật**
-  và không có lỗi nào hiện ra. Triệu chứng là "bộ lọc không chạy", rất xa nguyên nhân.
-
-### Added
-- **Chế độ "tất cả bot" gộp trùng người thành một dòng.** Zalo cấp uid khác nhau cho cùng một người
-  ở mỗi tài khoản, nên đó là hai bản ghi thật, hợp lệ, không gộp được ở tầng dữ liệu — chỉ gộp lúc
-  hiển thị. Khoá gộp đi từ bằng chứng mạnh xuống yếu: **sđt** → **tên không dấu + ngày sinh** →
-  **tên không dấu**. Dòng đã gộp mang chip `2 bot`, hợp nhất nhãn/nhóm của cả hai, và bù trường
-  trống từ bot kia (hồ sơ chỉ lộ sđt/ngày sinh với bot đã kết bạn nên mỗi bot biết một mẩu). Thao
-  tác hàng loạt trên dòng gộp áp cho **mọi** bản ghi bên dưới. Chọn một bot cụ thể thì không gộp gì.
-- **Nhập / tải CSV thay cho hai nút "Import từ Zalo" và "Đồng bộ nhãn Zalo".** Hai nút cũ kéo dữ
-  liệu từ chính tài khoản Zalo — đúng việc "Sync account" ở Tổng quan đã làm; bắt owner nhớ bấm ba
-  chỗ thì danh sách sẽ luôn cũ hơn thực tế và họ sẽ tưởng CRM hỏng. Nay **sync account tự làm cả
-  ba**, cho đúng phạm vi bot đang chọn. Chỗ hai nút đó dành cho việc mà sync không làm được: đưa
-  danh sách khách có sẵn từ ngoài vào và mang dữ liệu ra.
-
-  CSV chứ không phải `.xlsx`: Excel mở thẳng `.csv`, và bộ sinh chỉ là vài dòng chuỗi thay vì kéo bộ
-  đóng gói zip/XML vào một plugin đang không có dependency nào. Tải về theo **đúng bộ lọc đang xem**.
-  Có BOM UTF-8 (thiếu nó Excel trên Windows đọc tiếng Việt ra ký tự rác), nhận cả `,` lẫn `;`, và
-  chèn `'` trước ô bắt đầu bằng `=+-@` — tên Zalo do người ngoài đặt, một liên hệ tên `=cmd|...` là
-  đường tuồn lệnh vào máy người mở file. Nhập vào tự khớp bản trùng theo `uid` → **sđt** → **tên**,
-  không thì nhập lại cùng một file lần thứ hai là nhân đôi danh bạ.
-- **Cột "Nhóm" riêng; nhãn Zalo chuyển về cột "Liên hệ".** Cột tên trước đó thừa cả một khoảng trống
-  trong khi nhãn nằm tít bên phải. Nhãn là cách owner đã tự phân loại người này nên phải đọc được
-  cùng lúc với tên; còn chip nhóm gom về một cột.
-
-### Added
-- **★ Trang "Bạn bè" gộp vào "Khách hàng", đổi tên thành "Liên hệ" (CRM lớp 2).** Owner nói thẳng:
-  *"trang bạn bè t thấy đang chưa sử dụng được gì"* — và đúng: nó chỉ là **3 thẻ tĩnh mô tả API**
-  (`Friend requests` / `Sent requests` / `All friends`) với nút gọi API thô, **không có danh sách
-  nào**. Thứ owner thật sự cần — DANH SÁCH bạn bè — nay nằm ngay trong bảng Liên hệ nhờ cờ
-  `is_friend` của lớp 1. Ba thao tác kết bạn còn lại thu về một khối gấp dưới bảng, **vẫn khoá theo
-  Pro** như trang cũ: gộp giao diện không được phép nới giấy phép.
-- **Đồng bộ nhãn phân loại có sẵn của Zalo, kèm màu.** Owner đã phân loại chat trên app Zalo rồi
-  (Khách hàng · Gia đình · Công việc · Bạn bè · Trả lời sau · Đồng nghiệp, mỗi nhãn một màu), bắt
-  phân loại lại lần hai trong CRM là việc thừa. `get-labels` trả `{id, text, color, emoji,
-  conversations[]}` nên biết luôn ai mang nhãn nào. Đọc từ **mọi tài khoản bot**, trùng tên thì gộp
-  `conversations` — cùng một nhãn "Khách hàng" ở hai bot là cùng một ý định phân loại.
-- **Migration v5 — danh mục nhãn `crm_tags`** (`name`, `color`, `emoji`, `zalo_label_id`, `source`).
-  Nối với `contact_tags` theo **tên**, không thêm khoá ngoại: mọi tag gõ tay từ trước vẫn chạy
-  nguyên vẹn, chỉ là rơi về màu mặc định. `zalo_label_id` để dành cho việc ghi ngược lên Zalo
-  (`updateLabels`) về sau.
-- **Chọn hàng loạt + Thao tác**: tick từng dòng hoặc cả trang, rồi gắn nhãn / bỏ nhãn / xoá cho cả
-  lô. Lựa chọn giữ theo **id** chứ không theo chỉ số dòng — đổi bộ lọc hay sang trang khác thì vẫn
-  đúng người, điều kiện để "gắn nhãn cho 300 liên hệ trải nhiều trang" không thành trò may rủi.
-- **Lọc theo Nhãn** (kèm số liên hệ mỗi nhãn, để thấy nhãn nào còn dùng) và **theo Loại** (bạn bè
-  Zalo / từ nhóm Zalo), cộng **sắp xếp Tên A→Z**.
-
-### Fixed
-- **Sắp xếp tên tiếng Việt không còn vứt Đ/Ê/Ô xuống sau chữ Z.** `COLLATE NOCASE` của SQLite so
-  theo ASCII nên "Đặng" rơi xuống tận cuối danh bạ — với app tiếng Việt thì đó là danh sách sai,
-  nhìn phát ra ngay. Nay sắp bằng `localeCompare('vi')` trong JS, dùng chung đường đọc-hết-rồi-cắt-
-  trang vốn đã có cho bộ lọc sinh nhật. Đổi lại là mất phân trang ở tầng SQL; chấp nhận được với
-  danh bạ cỡ vài nghìn người, và nếu lên hàng chục nghìn thì thêm cột khoá-sắp-xếp đã bỏ dấu chứ
-  đừng quay lại `COLLATE`.
-- **Xoá liên hệ giờ dọn luôn bảng nối nhóm.** `contact_groups` thêm ở v3 nhưng `deleteContact`
-  không được cập nhật theo, để lại bản ghi mồ côi — xoá lẻ thì không lộ, nhưng xoá hàng loạt 500
-  người thì `listContactsByGroup` đếm cả người đã xoá.
-- **Tick một ô không còn vẽ lại cả bảng.** Mỗi lần tick mà dựng lại 500 dòng thì giật, nhảy vị trí
-  cuộn, và ô định tick tiếp đã là một node khác. Nay chỉ vẽ lại đúng thanh Thao tác.
-
-### Notes
 - Đồng bộ nhãn có ba trạng thái dễ bị hiểu nhầm là "hỏng", nên nói thẳng bằng toast: (1) có tài
   khoản đọc nhãn lỗi → lần đó **chỉ thêm, cấm xoá** (`prune: false`), vì luật "thay thế" hiểu
   thiếu-nghĩa-là-đã-xoá và sẽ gỡ sạch nhãn của đúng tài khoản vừa hỏng; (2) Zalo có nhãn nhưng chưa
@@ -332,44 +358,6 @@
   đúng màu từng liên hệ, lọc theo nhãn/loại, sắp A→Z, tick 3 dòng → xoá cả lô, chọn cả trang, và
   đồng bộ lại KHÔNG mất nhãn tự đặt.
 
-### Added
-- **★ Khách hàng import từ Zalo giờ CÓ sđt · ngày sinh · giới tính · cờ đã-kết-bạn (CRM lớp 1).**
-  Owner nói CRM *"vẫn là demo không có giá trị"*. Đối chiếu với một CRM Zalo khác cho thấy sự thật
-  ngược với giả định: CRM của họ **mỏng hơn** (không có deal/pipeline/task), nhưng **trông** hữu ích
-  vì danh sách của họ tự đầy và giàu trường — lọc theo giới tính, sinh nhật, lần tương tác cuối.
-  Của mình thì đủ tính năng mà bảng `contacts` chỉ có tên + avatar. *Danh sách nghèo trường thì bộ
-  lọc nào cũng lọc trên bảng trống.*
-
-  Chỗ đau nhất: **dữ liệu đã có sẵn từ lâu, chỉ chưa có đường nối**. `zalo-profiles-cache.json` (job
-  sync nền ghi) vẫn giữ `sdob` + `phoneNumber` cho từng uid, còn `get-friends` biết ai đã kết bạn.
-  Nhưng bản import cũ gom danh sách ở **trình duyệt** từ `state.members` — nơi chỉ có tên và avatar,
-  vì hồ sơ giàu trường nằm ở đĩa của gateway. Nay việc gộp chạy **phía server** (`crm-zalo-people` +
-  `crm-import-zalo`), lấy đủ ba nguồn.
-- **Migration v4**: `contacts` thêm `gender`, `birthday`, `is_friend`. `birthday` để **chuỗi thô**
-  đúng như Zalo trả: định dạng của họ không đảm bảo, ép kiểu lúc ghi sẽ nuốt mất dữ liệu không parse
-  được — chuẩn hoá ở tầng đọc thay vì tầng ghi.
-- **Bộ lọc mới trên trang Khách hàng**: kết bạn (đã/chưa), giới tính, và **🎂 sinh nhật hôm nay /
-  7 ngày / 30 ngày tới** — sắp theo ngày gần nhất, thẻ ghi rõ *"còn N ngày"*. Cột "Hồ sơ" hiện ngày
-  sinh + giới tính; ai đã kết bạn có nhãn `bạn bè` cạnh tên.
-- **Bạn bè KHÔNG ở nhóm nào cũng vào danh sách** (`source: zalo-friend`). Bản cũ chỉ quét member
-  nhóm nên bỏ sót trọn nhóm khách chỉ nhắn riêng.
-- **Hộp xác nhận import nói trước sẽ nhập được bao nhiêu TRƯỜNG**, không chỉ bao nhiêu người: hồ sơ
-  đồng bộ dần ở nền và chỉ lộ với bot đã kết bạn, nên import sớm sẽ ra danh sách nghèo trường mà
-  owner không hiểu vì sao.
-
-### Fixed
-- **Sync lại từ Zalo không còn xoá dữ liệu đã có.** Zalo chỉ lộ sđt/ngày sinh với bot **đã kết bạn**,
-  nên cùng một người, bot khác đọc ra rỗng. Ghi đè bằng rỗng thì một lần sync sai làm mất luôn dữ
-  liệu import được lần trước. Nay rỗng nghĩa là *"lần này không biết"*, không phải *"đã bị xoá"*.
-  Tương tự, `get-friends` hỏng → cờ bạn bè giữ nguyên chứ không bị đặt hết thành "chưa kết bạn"
-  (phân biệt `null` = không biết với `[]` = biết và không có ai).
-- **Giới tính không còn mất một nửa số hồ sơ.** Zalo mã hoá nam = `0`, mà `0` là falsy nên
-  `acc.gender || f.gender` vứt sạch hồ sơ nam. Job sync nền giờ kiểm tra tường minh.
-- **Bốn bộ lọc không còn xếp thành tường dọc.** Luật chung `input, select, textarea { width: 100%;
-  min-height: 40px }` khiến mỗi ô chiếm trọn một dòng — cùng loại bẫy với `.btn { min-height: 38px }`
-  ở 2.22.1. Phải ghi đè cả `width` lẫn `min-height`; dưới 768px thì 4 ô thành lưới 2×2.
-
-### Notes
 - 264 test xanh (thêm 19: 12 cho bộ gộp nguồn — chuẩn hoá sđt/giới tính, parse ngày sinh nhiều định
   dạng, đếm ngày qua giao thừa và 29/02, gộp uid có hậu tố `_0`, bạn-bè-ngoài-nhóm, `null` vs `[]`;
   7 cho store — giữ trường khi sync rỗng, import mang đủ trường, lọc giới tính/bạn bè/sinh nhật kèm

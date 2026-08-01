@@ -34,6 +34,10 @@ export const CONNECT_READ_ACTIONS = Object.freeze([
     // Hội thoại
     'get-archived-chats', 'get-hidden-conversations', 'get-pinned-conversations', 'get-unread-marks',
     'get-mute-status', 'get-auto-delete-chats',
+    // Xin Zalo đẩy lịch sử chat về (WS cmd 510/511). Xếp READ vì nó không đổi gì trên Zalo — chỉ
+    // yêu cầu gửi lại dữ liệu đã có. Tin cũ về qua sự kiện `old_messages` riêng nên không thể chạm
+    // tới đường dispatch của model.
+    'request-old-messages',
     // Nội dung
     'get-poll-detail', 'get-boards', 'get-labels', 'list-reminders', 'get-reminder',
     'get-reminder-responses', 'list-quick-messages', 'list-auto-replies', 'get-catalogs',

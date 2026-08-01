@@ -137,6 +137,8 @@ export function createZaloConnectBridge(adapter, opts = {}) {
     const inboundHandlers = new Set();
     const groupHandlers = new Set();
     const historyHandlers = new Set();
+    const typingHandlers = new Set();
+    let typingUnsub = null;
     let inboundUnsub = null;
     let groupUnsub = null;
     let historyUnsub = null;
@@ -272,6 +274,30 @@ export function createZaloConnectBridge(adapter, opts = {}) {
                 if (historyHandlers.size === 0 && historyUnsub) {
                     historyUnsub();
                     historyUnsub = null;
+                }
+            };
+        },
+
+        /**
+         * "Đang soạn tin" — bridge contract v6 trở lên. PHÙ DU: bên nhận giữ trong RAM vài giây
+         * rồi quên, tuyệt đối không ghi xuống đĩa.
+         */
+        onTyping(handler) {
+            typingHandlers.add(handler);
+            if (!typingUnsub && typeof adapter.subscribeTyping === 'function') {
+                typingUnsub = adapter.subscribeTyping(async (ev) => {
+                    for (const h of typingHandlers) {
+                        try { await h(ev); } catch (e) {
+                            logger.warn?.(`[zalo-mod] bridge typing handler error: ${e.message}`);
+                        }
+                    }
+                });
+            }
+            return () => {
+                typingHandlers.delete(handler);
+                if (typingHandlers.size === 0 && typingUnsub) {
+                    typingUnsub();
+                    typingUnsub = null;
                 }
             };
         },

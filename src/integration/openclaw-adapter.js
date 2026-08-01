@@ -224,5 +224,12 @@ export function createOpenclawAdapter(deps = {}) {
         supportsHistory() {
             return typeof getService()?.subscribeHistory === 'function';
         },
+
+        /** "Đang soạn tin" (contract v6). Cùng luật kiểm-lúc-gọi như `subscribeHistory`. */
+        subscribeTyping(cb) {
+            const svc = getService();
+            if (typeof svc?.subscribeTyping !== 'function') return null;
+            return svc.subscribeTyping(cb);
+        },
     };
 }

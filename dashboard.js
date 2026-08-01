@@ -6385,12 +6385,16 @@ const chatState = {
   aiThread: [],      // { role: 'ai'|'me', text, canUse }
   suggestions: [],
   bot: null,
+  typing: [],        // conversationId đang có người gõ (phù du, không lưu)
 };
 
 // 4 giây thay vì 12: nhịp poll giờ chỉ hỏi một dấu-vân-tay (0.01ms phía server, rẻ hơn 48 lần so
 // với dựng lại cả danh sách), nên poll dày gấp 3 mà tổng chi phí vẫn thấp hơn bản cũ. Đây là lý do
 // KHÔNG cần SSE: thứ SSE mua được chỉ là độ trễ, mà 4 giây đã đủ để trực chat.
-const CHAT_POLL_MS = 4000;
+// 2 giây: nhịp poll chỉ hỏi một dấu-vân-tay (68 byte, ~31ms cả HTTP), nên dày gấp đôi vẫn rẻ hơn
+// bản 12 giây ban đầu rất nhiều. Đây cũng là mức cần thiết để chỉ báo "đang soạn tin" không giật —
+// Zalo gửi lại sự kiện gõ phím mỗi vài giây, poll thưa hơn là nhấp nháy.
+const CHAT_POLL_MS = 2000;
 
 /**
  * Khung chat LUÔN thuộc về đúng một bot.
@@ -6479,6 +6483,7 @@ async function renderChat() {
     const res = await crmAction('chat-conversations', { accountId: bot });
     chatState.conversations = res.conversations || [];
     chatState.lastSig = res.v || '';
+    chatState.typing = res.typing || [];
     if (!chatState.conversations.some(c => c.id === chatState.activeId)) {
       chatState.activeId = chatState.conversations[0]?.id || null;
     }
@@ -6501,9 +6506,16 @@ function chatStartPolling() {
     try {
       // Nhịp thường: CHỈ hỏi dấu-vân-tay. Không đổi thì dừng ngay — không dựng lại danh sách, và
       // quan trọng hơn là không vẽ lại gì, vì vẽ lại mỗi vài giây sẽ cướp con trỏ khỏi ô soạn tin.
-      const { v } = await crmAction('chat-version');
-      if (v === chatState.lastSig) return;
-      chatState.lastSig = v;
+      const res0 = await crmAction('chat-version');
+      // "Đang soạn tin" đổi liên tục mà KHÔNG làm đổi dấu-vân-tay dữ liệu — nên xử lý riêng và chỉ
+      // vẽ lại đúng chỉ báo đó, không dựng lại danh sách.
+      const typingNext = res0.typing || [];
+      if (typingNext.join('|') !== chatState.typing.join('|')) {
+        chatState.typing = typingNext;
+        chatRenderTyping();
+      }
+      if (res0.v === chatState.lastSig) return;
+      chatState.lastSig = res0.v;
 
       const res = await crmAction('chat-conversations', { accountId: chatProfile() });
       chatState.conversations = res.conversations || [];
@@ -6867,4 +6879,40 @@ function chatBindComposer(body) {
       document.removeEventListener('click', once);
     }, { once: true }), 0);
   });
+}
+
+/**
+ * Chỉ báo "đang soạn tin" — vẽ RIÊNG, không đụng tới khung.
+ *
+ * Trạng thái này đổi liên tục (Zalo gửi lại mỗi vài giây khi người ta còn gõ). Vẽ lại cả khung theo
+ * nó sẽ cướp con trỏ khỏi ô soạn và làm danh sách nhấp nháy — nên chỉ chèn/gỡ đúng một dòng.
+ */
+function chatRenderTyping() {
+  const active = chatState.activeId;
+  const on = active && chatState.typing.includes(active);
+  const th = document.getElementById('chatThread');
+  if (th) {
+    const old = th.querySelector('.chat-typing');
+    if (on && !old) {
+      const atBottom = th.scrollHeight - th.scrollTop - th.clientHeight < 60;
+      th.insertAdjacentHTML('beforeend',
+        `<div class="chat-typing"><span></span><span></span><span></span></div>`);
+      if (atBottom) th.scrollTop = th.scrollHeight;
+    } else if (!on && old) {
+      old.remove();
+    }
+  }
+  // Trong danh sách: thay dòng xem-trước bằng "đang soạn tin…" cho hội thoại đó.
+  for (const el of document.querySelectorAll('[data-chat-conv]')) {
+    const last = el.querySelector('.chat-conv-last');
+    if (!last) continue;
+    const isTyping = chatState.typing.includes(el.dataset.chatConv);
+    if (isTyping && !last.dataset.prev) {
+      last.dataset.prev = last.innerHTML;
+      last.innerHTML = `<i class="chat-typing-text">${t('đang soạn tin…', 'typing…')}</i>`;
+    } else if (!isTyping && last.dataset.prev) {
+      last.innerHTML = last.dataset.prev;
+      delete last.dataset.prev;
+    }
+  }
 }

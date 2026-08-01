@@ -5416,7 +5416,17 @@ Quy tắc:
                 // Trả về TRƯỚC hai lần đọc file bên dưới. Đặt sau chúng thì mỗi nhịp poll 4 giây lại
                 // đọc `zalo-profiles-cache.json` + `group-members.json` từ đĩa — đắt hơn hẳn truy vấn
                 // 0.01ms mà nó đang thay thế, tức phá đúng lý do tồn tại của action này.
-                if (action === 'chat-version') return { v: chatVersion() };
+                // Kèm luôn "đang soạn tin" vào nhịp poll sẵn có — thêm một đường truyền riêng cho
+                // thứ chỉ sống 3 giây là không đáng.
+                const typingNow = () => {
+                    const out = [];
+                    const map = globalThis.__zaloModTypingState;
+                    if (!map) return out;
+                    const cut = Date.now() - 6000;   // Zalo gửi lại mỗi vài giây khi còn đang gõ
+                    for (const [k, at] of map) if (at >= cut) out.push(k);
+                    return out;
+                };
+                if (action === 'chat-version') return { v: chatVersion(), typing: typingNow() };
 
                 const profCache = await readPluginDataJson('zalo-profiles-cache.json');
                 const memberDir = await readPluginDataJson('group-members.json');
@@ -5505,6 +5515,7 @@ Quy tắc:
                         // Kèm luôn dấu-vân-tay: không có nó thì nhịp poll ĐẦU TIÊN sau khi mở trang
                         // luôn thấy "có đổi" và vẽ lại — đúng lúc owner có thể đang gõ dở tin nhắn.
                         v: chatVersion(),
+                        typing: typingNow(),
                         conversations: rows.map(c => ({
                             id: c.id,
                             accountId: c.account_id,
@@ -5971,6 +5982,22 @@ Quy tắc:
         // ZaloConnect phát mọi tin group đã qua access gate nhưng CHƯA qua mention
         // gate. Capture local tại đây để Silent vẫn có ngữ cảnh khi user tag bot
         // ở tin sau; callback này không dispatch/model nên luôn zero-token.
+        // "Đang soạn tin" (bridge v6) — giữ trong RAM, KHÔNG ghi đĩa: nó chỉ đúng vài giây, và một
+        // bảng toàn bản ghi "ai đó đang gõ" là rác vĩnh viễn. Dashboard đọc kèm nhịp poll sẵn có,
+        // nên không cần thêm đường truyền nào.
+        const typingByConv = new Map();   // conversationId → mốc thời gian gần nhất
+        globalThis.__zaloModTypingState = typingByConv;
+        try { globalThis.__zaloModTypingUnsubscribe?.(); } catch { }
+        globalThis.__zaloModTypingUnsubscribe = zEngine.bridge.onTyping?.((ev) => {
+            if (!ev?.conversationId) return;
+            typingByConv.set(`${ev.accountId || 'default'}|${ev.conversationId}`, Date.now());
+            // Dọn ngay tại chỗ: không có bước này thì map phình theo số hội thoại từng gõ phím.
+            if (typingByConv.size > 200) {
+                const cut = Date.now() - 30000;
+                for (const [k, at] of typingByConv) if (at < cut) typingByConv.delete(k);
+            }
+        }) || null;
+
         // Lịch sử chat kéo về (bridge v5) — kênh RIÊNG, không đi qua mention gate và không dispatch.
         // Chỉ ghi xuống SQLite để khung chat đọc lại; buffer RAM nuôi ngữ cảnh model không bị đụng.
         try { globalThis.__zaloModHistoryUnsubscribe?.(); } catch { }

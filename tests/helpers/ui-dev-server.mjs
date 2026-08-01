@@ -77,6 +77,7 @@ if (store.kind !== 'sqlite') {
     process.exit(1);
 }
 const crm = new CrmStore(store.db);
+const DEV_TYPING = [];
 
 // Vài hội thoại mẫu để khung chat có thứ mà vẽ: một DM hai chiều, một nhóm nhiều người, và một
 // hội thoại rỗng (ca dễ vỡ nhất — hội thoại có trong danh sách mà chưa tin nào được đồng bộ).
@@ -276,8 +277,14 @@ const server = http.createServer(async (req, res) => {
                     return `${r?.mx || 0}:${r?.n || 0}`;
                 } catch { return '0:0'; }
             };
+            // Giả lập "đang soạn tin": bật/tắt được bằng action `dev-typing` để kiểm giao diện.
+            if (action === 'dev-typing') {
+                DEV_TYPING.length = 0;
+                for (const c of (body.payload?.conversations || [])) DEV_TYPING.push(c);
+                return send(res, 200, { ok: true, result: { typing: [...DEV_TYPING] }, state: STATE_STUB });
+            }
             if (action === 'chat-version') {
-                return send(res, 200, { ok: true, result: { v: chatVersion() }, state: STATE_STUB });
+                return send(res, 200, { ok: true, result: { v: chatVersion(), typing: [...DEV_TYPING] }, state: STATE_STUB });
             }
             if (action === 'chat-conversations') {
                 const rows = store.listConversations({ accountId: body.payload?.accountId, limit: 200 });
@@ -285,6 +292,7 @@ const server = http.createServer(async (req, res) => {
                     ok: true,
                     result: {
                         v: chatVersion(),
+                        typing: [...DEV_TYPING],
                         conversations: rows.map(c => {
                             const raw = String(c.id || '').split('|').slice(1).join('|');
                             return {

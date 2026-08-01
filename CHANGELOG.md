@@ -1,6 +1,26 @@
 ## [Unreleased]
 
+### Added
+- **★ Chỉ báo "đang soạn tin" như Zalo Web.** Ba chấm nảy trong luồng tin, và dòng xem-trước trong
+  danh sách đổi thành *đang soạn tin…*. Đi kèm **nhịp poll sẵn có** thay vì dựng thêm một đường
+  truyền riêng cho thứ chỉ sống 3 giây. Giữ trong **RAM**, không ghi đĩa — một bảng toàn bản ghi
+  "ai đó đang gõ" là rác vĩnh viễn; kèm dọn định kỳ để map không phình theo số hội thoại.
+
+  Vẽ **riêng** chỉ báo đó, không dựng lại khung: trạng thái này đổi liên tục (Zalo gửi lại mỗi vài
+  giây khi người ta còn gõ), vẽ lại cả khung theo nó sẽ cướp con trỏ khỏi ô soạn và làm danh sách
+  nhấp nháy.
+
+### Changed
+- **Nhịp làm mới 4s → 2s.** Nhịp poll chỉ hỏi một dấu-vân-tay (68 byte, ~31ms cả HTTP) nên dày gấp
+  đôi vẫn rẻ hơn nhiều so với bản 12 giây ban đầu. Đây cũng là mức cần thiết để chỉ báo gõ phím
+  không nhấp nháy.
+
 ### Fixed
+- **★ Khung chat chỉ thấy MỘT chiều — câu bot trả lời không hiện.** Tin bot tự gửi không đi qua
+  đường inbound (zalo-connect bắt self-echo rồi `return` ngay sau khi ghi `cliMsgId`), nên không ai
+  ghi chúng vào `context.db`. Nay zalo-connect phát chúng qua **kênh lịch sử** — hợp đồng "chỉ lưu,
+  không bao giờ dispatch", đúng thứ cần cho tin đã gửi rồi; lọt vào inbound thì bot sẽ coi lời của
+  chính mình là tin cần trả lời. (Cần zalo-connect bridge v6.)
 - **★ Nhắn thẳng cho bot thì khung chat không hiện tin đó.** Handler inbound mở đầu bằng
   `if (!event?.isGroup) return;` — bỏ qua **toàn bộ** tin nhắn riêng. Nay DM được ghi vào
   `context.db` rồi **dừng lại ngay**, cố ý không đi tiếp: phần dưới ghi `.jsonl` mà báo cáo cuối

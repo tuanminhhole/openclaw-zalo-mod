@@ -2688,12 +2688,22 @@ Quy tắc:
          * chọn lọc lại: mỗi nhóm lấy tối đa 3 điểm (ưu tiên highlights của model), việc có hẹn/chưa xong
          * gắn ⚠️. Nhờ vậy thêm digest tốn 0 token — quan trọng vì mỗi request đang ~26k prompt token.
          */
-        async function buildDigestParts(groupIds, date) {
+        async function buildDigestParts(groupIds, date, { persist = true } = {}) {
             const blocks = [];
             let totalMsgs = 0, totalLinks = 0, totalAppts = 0;
             for (const gid of groupIds) {
                 let s = await getSummary(gid, date);
-                if (!s) s = await generateDailySummary(gid, date, { by: 'auto' }).catch(() => null);
+                // Cache summary có thể đã được sinh GIỮA ngày, lúc nhóm chưa có tin nào — khi đó nó
+                // ghi `messageCount: 0` và không bao giờ tự làm mới. Dùng lại nguyên si thì báo cáo
+                // sáng hôm sau rỗng trong khi nhật ký thô đầy tin. Đã xảy ra thật: 2026-08-01 digest
+                // gửi "0 nhóm · 0 tin" cho 24 nhóm, vì cache bị sinh lúc 01:56 ngày hôm trước.
+                //
+                // So với SỐ DÒNG NHẬT KÝ THẬT của đúng ngày đó — rẻ, chính xác, và chỉ tốn token sinh
+                // lại đúng những nhóm có thêm tin so với lúc cache.
+                const rawCount = (await readChatHistory(gid, date).catch(() => []))?.length || 0;
+                if ((!s || rawCount > (s.messageCount || 0)) && persist) {
+                    s = await generateDailySummary(gid, date, { by: 'auto' }).catch(() => s);
+                }
                 if (!s || !s.messageCount) continue;
                 const x = s.sections || {};
                 totalMsgs += s.messageCount;
@@ -2715,8 +2725,8 @@ Quy tắc:
         }
 
         /** Digest đã format, cắt sẵn theo ranh giới nhóm để Zalo không cắt giữa câu. */
-        async function buildDigestMessages(groupIds, date) {
-            const { blocks, totalMsgs, totalLinks, totalAppts, groupCount } = await buildDigestParts(groupIds, date);
+        async function buildDigestMessages(groupIds, date, opts = {}) {
+            const { blocks, totalMsgs, totalLinks, totalAppts, groupCount } = await buildDigestParts(groupIds, date, opts);
             const head = `📊 TỔNG HỢP ${date} · ${groupCount} nhóm · ${totalMsgs} tin`;
             if (!groupCount) return [`${head}\n\n(Không có nhóm nào có tin nhắn được ghi trong ngày này.)`];
             const foot = [
@@ -4870,7 +4880,11 @@ Quy tắc:
                     ? watchGroupIds.filter(gid => isFollowOn(gid))
                     : (Array.isArray(payload.groups) ? payload.groups.map(String) : []);
                 const date = String(payload.date || vnDateStr());
-                const texts = await buildDigestMessages(ids, date);
+                // `persist: false` — XEM TRƯỚC KHÔNG ĐƯỢC GHI CACHE. Đây là lỗi thật đã làm hỏng cả
+                // một ngày dữ liệu: xem trước lúc 01:56 sinh ra 24 summary `messageCount: 0` cho ngày
+                // vừa bắt đầu, và báo cáo sáng hôm sau đọc đúng mấy cache rỗng đó. Một thao tác chỉ
+                // để NHÌN thì không được đổi trạng thái.
+                const texts = await buildDigestMessages(ids, date, { persist: false });
                 return { date, parts: texts.length, texts, chars: texts.reduce((n, t) => n + t.length, 0) };
             }
             if (action === 'get-permissions') {

@@ -346,3 +346,78 @@ test('groupId lạ thì vẫn ghi lại được, lấy id làm tên thay vì r�
     const t = reportDeliveryTargets({ deliver: { ownerDm: false, eachGroup: false, groups: ['g-la'] } });
     assert.equal(t[0].name, 'g-la');
 });
+
+// ── Digest không được tin cache summary cũ ────────────────────────────────────────────────────
+// Lỗi thật 2026-08-01: digest gửi "0 nhóm · 0 tin" cho 24 nhóm trong khi nhật ký thô có tin. Cache
+// summary bị sinh lúc 01:56 hôm trước (do thao tác XEM TRƯỚC) khi ngày mới bắt đầu và chưa có tin
+// nào → ghi `messageCount: 0` rồi không bao giờ tự làm mới.
+function loadDigestParts({ summaries, history, generated = [] }) {
+    return new Function('summaries', 'history', 'generated', `
+        const getSummary = async (gid, d) => summaries[gid + '|' + d] || null;
+        const readChatHistory = async (gid, d) => history[gid + '|' + d] || [];
+        const generateDailySummary = async (gid, d) => {
+            generated.push(gid);
+            const rows = history[gid + '|' + d] || [];
+            const s = { messageCount: rows.length, sections: { highlights: ['h'], participants: ['p'] } };
+            summaries[gid + '|' + d] = s;
+            return s;
+        };
+        const getGroupName = (g) => 'Nhóm ' + g;
+        ${extract('buildDigestParts')}
+        return buildDigestParts;
+    `)(summaries, history, generated);
+}
+
+test('cache ghi 0 tin nhưng nhật ký có tin → phải sinh lại, không báo cáo rỗng', async () => {
+    const generated = [];
+    const build = loadDigestParts({
+        summaries: { 'g1|2026-07-31': { messageCount: 0, sections: {} } },
+        history: { 'g1|2026-07-31': [1, 2, 3, 4, 5] },
+        generated,
+    });
+    const r = await build(['g1'], '2026-07-31');
+    assert.deepEqual(generated, ['g1'], 'phải sinh lại vì nhật ký nhiều tin hơn cache');
+    assert.equal(r.groupCount, 1);
+    assert.equal(r.totalMsgs, 5);
+});
+
+test('cache đã khớp nhật ký thì KHÔNG sinh lại — không đốt token vô ích', async () => {
+    const generated = [];
+    const build = loadDigestParts({
+        summaries: { 'g1|2026-07-31': { messageCount: 5, sections: { highlights: ['x'] } } },
+        history: { 'g1|2026-07-31': [1, 2, 3, 4, 5] },
+        generated,
+    });
+    const r = await build(['g1'], '2026-07-31');
+    assert.deepEqual(generated, [], 'cache còn đúng thì dùng lại');
+    assert.equal(r.totalMsgs, 5);
+});
+
+test('chưa có cache thì sinh mới như cũ', async () => {
+    const generated = [];
+    const build = loadDigestParts({ summaries: {}, history: { 'g1|2026-07-31': [1, 2] }, generated });
+    const r = await build(['g1'], '2026-07-31');
+    assert.deepEqual(generated, ['g1']);
+    assert.equal(r.totalMsgs, 2);
+});
+
+test('nhóm thật sự không có tin thì bỏ qua, không sinh lại vô ích', async () => {
+    const generated = [];
+    const build = loadDigestParts({
+        summaries: { 'g1|2026-07-31': { messageCount: 0, sections: {} } },
+        history: { 'g1|2026-07-31': [] },
+        generated,
+    });
+    const r = await build(['g1'], '2026-07-31');
+    assert.deepEqual(generated, [], 'nhật ký rỗng = cache đúng, không cần sinh');
+    assert.equal(r.groupCount, 0);
+});
+
+test('persist:false (Xem trước) TUYỆT ĐỐI không ghi cache', async () => {
+    const generated = [];
+    const summaries = { 'g1|2026-07-31': { messageCount: 0, sections: {} } };
+    const build = loadDigestParts({ summaries, history: { 'g1|2026-07-31': [1, 2, 3] }, generated });
+    await build(['g1'], '2026-07-31', { persist: false });
+    assert.deepEqual(generated, [], 'xem trước không được sinh/ghi gì');
+    assert.equal(summaries['g1|2026-07-31'].messageCount, 0, 'cache phải giữ nguyên');
+});

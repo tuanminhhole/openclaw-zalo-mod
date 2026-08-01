@@ -10,7 +10,7 @@ const modalBody = document.getElementById('modalBody');
 const modalCancel = document.getElementById('modalCancel');
 const modalConfirm = document.getElementById('modalConfirm');
 const token = window.ZALO_DASHBOARD_TOKEN || '';
-const pluginVersion = '2.25.0';
+const pluginVersion = '2.26.0';
 let state = null;
 let activeGroupId = '';
 let lang = localStorage.getItem('zaloDashboardLang') || 'vi';
@@ -3103,6 +3103,15 @@ function renderSettings() {
           <span class="settings-field-label">${uiText('Giao diện', 'Appearance')}</span>
           <div class="settings-segmented">${seg(!dark, 'theme-light', uiText('Sáng', 'Light'))}${seg(dark, 'theme-dark', uiText('Tối', 'Dark'))}</div>
         </div>
+        <div class="settings-field">
+          <span class="settings-field-label">${uiText('Múi giờ hiển thị', 'Display timezone')}</span>
+          <select id="setTimezone" style="padding:7px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font-size:13px">
+            ${TZ_CHOICES.map(([v, l]) => `<option value="${esc(v)}" ${displayTz() === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}
+          </select>
+        </div>
+        <div class="item-sub" style="margin:-4px 0 10px;font-size:11.5px">${uiText(
+          `Chỉ đổi cách HIỂN THỊ mốc thời gian (vd: Lịch sử báo cáo). Giờ chạy của lịch báo cáo luôn theo giờ Việt Nam. Hiện tại: ${fmtTs(new Date().toISOString())}`,
+          `Only changes how timestamps are DISPLAYED (e.g. Report log). Schedules always run on Vietnam time. Now: ${fmtTs(new Date().toISOString())}`)}</div>
         ${settingsToggle('setReduceMotion', reduceMotion, uiText('Giảm chuyển động', 'Reduce motion'), uiText('Tắt hiệu ứng chuyển cảnh', 'Disable transition effects'))}
       </div>
       <div class="card settings-card">
@@ -3144,6 +3153,12 @@ function wireSettingsRoot(root) {
     if (e.target.closest('[data-set-theme-dark]')) return setTheme('dark');
   });
   root.addEventListener('change', e => {
+    if (e.target.id === 'setTimezone') {
+      localStorage.setItem('zaloDashboardTz', e.target.value);
+      renderSettings();
+      showToast(uiText('Đã đổi múi giờ hiển thị', 'Display timezone updated'), 'success');
+      return;
+    }
     if (e.target.id === 'setReduceMotion') {
       localStorage.setItem('zaloReduceMotion', e.target.checked ? '1' : '0');
       applyReduceMotion();
@@ -5173,6 +5188,43 @@ async function reportsApi(action, payload) {
   return data.result;
 }
 
+// ── Múi giờ hiển thị ──────────────────────────────────────────────────────────────────────────
+// Mốc thời gian lưu trong dữ liệu là ISO UTC (`nowIso()`), nên hiển thị thô sẽ ra giờ UTC: báo cáo
+// gửi 08:00 giờ VN hiện thành "01:00" và owner tưởng lịch chạy sai. Quy đổi ở tầng HIỂN THỊ, không
+// đụng vào dữ liệu đã lưu — đổi múi giờ về sau không được làm sai mốc cũ.
+const TZ_CHOICES = [
+  ['Asia/Ho_Chi_Minh', 'Việt Nam (UTC+7)'],
+  ['Asia/Bangkok', 'Bangkok (UTC+7)'],
+  ['Asia/Singapore', 'Singapore (UTC+8)'],
+  ['Asia/Shanghai', 'Trung Quốc (UTC+8)'],
+  ['Asia/Tokyo', 'Nhật Bản (UTC+9)'],
+  ['Asia/Seoul', 'Hàn Quốc (UTC+9)'],
+  ['Europe/London', 'London (UTC+0/+1)'],
+  ['America/Los_Angeles', 'Los Angeles (UTC-8/-7)'],
+  ['UTC', 'UTC'],
+];
+
+function displayTz() {
+  return localStorage.getItem('zaloDashboardTz') || 'Asia/Ho_Chi_Minh';
+}
+
+/** ISO (UTC) → "YYYY-MM-DD HH:MM" theo múi giờ owner đã chọn. */
+function fmtTs(iso, { withTime = true } = {}) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return String(iso);
+  try {
+    const p = new Intl.DateTimeFormat('sv-SE', {
+      timeZone: displayTz(), year: 'numeric', month: '2-digit', day: '2-digit',
+      ...(withTime ? { hour: '2-digit', minute: '2-digit', hour12: false } : {}),
+    }).format(d);
+    return p.replace('T', ' ');
+  } catch {
+    // Múi giờ lạ (owner sửa tay localStorage) thì rơi về UTC thay vì vỡ cả trang.
+    return d.toISOString().slice(0, withTime ? 16 : 10).replace('T', ' ');
+  }
+}
+
 // ── Lịch sử báo cáo ───────────────────────────────────────────────────────────────────────────
 // Owner hỏi "sáng nay bot gửi gì" và không có chỗ nào xem: gateway chat không hiện tin do plugin
 // gửi, còn digest thì tính lúc chạy rồi thả đi. Trang này đọc bản ĐÃ LƯU lúc gửi — khác với bấm
@@ -5312,7 +5364,7 @@ function reportLogCard(e) {
   const isDigest = e.kind === 'digest';
   const full = (e.texts || []).join('\n\n');
   const preview = full.split('\n').slice(0, 3).join(' · ').slice(0, 150);
-  const when = `${String(e.sentAt || '').slice(0, 10)} ${String(e.sentAt || '').slice(11, 16)}`;
+  const when = fmtTs(e.sentAt);
   return `<div class="card" style="padding:13px 15px">
     <div style="display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap">
       <div style="flex:1 1 200px;min-width:0">
@@ -5344,7 +5396,7 @@ function reportLogOpen(id) {
       background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:12px">${esc(t)}</pre>`).join('');
   openModal({
     title: `${e.jobName || e.jobId} — ${e.date}`,
-    body: `<div class="item-sub" style="margin-bottom:10px">${uiText('Gửi lúc', 'Sent at')} ${esc(String(e.sentAt || '').replace('T', ' ').slice(0, 16))}
+    body: `<div class="item-sub" style="margin-bottom:10px">${uiText('Gửi lúc', 'Sent at')} ${esc(fmtTs(e.sentAt))}
       · ${uiText('tới', 'to')} ${(e.targets || []).map(t => esc(t.name)).join(', ') || '—'}</div>${body}`,
     confirmText: uiText('Đóng', 'Close'),
   });

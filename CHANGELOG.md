@@ -1,3 +1,21 @@
+## [2.26.0] - 2026-08-01
+
+### Fixed
+- **★ Báo cáo tổng hợp gửi RỖNG dù nhật ký đầy tin — digest tin vào cache summary cũ.** Sáng 2026-08-01 digest gửi *"0 nhóm · 0 tin"* cho 24 nhóm, trong khi 14 nhóm có nhật ký thô của ngày 31/07 (nhóm này 5 tin, nhóm kia 22 tin). Nguyên nhân: `buildDigestParts` chỉ sinh summary khi **chưa có** cache, còn có cache thì dùng nguyên si — kể cả cache ghi `messageCount: 0`.
+
+  Cache rỗng đó ở đâu ra: thao tác **"Xem trước"** chạy lúc 01:56 ngày 31/07 — ngày vừa bắt đầu, chưa nhóm nào có tin — đã sinh và **ghi** 24 summary `messageCount: 0`, rồi không bao giờ tự làm mới. Một thao tác chỉ để NHÌN mà đổi trạng thái, và hỏng đúng dữ liệu của cả ngày hôm đó.
+
+  Hai lớp sửa: (1) digest so `messageCount` của cache với **số dòng nhật ký thô thật** của đúng ngày đó, nhiều hơn thì sinh lại — rẻ, chính xác, và chỉ tốn token đúng những nhóm thật sự có thêm tin; (2) `report-digest-preview` truyền `persist: false`, **tuyệt đối không ghi cache**.
+
+  Vì sao báo cáo X3 vẫn đúng (66 tin) còn digest thì rỗng: lịch X3 là kiểu `group`, nó gọi thẳng `generateDailySummary` lúc gửi nên luôn sinh lại; chỉ nhánh digest mới đọc cache.
+
+### Added
+- **Chọn múi giờ hiển thị trong Cài đặt, mặc định Việt Nam (UTC+7).** Mốc thời gian lưu là ISO UTC nên Lịch sử báo cáo hiện "01:00" cho một báo cáo gửi lúc 08:00 giờ VN — owner đọc vào tưởng lịch chạy sai giờ. Quy đổi ở tầng **hiển thị**, không đụng dữ liệu đã lưu, nên đổi múi giờ về sau không làm sai mốc cũ. 9 lựa chọn; múi giờ lạ thì rơi về UTC thay vì vỡ trang. Ghi rõ ngay dưới ô chọn: giờ **chạy** của lịch báo cáo vẫn luôn theo giờ Việt Nam, đây chỉ là cách hiển thị.
+
+### Notes
+- 249 test xanh (thêm 5 cho luật cache: cache 0 tin mà nhật ký có tin thì sinh lại · cache khớp thì không sinh lại để khỏi đốt token · chưa có cache thì sinh mới · nhóm thật sự không có tin thì bỏ qua · `persist:false` không ghi gì). Múi giờ kiểm trên trình duyệt: VN/UTC/Tokyo, múi giờ lạ, ISO hỏng, và đổi ở Cài đặt thì Lịch sử báo cáo đổi theo.
+- **Bài học:** một thao tác mang tên "xem trước" mà ghi cache là cái bẫy hai tầng — nó vừa đổi trạng thái ngoài ý muốn, vừa làm hỏng đúng thứ nó đang xem trước. Và cache dẫn xuất từ dữ liệu thô thì phải có cách biết mình đã cũ, không thì sai âm thầm mãi mãi.
+
 ## [2.25.0] - 2026-07-31
 
 ### Added

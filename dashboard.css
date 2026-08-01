@@ -1175,6 +1175,19 @@ textarea {
   transition: border-color .18s ease, box-shadow .18s ease;
 }
 
+/* Quy tắc `input` ở trên áp cho MỌI input, kể cả checkbox và radio — nên ô tick bị kéo rộng 100%
+   và cao 40px, nuốt trọn dòng và đẩy nhãn chữ bên cạnh ra khỏi vùng nhìn. Đó chính là lỗi làm khối
+   "Thuộc nhóm" trong form Liên hệ hiện ra ba ô vuông to đùng không có tên nhóm.
+   Cùng họ với bẫy `.btn { min-height: 38px }`: quy tắc chung của form đè lên thứ không phải ô nhập.
+   Đặt NGAY sau quy tắc chung để các rule cụ thể hơn phía dưới file vẫn thắng như cũ. */
+input[type="checkbox"],
+input[type="radio"] {
+  width: auto;
+  min-height: 0;
+  padding: 0;
+  flex: none;
+}
+
 textarea {
   min-height: 96px;
   padding-top: 10px;

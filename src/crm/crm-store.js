@@ -8,7 +8,7 @@
  */
 
 import crypto from 'node:crypto';
-import { birthdayDayMonth, daysUntilBirthday, normalizeGender, normalizePhone } from './zalo-people.js';
+import { birthdayDayMonth, daysUntilBirthday, foldName, normalizeGender, normalizePhone } from './zalo-people.js';
 
 export const LEAD_STAGES = Object.freeze(['new', 'contacted', 'qualified', 'quoted', 'won', 'lost']);
 
@@ -169,7 +169,9 @@ export class CrmStore {
      * @param {object} [opts] { search, tag, accountId, limit=50, offset=0 }
      */
     listContacts(opts = {}) {
-        const limit = Math.min(num(opts.limit, 50), 200);
+        // `_maxLimit` là cửa nội bộ cho `exportContacts` — trần 200 giữ cho API công khai không bị
+        // ai đó gọi limit=100000 làm nghẽn, còn xuất file thì cần lấy hết thật.
+        const limit = Math.min(num(opts.limit, 50), num(opts._maxLimit, 200));
         const offset = Math.max(num(opts.offset, 0), 0);
         const where = [];
         const params = [];
@@ -210,13 +212,16 @@ export class CrmStore {
         // Đổi lại là mất khả năng phân trang trong SQL. Chấp nhận được: danh bạ Zalo của một tài
         // khoản cỡ vài nghìn người, sắp trong JS tốn vài mili-giây. Nếu có ngày nó lên hàng chục
         // nghìn thì thêm cột khoá-sắp-xếp đã bỏ dấu, đừng quay lại COLLATE.
+        // Nhánh thứ ba dùng chung đường này: **gộp trùng người ở chế độ tất cả bot** — phải có đủ
+        // tags/groups của MỌI dòng mới hợp nhất được, nên cũng đọc hết rồi mới cắt trang.
         const withinDays = num(opts.birthdayWithin, null);
         const byBirthday = withinDays != null && withinDays >= 0;
         const byName = opts.sort === 'name';
-        if (byBirthday || byName) {
+        const merge = opts.mergePeople === true;
+        if (byBirthday || byName || merge) {
             const today = opts.today instanceof Date ? opts.today : new Date(this._now());
             const all = this.db.prepare(`SELECT * FROM contacts ${cond} ORDER BY updated_at DESC`).all(...params);
-            const matched = [];
+            let matched = [];
             for (const r of all) {
                 if (byBirthday) {
                     const days = daysUntilBirthday(birthdayDayMonth(r.birthday), today);
@@ -227,12 +232,17 @@ export class CrmStore {
                 }
                 matched.push(r);
             }
+            // Hydrate TRƯỚC khi gộp: hợp nhất nhãn và nhóm của các bot cần biết chúng là gì.
+            if (merge) {
+                this._hydrate(matched);
+                matched = this._mergePeople(matched);
+            }
             // Lọc sinh nhật thì thứ duy nhất owner cần là "ai sắp tới sinh nhật trước" — nó thắng
             // cả yêu cầu sắp theo tên.
             if (byBirthday) matched.sort((a, b) => a.birthdayInDays - b.birthdayInDays);
-            else matched.sort((a, b) => String(a.display_name).localeCompare(String(b.display_name), 'vi'));
+            else if (byName) matched.sort((a, b) => String(a.display_name).localeCompare(String(b.display_name), 'vi'));
             const page = matched.slice(offset, offset + limit);
-            this._hydrate(page);
+            if (!merge) this._hydrate(page);
             return { contacts: page, total: matched.length, limit, offset };
         }
         const order = 'updated_at DESC';
@@ -243,6 +253,51 @@ export class CrmStore {
         const total = this.db.prepare(`SELECT COUNT(*) AS n FROM contacts ${cond}`).all(...params)[0].n;
         this._hydrate(rows);
         return { contacts: rows, total, limit, offset };
+    }
+
+    /**
+     * Gộp các dòng CÙNG MỘT NGƯỜI ở nhiều bot thành một dòng — chỉ dùng cho chế độ "tất cả bot".
+     *
+     * Zalo cấp uid khác nhau cho cùng một người ở mỗi tài khoản, nên cùng một khách nằm trong nhóm
+     * của hai bot sẽ là hai bản ghi thật, hợp lệ, không thể gộp ở tầng dữ liệu (bot nào nhắn cũng
+     * phải dùng đúng uid của mình). Chỉ gộp lúc HIỂN THỊ.
+     *
+     * Khoá gộp đi từ bằng chứng mạnh xuống yếu: **sđt** (trùng là chắc chắn một người) → **tên
+     * không dấu + ngày sinh** → **tên không dấu**. Bậc cuối có thể gộp nhầm hai người trùng tên mà
+     * cả hai đều thiếu sđt lẫn ngày sinh; đổi lại là danh sách tổng không còn lặp. Chọn một bot cụ
+     * thể thì không gộp gì cả, luôn chính xác.
+     */
+    _mergePeople(rows) {
+        const keyOf = (r) => {
+            const phone = normalizePhone(r.phone);
+            if (phone) return `p:${phone}`;
+            const name = foldName(r.display_name);
+            const dm = birthdayDayMonth(r.birthday);
+            if (dm) return `nb:${name}|${dm.day}/${dm.month}`;
+            return `n:${name}`;
+        };
+        const byKey = new Map();
+        for (const r of rows) {
+            const k = keyOf(r);
+            const cur = byKey.get(k);
+            if (!cur) {
+                byKey.set(k, { ...r, mergedIds: [r.id], accounts: [r.account_id] });
+                continue;
+            }
+            cur.mergedIds.push(r.id);
+            if (!cur.accounts.includes(r.account_id)) cur.accounts.push(r.account_id);
+            // Trường nào bên kia có mà bên này trống thì lấy — hồ sơ chỉ lộ với bot đã kết bạn, nên
+            // mỗi bot biết một mẩu khác nhau về cùng một người.
+            for (const f of ['phone', 'birthday', 'gender', 'avatar_url', 'notes']) {
+                if (!cur[f] && r[f]) cur[f] = r[f];
+            }
+            cur.is_friend = cur.is_friend || r.is_friend;
+            cur.last_contact_at = Math.max(cur.last_contact_at || 0, r.last_contact_at || 0) || null;
+            cur.tags = [...new Set([...(cur.tags || []), ...(r.tags || [])])].sort();
+            const seenGroups = new Set((cur.groups || []).map(g => g.groupId));
+            for (const g of (r.groups || [])) if (!seenGroups.has(g.groupId)) { cur.groups.push(g); seenGroups.add(g.groupId); }
+        }
+        return [...byKey.values()];
     }
 
     /** Gắn tags + groups cho một trang contact (dùng chung cho mọi nhánh lọc). */
@@ -322,9 +377,16 @@ export class CrmStore {
         const prune = opts.prune !== false;
         const list = Array.isArray(labels) ? labels : [];
         const now = this._now();
-        const uidToId = new Map(
-            this.db.prepare('SELECT id, zalo_uid FROM contacts WHERE zalo_uid IS NOT NULL').all()
-                .map(r => [String(r.zalo_uid), r.id]));
+
+        // `accountId` giới hạn cả việc KHỚP lẫn việc XOÁ vào đúng liên hệ của một bot. Bắt buộc khi
+        // có nhiều bot: uid của cùng một người khác nhau giữa các tài khoản, nên nhãn của bot A
+        // không bao giờ khớp liên hệ của bot B — mà bước "thay thế" thì lại xoá theo TÊN nhãn, nên
+        // đồng bộ bot A sẽ gỡ sạch nhãn mà bot B vừa gắn. Hai bot thay nhau xoá của nhau.
+        const acc = opts.accountId != null ? String(opts.accountId) : null;
+        const uidRows = acc
+            ? this.db.prepare('SELECT id, zalo_uid FROM contacts WHERE zalo_uid IS NOT NULL AND account_id = ?').all(acc)
+            : this.db.prepare('SELECT id, zalo_uid FROM contacts WHERE zalo_uid IS NOT NULL').all();
+        const uidToId = new Map(uidRows.map(r => [String(r.zalo_uid), r.id]));
 
         const prevZaloTags = this.db.prepare("SELECT name FROM crm_tags WHERE source = 'zalo'").all().map(r => r.name);
         const seen = [];
@@ -332,7 +394,10 @@ export class CrmStore {
 
         this.db.exec('BEGIN');
         try {
-            const clearStmt = this.db.prepare('DELETE FROM contact_tags WHERE tag = ?');
+            const clearScoped = this.db.prepare(`DELETE FROM contact_tags WHERE tag = ? AND contact_id IN
+                (SELECT id FROM contacts WHERE account_id = ?)`);
+            const clearAll = this.db.prepare('DELETE FROM contact_tags WHERE tag = ?');
+            const clearTag = (name) => (acc ? clearScoped.run(name, acc) : clearAll.run(name));
             const assignStmt = this.db.prepare('INSERT OR IGNORE INTO contact_tags (contact_id, tag) VALUES (?, ?)');
             const tagStmt = this.db.prepare(`INSERT INTO crm_tags (name, color, emoji, zalo_label_id, source, updated_at)
                 VALUES (?, ?, ?, ?, 'zalo', ?)
@@ -344,7 +409,7 @@ export class CrmStore {
                 if (!name) continue;
                 seen.push(name);
                 tagStmt.run(name, s(raw?.color, 20) || null, s(raw?.emoji, 16) || null, num(raw?.id), now);
-                clearStmt.run(name);
+                clearTag(name);
                 for (const conv of (Array.isArray(raw?.conversations) ? raw.conversations : [])) {
                     const contactId = uidToId.get(String(conv).replace(/_0$/, ''));
                     if (!contactId) { unmatched++; continue; }
@@ -356,7 +421,7 @@ export class CrmStore {
             // Nhãn Zalo đã bị xoá hẳn bên app → gỡ luôn khỏi CRM, kể cả hàng danh mục.
             const gone = prune ? prevZaloTags.filter(n => !seen.includes(n)) : [];
             for (const n of gone) {
-                clearStmt.run(n);
+                clearTag(n);
                 this.db.prepare('DELETE FROM crm_tags WHERE name = ? AND source = ?').run(n, 'zalo');
             }
             this.db.exec('COMMIT');
@@ -366,6 +431,25 @@ export class CrmStore {
             this.db.exec('ROLLBACK');
             throw e;
         }
+    }
+
+    /**
+     * Dọn nhãn nguồn Zalo đã biến mất khỏi app — TÁCH RIÊNG khỏi `syncZaloLabels` vì nó là việc
+     * toàn cục: một nhãn chỉ thật sự "đã xoá" khi KHÔNG tài khoản nào còn nó. Gọi dọn bên trong
+     * vòng lặp từng bot sẽ xoá nhãn mà bot kế tiếp vẫn đang dùng.
+     *
+     * @param {string[]} keepNames tên nhãn còn thấy trên MỌI tài khoản đọc được
+     */
+    pruneZaloTags(keepNames, actor = 'system') {
+        const keep = new Set((Array.isArray(keepNames) ? keepNames : []).map(n => String(n)));
+        const gone = this.db.prepare("SELECT name FROM crm_tags WHERE source = 'zalo'").all()
+            .map(r => r.name).filter(n => !keep.has(n));
+        if (!gone.length) return 0;
+        const delTag = this.db.prepare('DELETE FROM contact_tags WHERE tag = ?');
+        const delCat = this.db.prepare("DELETE FROM crm_tags WHERE name = ? AND source = 'zalo'");
+        for (const n of gone) { delTag.run(n); delCat.run(n); }
+        this._audit(actor, 'tag.prune-zalo', `${gone.length} nhãn`, gone.join(', '));
+        return gone.length;
     }
 
     // ── Thao tác hàng loạt ───────────────────────────────────────────────
@@ -408,6 +492,74 @@ export class CrmStore {
         let deleted = 0;
         for (const id of ids) if (this.deleteContact(id, actor)) deleted++;
         return { deleted, skipped: ids.length - deleted };
+    }
+
+    /**
+     * Nhập liên hệ từ file (CSV) — KHÔNG có `zalo_uid` nên phải tự tìm bản trùng.
+     *
+     * Thứ tự khớp đi từ chắc xuống yếu: `zalo_uid` (nếu file có) → **sđt** trong cùng tài khoản →
+     * **tên không dấu** trong cùng tài khoản. Thiếu bước này thì nhập lại cùng một file lần thứ hai
+     * là nhân đôi toàn bộ danh bạ — lỗi mà người dùng chỉ phát hiện khi đã muộn.
+     *
+     * Chỉ ghi đè trường có giá trị trong file: cột để trống nghĩa là "không đụng tới", không phải
+     * "xoá đi" — cùng luật với import từ Zalo.
+     */
+    importRows(rows, accountId = 'default', actor = 'import') {
+        const acc = s(accountId) || 'default';
+        let created = 0, updated = 0, skipped = 0;
+        const byPhone = new Map();
+        const byName = new Map();
+        for (const r of this.db.prepare('SELECT id, phone, display_name FROM contacts WHERE account_id = ?').all(acc)) {
+            const p = normalizePhone(r.phone);
+            if (p && !byPhone.has(p)) byPhone.set(p, r.id);
+            const n = foldName(r.display_name);
+            if (n && !byName.has(n)) byName.set(n, r.id);
+        }
+
+        for (const raw of (Array.isArray(rows) ? rows : [])) {
+            const name = s(raw?.displayName)?.trim();
+            if (!name) { skipped++; continue; }
+            const phone = normalizePhone(raw.phone);
+            const uid = s(raw.zaloUid)?.trim() || null;
+
+            let existingId = null;
+            if (uid) {
+                existingId = this.db.prepare('SELECT id FROM contacts WHERE account_id = ? AND zalo_uid = ?')
+                    .get(acc, uid)?.id || null;
+            }
+            if (!existingId && phone) existingId = byPhone.get(phone) || null;
+            if (!existingId) existingId = byName.get(foldName(name)) || null;
+
+            const saved = this.upsertContact({
+                id: existingId || undefined,
+                accountId: acc,
+                zaloUid: existingId ? undefined : uid,
+                displayName: name,
+                phone: phone || undefined,
+                gender: raw.gender || undefined,
+                birthday: raw.birthday || undefined,
+                notes: raw.notes || undefined,
+                source: raw.source || (existingId ? undefined : 'import'),
+            }, actor);
+
+            if (existingId) updated++; else created++;
+            const p2 = normalizePhone(saved.phone);
+            if (p2) byPhone.set(p2, saved.id);
+            byName.set(foldName(saved.display_name), saved.id);
+
+            const tags = String(raw.tags || '').split(/[,;]/).map(x => x.trim()).filter(Boolean);
+            if (tags.length) {
+                const ins = this.db.prepare('INSERT OR IGNORE INTO contact_tags (contact_id, tag) VALUES (?, ?)');
+                for (const tg of tags.slice(0, 20)) ins.run(saved.id, s(tg, 50));
+            }
+        }
+        this._audit(actor, 'contacts.import-file', acc, `thêm ${created}, cập nhật ${updated}, bỏ ${skipped}`);
+        return { created, updated, skipped };
+    }
+
+    /** Toàn bộ liên hệ khớp bộ lọc, không phân trang — cho việc xuất file. */
+    exportContacts(opts = {}) {
+        return this.listContacts({ ...opts, offset: 0, limit: 10000, _maxLimit: 10000 }).contacts;
     }
 
     setContactTags(contactId, tags, actor = 'system') {

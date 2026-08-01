@@ -1,5 +1,52 @@
 ## [Unreleased]
 
+### Fixed
+- **★ Liên hệ không tách theo bot: bot này thấy liên hệ của bot kia, và một người thành hai dòng.**
+  Owner báo hai triệu chứng, chung một gốc: CRM **chưa bao giờ truyền `accountId`**. Import luôn ghi
+  `'default'` bất kể liên hệ đến từ nhóm của bot nào, còn danh sách thì không lọc gì — nên bot `mkt`
+  hiện đủ 376 người kể cả người chỉ có trong nhóm của `william`. Bảng `contacts` vốn đã unique theo
+  `(account_id, zalo_uid)` từ v2; thiếu đúng một thứ là ai đó truyền `account_id` cho đúng.
+
+  Nay import chạy **riêng từng bot**, mỗi bot chỉ quét nhóm của mình (`groupNames[gid].profile`) và
+  danh sách bạn bè của chính tài khoản đó. Đồng bộ nhãn cũng giới hạn theo `accountId` — không thì
+  bước "thay thế" xoá-theo-tên của bot A sẽ gỡ sạch nhãn bot B vừa gắn, hai bot thay nhau xoá của
+  nhau. Việc dọn nhãn đã biến mất tách thành `pruneZaloTags`, chỉ chạy sau khi đọc được **mọi** tài
+  khoản, vì một nhãn chỉ thật sự bị xoá khi không tài khoản nào còn nó.
+- **Ô tick trong form Liên hệ phình hết dòng, nuốt mất tên nhóm.** Khối "Thuộc nhóm" hiện ra mấy ô
+  vuông trống không có chữ. Quy tắc chung `input { width:100%; min-height:40px }` áp cho **mọi**
+  input, kể cả checkbox — cùng họ với bẫy `.btn { min-height:38px }`. Thêm rule đè cho
+  `input[type=checkbox|radio]` (sửa cho toàn dashboard), và đặt cỡ **inline** ngay tại chỗ dựng
+  checklist để không lệ thuộc thứ tự cascade lẫn bộ nhớ đệm CSS.
+- **Sửa CSS/JS mà không đổi dấu vân bản thì người dùng vẫn thấy bản cũ.** `index.html` nạp
+  `dashboard.css?v=20260703f`; trình duyệt giữ bản cũ nên bản vá ô tick ở trên không tới nơi. Đây là
+  bước bắt buộc mỗi lần đụng hai file đó — đã bump lên `?v=20260801a`.
+- **Một bot thiếu `id`/`name` là giết cả `renderState()`.** `getBotBadge` gọi thẳng `bot.id.includes`
+  nên ném ngay, mà nó nằm trong `renderState()` — hệ quả là đổi bot xong **không trang nào cập nhật**
+  và không có lỗi nào hiện ra. Triệu chứng là "bộ lọc không chạy", rất xa nguyên nhân.
+
+### Added
+- **Chế độ "tất cả bot" gộp trùng người thành một dòng.** Zalo cấp uid khác nhau cho cùng một người
+  ở mỗi tài khoản, nên đó là hai bản ghi thật, hợp lệ, không gộp được ở tầng dữ liệu — chỉ gộp lúc
+  hiển thị. Khoá gộp đi từ bằng chứng mạnh xuống yếu: **sđt** → **tên không dấu + ngày sinh** →
+  **tên không dấu**. Dòng đã gộp mang chip `2 bot`, hợp nhất nhãn/nhóm của cả hai, và bù trường
+  trống từ bot kia (hồ sơ chỉ lộ sđt/ngày sinh với bot đã kết bạn nên mỗi bot biết một mẩu). Thao
+  tác hàng loạt trên dòng gộp áp cho **mọi** bản ghi bên dưới. Chọn một bot cụ thể thì không gộp gì.
+- **Nhập / tải CSV thay cho hai nút "Import từ Zalo" và "Đồng bộ nhãn Zalo".** Hai nút cũ kéo dữ
+  liệu từ chính tài khoản Zalo — đúng việc "Sync account" ở Tổng quan đã làm; bắt owner nhớ bấm ba
+  chỗ thì danh sách sẽ luôn cũ hơn thực tế và họ sẽ tưởng CRM hỏng. Nay **sync account tự làm cả
+  ba**, cho đúng phạm vi bot đang chọn. Chỗ hai nút đó dành cho việc mà sync không làm được: đưa
+  danh sách khách có sẵn từ ngoài vào và mang dữ liệu ra.
+
+  CSV chứ không phải `.xlsx`: Excel mở thẳng `.csv`, và bộ sinh chỉ là vài dòng chuỗi thay vì kéo bộ
+  đóng gói zip/XML vào một plugin đang không có dependency nào. Tải về theo **đúng bộ lọc đang xem**.
+  Có BOM UTF-8 (thiếu nó Excel trên Windows đọc tiếng Việt ra ký tự rác), nhận cả `,` lẫn `;`, và
+  chèn `'` trước ô bắt đầu bằng `=+-@` — tên Zalo do người ngoài đặt, một liên hệ tên `=cmd|...` là
+  đường tuồn lệnh vào máy người mở file. Nhập vào tự khớp bản trùng theo `uid` → **sđt** → **tên**,
+  không thì nhập lại cùng một file lần thứ hai là nhân đôi danh bạ.
+- **Cột "Nhóm" riêng; nhãn Zalo chuyển về cột "Liên hệ".** Cột tên trước đó thừa cả một khoảng trống
+  trong khi nhãn nằm tít bên phải. Nhãn là cách owner đã tự phân loại người này nên phải đọc được
+  cùng lúc với tên; còn chip nhóm gom về một cột.
+
 ### Added
 - **★ Trang "Bạn bè" gộp vào "Khách hàng", đổi tên thành "Liên hệ" (CRM lớp 2).** Owner nói thẳng:
   *"trang bạn bè t thấy đang chưa sử dụng được gì"* — và đúng: nó chỉ là **3 thẻ tĩnh mô tả API**

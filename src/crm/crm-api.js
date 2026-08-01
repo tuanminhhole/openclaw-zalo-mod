@@ -22,6 +22,9 @@ const ACTIONS = {
     }),
     'crm-contact-delete': (crm, p, actor) => ({ deleted: crm.deleteContact(required(p, 'id'), actor) }),
     'crm-contacts-import': (crm, p, actor) => crm.importMembers(p?.members || [], p?.accountId || 'default', actor),
+    // Nhập từ file (CSV): không có zalo_uid nên store tự tìm bản trùng theo sđt/tên.
+    'crm-contacts-import-rows': (crm, p, actor) => crm.importRows(p?.rows || [], p?.accountId || 'default', actor),
+    'crm-contacts-export': (crm, p) => ({ contacts: crm.exportContacts(p || {}) }),
     // Nối khách hàng ↔ nhóm Zalo. Replace toàn bộ, để bỏ tick một nhóm trên UI là bỏ liên kết thật.
     'crm-contact-groups': (crm, p, actor) => ({
         groups: crm.setContactGroups(required(p, 'id'), p.groups || [], actor),

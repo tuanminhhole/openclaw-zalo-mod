@@ -350,6 +350,118 @@ test('API: nhãn và thao tác hàng loạt đi qua handler, thiếu tham số t
     assert.equal(handleCrmAction(crm, 'crm-contacts-delete', { ids: [a.id] }).body.data.deleted, 1);
 });
 
+// ── Nhiều bot: tách theo tài khoản + gộp trùng người ──────────────────────
+
+/** Cùng một người ở hai bot: Zalo cấp uid khác nhau nên là hai bản ghi thật, hợp lệ. */
+function seedTwoBots(crm) {
+    crm.upsertContact({ accountId: 'william', zaloUid: 'w-1', displayName: 'Nguyễn Văn An', phone: '0901234567' });
+    crm.upsertContact({ accountId: 'mkt', zaloUid: 'm-1', displayName: 'Nguyen Van An', birthday: '17/05/1990' });
+    crm.upsertContact({ accountId: 'william', zaloUid: 'w-2', displayName: 'Chỉ ở William' });
+    crm.upsertContact({ accountId: 'mkt', zaloUid: 'm-2', displayName: 'Chỉ ở Mkt' });
+}
+
+test('nhiều bot: lọc theo accountId chỉ ra liên hệ của đúng bot đó', (t) => {
+    const { crm, close } = makeCrm();
+    t.after(close);
+    seedTwoBots(crm);
+
+    const w = crm.listContacts({ accountId: 'william' });
+    assert.equal(w.total, 2);
+    assert.ok(!w.contacts.some(c => c.display_name === 'Chỉ ở Mkt'),
+        'bot mkt có người không nằm trong nhóm nào của william thì william không được thấy');
+    assert.equal(crm.listContacts({ accountId: 'mkt' }).total, 2);
+    assert.equal(crm.listContacts({}).total, 4, 'không lọc thì thấy hết');
+});
+
+test('nhiều bot: cùng uid ở hai tài khoản là HAI bản ghi, không đè lên nhau', (t) => {
+    const { crm, close } = makeCrm();
+    t.after(close);
+    crm.upsertContact({ accountId: 'william', zaloUid: 'trùng', displayName: 'A' });
+    crm.upsertContact({ accountId: 'mkt', zaloUid: 'trùng', displayName: 'B' });
+    assert.equal(crm.listContacts({}).total, 2);
+    assert.equal(crm.listContacts({ accountId: 'mkt' }).contacts[0].display_name, 'B');
+});
+
+test('gộp trùng: cùng sđt → một dòng, mang theo id của cả hai bot', (t) => {
+    const { crm, close } = makeCrm();
+    t.after(close);
+    crm.upsertContact({ accountId: 'william', zaloUid: 'w-1', displayName: 'Nguyễn Văn An', phone: '0901234567' });
+    crm.upsertContact({ accountId: 'mkt', zaloUid: 'm-1', displayName: 'An (tên khác)', phone: '+84901234567' });
+
+    const merged = crm.listContacts({ mergePeople: true });
+    assert.equal(merged.total, 1, 'trùng sđt là chắc chắn một người');
+    assert.equal(merged.contacts[0].mergedIds.length, 2);
+    assert.deepEqual(merged.contacts[0].accounts.sort(), ['mkt', 'william']);
+});
+
+test('gộp trùng: không sđt thì gộp theo tên không dấu + ngày sinh, và hợp nhất nhãn/nhóm', (t) => {
+    const { crm, close } = makeCrm();
+    t.after(close);
+    const a = crm.upsertContact({ accountId: 'william', zaloUid: 'w-1', displayName: 'Đặng Đình Đạt', birthday: '17/05/1990' });
+    const b = crm.upsertContact({ accountId: 'mkt', zaloUid: 'm-1', displayName: 'dang dinh dat', birthday: '1990-05-17' });
+    crm.setContactTags(a.id, ['Khách hàng']);
+    crm.setContactTags(b.id, ['Trả lời sau']);
+    crm.setContactGroups(a.id, [{ groupId: 'g1', name: 'Nhóm 1' }]);
+    crm.setContactGroups(b.id, [{ groupId: 'g2', name: 'Nhóm 2' }]);
+
+    const merged = crm.listContacts({ mergePeople: true });
+    assert.equal(merged.total, 1, 'cùng tên (bỏ dấu) + cùng ngày sinh dù khác định dạng');
+    assert.deepEqual(merged.contacts[0].tags, ['Khách hàng', 'Trả lời sau'], 'nhãn của cả hai bot');
+    assert.deepEqual(merged.contacts[0].groups.map(g => g.groupId).sort(), ['g1', 'g2']);
+});
+
+test('gộp trùng: hai người KHÁC ngày sinh thì KHÔNG gộp dù trùng tên', (t) => {
+    const { crm, close } = makeCrm();
+    t.after(close);
+    crm.upsertContact({ accountId: 'william', zaloUid: 'w-1', displayName: 'Hoa', birthday: '01/01/1990' });
+    crm.upsertContact({ accountId: 'mkt', zaloUid: 'm-1', displayName: 'Hoa', birthday: '02/02/1995' });
+    assert.equal(crm.listContacts({ mergePeople: true }).total, 2);
+});
+
+test('gộp trùng: trường trống được bù từ bot kia (hồ sơ chỉ lộ với bot đã kết bạn)', (t) => {
+    const { crm, close } = makeCrm();
+    t.after(close);
+    crm.upsertContact({ accountId: 'william', zaloUid: 'w-1', displayName: 'An', phone: '0901234567' });
+    crm.upsertContact({ accountId: 'mkt', zaloUid: 'm-1', displayName: 'An', phone: '0901234567', gender: 'male', isFriend: true });
+
+    const m = crm.listContacts({ mergePeople: true }).contacts[0];
+    assert.equal(m.gender, 'male');
+    assert.equal(m.is_friend, 1, 'một bot đã kết bạn là đủ để nhắn riêng được');
+});
+
+test('đồng bộ nhãn: giới hạn theo accountId, bot này KHÔNG gỡ nhãn của bot kia', (t) => {
+    const { crm, close } = makeCrm();
+    t.after(close);
+    const w = crm.upsertContact({ accountId: 'william', zaloUid: 'w-1', displayName: 'A' });
+    const m = crm.upsertContact({ accountId: 'mkt', zaloUid: 'm-1', displayName: 'B' });
+
+    crm.syncZaloLabels([{ id: 1, text: 'Khách hàng', color: '#f00', conversations: ['w-1'] }],
+        'system', { accountId: 'william' });
+    crm.syncZaloLabels([{ id: 1, text: 'Khách hàng', color: '#f00', conversations: ['m-1'] }],
+        'system', { accountId: 'mkt' });
+
+    assert.deepEqual(crm.getContact(w.id).tags, ['Khách hàng'],
+        'đồng bộ bot mkt xoá-theo-tên sẽ gỡ luôn nhãn của william nếu không giới hạn theo tài khoản');
+    assert.deepEqual(crm.getContact(m.id).tags, ['Khách hàng']);
+});
+
+test('pruneZaloTags: chỉ gỡ nhãn KHÔNG còn ở tài khoản nào, giữ nhãn tự đặt', (t) => {
+    const { crm, close } = makeCrm();
+    t.after(close);
+    const a = crm.upsertContact({ displayName: 'A', zaloUid: 'u1' });
+    crm.syncZaloLabels([
+        { id: 1, text: 'Khách hàng', color: '#f00', conversations: ['u1'] },
+        { id: 2, text: 'Gia đình', color: '#00f', conversations: ['u1'] },
+    ]);
+    crm.tagContacts([a.id], 'VIP nội bộ', true);
+
+    assert.equal(crm.pruneZaloTags(['Khách hàng']), 1, 'chỉ "Gia đình" biến mất');
+    const tags = crm.getContact(a.id).tags;
+    assert.ok(tags.includes('Khách hàng') && tags.includes('VIP nội bộ'));
+    assert.ok(!tags.includes('Gia đình'));
+    assert.equal(crm.pruneZaloTags(['Khách hàng']), 0, 'gọi lại không gỡ thêm gì');
+});
+
 // ── Leads ─────────────────────────────────────────────────────────────────
 
 test('lead: pipeline mặc định New → ... → Won/Lost, move + history + undo', (t) => {

@@ -38,6 +38,19 @@ export function normalizeGender(raw) {
 }
 
 /**
+ * Bỏ dấu + hạ chữ để so tên. `đ` KHÔNG phải dấu tổ hợp nên `NFD` không tách được, phải thay tay —
+ * thiếu bước đó thì "van don" không bao giờ khớp "vận đơn" trong khi "tong hop" vẫn khớp
+ * "Tổng Hợp", kiểu lỗi lúc được lúc không.
+ */
+export function foldName(raw) {
+    return String(raw ?? '')
+        .normalize('NFD').replace(/[̀-ͯ]/g, '')
+        .toLowerCase().replace(/đ/g, 'd')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+/**
  * Tách ngày/tháng từ chuỗi ngày sinh thô của Zalo (`sdob`).
  *
  * Trả `{ day, month }` — CỐ Ý bỏ năm: cái owner cần là "sinh nhật sắp tới", mà nhiều hồ sơ

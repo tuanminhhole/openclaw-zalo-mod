@@ -5339,28 +5339,58 @@ Quy tắc:
                 if (!zEngine?.crm) throw new Error('CRM cần SQLite (Node >= 22.5). Storage hiện tại: in-memory.');
                 const memberDir = await readPluginDataJson('group-members.json');
                 const profileCache = await readPluginDataJson('zalo-profiles-cache.json');
-                let friendIds = null;
-                try {
-                    friendIds = extractFriendList(await runDashboardZcaAction('get-friends', {}))
-                        .map(f => String(f.id || '')).filter(Boolean);
-                } catch (_) {
-                    // Giữ `null` = "không biết ai là bạn". Đổi thành `[]` thì một lần Zalo lỗi sẽ xoá
-                    // sạch cờ bạn bè của mọi khách đã import trước đó.
+
+                // Import phải chạy RIÊNG TỪNG BOT, không gộp một cục.
+                //
+                // Zalo cấp cho mỗi tài khoản một uid KHÁC NHAU cho cùng một người, và mỗi nhóm chỉ
+                // thuộc về bot đang ở trong nhóm đó. Bản đầu ghi tất cả vào `accountId: 'default'`
+                // nên hỏng hai đường cùng lúc: bot `mkt` nhìn thấy cả người chỉ có trong nhóm của
+                // `william`, và một người ở nhóm của cả hai bot thành hai dòng không biết dòng nào
+                // của ai. `contacts` vốn đã unique theo (account_id, zalo_uid) — chỉ là chưa ai
+                // truyền account_id đúng vào.
+                const bots = await getZaloBots().catch(() => []);
+                const allProfiles = (bots.length ? bots.map(b => b.profile) : ['default']).filter(Boolean);
+                const wanted = payload.profile ? [String(payload.profile)] : allProfiles;
+
+                const perBot = [];
+                for (const prof of wanted) {
+                    const dir = {};
+                    for (const gid of Object.keys(memberDir)) {
+                        if (parseProfiles(groupNames[gid]?.profile).includes(prof)) dir[gid] = memberDir[gid];
+                    }
+                    let friendIds = null;
+                    try {
+                        friendIds = extractFriendList(await runDashboardZcaAction('get-friends', { profile: prof }))
+                            .map(f => String(f.id || '')).filter(Boolean);
+                    } catch (_) {
+                        // Giữ `null` = "không biết ai là bạn". Đổi thành `[]` thì một lần Zalo lỗi sẽ
+                        // xoá sạch cờ bạn bè của mọi liên hệ đã import trước đó.
+                    }
+                    const people = buildZaloPeople({
+                        memberDir: dir, profileCache, friendIds,
+                        groupNameOf: (gid) => getGroupName(gid),
+                    });
+                    perBot.push({ profile: prof, people, friendIds });
                 }
-                const people = buildZaloPeople({
-                    memberDir, profileCache, friendIds,
-                    groupNameOf: (gid) => getGroupName(gid),
-                });
+
+                const all = perBot.flatMap(b => b.people);
                 const stats = {
-                    total: people.length,
-                    withPhone: people.filter(p => p.phone).length,
-                    withBirthday: people.filter(p => p.birthday).length,
-                    friendsKnown: friendIds != null,
-                    friends: friendIds != null ? people.filter(p => p.isFriend).length : null,
+                    profiles: wanted,
+                    total: all.length,
+                    withPhone: all.filter(p => p.phone).length,
+                    withBirthday: all.filter(p => p.birthday).length,
+                    friendsKnown: perBot.some(b => b.friendIds != null),
+                    friends: perBot.reduce((n, b) => n + (b.friendIds != null ? b.people.filter(p => p.isFriend).length : 0), 0),
+                    byBot: perBot.map(b => ({ profile: b.profile, people: b.people.length })),
                 };
-                if (action === 'crm-zalo-people') return { ...stats, people: people.slice(0, 500) };
-                const res = zEngine.crm.importMembers(people, payload.accountId || 'default', 'dashboard');
-                return { ...res, ...stats };
+                if (action === 'crm-zalo-people') return { ...stats, people: all.slice(0, 500) };
+
+                let created = 0, updated = 0, linked = 0;
+                for (const b of perBot) {
+                    const r = zEngine.crm.importMembers(b.people, b.profile, 'dashboard');
+                    created += r.created; updated += r.updated; linked += r.linked;
+                }
+                return { created, updated, linked, ...stats };
             }
 
             // ── CRM: kéo nhãn phân loại có sẵn của Zalo về ──
@@ -5384,34 +5414,44 @@ Quy tắc:
                     return null;
                 };
 
-                // Trùng TÊN giữa các tài khoản thì gộp `conversations` — cùng một nhãn "Khách hàng"
-                // ở hai bot là cùng một ý định phân loại, tách ra thành hai nhãn là vô nghĩa.
-                const merged = new Map();
+                // Gắn nhãn phải chạy RIÊNG từng bot và giới hạn theo `accountId`: uid của cùng một
+                // người khác nhau giữa các tài khoản, nên nhãn của bot A không khớp liên hệ của bot
+                // B. Gộp một cục rồi xoá-theo-tên thì hai bot thay nhau gỡ nhãn của nhau.
+                const wanted = payload.profile ? [String(payload.profile)] : profiles;
                 const failed = [];
-                for (const prof of profiles) {
+                const seenNames = new Set();
+                let tags = 0, assigned = 0, unmatched = 0;
+
+                for (const prof of wanted) {
+                    let labels;
                     try {
-                        const res = await zEngine.bridge.execute(prof, { action: 'get-labels' });
-                        for (const l of (findLabelData(res) || [])) {
-                            const name = String(l?.text || '').trim();
-                            if (!name) continue;
-                            const cur = merged.get(name)
-                                || { id: l.id, text: name, color: l.color, emoji: l.emoji, conversations: [] };
-                            for (const c of (Array.isArray(l.conversations) ? l.conversations : [])) {
-                                if (!cur.conversations.includes(c)) cur.conversations.push(c);
-                            }
-                            merged.set(name, cur);
-                        }
+                        labels = findLabelData(await zEngine.bridge.execute(prof, { action: 'get-labels' })) || [];
                     } catch (e) {
                         failed.push(`${prof}: ${e.message}`);
+                        continue;
                     }
+                    for (const l of labels) {
+                        const n = String(l?.text || '').trim();
+                        if (n) seenNames.add(n);
+                    }
+                    // `prune: false` ở đây vì việc dọn danh mục là chuyện TOÀN CỤC, không phải của
+                    // riêng một bot — làm sau vòng lặp, khi đã biết đủ tên nhãn của mọi tài khoản.
+                    const r = zEngine.crm.syncZaloLabels(labels, 'dashboard', { prune: false, accountId: prof });
+                    tags = Math.max(tags, r.tags);
+                    assigned += r.assigned;
+                    unmatched += r.unmatched;
                 }
-                if (failed.length === profiles.length) {
+                if (failed.length === wanted.length) {
                     throw new Error(`Không đọc được nhãn Zalo từ tài khoản nào. ${failed.join(' · ')}`);
                 }
-                // Có tài khoản hỏng nghĩa là danh sách nhãn KHÔNG đầy đủ. Luật "thay thế" của
-                // syncZaloLabels hiểu thiếu-là-đã-xoá, nên lúc này chỉ được thêm, cấm xoá.
-                const r = zEngine.crm.syncZaloLabels([...merged.values()], 'dashboard', { prune: failed.length === 0 });
-                return { ...r, profiles: profiles.length, failed, pruned: failed.length === 0 };
+                // Chỉ dọn nhãn đã biến mất khi ĐỌC ĐƯỢC HẾT: thiếu một tài khoản nghĩa là danh sách
+                // nhãn không đầy đủ, mà luật dọn lại hiểu thiếu-là-đã-xoá.
+                const canPrune = failed.length === 0 && !payload.profile;
+                const removed = canPrune ? zEngine.crm.pruneZaloTags([...seenNames], 'dashboard') : 0;
+                return {
+                    tags: seenNames.size, assigned, unmatched, removed,
+                    profiles: wanted.length, failed, pruned: canPrune,
+                };
             }
 
             // ── CRM actions (crm-*) → src/crm/crm-api.js ──

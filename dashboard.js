@@ -1509,10 +1509,12 @@ function getBotBadge(profile) {
   if (profiles.length === 0) profiles.push('default');
   return profiles.map(p => {
     const bot = state.bots?.find(b => b.profile === p);
-    const name = bot ? (bot.name || bot.id) : (p || 'default');
-    const isWholesale = bot
-      ? (bot.id.includes('si') || bot.id.includes('2') || bot.name.includes('2') || bot.name.toLowerCase().includes('si'))
-      : (p || '').includes('si');
+    const name = bot ? (bot.name || bot.id || p || 'default') : (p || 'default');
+    // `bot.id`/`bot.name` từng được coi là luôn có. Một bot thiếu một trong hai là ném ngay tại đây,
+    // mà hàm này nằm trong `renderState()` — nên cả trang ngừng cập nhật: đổi bot xong danh sách
+    // không đổi, không báo lỗi gì. Mất khá lâu mới lần ra vì triệu chứng là "bộ lọc không chạy".
+    const hay = `${bot?.id || ''} ${bot?.name || ''} ${p || ''}`.toLowerCase();
+    const isWholesale = hay.includes('si') || hay.includes('2');
     const badgeClass = isWholesale ? 'si' : 'le';
     return `<span class="bot-badge badge-${badgeClass}">${esc(name)}</span>`;
   }).join(' ');
@@ -3870,6 +3872,9 @@ document.addEventListener('click', async event => {
         if (res && Array.isArray(res.failed) && res.failed.length) {
           showToast(t(`⚠️ Bot lỗi session, KHÔNG sync được: ${res.failed.join(', ')}. Đăng nhập lại các bot này rồi sync lại.`, `Sync failed for: ${res.failed.join(', ')}. Re-login those bots and sync again.`), 'warning');
         }
+        // Sync xong danh sách nhóm/member thì kéo luôn liên hệ + nhãn Zalo về CRM cho cùng phạm vi.
+        // Không tách thành nút riêng nữa: owner sẽ không nhớ bấm, và CRM sẽ luôn cũ hơn thực tế.
+        await crmSyncFromZalo(selectedBotFilter === 'all' ? '' : selectedBotFilter);
       }
       if (action === 'danger') showToast(t('Action nguy hiểm cần xác nhận 2 bước ở backend.', 'Danger actions require two-step confirmation in backend.'), 'warning');
       if (action === 'approve-selected') {
@@ -4421,6 +4426,11 @@ const crmState = {
   // Chọn hàng loạt giữ theo id chứ không theo chỉ số dòng — đổi bộ lọc là chỉ số lệch hết, và
   // "xoá 500 người" mà lệch thì không sửa lại được.
   selected: new Set(),
+  contactsBot: null,
+  // Một dòng đã gộp đại diện cho NHIỀU bản ghi (mỗi bot một cái). Nhớ lại ánh xạ khi vẽ, vì lựa
+  // chọn trải nhiều trang mà `crmState.contacts` chỉ giữ trang hiện tại — thiếu nó thì "gắn nhãn
+  // cho người này" chỉ gắn cho bản ghi của một bot.
+  mergedMap: new Map(),
   pipeline: null, tasks: null, taskFilter: 'open', undoLead: null,
 };
 const CRM_PAGE_SIZE = 50;
@@ -4482,17 +4492,34 @@ async function renderCrmContacts() {
       'Friends and not-yet-friend customers in one place — Zalo labels, birthdays, groups, lead links.');
   }
   const actions = document.getElementById('crmContactsActions');
+  // Không còn nút "Import từ Zalo" và "Đồng bộ nhãn Zalo": cả hai kéo dữ liệu từ chính tài khoản
+  // Zalo, đúng việc mà "Sync account" ở Tổng quan đã làm — hai nút riêng chỉ khiến owner phải nhớ
+  // bấm ba chỗ thì danh sách mới đầy đủ. Nay sync account tự làm cả ba. Chỗ này để dành cho việc
+  // mà sync KHÔNG làm được: đưa danh sách khách có sẵn từ ngoài vào, và mang dữ liệu ra.
   actions.innerHTML = `
-    <button class="btn" id="crmSyncLabelsBtn">${t('🏷 Đồng bộ nhãn Zalo', '🏷 Sync Zalo labels')}</button>
-    <button class="btn" id="crmImportBtn">${t('⟳ Import từ Zalo', '⟳ Import from Zalo')}</button>
+    <button class="btn" id="crmCsvImportBtn">${t('⬆ Nhập CSV', '⬆ Import CSV')}</button>
+    <button class="btn" id="crmCsvExportBtn">${t('⬇ Tải CSV', '⬇ Export CSV')}</button>
     <button class="btn primary" id="crmAddContactBtn">${t('+ Thêm liên hệ', '+ Add contact')}</button>`;
-  actions.querySelector('#crmSyncLabelsBtn').addEventListener('click', crmSyncZaloLabels);
-  actions.querySelector('#crmImportBtn').addEventListener('click', crmImportFromZalo);
+  actions.querySelector('#crmCsvImportBtn').addEventListener('click', crmImportCsv);
+  actions.querySelector('#crmCsvExportBtn').addEventListener('click', crmExportCsv);
   actions.querySelector('#crmAddContactBtn').addEventListener('click', () => crmContactModal(null));
   crmRenderFriendOps();
 
   const body = document.getElementById('crmContactsBody');
   body.innerHTML = `<div class="card" style="padding:24px;color:var(--muted)">${t('Đang tải…', 'Loading…')}</div>`;
+
+  // Mỗi bot có bảng liên hệ riêng (Zalo cấp uid khác nhau cho cùng một người), nên đổi bot là đổi
+  // hẳn tập dữ liệu: giữ nguyên lựa chọn hàng loạt hay số trang sẽ trỏ vào id của bot cũ.
+  const bot = selBotProfile();
+  if (crmState.contactsBot !== bot) {
+    crmState.contactsBot = bot;
+    crmState.selected.clear();
+    crmState.contactsPage = 1;
+  }
+  // Không chọn bot cụ thể + có nhiều bot → gộp trùng ở tầng hiển thị, không thì cùng một người
+  // hiện hai dòng vì hai uid.
+  const mergePeople = !bot && (state.bots || []).length > 1;
+
   try {
     // Danh mục nhãn và danh sách liên hệ độc lập nhau → gọi song song, đỡ một vòng chờ.
     const [res, tagsRes] = await Promise.all([
@@ -4505,6 +4532,8 @@ async function renderCrmContacts() {
         friend: crmState.contactsFriend || undefined,
         source: crmState.contactsSource || undefined,
         sort: crmState.contactsSort || undefined,
+        accountId: bot || undefined,
+        mergePeople: mergePeople || undefined,
         birthdayWithin: crmState.contactsBirthday ? Number(crmState.contactsBirthday) : undefined,
         limit: CRM_PAGE_SIZE,
         offset: (crmState.contactsPage - 1) * CRM_PAGE_SIZE,
@@ -4512,6 +4541,9 @@ async function renderCrmContacts() {
       crmState.tags ? Promise.resolve(null) : crmAction('crm-tags'),
     ]);
     if (tagsRes) crmState.tags = tagsRes.tags;
+    for (const c of res.contacts) {
+      if (c.mergedIds?.length > 1) crmState.mergedMap.set(c.id, c.mergedIds);
+    }
     crmState.contacts = res.contacts;
     crmState.contactsTotal = res.total;
     crmRenderContactsTable(body);
@@ -4592,19 +4624,32 @@ function crmRenderContactsTable(body) {
             <div style="font-weight:600">${crmEsc(c.display_name)}${c.is_friend
               ? ` <span class="chip" title="${t('Đã kết bạn Zalo — nhắn riêng được', 'Zalo friend — can DM')}"
                   style="font-size:10px;background:rgba(52,211,153,.16);vertical-align:middle">${t('bạn bè', 'friend')}</span>`
+              : ''}${c.mergedIds?.length > 1
+              ? ` <span class="chip" title="${t('Cùng một người ở nhiều bot — Zalo cấp uid khác nhau cho mỗi tài khoản',
+                  'Same person across bots — Zalo issues a different uid per account')}"
+                  style="font-size:10px;background:rgba(167,139,250,.18);vertical-align:middle">${c.mergedIds.length} bot</span>`
               : ''}</div>
-            ${/* Nói rõ khách nào CHƯA nối được với người Zalo — đó là khách không mở được lịch sử
-                  chat, tức phần dữ liệu vẫn là sổ tay gõ tay. */''}
+            ${/* Nói rõ ai CHƯA nối được với người Zalo — đó là liên hệ không mở được lịch sử chat,
+                  tức phần dữ liệu vẫn là sổ tay gõ tay. */''}
             <div style="color:var(--muted);font-size:12px">${c.zalo_uid
               ? `🔗 ${crmEsc(c.zalo_uid)}`
               : `<span style="opacity:.8">${t('chưa nối Zalo', 'not linked')}</span>`}</div>
-            ${(c.groups || []).length ? `<div class="chips" style="margin-top:4px">${(c.groups || []).slice(0, 3).map(g =>
-              `<span class="chip" data-crm-group-filter="${crmEsc(g.groupId)}" title="${crmEsc(g.name)}"
-                style="cursor:pointer;font-size:10.5px;background:rgba(96,165,250,.14)">${crmEsc(g.name)}</span>`).join('')}${
-              (c.groups || []).length > 3 ? `<span class="chip" style="font-size:10.5px">+${(c.groups || []).length - 3}</span>` : ''}</div>` : ''}
+            ${/* Nhãn Zalo nằm NGAY dưới tên: nó là cách owner đã tự phân loại người này, nên phải
+                  đọc được cùng lúc với tên. Trước đó nhãn ở một cột riêng tít bên phải trong khi
+                  cột tên thừa cả một khoảng trống. */''}
+            ${(c.tags || []).length ? `<div class="chips" style="margin-top:4px">${
+              (c.tags || []).map(tag => crmTagChip(tag)).join('')}</div>` : ''}
           </div>
         </div>
       </td>
+      <td>${(c.groups || []).length
+        ? `<div class="chips">${(c.groups || []).slice(0, 3).map(g =>
+            `<span class="chip" data-crm-group-filter="${crmEsc(g.groupId)}" title="${crmEsc(g.name)}"
+              style="cursor:pointer;font-size:10.5px;background:rgba(96,165,250,.14)">${crmEsc(g.name)}</span>`).join('')}${
+            (c.groups || []).length > 3
+              ? `<span class="chip" style="font-size:10.5px" title="${crmEsc((c.groups || []).slice(3).map(g => g.name).join(', '))}">+${(c.groups || []).length - 3}</span>`
+              : ''}</div>`
+        : '<span style="color:var(--muted)">—</span>'}</td>
       <td>${crmEsc(c.phone || '—')}</td>
       ${/* Cột hồ sơ: ngày sinh + giới tính. Đây là hai trường khiến danh sách "đầy" và lọc được —
             trước 2.28 chúng không tồn tại nên mọi bộ lọc đều lọc trên bảng trống. */''}
@@ -4618,7 +4663,6 @@ function crmRenderContactsTable(body) {
           : '';
         return `${bd ? `🎂 ${crmEsc(bd)}${soon}` : ''}${bd && g ? '<br>' : ''}${g ? `<span style="color:var(--muted);font-size:12px">${crmEsc(g)}</span>` : ''}`;
       })()}</td>
-      <td><div class="chips">${(c.tags || []).map(tag => crmTagChip(tag)).join('') || '—'}</div></td>
       <td style="white-space:nowrap">${crmEsc(crmSourceLabel(c.source))}</td>
       <td style="white-space:nowrap">${crmDate(c.last_contact_at)}</td>
       <td style="white-space:nowrap;text-align:right">
@@ -4685,9 +4729,11 @@ function crmRenderContactsTable(body) {
           <thead><tr>
             <th style="width:34px"><input type="checkbox" id="crmPickAll" ${allOnPage ? 'checked' : ''}
               title="${t('Chọn cả trang này', 'Select this page')}" style="width:auto;min-height:0;margin:0"></th>
-            <th>${t('Liên hệ', 'Contact')}</th><th>${t('SĐT', 'Phone')}</th>
+            <th>${t('Liên hệ', 'Contact')}</th>
+            <th>${t('Nhóm', 'Groups')}</th>
+            <th>${t('SĐT', 'Phone')}</th>
             <th>${t('Hồ sơ', 'Profile')}</th>
-            <th>${t('Nhãn', 'Labels')}</th><th>${t('Loại', 'Type')}</th>
+            <th>${t('Loại', 'Type')}</th>
             <th>${t('Tương tác cuối', 'Last contact')}</th><th></th>
           </tr></thead>
           <tbody>${rowsHtml || `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:28px">${t('Chưa có liên hệ nào. Bấm "Import từ Zalo" hoặc "+ Thêm liên hệ".', 'No contacts yet. Use "Import from Zalo" or "+ Add contact".')}</td></tr>`}</tbody>
@@ -4821,7 +4867,7 @@ async function crmContactModal(contact) {
   // openModal dựng DOM ĐỒNG BỘ rồi mới trả promise, nên phải gắn handler TRƯỚC khi await — gắn sau
   // thì owner đã đóng form xong, bộ chọn chưa bao giờ hoạt động.
   const pending = openModal({
-    title: contact ? t('Sửa khách hàng', 'Edit contact') : t('Thêm khách hàng', 'Add contact'),
+    title: contact ? t('Sửa liên hệ', 'Edit contact') : t('Thêm liên hệ', 'Add contact'),
     body: `<div class="crm-form">
       <label class="crm-field"><span>${t('Người Zalo', 'Zalo person')}</span>
         <div data-crm-linkbox>${linkBoxHtml()}</div></label>
@@ -4967,9 +5013,16 @@ function crmGroupChecklist(selectedIds = []) {
   if (!groups.length) return `<div class="item-sub">${t('Chưa có nhóm nào trong state.', 'No groups in state.')}</div>`;
   const sel = new Set(selectedIds.map(String));
   return `<div style="max-height:150px;overflow:auto;border:1px solid var(--line);border-radius:9px;padding:6px;background:var(--surface-2)">
+    ${/* Cỡ ô tick đặt THẲNG inline, không dựa vào dashboard.css: quy tắc chung
+          `input { width:100%; min-height:40px }` áp cả cho checkbox, và nó từng kéo ô tick rộng hết
+          dòng khiến tên nhóm bị đẩy mất — cả khối chỉ còn ba ô vuông trống. dashboard.css nay đã có
+          rule đè, nhưng inline thì không lệ thuộc vào thứ tự cascade lẫn bộ nhớ đệm CSS của trình
+          duyệt (file nạp qua URL có dấu vân bản, sửa CSS mà quên đổi dấu là người dùng vẫn thấy bản
+          cũ). */''}
     ${groups.map(g => `<label style="display:flex;align-items:center;gap:8px;padding:4px 6px;border-radius:6px;cursor:pointer;font-size:13px">
-      <input type="checkbox" data-crm-group="${crmEsc(g.groupId)}" ${sel.has(String(g.groupId)) ? 'checked' : ''}/>
-      <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${crmEsc(g.name)}</span>
+      <input type="checkbox" data-crm-group="${crmEsc(g.groupId)}" ${sel.has(String(g.groupId)) ? 'checked' : ''}
+        style="width:16px;min-width:16px;height:16px;min-height:0;padding:0;margin:0;flex:none"/>
+      <span style="flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${crmEsc(g.name)}</span>
     </label>`).join('')}</div>`;
 }
 
@@ -5012,13 +5065,28 @@ function crmRenderFriendOps() {
 }
 
 /**
+ * Id thật của những dòng đang chọn — bung dòng đã gộp ra thành mọi bản ghi bên dưới.
+ *
+ * Ở chế độ tất cả bot, một dòng là một NGƯỜI nhưng dưới nó có thể là hai bản ghi (mỗi bot một
+ * uid). Thao tác trên người đó phải áp cho cả hai, không thì gắn nhãn xong đổi sang bot kia lại
+ * thấy chưa có nhãn.
+ */
+function crmSelectedIds() {
+  const out = new Set();
+  for (const id of crmState.selected) {
+    for (const real of (crmState.mergedMap.get(id) || [id])) out.add(real);
+  }
+  return [...out];
+}
+
+/**
  * Gắn hoặc bỏ một nhãn cho toàn bộ liên hệ đang chọn.
  *
  * Cho gõ nhãn mới ngay tại đây (kèm `<datalist>` gợi ý nhãn đã có) thay vì bắt vào trang quản lý
  * nhãn trước: việc phân loại luôn nảy ra lúc đang nhìn danh sách, chứ không phải lúc rảnh.
  */
 async function crmBulkTag(add) {
-  const ids = [...crmState.selected];
+  const ids = crmSelectedIds();
   if (!ids.length) return;
   const known = (crmState.tags || []).map(x => x.name);
   const ok = await openModal({
@@ -5045,7 +5113,7 @@ async function crmBulkTag(add) {
 }
 
 async function crmBulkDelete() {
-  const ids = [...crmState.selected];
+  const ids = crmSelectedIds();
   if (!ids.length) return;
   const ok = await openModal({
     title: t(`Xoá ${ids.length} liên hệ?`, `Delete ${ids.length} contacts?`),
@@ -5064,89 +5132,225 @@ async function crmBulkDelete() {
   } catch (err) { showToast(err.message, 'error'); }
 }
 
-/** Kéo nhãn phân loại có sẵn của Zalo về CRM. */
-async function crmSyncZaloLabels() {
-  const btn = document.getElementById('crmSyncLabelsBtn');
-  if (btn) { btn.disabled = true; btn.textContent = t('Đang đồng bộ…', 'Syncing…'); }
+// ── Nhập / xuất CSV ─────────────────────────────────────────────────────────
+//
+// CSV chứ không phải .xlsx: Excel mở thẳng file .csv, và bộ sinh chỉ là vài dòng chuỗi — không
+// phải kéo thêm bộ đóng gói zip/XML vào một plugin hiện không có dependency nào.
+
+const CRM_CSV_COLUMNS = [
+  ['Tên', c => c.display_name],
+  ['SĐT', c => c.phone || ''],
+  ['Giới tính', c => crmGenderLabel(c.gender)],
+  ['Ngày sinh', c => c.birthday || ''],
+  ['Nhãn', c => (c.tags || []).join(', ')],
+  ['Nhóm', c => (c.groups || []).map(g => g.name).join(', ')],
+  ['Loại', c => crmSourceLabel(c.source)],
+  ['Đã kết bạn', c => (c.is_friend ? 'x' : '')],
+  ['UID Zalo', c => c.zalo_uid || ''],
+  ['Ghi chú', c => c.notes || ''],
+];
+
+/**
+ * Một ô CSV. Excel hiểu `""` là dấu nháy kép, và luôn phải bọc khi ô có dấu phẩy/xuống dòng.
+ *
+ * Dấu `'` ở đầu những chuỗi bắt đầu bằng `=+-@`: Excel coi chúng là CÔNG THỨC và sẽ chạy khi mở
+ * file. Tên Zalo do người ngoài đặt, nên một liên hệ tên `=cmd|...` là đường tuồn lệnh vào máy
+ * người mở file.
+ */
+function crmCsvCell(v) {
+  let str = String(v ?? '');
+  if (/^[=+\-@\t\r]/.test(str)) str = `'${str}`;
+  return `"${str.replace(/"/g, '""')}"`;
+}
+
+async function crmExportCsv() {
+  const bot = selBotProfile();
+  const btn = document.getElementById('crmCsvExportBtn');
+  if (btn) { btn.disabled = true; btn.textContent = t('Đang lấy…', 'Fetching…'); }
   try {
-    const r = await crmAction('crm-sync-zalo-labels');
+    // Xuất theo ĐÚNG bộ lọc đang xem: owner lọc "sinh nhật 7 ngày tới" rồi bấm tải mà ra cả 376
+    // người thì file đó vô dụng.
+    const res = await crmAction('crm-contacts-export', {
+      search: crmState.contactsSearch || undefined,
+      tag: crmState.contactsTag || undefined,
+      groupId: crmState.contactsGroup || undefined,
+      linked: crmState.contactsLinked || undefined,
+      gender: crmState.contactsGender || undefined,
+      friend: crmState.contactsFriend || undefined,
+      source: crmState.contactsSource || undefined,
+      sort: crmState.contactsSort || undefined,
+      accountId: bot || undefined,
+      mergePeople: (!bot && (state.bots || []).length > 1) || undefined,
+      birthdayWithin: crmState.contactsBirthday ? Number(crmState.contactsBirthday) : undefined,
+    });
+    const rows = res.contacts || [];
+    if (!rows.length) { showToast(t('Không có liên hệ nào khớp bộ lọc.', 'No contacts match the filter.'), 'error'); return; }
+
+    const lines = [CRM_CSV_COLUMNS.map(c => crmCsvCell(c[0])).join(',')];
+    for (const c of rows) lines.push(CRM_CSV_COLUMNS.map(col => crmCsvCell(col[1](c))).join(','));
+    // BOM UTF-8: thiếu nó thì Excel trên Windows đọc tiếng Việt thành ký tự rác.
+    const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const d = new Date();
+    const stamp = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+    a.href = url;
+    a.download = `lien-he-${bot || 'tat-ca'}-${stamp}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast(t(`Đã tải ${rows.length} liên hệ`, `Exported ${rows.length} contacts`), 'success');
+  } catch (err) { showToast(err.message, 'error'); }
+  finally { if (btn) { btn.disabled = false; btn.textContent = t('⬇ Tải CSV', '⬇ Export CSV'); } }
+}
+
+/** Tách một dòng CSV, có xử lý ô bọc nháy kép và dấu phẩy nằm trong ô. */
+function crmCsvSplitLine(line) {
+  const out = [];
+  let cur = '', inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (inQuotes) {
+      if (ch === '"') {
+        if (line[i + 1] === '"') { cur += '"'; i++; } else inQuotes = false;
+      } else cur += ch;
+    } else if (ch === '"') inQuotes = true;
+    else if (ch === ',' || ch === ';') { out.push(cur); cur = ''; }
+    else cur += ch;
+  }
+  out.push(cur);
+  // Bỏ dấu nháy chống-công-thức mà chính mình thêm lúc xuất, để tải ra rồi nhập lại không lệch.
+  return out.map(v => v.trim().replace(/^'(?=[=+\-@])/, ''));
+}
+
+function crmParseCsv(text) {
+  // Excel bản Việt hay lưu bằng dấu `;`. Đoán bằng cách đếm ở dòng tiêu đề — đoán sai thì cả file
+  // thành một cột và người dùng không hiểu vì sao.
+  const clean = text.replace(/^﻿/, '').replace(/\r\n/g, '\n').trim();
+  const rawLines = clean.split('\n').filter(l => l.trim());
+  if (rawLines.length < 2) return { rows: [], headers: [] };
+  const headers = crmCsvSplitLine(rawLines[0]).map(h => h.toLowerCase());
+  const find = (...names) => headers.findIndex(h => names.some(n => h.includes(n)));
+  const idx = {
+    displayName: find('tên', 'ten', 'name'),
+    phone: find('sđt', 'sdt', 'phone', 'điện thoại'),
+    gender: find('giới', 'gioi', 'gender'),
+    birthday: find('sinh', 'birthday', 'dob'),
+    tags: find('nhãn', 'nhan', 'tag', 'label'),
+    zaloUid: find('uid'),
+    notes: find('ghi chú', 'ghi chu', 'note'),
+  };
+  const rows = [];
+  for (const line of rawLines.slice(1)) {
+    const cells = crmCsvSplitLine(line);
+    const at = (i) => (i >= 0 && i < cells.length ? cells[i] : '');
+    const displayName = at(idx.displayName);
+    if (!displayName) continue;
+    rows.push({
+      displayName,
+      phone: at(idx.phone),
+      gender: /^(nữ|nu|female|f)$/i.test(at(idx.gender)) ? 'female'
+        : /^(nam|male|m)$/i.test(at(idx.gender)) ? 'male' : '',
+      birthday: at(idx.birthday),
+      tags: at(idx.tags),
+      zaloUid: at(idx.zaloUid),
+      notes: at(idx.notes),
+    });
+  }
+  return { rows, headers, hasName: idx.displayName >= 0 };
+}
+
+async function crmImportCsv() {
+  const bot = selBotProfile();
+  if (!bot && (state.bots || []).length > 1) {
+    showToast(t('Chọn một bot ở thanh trên trước khi nhập — liên hệ phải thuộc về đúng tài khoản Zalo.',
+      'Pick a bot in the top bar first — contacts must belong to a specific Zalo account.'), 'error');
+    return;
+  }
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.csv,text/csv';
+  input.addEventListener('change', async () => {
+    const file = input.files?.[0];
+    if (!file) return;
+    let parsed;
+    try {
+      parsed = crmParseCsv(await file.text());
+    } catch (err) { showToast(err.message, 'error'); return; }
+
+    if (!parsed.hasName) {
+      showToast(t('File thiếu cột "Tên" — tải một file mẫu bằng nút "Tải CSV" để xem đúng định dạng.',
+        'Missing a "Tên"/"Name" column — export a sample with "Export CSV" to see the format.'), 'error');
+      return;
+    }
+    if (!parsed.rows.length) { showToast(t('File không có dòng nào.', 'File has no rows.'), 'error'); return; }
+
+    const ok = await openModal({
+      title: t(`Nhập ${parsed.rows.length} liên hệ từ CSV`, `Import ${parsed.rows.length} contacts from CSV`),
+      body: `<ul style="margin:0;padding-left:18px;line-height:1.7">
+        <li>${crmEsc(t(`Vào tài khoản bot: ${bot || 'default'}`, `Into bot account: ${bot || 'default'}`))}</li>
+        <li>${crmEsc(t('Trùng sđt hoặc trùng tên thì CẬP NHẬT, không tạo thêm dòng mới.',
+          'Rows matching an existing phone or name are UPDATED, not duplicated.'))}</li>
+        <li>${crmEsc(t('Ô để trống nghĩa là không đụng tới, không phải xoá.',
+          'Empty cells mean "leave as-is", not "clear".'))}</li>
+      </ul>`,
+      confirmText: t('Nhập', 'Import'),
+    });
+    if (!ok) return;
+    try {
+      const r = await crmAction('crm-contacts-import-rows', { rows: parsed.rows, accountId: bot || 'default' });
+      crmState.tags = null;
+      showToast(t(`Nhập xong: ${r.created} mới, ${r.updated} cập nhật${r.skipped ? `, bỏ ${r.skipped} dòng thiếu tên` : ''}`,
+        `Imported: ${r.created} new, ${r.updated} updated${r.skipped ? `, ${r.skipped} skipped` : ''}`), 'success');
+      renderCrmContacts();
+    } catch (err) { showToast(err.message, 'error'); }
+  }, { once: true });
+  input.click();
+}
+
+/**
+ * Kéo liên hệ + nhãn Zalo về CRM. Chạy kèm "Sync account" ở Tổng quan, không còn nút riêng.
+ *
+ * Hai việc này lấy dữ liệu từ chính tài khoản Zalo, đúng phạm vi mà sync account vừa làm mới — bắt
+ * owner nhớ bấm thêm hai nút nữa ở một trang khác thì danh sách sẽ luôn cũ hơn thực tế, và họ sẽ
+ * kết luận là CRM hỏng chứ không nghĩ là mình quên bấm.
+ *
+ * Lỗi ở đây KHÔNG được làm hỏng kết quả sync group: sync group là việc chính owner vừa yêu cầu, còn
+ * đây là phần ăn theo. Nên bắt hết lỗi, chỉ báo bằng toast.
+ *
+ * @param {string} profile '' = mọi bot
+ */
+async function crmSyncFromZalo(profile = '') {
+  const scope = profile ? { profile } : {};
+  const bits = [];
+  try {
+    const res = await crmAction('crm-import-zalo', scope);
+    bits.push(t(`${res.created} liên hệ mới, ${res.updated} cập nhật`,
+      `${res.created} new contacts, ${res.updated} updated`));
+  } catch (err) {
+    showToast(t(`Sync liên hệ lỗi: ${err.message}`, `Contact sync failed: ${err.message}`), 'error');
+  }
+
+  try {
+    const r = await crmAction('crm-sync-zalo-labels', scope);
     crmState.tags = null;   // danh mục vừa đổi → buộc nạp lại màu
-    const bits = [t(`${r.tags} nhãn`, `${r.tags} labels`), t(`gắn ${r.assigned} liên hệ`, `${r.assigned} assigned`)];
+    bits.push(t(`${r.tags} nhãn, gắn ${r.assigned}`, `${r.tags} labels, ${r.assigned} assigned`));
     if (r.removed) bits.push(t(`gỡ ${r.removed} nhãn đã xoá bên Zalo`, `${r.removed} removed`));
-    showToast(bits.join(' · '), 'success');
 
     // Ba trạng thái dễ bị hiểu nhầm là "hỏng" — nói rõ ngay thay vì để owner đoán.
     if (r.failed?.length) {
       showToast(t(`⚠️ ${r.failed.length} tài khoản không đọc được nhãn — lần này CHỈ thêm, không xoá gì.`,
         `⚠️ ${r.failed.length} account(s) failed — this run only added labels, nothing removed.`), 'error');
     } else if (r.tags && !r.assigned) {
-      showToast(t('Zalo có nhãn nhưng chưa gắn cho ai — vào app Zalo phân loại chat rồi đồng bộ lại.',
-        'Zalo has labels but none is assigned yet — classify chats in the Zalo app, then sync again.'), 'error');
-    } else if (r.unmatched) {
-      showToast(t(`${r.unmatched} hội thoại được gắn nhãn nhưng chưa có trong Liên hệ — bấm "Import từ Zalo" trước.`,
-        `${r.unmatched} labelled conversations are not in Contacts yet — run "Import from Zalo" first.`), 'error');
+      showToast(t('Zalo có nhãn nhưng chưa gắn cho hội thoại nào — vào app Zalo phân loại chat rồi sync lại.',
+        'Zalo has labels but none is assigned to any chat — classify chats in the Zalo app, then sync again.'), 'warning');
     }
-    renderCrmContacts();
   } catch (err) {
-    showToast(err.message, 'error');
-  } finally {
-    if (btn) { btn.disabled = false; btn.textContent = t('🏷 Đồng bộ nhãn Zalo', '🏷 Sync Zalo labels'); }
-  }
-}
-
-/**
- * Import người Zalo vào CRM — việc gộp chạy PHÍA SERVER.
- *
- * Bản cũ gom danh sách ở đây từ `state.members`, nên mỗi khách chỉ có tên + avatar: sđt và ngày
- * sinh nằm trong `zalo-profiles-cache.json` ở đĩa của gateway, trình duyệt không thấy. Kết quả là
- * CRM đầy bản ghi trống trường, và mọi bộ lọc đều lọc trên bảng trống — đúng thứ khiến nó "không
- * có giá trị". Nay hỏi server một nhịp để xem trước sẽ nhập gì, rồi bảo server tự nhập.
- */
-async function crmImportFromZalo() {
-  let preview;
-  try {
-    preview = await crmAction('crm-zalo-people');
-  } catch (err) { showToast(err.message, 'error'); return; }
-
-  if (!preview.total) {
-    showToast(t('Chưa có member nào để import — mở trang Thành viên để sync trước.',
-      'No members to import — open the Members page to sync first.'), 'error');
-    return;
+    showToast(t(`Đồng bộ nhãn lỗi: ${err.message}`, `Label sync failed: ${err.message}`), 'error');
   }
 
-  // Nói rõ SẼ NHẬP ĐƯỢC BAO NHIÊU TRƯỜNG, không chỉ bao nhiêu người: hồ sơ đồng bộ dần ở nền, nên
-  // import sớm sẽ ra danh sách nghèo trường mà owner không hiểu vì sao.
-  const lines = [
-    t(`${preview.total} người (đã có thì cập nhật, không nhân đôi).`,
-      `${preview.total} people (existing ones are updated, no duplicates).`),
-    t(`Kèm sđt: ${preview.withPhone} · kèm ngày sinh: ${preview.withBirthday}`,
-      `With phone: ${preview.withPhone} · with birthday: ${preview.withBirthday}`),
-  ];
-  if (preview.friendsKnown) {
-    lines.push(t(`Đã kết bạn: ${preview.friends}`, `Friends: ${preview.friends}`));
-  } else {
-    lines.push(t('⚠️ Không đọc được danh sách bạn bè lần này — cờ "đã kết bạn" sẽ giữ nguyên như cũ.',
-      '⚠️ Could not read the friend list this time — existing "friend" flags are kept as-is.'));
-  }
-  if (preview.withPhone === 0 && preview.withBirthday === 0) {
-    lines.push(t('Hồ sơ chi tiết đồng bộ dần ở nền và chỉ hiện với bot đã kết bạn — import lại sau sẽ đầy thêm.',
-      'Detailed profiles sync in the background and only appear for befriended bots — re-import later to fill in more.'));
-  }
-
-  // Dùng `body` (HTML) chứ không nhồi `\n` vào `desc`: `desc` gán bằng `textContent` nên xuống dòng
-  // sẽ bị nuốt, cả khối dính thành một câu dài không ai đọc.
-  const ok = await openModal({
-    title: t('Import người Zalo vào CRM', 'Import Zalo people into CRM'),
-    body: `<ul style="margin:0;padding-left:18px;line-height:1.7">${lines.map(l => `<li>${crmEsc(l)}</li>`).join('')}</ul>`,
-    confirmText: 'Import',
-  });
-  if (!ok) return;
-  try {
-    const res = await crmAction('crm-import-zalo');
-    showToast(t(`Import xong: ${res.created} mới, ${res.updated} cập nhật`,
-      `Imported: ${res.created} new, ${res.updated} updated`), 'success');
-    renderCrmContacts();
-  } catch (err) { showToast(err.message, 'error'); }
+  if (bits.length) showToast(`CRM: ${bits.join(' · ')}`, 'success');
+  // Chỉ vẽ lại khi owner đang đứng ở trang Liên hệ — sync thường bấm từ Tổng quan.
+  if (document.getElementById('contacts')?.classList.contains('active')) renderCrmContacts();
 }
 
 // ── Leads (kanban) ──────────────────────────────────────────────────────────

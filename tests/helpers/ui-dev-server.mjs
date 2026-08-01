@@ -82,14 +82,22 @@ console.log(`[dev] CRM DB: ${DB_PATH}`);
 const STATE_STUB = {
     ok: true,
     pluginVersion: '2.16.0',
-    license: { isPro: true, canBulk: true, canMultiBot: false, tier: 'pro', plan: 'personal', expiry: '2026-08-18', isTrial: true },
+    license: { isPro: true, canBulk: true, canMultiBot: true, tier: 'pro', plan: 'personal', expiry: '2026-08-18', isTrial: true },
     bot: { botName: 'DevBot', ownerId: '', ownerName: 'Owner', profile: 'default' },
-    bots: [{ profile: 'default', botName: 'DevBot', avatar: '' }],
+    // HAI bot: nếu chỉ có một thì không bao giờ thấy được lỗi "bot này nhìn thấy liên hệ của bot
+    // kia" và nhánh gộp trùng người cũng không chạy.
+    // Đúng hình dạng bản thật trả về (`{ id, name, profile }`) — khai thiếu `id`/`name` thì
+    // `getBotBadge` ném và giết luôn `renderState()`, làm mọi bộ lọc trông như "không chạy".
+    bots: [
+        { id: 'william', name: 'DevBot', profile: 'default', avatar: '' },
+        { id: 'mkt', name: 'DevBot Mkt', profile: 'mkt', avatar: '' },
+    ],
     // Có nhóm thật + người ở NHIỀU nhóm (uid-1002) để thử phần nối CRM ↔ nhóm.
     groups: [
-        { groupId: 'group-demo', name: 'ASA 7881 - [ORDER TQ] ME ME' },
-        { groupId: 'group-kt', name: '237.KẾ TOÁN ASA-VNLOGS' },
-        { groupId: 'group-x3', name: 'X3 Diamond_ Gia đình Kim Cương X3' },
+        { groupId: 'group-demo', name: 'ASA 7881 - [ORDER TQ] ME ME', profile: 'default' },
+        { groupId: 'group-kt', name: '237.KẾ TOÁN ASA-VNLOGS', profile: 'default' },
+        { groupId: 'group-x3', name: 'X3 Diamond_ Gia đình Kim Cương X3', profile: 'default' },
+        { groupId: 'group-mkt', name: 'MKT — Khách lẻ', profile: 'mkt' },
     ],
     friends: [], pendingByGroup: {}, warnings: {}, violations: {},
     members: {
@@ -102,6 +110,13 @@ const STATE_STUB = {
         'group-kt': {
             'uid-1002': { name: 'Trần Thị Bích', avatar: '' },
             'uid-2001': { name: 'Đặng Đình Đạt', avatar: '' },
+        },
+        // Nhóm của bot `mkt`. `mkt-1001` CHÍNH LÀ Nguyễn Văn An ở trên nhưng mang uid khác — đúng
+        // cách Zalo cấp id riêng cho từng tài khoản. Cùng sđt nên phải gộp thành một dòng ở chế độ
+        // tất cả bot, và tuyệt đối không được hiện khi đang chọn bot `default`.
+        'group-mkt': {
+            'mkt-1001': { name: 'Nguyễn Văn An', avatar: '' },
+            'mkt-9002': { name: 'Khách chỉ của Mkt', avatar: '' },
         },
     },
     settings: {}, permissions: {}, reports: [], apis: [], audit: [], templates: {},
@@ -117,6 +132,12 @@ const DEV_PROFILE_CACHE = {
         userId: 'uid-1001', displayName: 'Nguyễn Văn An', avatar: '',
         sdob: '1990-05-17', phoneNumber: '+84901234567', gender: 0,
     },
+    // Cùng người với `uid-1001` nhưng nhìn từ bot `mkt`: uid khác, sđt trùng (ghi kiểu khác để thử
+    // luôn phần chuẩn hoá), và bot này KHÔNG thấy ngày sinh — đúng cảnh mỗi bot biết một mẩu.
+    'mkt-1001': {
+        userId: 'mkt-1001', displayName: 'Nguyễn Văn An', avatar: '',
+        sdob: '', phoneNumber: '0901234567', gender: 0,
+    },
     'uid-1002': {
         userId: 'uid-1002', displayName: 'Trần Thị Bích', avatar: '',
         // Sinh nhật trong 5 ngày tới → thử được bộ lọc "7 ngày tới" ngay khi mở trang.
@@ -127,14 +148,20 @@ const DEV_PROFILE_CACHE = {
     // uid-1004 và uid-2001 KHÔNG có hồ sơ → phải hiện "—" chứ không được vỡ.
     'uid-9001': { userId: 'uid-9001', displayName: 'Bạn chỉ nhắn riêng', phoneNumber: '0977000111', gender: 0 },
 };
-// Bạn bè: có một người KHÔNG ở nhóm nào (uid-9001) để thử nhánh gộp bạn-bè-ngoài-nhóm.
-const DEV_FRIEND_IDS = ['uid-1001', 'uid-9001'];
+// Bạn bè theo TỪNG bot — bản thật gọi `get-friends` riêng cho mỗi profile, mỗi tài khoản Zalo có
+// danh sách bạn của riêng nó. Dùng chung một mảng thì bot `mkt` sẽ nhận cả bạn của `default` và
+// lỗi "bot này thấy liên hệ của bot kia" bị che mất ngay trong dev.
+// `uid-9001` KHÔNG ở nhóm nào, để thử nhánh gộp bạn-bè-ngoài-nhóm.
+const DEV_FRIENDS_BY_PROFILE = {
+    default: ['uid-1001', 'uid-9001'],
+    mkt: ['mkt-1001'],
+};
 
 // Nhãn phân loại của Zalo — đúng 6 nhãn mặc định kèm màu thật lấy từ tài khoản production.
 // Cố ý để một nhãn RỖNG (Đồng nghiệp) và một id KHÔNG có trong CRM (`group-demo`): hai ca đó là
 // thứ hay bị hiểu nhầm thành "đồng bộ hỏng", nên phải nhìn thấy được ngay trong dev.
 const DEV_ZALO_LABELS = [
-    { id: 1, text: 'Khách hàng', color: '#d91b1b', emoji: '', conversations: ['uid-1001', 'uid-1002', 'group-demo'] },
+    { id: 1, text: 'Khách hàng', color: '#d91b1b', emoji: '', conversations: ['uid-1001', 'uid-1002', 'mkt-1001', 'group-demo'] },
     { id: 2, text: 'Gia đình', color: '#f31bc8', emoji: '', conversations: ['uid-9001'] },
     { id: 3, text: 'Công việc', color: '#ff6905', emoji: '', conversations: ['uid-1003'] },
     { id: 4, text: 'Bạn bè', color: '#fac000', emoji: '', conversations: ['uid-1001'] },
@@ -179,30 +206,56 @@ const server = http.createServer(async (req, res) => {
             // trong crm-api.js. Dựng lại đúng đường đi đó ở đây, nếu không nút "Import từ Zalo" sẽ
             // vỡ trong dev mà vẫn chạy trên production — kiểu lệch harness khó chịu nhất.
             if (action === 'crm-zalo-people' || action === 'crm-import-zalo') {
-                const people = buildZaloPeople({
-                    memberDir: STATE_STUB.members,
-                    profileCache: DEV_PROFILE_CACHE,
-                    friendIds: DEV_FRIEND_IDS,
-                    groupNameOf: (gid) => STATE_STUB.groups.find(g => g.groupId === gid)?.name || gid,
-                });
+                // Bắt chước index.js: import chạy RIÊNG từng bot, mỗi bot chỉ thấy nhóm của mình.
+                const wanted = body.payload?.profile
+                    ? [String(body.payload.profile)]
+                    : STATE_STUB.bots.map(b => b.profile);
+                let created = 0, updated = 0, linked = 0;
+                const all = [];
+                for (const prof of wanted) {
+                    const dir = {};
+                    for (const g of STATE_STUB.groups) {
+                        if (g.profile === prof && STATE_STUB.members[g.groupId]) dir[g.groupId] = STATE_STUB.members[g.groupId];
+                    }
+                    const people = buildZaloPeople({
+                        memberDir: dir,
+                        profileCache: DEV_PROFILE_CACHE,
+                        friendIds: DEV_FRIENDS_BY_PROFILE[prof] || [],
+                        groupNameOf: (gid) => STATE_STUB.groups.find(g => g.groupId === gid)?.name || gid,
+                    });
+                    all.push(...people);
+                    if (action === 'crm-import-zalo') {
+                        const r = crm.importMembers(people, prof, 'dev-ui');
+                        created += r.created; updated += r.updated; linked += r.linked;
+                    }
+                }
                 const stats = {
-                    total: people.length,
-                    withPhone: people.filter(p => p.phone).length,
-                    withBirthday: people.filter(p => p.birthday).length,
+                    profiles: wanted,
+                    total: all.length,
+                    withPhone: all.filter(p => p.phone).length,
+                    withBirthday: all.filter(p => p.birthday).length,
                     friendsKnown: true,
-                    friends: people.filter(p => p.isFriend).length,
+                    friends: all.filter(p => p.isFriend).length,
                 };
                 const result = action === 'crm-zalo-people'
-                    ? { ...stats, people: people.slice(0, 500) }
-                    : { ...crm.importMembers(people, 'default', 'dev-ui'), ...stats };
+                    ? { ...stats, people: all.slice(0, 500) }
+                    : { created, updated, linked, ...stats };
                 return send(res, 200, { ok: true, result, state: STATE_STUB });
             }
             // Cũng nằm ở index.js bên bản thật (cần gọi Zalo), không nằm trong crm-api.js.
             if (action === 'crm-sync-zalo-labels') {
-                const r = crm.syncZaloLabels(DEV_ZALO_LABELS, 'dev-ui');
+                const wanted = body.payload?.profile
+                    ? [String(body.payload.profile)]
+                    : STATE_STUB.bots.map(b => b.profile);
+                let assigned = 0, unmatched = 0;
+                for (const prof of wanted) {
+                    const r = crm.syncZaloLabels(DEV_ZALO_LABELS, 'dev-ui', { prune: false, accountId: prof });
+                    assigned += r.assigned; unmatched += r.unmatched;
+                }
+                const removed = body.payload?.profile ? 0 : crm.pruneZaloTags(DEV_ZALO_LABELS.map(l => l.text), 'dev-ui');
                 return send(res, 200, {
                     ok: true,
-                    result: { ...r, profiles: 1, failed: [], pruned: true },
+                    result: { tags: DEV_ZALO_LABELS.length, assigned, unmatched, removed, profiles: wanted.length, failed: [], pruned: !body.payload?.profile },
                     state: STATE_STUB,
                 });
             }

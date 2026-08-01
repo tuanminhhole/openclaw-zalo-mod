@@ -1,5 +1,22 @@
 ## [Unreleased]
 
+### Fixed
+- **★ Khung chat trộn hộp thư của nhiều bot nên lịch sử không khớp Zalo thật.** Mỗi bot là một tài
+  khoản Zalo riêng: cùng một người mang uid khác nhau ở mỗi tài khoản, và hộp thư của bot này không
+  phải hộp thư của bot kia. Chế độ "Tất cả bot" gộp chung ra một danh sách **không khớp lịch sử của
+  bất kỳ tài khoản nào** — nhìn thì có dữ liệu, nhưng sai.
+
+  Nay khung chat LUÔN thuộc về đúng một bot; chọn "Tất cả bot" thì lấy bot đầu tiên và **ghi rõ đang
+  xem hộp thư của ai** ngay trên đầu trang, thay vì để trắng bắt owner đi tìm thanh chọn bot. Đổi
+  bot là bỏ hội thoại đang mở + gợi ý + hội thoại với trợ lý, vì tất cả đều thuộc tài khoản cũ.
+- **Bấm chọn một người ở cuối danh sách thì bị kéo vọt lên đầu.** `chatRenderShell` vẽ lại
+  `innerHTML` cả khung nên vị trí cuộn của danh sách hội thoại về 0. Nay giữ nguyên qua mỗi lần vẽ
+  lại — cả khi bấm chọn lẫn khi nhịp poll 4 giây làm mới.
+- **Hội thoại riêng hiện uid trần thay vì tên người.** `zalo-profiles-cache.json` và
+  `group-members.json` không có mọi người, và những cuộc chỉ có bot nhắn ra thì không có tin đến để
+  lấy tên. Thêm **CRM `contacts`** làm nguồn tên thứ ba — sau khi Sync account bảng đó có tên của
+  hàng trăm người mà cache hồ sơ chưa kịp đồng bộ tới.
+
 ### Changed
 - **★ Khung chat làm mới nhanh gấp 3 mà tốn ít hơn trước — và KHÔNG dùng SSE.** Đo trên William
   (7038 tin · 30 hội thoại): dựng lại cả danh sách hết `0.48ms`, còn lấy một **dấu-vân-tay**

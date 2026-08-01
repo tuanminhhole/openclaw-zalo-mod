@@ -5431,6 +5431,14 @@ Quy tắc:
                     for (const users of Object.values(memberDir)) {
                         if (users?.[raw]) return typeof users[raw] === 'string' ? users[raw] : (users[raw].name || raw);
                     }
+                    // CRM là nguồn tên tốt thứ ba: sau khi Sync account, bảng `contacts` có tên của
+                    // hàng trăm người mà `zalo-profiles-cache.json` chưa kịp đồng bộ tới.
+                    try {
+                        const c = zEngine?.crm?.db?.prepare?.(
+                            'SELECT display_name FROM contacts WHERE zalo_uid = ? AND account_id = ? LIMIT 1',
+                        ).get(raw, conv.account_id || 'default');
+                        if (c?.display_name) return c.display_name;
+                    } catch { /* CRM tắt hoặc bảng rỗng */ }
                     // Cuối cùng mới lấy tên người gửi trong chính hội thoại — chỉ đúng với DM.
                     if (conv.type === 'dm') {
                         try {

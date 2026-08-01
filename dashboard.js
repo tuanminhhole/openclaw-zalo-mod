@@ -6384,12 +6384,29 @@ const chatState = {
   aiBusy: false,
   aiThread: [],      // { role: 'ai'|'me', text, canUse }
   suggestions: [],
+  bot: null,
 };
 
 // 4 giây thay vì 12: nhịp poll giờ chỉ hỏi một dấu-vân-tay (0.01ms phía server, rẻ hơn 48 lần so
 // với dựng lại cả danh sách), nên poll dày gấp 3 mà tổng chi phí vẫn thấp hơn bản cũ. Đây là lý do
 // KHÔNG cần SSE: thứ SSE mua được chỉ là độ trễ, mà 4 giây đã đủ để trực chat.
 const CHAT_POLL_MS = 4000;
+
+/**
+ * Khung chat LUÔN thuộc về đúng một bot.
+ *
+ * Mỗi bot là một tài khoản Zalo riêng: cùng một người có uid khác nhau ở mỗi tài khoản, và hộp thư
+ * của bot này không phải hộp thư của bot kia. Trộn chung ở chế độ "Tất cả bot" ra một danh sách
+ * không khớp với lịch sử thật của bất kỳ tài khoản nào — nhìn thì có dữ liệu, nhưng sai.
+ *
+ * Chọn "Tất cả bot" thì lấy bot ĐẦU TIÊN và nói rõ đang xem hộp thư của ai, thay vì để trắng trang
+ * bắt owner đi tìm thanh chọn bot.
+ */
+function chatProfile() {
+  if (selectedBotFilter && selectedBotFilter !== 'all') return selectedBotFilter;
+  const bots = (state && state.bots) || [];
+  return bots[0]?.profile || 'default';
+}
 
 function chatStopPolling() {
   if (chatState.pollTimer) {
@@ -6422,7 +6439,16 @@ async function renderChat() {
   }
   const actions = document.getElementById('chatActions');
   if (actions) {
-    actions.innerHTML = `<button class="btn" id="chatReloadBtn">${t('⟳ Làm mới', '⟳ Refresh')}</button>`;
+    // Nói rõ đang xem hộp thư của bot NÀO. Nhiều bot mà không ghi thì owner đọc một danh sách không
+    // khớp lịch sử Zalo của mình và tưởng dữ liệu sai — trong khi thật ra là đang xem bot khác.
+    const bots = (state && state.bots) || [];
+    const cur = chatProfile();
+    const curName = bots.find(b => b.profile === cur)?.name || cur;
+    actions.innerHTML = `${bots.length > 1
+      ? `<span class="chat-whose">${t('Hộp thư của', 'Inbox of')} <b>${crmEsc(curName)}</b>${
+          selectedBotFilter === 'all' ? ` · <span class="item-sub">${t('đổi ở thanh chọn bot phía trên', 'switch with the bot picker above')}</span>` : ''}</span>`
+      : ''}
+      <button class="btn" id="chatReloadBtn">${t('⟳ Làm mới', '⟳ Refresh')}</button>`;
     actions.querySelector('#chatReloadBtn').addEventListener('click', () => renderChat());
   }
 
@@ -6432,8 +6458,15 @@ async function renderChat() {
     body.innerHTML = `<div class="card" style="padding:24px;color:var(--muted)">${t('Đang tải…', 'Loading…')}</div>`;
   }
   try {
-    const bot = selBotProfile();
-    const res = await crmAction('chat-conversations', { accountId: bot || undefined });
+    const bot = chatProfile();
+    // Đổi bot là đổi hẳn hộp thư → bỏ hội thoại đang mở, gợi ý và hội thoại với trợ lý.
+    if (chatState.bot !== bot) {
+      chatState.bot = bot;
+      chatState.activeId = null;
+      chatState.suggestions = [];
+      chatState.aiThread = [];
+    }
+    const res = await crmAction('chat-conversations', { accountId: bot });
     chatState.conversations = res.conversations || [];
     chatState.lastSig = res.v || '';
     if (!chatState.conversations.some(c => c.id === chatState.activeId)) {
@@ -6462,8 +6495,7 @@ function chatStartPolling() {
       if (v === chatState.lastSig) return;
       chatState.lastSig = v;
 
-      const bot = selBotProfile();
-      const res = await crmAction('chat-conversations', { accountId: bot || undefined });
+      const res = await crmAction('chat-conversations', { accountId: chatProfile() });
       chatState.conversations = res.conversations || [];
       chatState.lastSig = res.v || chatState.lastSig;
       chatRenderShell(document.getElementById('chatBody'));
@@ -6493,6 +6525,10 @@ function chatRenderShell(body) {
         <span class="chat-conv-last">${c.type === 'group' ? '👥 ' : ''}${crmEsc(c.lastText || '')}</span>
       </span>
     </button>`).join('');
+
+  // Vẽ lại `innerHTML` là dựng lại cả danh sách → vị trí cuộn về 0. Bấm một người ở cuối danh sách
+  // mà bị kéo vọt lên đầu là lỗi thấy ngay và rất khó chịu; polling mỗi 4 giây cũng dính.
+  const listScroll = body.querySelector('.chat-conv-list')?.scrollTop || 0;
 
   body.innerHTML = `
     <div class="chat-wrap${active ? ' has-ai' : ''}">
@@ -6537,6 +6573,9 @@ function chatRenderShell(body) {
       </section>
       ${active ? chatAiPanelHtml() : ''}
     </div>`;
+
+  const listEl = body.querySelector('.chat-conv-list');
+  if (listEl) listEl.scrollTop = listScroll;
 
   let searchTimer;
   body.querySelector('#chatSearch')?.addEventListener('input', (e) => {

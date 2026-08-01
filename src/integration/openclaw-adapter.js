@@ -203,5 +203,26 @@ export function createOpenclawAdapter(deps = {}) {
             if (svc?.subscribeGroupEvents) return svc.subscribeGroupEvents(cb);
             return () => {};
         },
+
+        /**
+         * Lịch sử chat kéo về từ Zalo — chỉ có ở bridge contract v5 trở lên.
+         *
+         * Kiểm service lúc GỌI chứ không lúc dựng adapter: hai plugin nạp không đảm bảo thứ tự, nên
+         * quyết định "có hỗ trợ hay không" ngay lúc khởi tạo sẽ khoá cứng thành "không" nếu hôm đó
+         * zalo-mod nạp trước — và sẽ hỏng im lặng, không có lỗi nào để lần ra.
+         *
+         * Trả `null` (không phải hàm huỷ rỗng như hai hàm trên) khi runtime chưa hỗ trợ: bên gọi
+         * cần phân biệt "có kênh nhưng chưa có tin" với "runtime này chưa có kênh", để UI nói đúng
+         * là phải nâng cấp zalo-connect thay vì để owner ngồi chờ.
+         */
+        subscribeHistory(cb) {
+            const svc = getService();
+            if (typeof svc?.subscribeHistory !== 'function') return null;
+            return svc.subscribeHistory(cb);
+        },
+
+        supportsHistory() {
+            return typeof getService()?.subscribeHistory === 'function';
+        },
     };
 }

@@ -136,8 +136,10 @@ export function createZaloConnectBridge(adapter, opts = {}) {
     const logger = opts.logger || console;
     const inboundHandlers = new Set();
     const groupHandlers = new Set();
+    const historyHandlers = new Set();
     let inboundUnsub = null;
     let groupUnsub = null;
+    let historyUnsub = null;
 
     async function dispatchSafe(handlers, event, kind) {
         let handled = false;
@@ -236,6 +238,47 @@ export function createZaloConnectBridge(adapter, opts = {}) {
                     inboundUnsub = null;
                 }
             };
+        },
+
+        /**
+         * LỊCH SỬ chat kéo về từ Zalo (`request-old-messages`) — bridge contract v5 trở lên.
+         *
+         * Handler nhận nguyên một LÔ, và giá trị trả về bị bỏ qua: khác `onInbound`, không ai
+         * "claim" được tin cũ. Lịch sử chỉ để lưu, không phải thứ để phản hồi — nên ở đây cố ý
+         * KHÔNG dùng `dispatchSafe` (hàm đó tồn tại để gom cờ `handled`).
+         *
+         * Bridge cũ (v4 trở xuống) không có `subscribeHistory` → đăng ký lặng lẽ không làm gì,
+         * đúng cách một tính năng mới nên xử sự với runtime cũ.
+         */
+        onHistory(handler) {
+            historyHandlers.add(handler);
+            if (!historyUnsub && typeof adapter.subscribeHistory === 'function') {
+                // `subscribeHistory` trả `null` khi runtime bên kia chưa có kênh lịch sử — giữ
+                // `historyUnsub` là null để lần đăng ký sau còn thử lại (zalo-connect có thể nạp
+                // sau zalo-mod).
+                historyUnsub = adapter.subscribeHistory(async (batch) => {
+                    const events = Array.isArray(batch) ? batch : [batch];
+                    for (const h of historyHandlers) {
+                        try {
+                            await h(events);
+                        } catch (e) {
+                            logger.warn?.(`[zalo-mod] bridge history handler error: ${e.message}`);
+                        }
+                    }
+                });
+            }
+            return () => {
+                historyHandlers.delete(handler);
+                if (historyHandlers.size === 0 && historyUnsub) {
+                    historyUnsub();
+                    historyUnsub = null;
+                }
+            };
+        },
+
+        /** Runtime bên kia có hỗ trợ kênh lịch sử không — UI cần biết để không hứa suông. */
+        supportsHistory() {
+            return typeof adapter.subscribeHistory === 'function';
         },
 
         onGroupEvent(handler) {

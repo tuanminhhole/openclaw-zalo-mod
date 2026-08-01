@@ -46,8 +46,8 @@ export class SqliteStore {
         this.db = db;
         this.kind = 'sqlite';
         this._insMsg = db.prepare(`INSERT OR REPLACE INTO messages
-            (id, conversation_id, sender_id, sender_name, text, raw_type, sent_at, quote_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`);
+            (id, conversation_id, sender_id, sender_name, text, raw_type, sent_at, quote_id, from_self, media_json)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
         this._insTurn = db.prepare(`INSERT OR REPLACE INTO turn_contexts
             (id, message_id, sender_id, snapshot_json, status, created_at, expires_at)
             VALUES (?, ?, ?, ?, ?, ?, ?)`);
@@ -66,13 +66,49 @@ export class SqliteStore {
         this._upsertConv.run(id, accountId, groupId ?? null, type, title ?? null, lastMessageAt ?? Date.now());
     }
 
-    insertMessage({ id, conversationId, senderId, senderName, text, rawType, sentAt, quoteId }) {
+    insertMessage({ id, conversationId, senderId, senderName, text, rawType, sentAt, quoteId, fromSelf, mediaUrls }) {
         this._insMsg.run(id, conversationId, senderId, senderName ?? '', text ?? '',
-            rawType ?? 'message', sentAt ?? Date.now(), quoteId ?? null);
+            rawType ?? 'message', sentAt ?? Date.now(), quoteId ?? null,
+            fromSelf ? 1 : 0, mediaUrls?.length ? JSON.stringify(mediaUrls) : null);
+    }
+
+    /**
+     * Ghi một LÔ tin trong MỘT transaction.
+     *
+     * Kéo lịch sử về là hàng trăm tin mỗi lô; ghi từng tin thì mỗi lần là một transaction ngầm của
+     * SQLite, tức mỗi tin một lần fsync. Gói lại một transaction là khác biệt giữa vài mili-giây và
+     * vài giây.
+     *
+     * `INSERT OR REPLACE` theo `id` nên kéo lại lần hai không nhân đôi — điều kiện để owner bấm
+     * "lấy lịch sử" bao nhiêu lần cũng được.
+     */
+    insertMessages(rows) {
+        const list = Array.isArray(rows) ? rows : [];
+        if (!list.length) return 0;
+        this.db.exec('BEGIN');
+        try {
+            for (const r of list) this.insertMessage(r);
+            this.db.exec('COMMIT');
+            return list.length;
+        } catch (e) {
+            this.db.exec('ROLLBACK');
+            throw e;
+        }
     }
 
     recentMessages(conversationId, limit = 50) {
         return this._selRecent.all(conversationId, limit).reverse();
+    }
+
+    /** Danh sách hội thoại, mới nhất trước — cột trái của khung chat. */
+    listConversations({ accountId, limit = 100 } = {}) {
+        const where = accountId ? 'WHERE account_id = ?' : '';
+        const params = accountId ? [accountId] : [];
+        return this.db.prepare(`SELECT c.*,
+                (SELECT text FROM messages m WHERE m.conversation_id = c.id ORDER BY m.sent_at DESC LIMIT 1) AS last_text,
+                (SELECT COUNT(*) FROM messages m WHERE m.conversation_id = c.id) AS message_count
+            FROM conversations c ${where}
+            ORDER BY c.last_message_at DESC LIMIT ?`).all(...params, Math.min(Number(limit) || 100, 500));
     }
 
     saveTurn(turn, status = 'open') {
@@ -113,8 +149,19 @@ export class MemoryStore {
         if (idx >= 0) arr[idx] = m; else arr.push(m);
         this._messages.set(m.conversationId, arr.slice(-500));
     }
+    insertMessages(rows) {
+        const list = Array.isArray(rows) ? rows : [];
+        for (const r of list) this.insertMessage(r);
+        return list.length;
+    }
     recentMessages(conversationId, limit = 50) {
         return (this._messages.get(conversationId) || []).slice(-limit);
+    }
+    listConversations({ accountId, limit = 100 } = {}) {
+        return [...this._convs.values()]
+            .filter(c => !accountId || c.accountId === accountId)
+            .sort((a, b) => (b.lastMessageAt ?? 0) - (a.lastMessageAt ?? 0))
+            .slice(0, limit);
     }
     saveTurn(turn, status = 'open') { this._turns.set(turn.turnId, { ...turn, status }); }
     setTurnStatus(turnId, status) {

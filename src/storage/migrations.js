@@ -199,6 +199,23 @@ export const MIGRATIONS = [
             CREATE INDEX IF NOT EXISTS idx_crm_tags_source ON crm_tags(source);
         `,
     },
+    {
+        version: 6,
+        name: 'chat-history-fields',
+        // Bảng `messages` sinh ra để nuôi ngữ cảnh cho model, nên chỉ cần "ai nói gì lúc nào".
+        // Khung chat cần thêm hai thứ mà mục đích cũ không quan tâm:
+        //
+        // - `from_self`: vẽ bong bóng bên trái hay bên phải. Không suy ra được từ `sender_id` vì
+        //   muốn vậy phải biết uid của bot cho TỪNG tài khoản, mà uid đó đổi theo lần đăng nhập —
+        //   lưu thẳng lúc ghi thì về sau đọc lại luôn đúng.
+        // - `media_json`: link ảnh/tệp. Bảng `attachments` đã có nhưng nó dành cho tệp đã TẢI VỀ
+        //   (có `local_path`, `checksum`); tin cũ kéo từ Zalo chỉ có URL và cố ý không tải.
+        sql: `
+            ALTER TABLE messages ADD COLUMN from_self INTEGER DEFAULT 0;
+            ALTER TABLE messages ADD COLUMN media_json TEXT;
+            CREATE INDEX IF NOT EXISTS idx_conversations_last ON conversations(last_message_at);
+        `,
+    },
 ];
 
 /**

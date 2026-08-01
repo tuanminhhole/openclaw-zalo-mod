@@ -5738,6 +5738,14 @@ Quy tắc:
         // ZaloConnect phát mọi tin group đã qua access gate nhưng CHƯA qua mention
         // gate. Capture local tại đây để Silent vẫn có ngữ cảnh khi user tag bot
         // ở tin sau; callback này không dispatch/model nên luôn zero-token.
+        // Lịch sử chat kéo về (bridge v5) — kênh RIÊNG, không đi qua mention gate và không dispatch.
+        // Chỉ ghi xuống SQLite để khung chat đọc lại; buffer RAM nuôi ngữ cảnh model không bị đụng.
+        try { globalThis.__zaloModHistoryUnsubscribe?.(); } catch { }
+        globalThis.__zaloModHistoryUnsubscribe = zEngine.bridge.onHistory?.(async (events) => {
+            const n = zEngine.captureHistory(events);
+            if (n) logger.info(`[openclaw-zalo-mod] lịch sử chat: ghi ${n} tin cũ vào context.db`);
+        }) || null;
+
         try { globalThis.__zaloModInboundUnsubscribe?.(); } catch { }
         globalThis.__zaloModInboundUnsubscribe = zEngine.bridge.onInbound(async (event) => {
             if (!event?.isGroup) return;

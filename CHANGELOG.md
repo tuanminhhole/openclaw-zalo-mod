@@ -1,5 +1,36 @@
 ## [Unreleased]
 
+### Added
+- **★ Nhận LỊCH SỬ chat từ Zalo và ghi vào `context.db` (cần zalo-connect bridge v5).** Trước nay
+  chỉ có tin đến từ lúc bot đang chạy, và **tin nhắn riêng không được lưu ở đâu cả** — nên bất cứ
+  khung chat nào dựng lên cũng mở ra danh sách trống. Nay đăng ký kênh `subscribeHistory` (kênh
+  RIÊNG, không đi qua mention gate, không dispatch) và ghi cả lô xuống SQLite.
+
+  ★ Ghi **thẳng SQLite, cố ý KHÔNG qua `ConversationBuffer`**: buffer đó là RAM nuôi ngữ cảnh cho
+  model khi bot được tag, nhét vài trăm tin từ tuần trước vào sẽ đẩy hết tin mới ra khỏi giới hạn và
+  bot trả lời dựa trên chuyện đã cũ. Lịch sử chỉ để owner ĐỌC LẠI, không phải để model suy nghĩ
+  bằng nó.
+
+  Kết quả thật trên bot production: **0 → 4 hội thoại riêng · 26 hội thoại nhóm · 146 tin lịch sử**,
+  trong đó 46 tin phân biệt được là của chính bot.
+- **Migration v6** — `messages` thêm `from_self` (khung chat cần biết vẽ bong bóng trái hay phải;
+  không suy ra được từ `sender_id` vì phải biết uid bot của TỪNG tài khoản, mà uid đổi theo lần đăng
+  nhập) và `media_json` (link ảnh/tệp; bảng `attachments` sẵn có là dành cho tệp đã TẢI VỀ, còn tin
+  cũ chỉ có URL và cố ý không tải). Thêm `SqliteStore.insertMessages` ghi cả lô trong MỘT
+  transaction — kéo lịch sử là hàng trăm tin, ghi từng tin là mỗi tin một lần fsync.
+- `listConversations()` cho cột trái của khung chat, và action `request-old-messages` được xếp
+  **READ** trong allowlist (nó không đổi gì trên Zalo, chỉ xin gửi lại dữ liệu đã có).
+
+### Notes
+- Kiểm tra thứ tự nạp: `subscribeHistory` được hỏi lúc **gọi** chứ không lúc dựng adapter — hai
+  plugin nạp không đảm bảo thứ tự, quyết định "có hỗ trợ không" ngay lúc khởi tạo sẽ khoá cứng
+  thành "không" nếu hôm đó zalo-mod nạp trước, và hỏng im lặng.
+- Mốc `last_message_at` của hội thoại chỉ được **nâng, không hạ**: lô lịch sử toàn tin cũ, ghi đè
+  mốc sẽ đẩy hội thoại đang sôi nổi xuống đáy danh sách chat.
+- 286 test xanh (thêm 4 cho phần lịch sử, trong đó có test khoá tính chất "tin cũ KHÔNG vào buffer
+  RAM" và "kéo lại lần hai không nhân đôi").
+
+
 ### Changed
 - **Thanh lọc trang Liên hệ về ĐÚNG MỘT dòng** (cao 84px → 40px). Gốc không phải ô tìm quá rộng mà
   là quy tắc chung `select { width: 100% }` — mỗi ô lọc đòi rộng cả dòng (đo được 342px cho ô chỉ

@@ -75,6 +75,70 @@ export function createZaloModEngine({ dataDir, logger, runtime, getConfig, confi
         crm,
 
         /**
+         * Ghi một LÔ tin CŨ kéo từ Zalo về (bridge contract v5).
+         *
+         * ★ Ghi THẲNG SQLite, cố ý KHÔNG đi qua `ConversationBuffer`. Buffer đó là bộ nhớ RAM nuôi
+         * ngữ cảnh cho model khi bot được tag; nhét vài trăm tin từ tuần trước vào sẽ đẩy hết tin
+         * mới ra ngoài giới hạn và bot trả lời dựa trên chuyện đã cũ. Lịch sử chỉ để owner ĐỌC LẠI,
+         * không phải để model suy nghĩ bằng nó.
+         *
+         * Trả về số tin đã ghi. Không throw: hỏng thì mất lịch sử, không được làm sập luồng đang chạy.
+         */
+        captureHistory(events) {
+            const list = Array.isArray(events) ? events : [];
+            if (!list.length || !storage.insertMessages) return 0;
+            try {
+                const rows = [];
+                const convs = new Map();
+                for (const e of list) {
+                    if (!e?.conversationId || !e?.messageId) continue;
+                    const acc = e.accountId || 'default';
+                    const key = convKey(acc, e.conversationId);
+                    const ts = e.timestamp || Date.now();
+                    rows.push({
+                        id: e.messageId,
+                        conversationId: key,
+                        senderId: e.senderId || '',
+                        senderName: e.senderName || '',
+                        text: e.text || '',
+                        rawType: 'history',
+                        sentAt: ts,
+                        fromSelf: !!e.fromSelf,
+                        mediaUrls: e.mediaUrls,
+                    });
+                    // Mốc hội thoại lấy tin MỚI NHẤT trong lô — kéo lịch sử toàn tin cũ, ghi nhầm
+                    // mốc cũ vào sẽ đẩy hội thoại đang sôi nổi xuống đáy danh sách chat.
+                    const cur = convs.get(key);
+                    if (!cur || ts > cur.lastMessageAt) {
+                        convs.set(key, {
+                            id: key,
+                            accountId: acc,
+                            groupId: e.groupId || null,
+                            type: e.isGroup ? 'group' : 'dm',
+                            lastMessageAt: ts,
+                        });
+                    }
+                }
+                if (!rows.length) return 0;
+                const written = storage.insertMessages(rows);
+                for (const c of convs.values()) {
+                    // Chỉ nâng mốc, không hạ: hội thoại có thể đã có tin mới hơn từ luồng trực tiếp.
+                    try {
+                        const existing = storage.db?.prepare?.('SELECT last_message_at FROM conversations WHERE id = ?').get(c.id);
+                        if (existing && Number(existing.last_message_at) > c.lastMessageAt) continue;
+                        storage.upsertConversation?.(c);
+                    } catch {
+                        storage.upsertConversation?.(c);
+                    }
+                }
+                return written;
+            } catch (e) {
+                log.warn?.(`[zalo-mod] ghi lịch sử chat lỗi: ${e.message}`);
+                return 0;
+            }
+        },
+
+        /**
          * Ghi passive một tin group/DM được phép — gọi TRƯỚC mention gating.
          * Zero-token: chỉ RAM + SQLite. Không bao giờ throw (best-effort).
          */

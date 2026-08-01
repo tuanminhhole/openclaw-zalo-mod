@@ -132,3 +132,76 @@ test('persist SQLite: message ghi xuống DB thật trong dataDir', (t) => {
     assert.equal(rows.length, 1);
     assert.equal(rows[0].text, 'persisted');
 });
+
+// ── Lịch sử chat kéo từ Zalo về (bridge v5) ───────────────────────────────
+
+const histEvent = (over = {}) => ({
+    accountId: 'default',
+    conversationId: 'conv-1',
+    isGroup: false,
+    messageId: 'm-1',
+    senderId: 'u-1',
+    senderName: 'Khách',
+    text: 'tin cũ',
+    timestamp: 1_700_000_000_000,
+    fromSelf: false,
+    ...over,
+});
+
+test('lịch sử: ghi thẳng SQLite và KHÔNG đụng buffer RAM nuôi ngữ cảnh model', (t) => {
+    const { engine, cleanup } = makeEngine();
+    t.after(cleanup);
+
+    engine.captureInbound({
+        accountId: 'default', conversationId: 'conv-1', groupId: 'conv-1',
+        messageId: 'moi-1', senderId: 'u-9', senderName: 'Ai đó', text: 'tin MỚI', timestamp: Date.now(),
+    });
+
+    const n = engine.captureHistory([
+        histEvent({ messageId: 'cu-1', text: 'tin cũ 1' }),
+        histEvent({ messageId: 'cu-2', text: 'tin cũ 2', fromSelf: true }),
+    ]);
+    assert.equal(n, 2);
+
+    // Đây là tính chất then chốt: nhét vài trăm tin cũ vào buffer sẽ đẩy tin mới ra khỏi giới hạn
+    // và bot trả lời dựa trên chuyện tuần trước.
+    const buffered = engine.buffer.recent('default', 'conv-1', { maxAgeMs: Number.MAX_SAFE_INTEGER });
+    assert.deepEqual(buffered.map(m => m.text), ['tin MỚI'], 'buffer chỉ được có tin trực tiếp');
+
+    const stored = engine.storage.recentMessages('default|conv-1', 50);
+    assert.deepEqual(stored.map(m => m.text).sort(), ['tin MỚI', 'tin cũ 1', 'tin cũ 2']);
+    assert.equal(stored.find(m => m.id === 'cu-2').from_self, 1, 'phân biệt được tin của bot');
+    assert.equal(stored.find(m => m.id === 'cu-1').raw_type, 'history');
+});
+
+test('lịch sử: kéo lại lần hai KHÔNG nhân đôi', (t) => {
+    const { engine, cleanup } = makeEngine();
+    t.after(cleanup);
+    const batch = [histEvent({ messageId: 'cu-1' }), histEvent({ messageId: 'cu-2' })];
+    engine.captureHistory(batch);
+    engine.captureHistory(batch);
+    assert.equal(engine.storage.recentMessages('default|conv-1', 50).length, 2);
+});
+
+test('lịch sử: mốc hội thoại lấy tin MỚI NHẤT và không hạ mốc đang có', (t) => {
+    const { engine, cleanup } = makeEngine();
+    t.after(cleanup);
+    const now = Date.now();
+    engine.captureInbound({
+        accountId: 'default', conversationId: 'conv-1', groupId: 'conv-1',
+        messageId: 'moi-1', senderId: 'u-9', senderName: 'x', text: 'mới', timestamp: now,
+    });
+    // Lô toàn tin cũ — ghi đè mốc sẽ đẩy hội thoại đang sôi nổi xuống đáy danh sách chat.
+    engine.captureHistory([histEvent({ messageId: 'cu-1', timestamp: now - 86400000 })]);
+    const conv = engine.storage.listConversations({ accountId: 'default' })[0];
+    assert.equal(Number(conv.last_message_at), now);
+});
+
+test('lịch sử: dữ liệu thiếu/hỏng thì bỏ qua, không ném', (t) => {
+    const { engine, cleanup } = makeEngine();
+    t.after(cleanup);
+    assert.equal(engine.captureHistory(null), 0);
+    assert.equal(engine.captureHistory([]), 0);
+    assert.equal(engine.captureHistory([{ text: 'thiếu id' }, histEvent({ messageId: '' })]), 0);
+    assert.equal(engine.captureHistory([histEvent(), { hỏng: true }]), 1);
+});

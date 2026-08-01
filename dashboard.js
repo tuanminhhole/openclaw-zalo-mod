@@ -10,7 +10,7 @@ const modalBody = document.getElementById('modalBody');
 const modalCancel = document.getElementById('modalCancel');
 const modalConfirm = document.getElementById('modalConfirm');
 const token = window.ZALO_DASHBOARD_TOKEN || '';
-const pluginVersion = '2.26.1';
+const pluginVersion = '2.27.0';
 let state = null;
 let activeGroupId = '';
 let lang = localStorage.getItem('zaloDashboardLang') || 'vi';
@@ -5379,11 +5379,15 @@ function reportLogCard(e) {
           <span style="font-weight:650;font-size:14px">${esc(e.jobName || e.jobId)}</span>
           <span class="chip" style="background:${isDigest ? 'rgba(96,165,250,.16)' : 'rgba(148,163,184,.16)'}">
             ${isDigest ? '📊 ' + uiText('Tổng hợp', 'Digest') : '📋 ' + uiText('Từng nhóm', 'Per group')}</span>
-          ${e.trigger === 'manual' ? `<span class="chip" style="background:rgba(251,191,36,.18)">${uiText('Gửi thử', 'Manual')}</span>` : ''}
+          ${e.trigger === 'manual' ? `<span class="chip" style="background:rgba(251,191,36,.18)">${uiText('Gửi tay', 'Manual')}</span>` : ''}
         </div>
         <div class="item-sub" style="margin-top:6px;line-height:1.65">
           ${uiText('Gửi', 'Sent')} <b>${esc(when)}</b> · ${uiText('nội dung ngày', 'covers')} <b>${esc(e.date || '')}</b>
-          · ${(e.scope || []).length} ${uiText('nhóm', 'groups')} · ${e.chars || 0} ${uiText('ký tự', 'chars')}
+          ${/* "phạm vi" chứ không phải "nhóm" trần: con số này là số nhóm lịch QUÉT, khác với số nhóm
+                CÓ TIN in trong thân báo cáo. Hai số nằm cạnh nhau mà cùng gọi là "nhóm" thì owner
+                đọc vào tưởng số liệu đá nhau — đã hỏi thật. */''}
+          · ${uiText('phạm vi', 'scope')} ${(e.scope || []).length} ${uiText('nhóm', 'groups')}
+          · ${e.chars || 0} ${uiText('ký tự', 'chars')}
           <br>${uiText('Tới', 'To')}: ${(e.targets || []).map(t => esc(t.name)).join(', ') || '—'}
         </div>
       </div>
@@ -5474,9 +5478,11 @@ function reportMorningWarning(job) {
 function reportJobCardHtml(job) {
   const isDigest = job.kind === 'digest';
   const ran = reportsState.state[job.id];
+  // "Phạm vi N nhóm" = số nhóm lịch QUÉT. Báo cáo gửi ra chỉ liệt kê những nhóm CÓ TIN hôm đó, nên
+  // hai con số lệch nhau là bình thường — nói rõ ở đây để owner không tưởng số liệu sai.
   const scope = job.groups === '*'
     ? `${uiText('Tất cả nhóm follow', 'All followed groups')} (${job.resolvedCount})`
-    : `${job.resolvedCount} ${uiText('nhóm', 'groups')}`;
+    : `${uiText('Phạm vi', 'Scope')} ${job.resolvedCount} ${uiText('nhóm', 'groups')}`;
   // Nút gạt và giờ xếp dọc ở cột phải: bật/tắt là quyết định "có chạy không", giờ là "chạy lúc nào" —
   // cùng một cột nên đọc theo thứ tự đó.
   return `<div class="card" style="padding:14px 16px">
@@ -5510,7 +5516,7 @@ function reportJobCardHtml(job) {
     <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;justify-content:flex-end">
       ${isDigest ? `<button class="btn" data-report-preview="${job.id}">${REPORT_ICONS.preview}<span>${uiText('Xem trước', 'Preview')}</span></button>` : ''}
       <button class="btn outline-primary" data-report-edit="${job.id}">${REPORT_ICONS.edit}<span>${uiText('Sửa', 'Edit')}</span></button>
-      <button class="btn primary" data-report-run="${job.id}">${REPORT_ICONS.send}<span>${uiText('Gửi thử', 'Send now')}</span></button>
+      <button class="btn primary" data-report-run="${job.id}">${REPORT_ICONS.send}<span>${uiText('Gửi ngay', 'Send now')}</span></button>
       <button class="btn danger" data-report-delete="${job.id}">${REPORT_ICONS.del}<span>${uiText('Xoá', 'Delete')}</span></button>
     </div>
   </div>`;
@@ -5669,7 +5675,32 @@ document.addEventListener('click', async (ev) => {
 
   const runId = hit('data-report-run');
   if (runId) {
+    const job = reportsState.jobs.find(j => j.id === runId);
+    if (!job) return;
+    // Nút này GỬI THẬT tới nhóm khách, không phải chạy thử — tên cũ "Gửi thử" nói dối về hậu quả.
+    // Với lịch "từng nhóm + mỗi nhóm tự nhận" thì một cú bấm là N tin vào N nhóm khách. Phải nói rõ
+    // đi đâu và bao nhiêu tin TRƯỚC khi gửi.
+    const dests = [];
+    if (job.deliver.ownerDm) dests.push(uiText('DM riêng của bạn', 'your DM'));
+    if (job.deliver.eachGroup) dests.push(uiText(`CHÍNH ${job.resolvedCount} nhóm trong phạm vi`, `EACH of the ${job.resolvedCount} groups in scope`));
+    for (const gid of job.deliver.groups) dests.push(reportGroupName(gid));
+    const msgCount = job.kind === 'digest' ? 1 : job.resolvedCount;
+    const ok = await openModal({
+      title: uiText('Gửi báo cáo ngay?', 'Send report now?'),
+      desc: uiText('Đây là gửi THẬT, không phải chạy thử.', 'This sends for real — not a dry run.'),
+      body: `<div class="item-sub" style="line-height:1.8">
+        <div>${uiText('Lịch', 'Schedule')}: <b>${esc(job.name)}</b></div>
+        <div>${uiText('Nội dung ngày', 'Covers')}: <b>${job.reportFor === 'yesterday' ? isoDaysAgo(1) : isoDaysAgo(0)}</b></div>
+        <div>${uiText('Sẽ gửi tới', 'Sends to')}: <b>${esc(dests.join(', ') || '—')}</b></div>
+        <div>${uiText('Số tin', 'Messages')}: <b>${msgCount}</b></div>
+      </div>`,
+      confirmText: uiText('Gửi ngay', 'Send now'),
+      danger: true,
+      tone: 'warn',
+    });
+    if (!ok) return;
     const btn = t.closest('[data-report-run]');
+    if (!btn) return;
     btn.disabled = true; btn.textContent = uiText('Đang gửi...', 'Sending...');
     try {
       const r = await reportsApi('report-job-run', { id: runId });

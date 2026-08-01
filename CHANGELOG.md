@@ -1,3 +1,15 @@
+## [2.27.0] - 2026-08-01
+
+### Changed
+- **★ "Gửi thử" đổi tên thành "Gửi ngay", và bắt xác nhận trước khi gửi.** Cái tên cũ nói dối về hậu quả: nó **gửi thật** tới đúng nơi đã cấu hình, không phải chạy thử. Owner bấm nó rồi hỏi lại *"gửi thử đó là gửi cho 1 nhóm chứ đâu phải gửi hết?"* — tức đã bấm mà không biết chắc mình vừa làm gì với nhóm khách.
+
+  Chỗ nguy hiểm nhất không phải lịch tổng hợp (1 tin tới 1 đích), mà là lịch **"từng nhóm" + "mỗi nhóm tự nhận"**: một cú bấm là **N tin vào N nhóm khách**. Hộp xác nhận giờ nói rõ trước khi gửi: tên lịch · nội dung ngày nào · **sẽ gửi tới đâu** (ghi thẳng *"CHÍNH N nhóm trong phạm vi"* khi bật `eachGroup`) · **bao nhiêu tin**. Nhãn trong Lịch sử đổi từ "Gửi thử" sang "Gửi tay" cho khớp sự thật.
+- **Nói rõ "phạm vi N nhóm" thay vì "N nhóm" trần.** Thẻ lịch ghi `24 nhóm` (số nhóm lịch quét) còn thân báo cáo ghi `13 nhóm` (số nhóm **có tin** hôm đó) — hai số cùng gọi là "nhóm" nằm cạnh nhau khiến owner tưởng số liệu đá nhau. Cả thẻ lịch lẫn thẻ lịch sử giờ ghi `Phạm vi N nhóm`.
+
+### Notes
+- 245 test xanh. Kiểm trên trình duyệt cả hai ca: lịch tổng hợp báo "1 tin → DM riêng của bạn", lịch từng-nhóm báo "CHÍNH 2 nhóm trong phạm vi · 2 tin"; bấm Huỷ thì không gọi API nào.
+- **Bài học:** tên nút phải mô tả đúng hậu quả. "Gửi thử" khiến người dùng bấm để *thử*, trong khi nó gửi thật vào nhóm khách hàng — và họ chỉ phát hiện khi đã gửi xong.
+
 ## [2.26.1] - 2026-08-01
 
 ### Fixed

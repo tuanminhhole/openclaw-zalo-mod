@@ -5466,6 +5466,27 @@ textarea:focus {
   max-width: 100%;
 }
 .crm-filter-select:focus { outline: 2px solid var(--primary-soft); border-color: var(--primary); }
+
+/* Thanh thao tác hàng loạt — chỉ hiện khi có dòng được tick, nên phải nổi hẳn lên để owner thấy
+   ngay là mình đang ở "chế độ đã chọn N người", tránh bấm Xoá mà tưởng chỉ xoá một dòng. */
+.crm-bulkbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  padding: 9px 12px;
+  border-radius: var(--radius);
+  border: 1px solid color-mix(in srgb, var(--primary) 34%, transparent);
+  background: var(--primary-soft);
+}
+.crm-bulkbar .btn { min-height: 32px; padding: 5px 10px; font-size: 12.5px; white-space: nowrap; }
+
+/* Khối "Kết bạn & lời mời" gấp lại — phần còn sót của trang Bạn bè cũ, hiếm dùng nên không được
+   chiếm chỗ phía trên danh sách. */
+.crm-friend-ops { margin-top: 14px; padding: 12px 16px; }
+.crm-friend-ops > summary { cursor: pointer; font-weight: 600; font-size: 13.5px; }
+.crm-friend-ops-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
 .crm-pager {
   display: flex;
   align-items: center;

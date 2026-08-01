@@ -1,6 +1,52 @@
 ## [Unreleased]
 
 ### Added
+- **★ Trang "Bạn bè" gộp vào "Khách hàng", đổi tên thành "Liên hệ" (CRM lớp 2).** Owner nói thẳng:
+  *"trang bạn bè t thấy đang chưa sử dụng được gì"* — và đúng: nó chỉ là **3 thẻ tĩnh mô tả API**
+  (`Friend requests` / `Sent requests` / `All friends`) với nút gọi API thô, **không có danh sách
+  nào**. Thứ owner thật sự cần — DANH SÁCH bạn bè — nay nằm ngay trong bảng Liên hệ nhờ cờ
+  `is_friend` của lớp 1. Ba thao tác kết bạn còn lại thu về một khối gấp dưới bảng, **vẫn khoá theo
+  Pro** như trang cũ: gộp giao diện không được phép nới giấy phép.
+- **Đồng bộ nhãn phân loại có sẵn của Zalo, kèm màu.** Owner đã phân loại chat trên app Zalo rồi
+  (Khách hàng · Gia đình · Công việc · Bạn bè · Trả lời sau · Đồng nghiệp, mỗi nhãn một màu), bắt
+  phân loại lại lần hai trong CRM là việc thừa. `get-labels` trả `{id, text, color, emoji,
+  conversations[]}` nên biết luôn ai mang nhãn nào. Đọc từ **mọi tài khoản bot**, trùng tên thì gộp
+  `conversations` — cùng một nhãn "Khách hàng" ở hai bot là cùng một ý định phân loại.
+- **Migration v5 — danh mục nhãn `crm_tags`** (`name`, `color`, `emoji`, `zalo_label_id`, `source`).
+  Nối với `contact_tags` theo **tên**, không thêm khoá ngoại: mọi tag gõ tay từ trước vẫn chạy
+  nguyên vẹn, chỉ là rơi về màu mặc định. `zalo_label_id` để dành cho việc ghi ngược lên Zalo
+  (`updateLabels`) về sau.
+- **Chọn hàng loạt + Thao tác**: tick từng dòng hoặc cả trang, rồi gắn nhãn / bỏ nhãn / xoá cho cả
+  lô. Lựa chọn giữ theo **id** chứ không theo chỉ số dòng — đổi bộ lọc hay sang trang khác thì vẫn
+  đúng người, điều kiện để "gắn nhãn cho 300 liên hệ trải nhiều trang" không thành trò may rủi.
+- **Lọc theo Nhãn** (kèm số liên hệ mỗi nhãn, để thấy nhãn nào còn dùng) và **theo Loại** (bạn bè
+  Zalo / từ nhóm Zalo), cộng **sắp xếp Tên A→Z**.
+
+### Fixed
+- **Sắp xếp tên tiếng Việt không còn vứt Đ/Ê/Ô xuống sau chữ Z.** `COLLATE NOCASE` của SQLite so
+  theo ASCII nên "Đặng" rơi xuống tận cuối danh bạ — với app tiếng Việt thì đó là danh sách sai,
+  nhìn phát ra ngay. Nay sắp bằng `localeCompare('vi')` trong JS, dùng chung đường đọc-hết-rồi-cắt-
+  trang vốn đã có cho bộ lọc sinh nhật. Đổi lại là mất phân trang ở tầng SQL; chấp nhận được với
+  danh bạ cỡ vài nghìn người, và nếu lên hàng chục nghìn thì thêm cột khoá-sắp-xếp đã bỏ dấu chứ
+  đừng quay lại `COLLATE`.
+- **Xoá liên hệ giờ dọn luôn bảng nối nhóm.** `contact_groups` thêm ở v3 nhưng `deleteContact`
+  không được cập nhật theo, để lại bản ghi mồ côi — xoá lẻ thì không lộ, nhưng xoá hàng loạt 500
+  người thì `listContactsByGroup` đếm cả người đã xoá.
+- **Tick một ô không còn vẽ lại cả bảng.** Mỗi lần tick mà dựng lại 500 dòng thì giật, nhảy vị trí
+  cuộn, và ô định tick tiếp đã là một node khác. Nay chỉ vẽ lại đúng thanh Thao tác.
+
+### Notes
+- Đồng bộ nhãn có ba trạng thái dễ bị hiểu nhầm là "hỏng", nên nói thẳng bằng toast: (1) có tài
+  khoản đọc nhãn lỗi → lần đó **chỉ thêm, cấm xoá** (`prune: false`), vì luật "thay thế" hiểu
+  thiếu-nghĩa-là-đã-xoá và sẽ gỡ sạch nhãn của đúng tài khoản vừa hỏng; (2) Zalo có nhãn nhưng chưa
+  gắn cho ai → bảo owner vào app phân loại trước; (3) có hội thoại mang nhãn nhưng chưa import →
+  bảo bấm "Import từ Zalo".
+- Nhãn owner tự đặt trong CRM (`source: 'manual'`) **tuyệt đối không bị đồng bộ đụng tới**.
+- 274 test xanh (thêm 10). Kiểm trên trình duyệt thật, desktop + mobile 375px: đồng bộ 6 nhãn ra
+  đúng màu từng liên hệ, lọc theo nhãn/loại, sắp A→Z, tick 3 dòng → xoá cả lô, chọn cả trang, và
+  đồng bộ lại KHÔNG mất nhãn tự đặt.
+
+### Added
 - **★ Khách hàng import từ Zalo giờ CÓ sđt · ngày sinh · giới tính · cờ đã-kết-bạn (CRM lớp 1).**
   Owner nói CRM *"vẫn là demo không có giá trị"*. Đối chiếu với một CRM Zalo khác cho thấy sự thật
   ngược với giả định: CRM của họ **mỏng hơn** (không có deal/pipeline/task), nhưng **trông** hữu ích

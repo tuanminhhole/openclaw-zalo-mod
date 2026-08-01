@@ -5363,6 +5363,57 @@ Quy tắc:
                 return { ...res, ...stats };
             }
 
+            // ── CRM: kéo nhãn phân loại có sẵn của Zalo về ──
+            //
+            // Owner đã phân loại chat trên app Zalo rồi (nhãn kèm màu: Khách hàng, Gia đình, Trả lời
+            // sau…). Bắt họ phân loại lại lần hai trong CRM là việc thừa, nên đọc thẳng `get-labels`.
+            if (action === 'crm-sync-zalo-labels') {
+                if (!zEngine?.crm) throw new Error('CRM cần SQLite (Node >= 22.5). Storage hiện tại: in-memory.');
+                const bots = await getZaloBots().catch(() => []);
+                const profiles = (bots.length ? bots.map(b => b.profile) : ['default']).filter(Boolean);
+
+                // Nhãn nằm sâu trong response và độ sâu khác nhau giữa các bản zca — tìm đệ quy thay
+                // vì bám một đường dẫn cứng.
+                const findLabelData = (o, depth = 0) => {
+                    if (!o || typeof o !== 'object' || depth > 6) return null;
+                    if (Array.isArray(o.labelData)) return o.labelData;
+                    for (const v of Object.values(o)) {
+                        const r = findLabelData(v, depth + 1);
+                        if (r) return r;
+                    }
+                    return null;
+                };
+
+                // Trùng TÊN giữa các tài khoản thì gộp `conversations` — cùng một nhãn "Khách hàng"
+                // ở hai bot là cùng một ý định phân loại, tách ra thành hai nhãn là vô nghĩa.
+                const merged = new Map();
+                const failed = [];
+                for (const prof of profiles) {
+                    try {
+                        const res = await zEngine.bridge.execute(prof, { action: 'get-labels' });
+                        for (const l of (findLabelData(res) || [])) {
+                            const name = String(l?.text || '').trim();
+                            if (!name) continue;
+                            const cur = merged.get(name)
+                                || { id: l.id, text: name, color: l.color, emoji: l.emoji, conversations: [] };
+                            for (const c of (Array.isArray(l.conversations) ? l.conversations : [])) {
+                                if (!cur.conversations.includes(c)) cur.conversations.push(c);
+                            }
+                            merged.set(name, cur);
+                        }
+                    } catch (e) {
+                        failed.push(`${prof}: ${e.message}`);
+                    }
+                }
+                if (failed.length === profiles.length) {
+                    throw new Error(`Không đọc được nhãn Zalo từ tài khoản nào. ${failed.join(' · ')}`);
+                }
+                // Có tài khoản hỏng nghĩa là danh sách nhãn KHÔNG đầy đủ. Luật "thay thế" của
+                // syncZaloLabels hiểu thiếu-là-đã-xoá, nên lúc này chỉ được thêm, cấm xoá.
+                const r = zEngine.crm.syncZaloLabels([...merged.values()], 'dashboard', { prune: failed.length === 0 });
+                return { ...r, profiles: profiles.length, failed, pruned: failed.length === 0 };
+            }
+
             // ── CRM actions (crm-*) → src/crm/crm-api.js ──
             if (action.startsWith('crm-')) {
                 const res = handleCrmAction(zEngine?.crm ?? null, action, payload, 'dashboard');

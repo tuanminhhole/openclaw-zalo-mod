@@ -30,6 +30,19 @@ const ACTIONS = {
         contacts: crm.listContactsByGroup(required(p, 'groupId'), p.limit),
     }),
 
+    // Nhãn (danh mục có màu + emoji)
+    'crm-tags': (crm) => ({ tags: crm.listTags() }),
+    'crm-tag-save': (crm, p, actor) => crm.upsertTag(p || {}, actor),
+    'crm-tag-delete': (crm, p, actor) => crm.deleteTag(required(p, 'name'), actor),
+    // Nhận sẵn mảng `labels` thay vì tự gọi Zalo: index.js lo phần lấy dữ liệu (đa tài khoản,
+    // cần zca), file này vẫn thuần để test không cần server.
+    'crm-tags-sync-apply': (crm, p, actor) => crm.syncZaloLabels(p?.labels || [], actor, { prune: p?.prune !== false }),
+
+    // Thao tác hàng loạt
+    'crm-contacts-tag': (crm, p, actor) => crm.tagContacts(
+        p?.ids || [], required(p, 'tag'), p?.add !== false, actor),
+    'crm-contacts-delete': (crm, p, actor) => crm.deleteContacts(p?.ids || [], actor),
+
     // Leads
     'crm-pipeline': (crm) => crm.pipeline(),
     'crm-lead-get': (crm, p) => {

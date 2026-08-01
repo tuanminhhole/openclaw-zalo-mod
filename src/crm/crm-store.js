@@ -195,32 +195,50 @@ export class CrmStore {
         if (opts.gender === 'male' || opts.gender === 'female') { where.push('gender = ?'); params.push(opts.gender); }
         if (opts.friend === 'only') where.push('is_friend = 1');
         if (opts.friend === 'none') where.push('(is_friend IS NULL OR is_friend = 0)');
+        if (opts.source) { where.push('source = ?'); params.push(s(opts.source)); }
         const cond = where.length ? `WHERE ${where.join(' AND ')}` : '';
 
-        // "Sinh nhật trong N ngày tới" phải lọc TRONG JS, không phải SQL: `birthday` là chuỗi thô của
-        // Zalo (nhiều định dạng, có cái thiếu năm), và khoảng ngày còn phải vòng qua giao thừa. Nhét
-        // vào SQL thì hoặc sai, hoặc phải chuẩn hoá lúc ghi — mà chuẩn hoá lúc ghi sẽ nuốt mất những
-        // chuỗi không parse được. Đổi lại phải đọc hết rồi mới cắt trang, nên chỉ làm khi có lọc này.
+        // Hai nhánh dưới đây phải đọc HẾT rồi mới cắt trang, vì SQL không làm đúng được:
+        //
+        // - **Sinh nhật trong N ngày tới**: `birthday` là chuỗi thô của Zalo (nhiều định dạng, có
+        //   cái thiếu năm) và khoảng ngày còn phải vòng qua giao thừa. Nhét vào SQL thì hoặc sai,
+        //   hoặc phải chuẩn hoá lúc ghi — mà chuẩn hoá lúc ghi sẽ nuốt mất chuỗi không parse được.
+        // - **Sắp Tên A→Z**: `COLLATE NOCASE` của SQLite so theo ASCII, nên mọi tên bắt đầu bằng
+        //   Đ/Ê/Ô/Ư bị đẩy xuống sau hết chữ Z — với danh bạ tiếng Việt thì đó là danh sách sai,
+        //   nhìn phát ra ngay. `localeCompare('vi')` xếp đúng nhưng chỉ chạy được trong JS.
+        //
+        // Đổi lại là mất khả năng phân trang trong SQL. Chấp nhận được: danh bạ Zalo của một tài
+        // khoản cỡ vài nghìn người, sắp trong JS tốn vài mili-giây. Nếu có ngày nó lên hàng chục
+        // nghìn thì thêm cột khoá-sắp-xếp đã bỏ dấu, đừng quay lại COLLATE.
         const withinDays = num(opts.birthdayWithin, null);
-        if (withinDays != null && withinDays >= 0) {
+        const byBirthday = withinDays != null && withinDays >= 0;
+        const byName = opts.sort === 'name';
+        if (byBirthday || byName) {
             const today = opts.today instanceof Date ? opts.today : new Date(this._now());
             const all = this.db.prepare(`SELECT * FROM contacts ${cond} ORDER BY updated_at DESC`).all(...params);
             const matched = [];
             for (const r of all) {
-                const days = daysUntilBirthday(birthdayDayMonth(r.birthday), today);
-                if (days == null || days > withinDays) continue;
-                r.birthdayInDays = days;
+                if (byBirthday) {
+                    const days = daysUntilBirthday(birthdayDayMonth(r.birthday), today);
+                    if (days == null || days > withinDays) continue;
+                    r.birthdayInDays = days;
+                } else if (r.birthday) {
+                    r.birthdayInDays = daysUntilBirthday(birthdayDayMonth(r.birthday), today);
+                }
                 matched.push(r);
             }
-            // Sắp theo sinh nhật gần nhất — đây là thứ duy nhất owner cần khi mở bộ lọc này.
-            matched.sort((a, b) => a.birthdayInDays - b.birthdayInDays);
+            // Lọc sinh nhật thì thứ duy nhất owner cần là "ai sắp tới sinh nhật trước" — nó thắng
+            // cả yêu cầu sắp theo tên.
+            if (byBirthday) matched.sort((a, b) => a.birthdayInDays - b.birthdayInDays);
+            else matched.sort((a, b) => String(a.display_name).localeCompare(String(b.display_name), 'vi'));
             const page = matched.slice(offset, offset + limit);
             this._hydrate(page);
             return { contacts: page, total: matched.length, limit, offset };
         }
+        const order = 'updated_at DESC';
 
         const rows = this.db.prepare(
-            `SELECT * FROM contacts ${cond} ORDER BY updated_at DESC LIMIT ? OFFSET ?`)
+            `SELECT * FROM contacts ${cond} ORDER BY ${order} LIMIT ? OFFSET ?`)
             .all(...params, limit, offset);
         const total = this.db.prepare(`SELECT COUNT(*) AS n FROM contacts ${cond}`).all(...params)[0].n;
         this._hydrate(rows);
@@ -237,6 +255,161 @@ export class CrmStore {
         return rows;
     }
 
+    // ── Danh mục nhãn (màu + emoji) ──────────────────────────────────────
+
+    /** Nhãn kèm số liên hệ đang mang — không có số thì owner không biết nhãn nào còn dùng. */
+    listTags() {
+        const rows = this.db.prepare(`
+            SELECT t.name, t.color, t.emoji, t.zalo_label_id, t.source,
+                   (SELECT COUNT(*) FROM contact_tags ct WHERE ct.tag = t.name) AS n
+            FROM crm_tags t ORDER BY t.name`).all();
+        // Nhãn đã gắn cho liên hệ nhưng CHƯA có hàng danh mục (tag cũ, gõ tay) vẫn phải hiện ra —
+        // giấu đi thì bộ lọc "Nhãn" thiếu mất đúng những nhãn owner đang dùng.
+        const known = new Set(rows.map(r => r.name));
+        const orphans = this.db.prepare(
+            'SELECT tag AS name, COUNT(*) AS n FROM contact_tags GROUP BY tag ORDER BY tag').all();
+        for (const o of orphans) {
+            if (known.has(o.name)) continue;
+            rows.push({ name: o.name, color: null, emoji: null, zalo_label_id: null, source: 'manual', n: o.n });
+        }
+        rows.sort((a, b) => a.name.localeCompare(b.name, 'vi'));
+        return rows;
+    }
+
+    upsertTag(fields, actor = 'system') {
+        const name = s(fields.name, 50)?.trim();
+        if (!name) throw new Error('tên nhãn là bắt buộc');
+        this.db.prepare(`INSERT INTO crm_tags (name, color, emoji, zalo_label_id, source, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT(name) DO UPDATE SET color=excluded.color, emoji=excluded.emoji,
+                zalo_label_id=excluded.zalo_label_id, source=excluded.source, updated_at=excluded.updated_at`)
+            .run(name, s(fields.color, 20) || null, s(fields.emoji, 16) || null,
+                num(fields.zaloLabelId), s(fields.source, 20) || 'manual', this._now());
+        this._audit(actor, 'tag.upsert', name, s(fields.color, 20) || '');
+        return this.db.prepare('SELECT * FROM crm_tags WHERE name = ?').get(name);
+    }
+
+    /** Xoá nhãn: bỏ khỏi danh mục VÀ gỡ khỏi mọi liên hệ — nửa vời thì nhãn ma vẫn hiện ở bộ lọc. */
+    deleteTag(name, actor = 'system') {
+        const tag = s(name, 50)?.trim();
+        if (!tag) return { removed: 0 };
+        const removed = this.db.prepare('SELECT COUNT(*) AS n FROM contact_tags WHERE tag = ?').get(tag).n;
+        this.db.prepare('DELETE FROM contact_tags WHERE tag = ?').run(tag);
+        this.db.prepare('DELETE FROM crm_tags WHERE name = ?').run(tag);
+        this._audit(actor, 'tag.delete', tag, `gỡ khỏi ${removed} liên hệ`);
+        return { removed };
+    }
+
+    /**
+     * Kéo nhãn phân loại có sẵn của Zalo về CRM.
+     *
+     * `labels` là `LabelData[]` của zca-js: `{ id, text, color, emoji, conversations[] }`, trong đó
+     * `conversations` là danh sách id hội thoại đang mang nhãn đó.
+     *
+     * Hai quyết định:
+     * - **Thay thế, không gộp, cho riêng nhãn nguồn Zalo.** Owner bỏ nhãn trên app Zalo thì CRM phải
+     *   bỏ theo, không thì hai bên lệch dần và không ai tin bên nào. Nhãn owner tự đặt trong CRM
+     *   (`source: 'manual'`) tuyệt đối không đụng tới.
+     * - **Đếm và trả về số KHÔNG khớp.** `conversations` có cả id nhóm và người chưa import, khớp
+     *   không hết là chuyện bình thường — nhưng phải nói ra, không thì owner thấy "đồng bộ xong"
+     *   mà danh sách chẳng đổi gì và tưởng hỏng.
+     *
+     * `opts.prune = false` để gọi khi **có tài khoản đọc nhãn hỏng**: lúc đó danh sách nhãn nhận
+     * được là KHÔNG đầy đủ, mà luật "thay thế" ở trên lại hiểu thiếu-nghĩa-là-đã-xoá — sẽ gỡ sạch
+     * nhãn của đúng tài khoản vừa hỏng. Thiếu dữ liệu thì chỉ được thêm, không được xoá.
+     */
+    syncZaloLabels(labels, actor = 'system', opts = {}) {
+        const prune = opts.prune !== false;
+        const list = Array.isArray(labels) ? labels : [];
+        const now = this._now();
+        const uidToId = new Map(
+            this.db.prepare('SELECT id, zalo_uid FROM contacts WHERE zalo_uid IS NOT NULL').all()
+                .map(r => [String(r.zalo_uid), r.id]));
+
+        const prevZaloTags = this.db.prepare("SELECT name FROM crm_tags WHERE source = 'zalo'").all().map(r => r.name);
+        const seen = [];
+        let assigned = 0, unmatched = 0;
+
+        this.db.exec('BEGIN');
+        try {
+            const clearStmt = this.db.prepare('DELETE FROM contact_tags WHERE tag = ?');
+            const assignStmt = this.db.prepare('INSERT OR IGNORE INTO contact_tags (contact_id, tag) VALUES (?, ?)');
+            const tagStmt = this.db.prepare(`INSERT INTO crm_tags (name, color, emoji, zalo_label_id, source, updated_at)
+                VALUES (?, ?, ?, ?, 'zalo', ?)
+                ON CONFLICT(name) DO UPDATE SET color=excluded.color, emoji=excluded.emoji,
+                    zalo_label_id=excluded.zalo_label_id, source='zalo', updated_at=excluded.updated_at`);
+
+            for (const raw of list) {
+                const name = s(raw?.text, 50)?.trim();
+                if (!name) continue;
+                seen.push(name);
+                tagStmt.run(name, s(raw?.color, 20) || null, s(raw?.emoji, 16) || null, num(raw?.id), now);
+                clearStmt.run(name);
+                for (const conv of (Array.isArray(raw?.conversations) ? raw.conversations : [])) {
+                    const contactId = uidToId.get(String(conv).replace(/_0$/, ''));
+                    if (!contactId) { unmatched++; continue; }
+                    assignStmt.run(contactId, name);
+                    assigned++;
+                }
+            }
+
+            // Nhãn Zalo đã bị xoá hẳn bên app → gỡ luôn khỏi CRM, kể cả hàng danh mục.
+            const gone = prune ? prevZaloTags.filter(n => !seen.includes(n)) : [];
+            for (const n of gone) {
+                clearStmt.run(n);
+                this.db.prepare('DELETE FROM crm_tags WHERE name = ? AND source = ?').run(n, 'zalo');
+            }
+            this.db.exec('COMMIT');
+            this._audit(actor, 'tag.sync-zalo', `${seen.length} nhãn`, `gắn ${assigned}, không khớp ${unmatched}, gỡ ${gone.length}`);
+            return { tags: seen.length, assigned, unmatched, removed: gone.length };
+        } catch (e) {
+            this.db.exec('ROLLBACK');
+            throw e;
+        }
+    }
+
+    // ── Thao tác hàng loạt ───────────────────────────────────────────────
+
+    /**
+     * Gắn/bỏ một nhãn cho nhiều liên hệ cùng lúc.
+     *
+     * Bỏ qua id không tồn tại thay vì ném: thao tác hàng loạt chạy trên danh sách người dùng vừa
+     * tick, mà giữa lúc tick và lúc bấm có thể một bản ghi đã bị xoá ở tab khác — ném lỗi thì cả
+     * lô 500 người không có gì được ghi vì một id lạc.
+     */
+    tagContacts(contactIds, tag, add = true, actor = 'system') {
+        const name = s(tag, 50)?.trim();
+        if (!name) throw new Error('tên nhãn là bắt buộc');
+        const ids = [...new Set((Array.isArray(contactIds) ? contactIds : []).map(String).filter(Boolean))];
+        if (!ids.length) return { changed: 0, skipped: 0 };
+        const exists = this.db.prepare('SELECT id FROM contacts WHERE id = ?');
+        const ins = this.db.prepare('INSERT OR IGNORE INTO contact_tags (contact_id, tag) VALUES (?, ?)');
+        const del = this.db.prepare('DELETE FROM contact_tags WHERE contact_id = ? AND tag = ?');
+        let changed = 0, skipped = 0;
+        this.db.exec('BEGIN');
+        try {
+            for (const id of ids) {
+                if (!exists.get(id)) { skipped++; continue; }
+                (add ? ins : del).run(id, name);
+                changed++;
+            }
+            this.db.exec('COMMIT');
+        } catch (e) {
+            this.db.exec('ROLLBACK');
+            throw e;
+        }
+        this._audit(actor, add ? 'contacts.tag-add' : 'contacts.tag-remove', name, `${changed} liên hệ`);
+        return { changed, skipped };
+    }
+
+    /** Xoá nhiều liên hệ — dùng lại deleteContact để lead/task được gỡ liên kết chứ không mất. */
+    deleteContacts(contactIds, actor = 'system') {
+        const ids = [...new Set((Array.isArray(contactIds) ? contactIds : []).map(String).filter(Boolean))];
+        let deleted = 0;
+        for (const id of ids) if (this.deleteContact(id, actor)) deleted++;
+        return { deleted, skipped: ids.length - deleted };
+    }
+
     setContactTags(contactId, tags, actor = 'system') {
         if (!this.getContact(contactId)) throw new Error('contact không tồn tại');
         const clean = [...new Set((tags || []).map(t => s(t, 50)?.trim()).filter(Boolean))].slice(0, 20);
@@ -251,6 +424,10 @@ export class CrmStore {
         const c = this.getContact(id);
         if (!c) return false;
         this.db.prepare('DELETE FROM contact_tags WHERE contact_id = ?').run(id);
+        // Bảng nối nhóm thêm ở v3 nhưng chỗ xoá này không được cập nhật theo — bản ghi mồ côi
+        // không lộ ra khi xoá lẻ, nhưng xoá hàng loạt 500 người thì `listContactsByGroup` sẽ đếm
+        // cả người đã xoá.
+        this.db.prepare('DELETE FROM contact_groups WHERE contact_id = ?').run(id);
         this.db.prepare('UPDATE leads SET contact_id = NULL WHERE contact_id = ?').run(id);
         this.db.prepare('UPDATE tasks SET contact_id = NULL WHERE contact_id = ?').run(id);
         this.db.prepare('DELETE FROM contacts WHERE id = ?').run(id);

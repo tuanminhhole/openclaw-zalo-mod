@@ -296,11 +296,10 @@ const NAV_LABELS = {
   journal: ['Theo nhóm', 'By group'],
   reports: ['Lịch báo cáo', 'Schedules'],
   reportlog: ['Lịch sử báo cáo', 'Report log'],
-  friends: ['Bạn bè', 'Friends'],
   messages: ['Tin nhắn', 'Messages'],
   templates: ['Template', 'Templates'],
   permissions: ['Phân quyền', 'Permissions'],
-  contacts: ['Khách hàng', 'Contacts'],
+  contacts: ['Liên hệ', 'Contacts'],
   leads: ['Pipeline', 'Pipeline'],
   tasks: ['Công việc', 'Tasks'],
   upgrade: ['Nâng cấp', 'Upgrade'],
@@ -419,16 +418,10 @@ function applyI18n() {
     ['Block khỏi group', 'Block from group'],
   ]);
   setText('#members [data-action="member-form-action"]', 'Chạy action', 'Run action');
-  setText('#friends .page-head h2', 'Bạn bè', 'Friends');
-  setText('#friends .page-head p', 'Quản lý kết bạn, lời mời đã gửi, request đang chờ và danh bạ của tài khoản Zalo bot.', 'Manage friend requests, sent requests, pending requests, and the bot account contact list.');
-  setAllText('#friends .actions .btn', [['Tìm user', 'Find user'], ['Gửi lời mời', 'Send request']]);
-  setAllText('#friends .api-card h4', [['Friend requests', 'Friend requests'], ['Lời mời đã gửi', 'Sent requests'], ['Tất cả bạn bè', 'All friends']]);
-  setAllText('#friends .api-card p', [
-    ['Accept hoặc reject lời mời kết bạn bằng `acceptFriendRequest` và `rejectFriendRequest`.', 'Accept or reject friend requests with `acceptFriendRequest` and `rejectFriendRequest`.'],
-    ['Theo dõi lời mời đã gửi, thu hồi khi cần bằng `undoFriendRequest`.', 'Track sent requests and revoke them when needed with `undoFriendRequest`.'],
-    ['Search, alias, remove friend và phân nhóm danh bạ.', 'Search, alias, remove friends, and organize contacts.'],
-  ]);
-  setAllText('#friends .api-card .btn', [['Xử lý bằng ID', 'Handle by ID'], ['Gửi mới', 'Send new'], ['Tải bạn bè', 'Load friends']]);
+  setText('#contacts .page-head h2', 'Liên hệ', 'Contacts');
+  setText('#contacts .page-head p',
+    'Bạn bè và khách hàng chưa kết bạn, gộp chung một chỗ — nhãn Zalo, sinh nhật, nhóm, liên kết lead.',
+    'Friends and not-yet-friend customers in one place — Zalo labels, birthdays, groups, lead links.');
   setText('#messages .page-head h2', 'Tin nhắn', 'Messages');
   setText('#messages .page-head p', 'Gửi template, thông báo, link hoặc tin nhắn hàng loạt có preview và rate limit.', 'Send templates, announcements, links, or bulk messages with preview and rate limiting.');
   setText('#messages .panel-head h3', 'Composer', 'Composer');
@@ -872,7 +865,7 @@ function renderLicense() {
 
   navButtons.forEach(btn => {
     const sec = btn.dataset.section;
-    if (['members', 'friends', 'api', 'danger'].includes(sec)) {
+    if (['members', 'api', 'danger'].includes(sec)) {
       let lockIcon = btn.querySelector('.nav-lock-badge');
       if (!isPro) {
         if (!lockIcon) {
@@ -889,7 +882,7 @@ function renderLicense() {
     }
   });
 
-  ['members', 'friends', 'api', 'danger'].forEach(secId => {
+  ['members', 'api', 'danger'].forEach(secId => {
     const secEl = document.getElementById(secId);
     if (secEl) {
       let overlay = secEl.querySelector('.locked-overlay');
@@ -4421,6 +4414,13 @@ window.addEventListener('resize', () => {
 const crmState = {
   contacts: null, contactsTotal: 0, contactsPage: 1, contactsSearch: '', contactsTag: '',
   contactsGroup: '', contactsLinked: '', contactsGender: '', contactsFriend: '', contactsBirthday: '',
+  contactsSource: '', contactsSort: '',
+  // Danh mục nhãn nạp MỘT lần rồi dùng lại: mỗi dòng cần màu của nhãn, hỏi server theo từng dòng
+  // là 500 lượt gọi cho một trang.
+  tags: null,
+  // Chọn hàng loạt giữ theo id chứ không theo chỉ số dòng — đổi bộ lọc là chỉ số lệch hết, và
+  // "xoá 500 người" mà lệch thì không sửa lại được.
+  selected: new Set(),
   pipeline: null, tasks: null, taskFilter: 'open', undoLead: null,
 };
 const CRM_PAGE_SIZE = 50;
@@ -4476,31 +4476,42 @@ function crmErrorCard(container, err, retryFn) {
 async function renderCrmContacts() {
   const head = document.querySelector('#contacts .page-head');
   if (head) {
-    head.querySelector('h2').textContent = t('Khách hàng', 'Contacts');
-    head.querySelector('p').textContent = t('Danh bạ CRM — gộp từ member Zalo, gắn tag, ghi chú, liên kết lead.',
-      'CRM contact book — merged from Zalo members, with tags, notes and lead links.');
+    head.querySelector('h2').textContent = t('Liên hệ', 'Contacts');
+    head.querySelector('p').textContent = t(
+      'Bạn bè và khách hàng chưa kết bạn, gộp chung một chỗ — nhãn Zalo, sinh nhật, nhóm, liên kết lead.',
+      'Friends and not-yet-friend customers in one place — Zalo labels, birthdays, groups, lead links.');
   }
   const actions = document.getElementById('crmContactsActions');
   actions.innerHTML = `
+    <button class="btn" id="crmSyncLabelsBtn">${t('🏷 Đồng bộ nhãn Zalo', '🏷 Sync Zalo labels')}</button>
     <button class="btn" id="crmImportBtn">${t('⟳ Import từ Zalo', '⟳ Import from Zalo')}</button>
-    <button class="btn primary" id="crmAddContactBtn">${t('+ Thêm khách', '+ Add contact')}</button>`;
+    <button class="btn primary" id="crmAddContactBtn">${t('+ Thêm liên hệ', '+ Add contact')}</button>`;
+  actions.querySelector('#crmSyncLabelsBtn').addEventListener('click', crmSyncZaloLabels);
   actions.querySelector('#crmImportBtn').addEventListener('click', crmImportFromZalo);
   actions.querySelector('#crmAddContactBtn').addEventListener('click', () => crmContactModal(null));
+  crmRenderFriendOps();
 
   const body = document.getElementById('crmContactsBody');
   body.innerHTML = `<div class="card" style="padding:24px;color:var(--muted)">${t('Đang tải…', 'Loading…')}</div>`;
   try {
-    const res = await crmAction('crm-contacts-list', {
-      search: crmState.contactsSearch || undefined,
-      tag: crmState.contactsTag || undefined,
-      groupId: crmState.contactsGroup || undefined,
-      linked: crmState.contactsLinked || undefined,
-      gender: crmState.contactsGender || undefined,
-      friend: crmState.contactsFriend || undefined,
-      birthdayWithin: crmState.contactsBirthday ? Number(crmState.contactsBirthday) : undefined,
-      limit: CRM_PAGE_SIZE,
-      offset: (crmState.contactsPage - 1) * CRM_PAGE_SIZE,
-    });
+    // Danh mục nhãn và danh sách liên hệ độc lập nhau → gọi song song, đỡ một vòng chờ.
+    const [res, tagsRes] = await Promise.all([
+      crmAction('crm-contacts-list', {
+        search: crmState.contactsSearch || undefined,
+        tag: crmState.contactsTag || undefined,
+        groupId: crmState.contactsGroup || undefined,
+        linked: crmState.contactsLinked || undefined,
+        gender: crmState.contactsGender || undefined,
+        friend: crmState.contactsFriend || undefined,
+        source: crmState.contactsSource || undefined,
+        sort: crmState.contactsSort || undefined,
+        birthdayWithin: crmState.contactsBirthday ? Number(crmState.contactsBirthday) : undefined,
+        limit: CRM_PAGE_SIZE,
+        offset: (crmState.contactsPage - 1) * CRM_PAGE_SIZE,
+      }),
+      crmState.tags ? Promise.resolve(null) : crmAction('crm-tags'),
+    ]);
+    if (tagsRes) crmState.tags = tagsRes.tags;
     crmState.contacts = res.contacts;
     crmState.contactsTotal = res.total;
     crmRenderContactsTable(body);
@@ -4535,11 +4546,43 @@ function crmGenderLabel(g) {
   return '';
 }
 
+/**
+ * Chip nhãn lấy màu từ danh mục Zalo.
+ *
+ * Màu của Zalo là mã đặc (`#d91b1b`) — dùng nguyên làm nền thì chữ đen trên đỏ đặc, đọc không nổi.
+ * Đổ nền bằng `color-mix` cho nhạt đi và giữ chữ theo đúng màu nhãn, nên 6 nhãn vẫn phân biệt được
+ * bằng mắt ở cả nền sáng lẫn nền tối. Nhãn chưa có trong danh mục (gõ tay từ trước) rơi về chip xám
+ * mặc định thay vì biến mất.
+ */
+function crmTagChip(tag, { clickable = true } = {}) {
+  const meta = (crmState.tags || []).find(x => x.name === tag);
+  const color = meta?.color && /^#[0-9a-f]{3,8}$/i.test(meta.color) ? meta.color : '';
+  const style = color
+    ? `background:color-mix(in srgb, ${color} 16%, transparent);color:${color};border:1px solid color-mix(in srgb, ${color} 34%, transparent)`
+    : '';
+  return `<span class="chip"${clickable ? ` data-crm-tag="${crmEsc(tag)}"` : ''}
+    style="${clickable ? 'cursor:pointer;' : ''}${style}">${meta?.emoji ? `${crmEsc(meta.emoji)} ` : ''}${crmEsc(tag)}</span>`;
+}
+
+const CRM_SOURCE_LABELS = {
+  'zalo-group': ['Từ nhóm Zalo', 'From Zalo group'],
+  'zalo-friend': ['Bạn bè Zalo', 'Zalo friend'],
+};
+function crmSourceLabel(src) {
+  const pair = CRM_SOURCE_LABELS[src];
+  return pair ? t(pair[0], pair[1]) : (src || '—');
+}
+
 function crmRenderContactsTable(body) {
   const rows = crmState.contacts || [];
   const totalPages = Math.max(Math.ceil(crmState.contactsTotal / CRM_PAGE_SIZE), 1);
+  const sel = crmState.selected;
+  const pageIds = rows.map(c => c.id);
+  const allOnPage = pageIds.length > 0 && pageIds.every(id => sel.has(id));
   const rowsHtml = rows.map(c => `
     <tr data-contact-id="${crmEsc(c.id)}">
+      <td style="width:34px"><input type="checkbox" data-crm-pick-row="${crmEsc(c.id)}"
+        ${sel.has(c.id) ? 'checked' : ''} style="width:auto;min-height:0;margin:0"></td>
       <td>
         <div style="display:flex;align-items:center;gap:10px">
           ${c.avatar_url
@@ -4575,9 +4618,8 @@ function crmRenderContactsTable(body) {
           : '';
         return `${bd ? `🎂 ${crmEsc(bd)}${soon}` : ''}${bd && g ? '<br>' : ''}${g ? `<span style="color:var(--muted);font-size:12px">${crmEsc(g)}</span>` : ''}`;
       })()}</td>
-      <td><div class="chips">${(c.tags || []).map(tag =>
-        `<span class="chip" data-crm-tag="${crmEsc(tag)}" style="cursor:pointer">${crmEsc(tag)}</span>`).join('') || '—'}</div></td>
-      <td>${crmEsc(c.source || '—')}</td>
+      <td><div class="chips">${(c.tags || []).map(tag => crmTagChip(tag)).join('') || '—'}</div></td>
+      <td style="white-space:nowrap">${crmEsc(crmSourceLabel(c.source))}</td>
       <td style="white-space:nowrap">${crmDate(c.last_contact_at)}</td>
       <td style="white-space:nowrap;text-align:right">
         <button class="btn" data-crm-edit="${crmEsc(c.id)}">${t('Sửa', 'Edit')}</button>
@@ -4588,7 +4630,8 @@ function crmRenderContactsTable(body) {
   body.innerHTML = `
     <div class="crm-toolbar">
       <input type="search" id="crmContactSearch" class="crm-search" placeholder="${t('Tìm tên / SĐT / UID…', 'Search name / phone / UID…')}" value="${crmEsc(crmState.contactsSearch)}">
-      ${crmState.contactsTag ? `<span class="chip" id="crmTagClear" style="cursor:pointer">🏷 ${crmEsc(crmState.contactsTag)} ✕</span>` : ''}
+      ${/* Nhãn đang lọc hiện ngay trong <select id="crmTagFilter">, nên bỏ chip "🏷 … ✕" cũ —
+            hai chỗ cùng nói một trạng thái thì sửa một chỗ là lệch. */''}
       ${crmState.contactsGroup ? `<span class="chip" id="crmGroupClear" style="cursor:pointer;background:rgba(96,165,250,.16)">👥 ${crmEsc(
         (state.groups || []).find(g => g.groupId === crmState.contactsGroup)?.name || crmState.contactsGroup)} ✕</span>` : ''}
       <select id="crmLinkedFilter" class="crm-filter-select">
@@ -4614,18 +4657,40 @@ function crmRenderContactsTable(body) {
         <option value="7" ${crmState.contactsBirthday === '7' ? 'selected' : ''}>🎂 ${t('7 ngày tới', 'Next 7 days')}</option>
         <option value="30" ${crmState.contactsBirthday === '30' ? 'selected' : ''}>🎂 ${t('30 ngày tới', 'Next 30 days')}</option>
       </select>
-      <span style="margin-left:auto;color:var(--muted);font-size:13px">${t(`${crmState.contactsTotal} khách`, `${crmState.contactsTotal} contacts`)}</span>
+      ${/* Bộ lọc Nhãn dựng từ danh mục, kèm số liên hệ — owner thấy ngay nhãn nào còn dùng, nhãn
+            nào rỗng. Nhãn Zalo hiện màu ngay trong <option> không được, nên gắn emoji phía trước. */''}
+      <select id="crmTagFilter" class="crm-filter-select">
+        <option value="">${t('Nhãn: tất cả', 'Label: all')}</option>
+        ${(crmState.tags || []).map(tg => `<option value="${crmEsc(tg.name)}" ${crmState.contactsTag === tg.name ? 'selected' : ''}>
+          ${tg.emoji ? `${crmEsc(tg.emoji)} ` : '🏷 '}${crmEsc(tg.name)} (${tg.n})</option>`).join('')}
+      </select>
+      <select id="crmSourceFilter" class="crm-filter-select">
+        <option value="">${t('Loại: tất cả', 'Type: all')}</option>
+        <option value="zalo-friend" ${crmState.contactsSource === 'zalo-friend' ? 'selected' : ''}>${t('Bạn bè Zalo', 'Zalo friend')}</option>
+        <option value="zalo-group" ${crmState.contactsSource === 'zalo-group' ? 'selected' : ''}>${t('Từ nhóm Zalo', 'From Zalo group')}</option>
+      </select>
+      <select id="crmSortSelect" class="crm-filter-select">
+        <option value="">${t('Mới cập nhật', 'Recently updated')}</option>
+        <option value="name" ${crmState.contactsSort === 'name' ? 'selected' : ''}>${t('Tên A → Z', 'Name A → Z')}</option>
+      </select>
+      <span style="margin-left:auto;color:var(--muted);font-size:13px">${t(`${crmState.contactsTotal} liên hệ`, `${crmState.contactsTotal} contacts`)}</span>
     </div>
+    ${/* Vùng chứa CỐ ĐỊNH cho thanh Thao tác: tick một ô chỉ vẽ lại đúng thanh này, không vẽ lại
+          cả bảng. Vẽ lại cả bảng thì 500 dòng bị dựng lại mỗi lần tick — giật, nhảy vị trí cuộn,
+          và ô vừa định tick tiếp đã là một node khác. */''}
+    <div id="crmBulkHost"></div>
     <div class="card">
       <div class="table-wrap">
         <table>
           <thead><tr>
-            <th>${t('Khách hàng', 'Contact')}</th><th>${t('SĐT', 'Phone')}</th>
+            <th style="width:34px"><input type="checkbox" id="crmPickAll" ${allOnPage ? 'checked' : ''}
+              title="${t('Chọn cả trang này', 'Select this page')}" style="width:auto;min-height:0;margin:0"></th>
+            <th>${t('Liên hệ', 'Contact')}</th><th>${t('SĐT', 'Phone')}</th>
             <th>${t('Hồ sơ', 'Profile')}</th>
-            <th>Tags</th><th>${t('Nguồn', 'Source')}</th>
+            <th>${t('Nhãn', 'Labels')}</th><th>${t('Loại', 'Type')}</th>
             <th>${t('Tương tác cuối', 'Last contact')}</th><th></th>
           </tr></thead>
-          <tbody>${rowsHtml || `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:28px">${t('Chưa có khách hàng. Bấm "Import từ Zalo" hoặc "+ Thêm khách".', 'No contacts yet. Use "Import from Zalo" or "+ Add contact".')}</td></tr>`}</tbody>
+          <tbody>${rowsHtml || `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:28px">${t('Chưa có liên hệ nào. Bấm "Import từ Zalo" hoặc "+ Thêm liên hệ".', 'No contacts yet. Use "Import from Zalo" or "+ Add contact".')}</td></tr>`}</tbody>
         </table>
       </div>
       ${totalPages > 1 ? `<div class="crm-pager">
@@ -4644,10 +4709,6 @@ function crmRenderContactsTable(body) {
       renderCrmContacts();
     }, 300);
   });
-  body.querySelector('#crmTagClear')?.addEventListener('click', () => {
-    crmState.contactsTag = '';
-    renderCrmContacts();
-  });
   body.querySelector('#crmGroupClear')?.addEventListener('click', () => {
     crmState.contactsGroup = '';
     crmState.contactsPage = 1;
@@ -4662,6 +4723,49 @@ function crmRenderContactsTable(body) {
   bindFilter('#crmFriendFilter', 'contactsFriend');
   bindFilter('#crmGenderFilter', 'contactsGender');
   bindFilter('#crmBirthdayFilter', 'contactsBirthday');
+  bindFilter('#crmTagFilter', 'contactsTag');
+  bindFilter('#crmSourceFilter', 'contactsSource');
+  bindFilter('#crmSortSelect', 'contactsSort');
+
+  // ── Chọn hàng loạt ──
+  // Tick giữ theo id trong `crmState.selected`, không theo dòng: sang trang khác rồi quay lại,
+  // hoặc đổi bộ lọc, thì lựa chọn vẫn đúng người. Đây là điều kiện để "gắn nhãn cho 300 liên hệ
+  // trải nhiều trang" không thành trò may rủi.
+  const syncBulkUi = () => {
+    const host = body.querySelector('#crmBulkHost');
+    const n = crmState.selected.size;
+    host.innerHTML = n ? `<div class="crm-bulkbar">
+      <span><b>${n}</b> ${t('đã chọn', 'selected')}</span>
+      <button class="btn" id="crmBulkTagAdd">${t('🏷 Gắn nhãn', '🏷 Add label')}</button>
+      <button class="btn" id="crmBulkTagRemove">${t('Bỏ nhãn', 'Remove label')}</button>
+      <button class="btn danger" id="crmBulkDelete">${t('Xoá', 'Delete')}</button>
+      <button class="btn" id="crmBulkClear" style="margin-left:auto">${t('Bỏ chọn', 'Clear')}</button>
+    </div>` : '';
+    host.querySelector('#crmBulkTagAdd')?.addEventListener('click', () => crmBulkTag(true));
+    host.querySelector('#crmBulkTagRemove')?.addEventListener('click', () => crmBulkTag(false));
+    host.querySelector('#crmBulkDelete')?.addEventListener('click', crmBulkDelete);
+    host.querySelector('#crmBulkClear')?.addEventListener('click', () => {
+      crmState.selected.clear();
+      body.querySelectorAll('[data-crm-pick-row]').forEach(cb => { cb.checked = false; });
+      syncBulkUi();
+    });
+    const all = body.querySelector('#crmPickAll');
+    if (all) all.checked = pageIds.length > 0 && pageIds.every(id => crmState.selected.has(id));
+  };
+  syncBulkUi();
+
+  body.querySelectorAll('[data-crm-pick-row]').forEach(cb => cb.addEventListener('change', () => {
+    const id = cb.getAttribute('data-crm-pick-row');
+    if (cb.checked) crmState.selected.add(id); else crmState.selected.delete(id);
+    syncBulkUi();
+  }));
+  body.querySelector('#crmPickAll')?.addEventListener('change', (e) => {
+    for (const id of pageIds) {
+      if (e.target.checked) crmState.selected.add(id); else crmState.selected.delete(id);
+    }
+    body.querySelectorAll('[data-crm-pick-row]').forEach(cb => { cb.checked = e.target.checked; });
+    syncBulkUi();
+  });
   body.querySelector('#crmPrevPage')?.addEventListener('click', () => { crmState.contactsPage--; renderCrmContacts(); });
   body.querySelector('#crmNextPage')?.addEventListener('click', () => { crmState.contactsPage++; renderCrmContacts(); });
   body.querySelectorAll('[data-crm-tag]').forEach(el => el.addEventListener('click', () => {
@@ -4876,6 +4980,118 @@ function crmGroupSelect(id, current = '') {
     <option value="">${t('— không gắn nhóm —', '— no group —')}</option>
     ${groups.map(g => `<option value="${crmEsc(g.groupId)}" ${String(current) === String(g.groupId) ? 'selected' : ''}>${crmEsc(g.name)}</option>`).join('')}
   </select>`;
+}
+
+/**
+ * Khối "Kết bạn & lời mời" — phần duy nhất còn dùng được của trang Bạn bè cũ.
+ *
+ * Trang đó bị bỏ vì nó chỉ là 3 thẻ mô tả API, không có danh sách nào; thứ owner thật sự cần —
+ * DANH SÁCH bạn bè — nay nằm ngay trong bảng Liên hệ (cờ `is_friend` + bộ lọc "Đã kết bạn").
+ * Còn lại là ba thao tác kết bạn, đặt gọn dưới bảng thay vì chiếm một mục nav riêng.
+ *
+ * Vẫn khoá theo Pro: trang cũ nằm trong danh sách khoá, gộp sang trang CRM (không khoá) mà bỏ luôn
+ * cổng thì hoá ra mở thêm tính năng Pro cho bản free — sửa giao diện không được đổi giấy phép.
+ */
+function crmRenderFriendOps() {
+  const host = document.getElementById('crmFriendOps');
+  if (!host) return;
+  const isPro = !!(state?.license?.isPro);
+  host.innerHTML = `
+    <details class="card crm-friend-ops">
+      <summary>${t('Kết bạn & lời mời', 'Friend requests')}
+        <span class="item-sub" style="font-weight:400">${t('— thao tác trên tài khoản Zalo của bot',
+          '— actions on the bot Zalo account')}</span></summary>
+      ${isPro ? `<div class="crm-friend-ops-row">
+        <button class="btn" data-action="find-user">${t('Tìm user', 'Find user')}</button>
+        <button class="btn" data-action="friend-request-by-id">${t('Gửi lời mời', 'Send request')}</button>
+        <button class="btn" data-action="get-friends">${t('Tải danh sách bạn bè', 'Load friends')}</button>
+      </div>` : `<p class="item-sub" style="margin:10px 0 0">🔒 ${t(
+        'Cần bản Pro. Danh sách bạn bè vẫn xem được ở bảng trên bằng bộ lọc "Đã kết bạn".',
+        'Pro required. The friend list is still visible above via the "Friends" filter.')}</p>`}
+    </details>`;
+}
+
+/**
+ * Gắn hoặc bỏ một nhãn cho toàn bộ liên hệ đang chọn.
+ *
+ * Cho gõ nhãn mới ngay tại đây (kèm `<datalist>` gợi ý nhãn đã có) thay vì bắt vào trang quản lý
+ * nhãn trước: việc phân loại luôn nảy ra lúc đang nhìn danh sách, chứ không phải lúc rảnh.
+ */
+async function crmBulkTag(add) {
+  const ids = [...crmState.selected];
+  if (!ids.length) return;
+  const known = (crmState.tags || []).map(x => x.name);
+  const ok = await openModal({
+    title: add ? t(`Gắn nhãn cho ${ids.length} liên hệ`, `Add label to ${ids.length} contacts`)
+               : t(`Bỏ nhãn khỏi ${ids.length} liên hệ`, `Remove label from ${ids.length} contacts`),
+    body: `<label class="crm-field"><span>${t('Tên nhãn', 'Label')}</span>
+        <input id="crmBulkTagName" list="crmBulkTagList" autocomplete="off"
+          placeholder="${t('Gõ tên nhãn hoặc chọn nhãn có sẵn', 'Type a label or pick an existing one')}"></label>
+      <datalist id="crmBulkTagList">${known.map(n => `<option value="${crmEsc(n)}"></option>`).join('')}</datalist>`,
+    confirmText: add ? t('Gắn nhãn', 'Add') : t('Bỏ nhãn', 'Remove'),
+    danger: !add,
+  });
+  if (!ok) return;
+  const tag = document.getElementById('crmBulkTagName')?.value.trim();
+  if (!tag) { showToast(t('Chưa nhập tên nhãn.', 'No label entered.'), 'error'); return; }
+  try {
+    const r = await crmAction('crm-contacts-tag', { ids, tag, add });
+    crmState.tags = null;   // số đếm mỗi nhãn vừa đổi
+    crmState.selected.clear();
+    showToast(add ? t(`Đã gắn "${tag}" cho ${r.changed} liên hệ`, `Added "${tag}" to ${r.changed} contacts`)
+                  : t(`Đã bỏ "${tag}" khỏi ${r.changed} liên hệ`, `Removed "${tag}" from ${r.changed} contacts`), 'success');
+    renderCrmContacts();
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+async function crmBulkDelete() {
+  const ids = [...crmState.selected];
+  if (!ids.length) return;
+  const ok = await openModal({
+    title: t(`Xoá ${ids.length} liên hệ?`, `Delete ${ids.length} contacts?`),
+    desc: t('Lead và công việc liên quan được giữ lại, chỉ gỡ liên kết. Import lại từ Zalo sẽ tạo lại các liên hệ này.',
+      'Related leads and tasks are kept, just unlinked. Re-importing from Zalo will recreate them.'),
+    confirmText: t('Xoá', 'Delete'), danger: true, tone: 'danger',
+  });
+  if (!ok) return;
+  try {
+    const r = await crmAction('crm-contacts-delete', { ids });
+    crmState.tags = null;
+    crmState.selected.clear();
+    crmState.contactsPage = 1;   // xoá xong trang cuối có thể không còn tồn tại
+    showToast(t(`Đã xoá ${r.deleted} liên hệ`, `Deleted ${r.deleted} contacts`), 'success');
+    renderCrmContacts();
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+/** Kéo nhãn phân loại có sẵn của Zalo về CRM. */
+async function crmSyncZaloLabels() {
+  const btn = document.getElementById('crmSyncLabelsBtn');
+  if (btn) { btn.disabled = true; btn.textContent = t('Đang đồng bộ…', 'Syncing…'); }
+  try {
+    const r = await crmAction('crm-sync-zalo-labels');
+    crmState.tags = null;   // danh mục vừa đổi → buộc nạp lại màu
+    const bits = [t(`${r.tags} nhãn`, `${r.tags} labels`), t(`gắn ${r.assigned} liên hệ`, `${r.assigned} assigned`)];
+    if (r.removed) bits.push(t(`gỡ ${r.removed} nhãn đã xoá bên Zalo`, `${r.removed} removed`));
+    showToast(bits.join(' · '), 'success');
+
+    // Ba trạng thái dễ bị hiểu nhầm là "hỏng" — nói rõ ngay thay vì để owner đoán.
+    if (r.failed?.length) {
+      showToast(t(`⚠️ ${r.failed.length} tài khoản không đọc được nhãn — lần này CHỈ thêm, không xoá gì.`,
+        `⚠️ ${r.failed.length} account(s) failed — this run only added labels, nothing removed.`), 'error');
+    } else if (r.tags && !r.assigned) {
+      showToast(t('Zalo có nhãn nhưng chưa gắn cho ai — vào app Zalo phân loại chat rồi đồng bộ lại.',
+        'Zalo has labels but none is assigned yet — classify chats in the Zalo app, then sync again.'), 'error');
+    } else if (r.unmatched) {
+      showToast(t(`${r.unmatched} hội thoại được gắn nhãn nhưng chưa có trong Liên hệ — bấm "Import từ Zalo" trước.`,
+        `${r.unmatched} labelled conversations are not in Contacts yet — run "Import from Zalo" first.`), 'error');
+    }
+    renderCrmContacts();
+  } catch (err) {
+    showToast(err.message, 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = t('🏷 Đồng bộ nhãn Zalo', '🏷 Sync Zalo labels'); }
+  }
 }
 
 /**

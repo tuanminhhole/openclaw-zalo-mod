@@ -130,6 +130,18 @@ const DEV_PROFILE_CACHE = {
 // Bạn bè: có một người KHÔNG ở nhóm nào (uid-9001) để thử nhánh gộp bạn-bè-ngoài-nhóm.
 const DEV_FRIEND_IDS = ['uid-1001', 'uid-9001'];
 
+// Nhãn phân loại của Zalo — đúng 6 nhãn mặc định kèm màu thật lấy từ tài khoản production.
+// Cố ý để một nhãn RỖNG (Đồng nghiệp) và một id KHÔNG có trong CRM (`group-demo`): hai ca đó là
+// thứ hay bị hiểu nhầm thành "đồng bộ hỏng", nên phải nhìn thấy được ngay trong dev.
+const DEV_ZALO_LABELS = [
+    { id: 1, text: 'Khách hàng', color: '#d91b1b', emoji: '', conversations: ['uid-1001', 'uid-1002', 'group-demo'] },
+    { id: 2, text: 'Gia đình', color: '#f31bc8', emoji: '', conversations: ['uid-9001'] },
+    { id: 3, text: 'Công việc', color: '#ff6905', emoji: '', conversations: ['uid-1003'] },
+    { id: 4, text: 'Bạn bè', color: '#fac000', emoji: '', conversations: ['uid-1001'] },
+    { id: 5, text: 'Trả lời sau', color: '#4bc377', emoji: '', conversations: ['uid-2001'] },
+    { id: 6, text: 'Đồng nghiệp', color: '#0068ff', emoji: '', conversations: [] },
+];
+
 const MIME = {
     '.html': 'text/html; charset=utf-8',
     '.js': 'text/javascript; charset=utf-8',
@@ -184,6 +196,15 @@ const server = http.createServer(async (req, res) => {
                     ? { ...stats, people: people.slice(0, 500) }
                     : { ...crm.importMembers(people, 'default', 'dev-ui'), ...stats };
                 return send(res, 200, { ok: true, result, state: STATE_STUB });
+            }
+            // Cũng nằm ở index.js bên bản thật (cần gọi Zalo), không nằm trong crm-api.js.
+            if (action === 'crm-sync-zalo-labels') {
+                const r = crm.syncZaloLabels(DEV_ZALO_LABELS, 'dev-ui');
+                return send(res, 200, {
+                    ok: true,
+                    result: { ...r, profiles: 1, failed: [], pruned: true },
+                    state: STATE_STUB,
+                });
             }
             if (action.startsWith('crm-')) {
                 const r = handleCrmAction(crm, action, body.payload || {}, 'dev-ui');

@@ -184,6 +184,172 @@ test('listContacts: lọc sinh nhật cộng dồn được với lọc khác, v
     assert.equal(page.total, 2, 'total là tổng đã lọc, không phải số bản ghi trên trang');
 });
 
+// ── Nhãn có màu + đồng bộ nhãn Zalo (v5) ──────────────────────────────────
+
+test('nhãn: danh mục có màu, và nhãn cũ chưa có hàng danh mục vẫn hiện ra', (t) => {
+    const { crm, close } = makeCrm();
+    t.after(close);
+    const c = crm.upsertContact({ displayName: 'A', zaloUid: 'u1' });
+    crm.setContactTags(c.id, ['khách sỉ', 'Hot']);
+    crm.upsertTag({ name: 'Hot', color: '#d91b1b', emoji: '🔥' });
+
+    const tags = crm.listTags();
+    const hot = tags.find(x => x.name === 'Hot');
+    assert.equal(hot.color, '#d91b1b');
+    assert.equal(hot.n, 1, 'đếm số liên hệ đang mang nhãn');
+
+    const orphan = tags.find(x => x.name === 'khách sỉ');
+    assert.ok(orphan, 'nhãn gõ tay chưa có màu vẫn phải lọt vào bộ lọc, không được giấu');
+    assert.equal(orphan.color, null);
+    assert.equal(orphan.n, 1);
+});
+
+test('nhãn: xoá thì gỡ khỏi CẢ danh mục lẫn mọi liên hệ', (t) => {
+    const { crm, close } = makeCrm();
+    t.after(close);
+    const a = crm.upsertContact({ displayName: 'A', zaloUid: 'u1' });
+    const b = crm.upsertContact({ displayName: 'B', zaloUid: 'u2' });
+    crm.setContactTags(a.id, ['Hot']);
+    crm.setContactTags(b.id, ['Hot']);
+    crm.upsertTag({ name: 'Hot', color: '#f00' });
+
+    assert.deepEqual(crm.deleteTag('Hot'), { removed: 2 });
+    assert.deepEqual(crm.listTags(), [], 'không còn nhãn ma trong bộ lọc');
+    assert.deepEqual(crm.getContact(a.id).tags, []);
+});
+
+const ZALO_LABELS = [
+    { id: 1, text: 'Khách hàng', color: '#d91b1b', emoji: '', conversations: ['u1', 'u2_0', 'u-lạ'] },
+    { id: 2, text: 'Gia đình', color: '#f31bc8', emoji: '', conversations: [] },
+];
+
+test('đồng bộ nhãn Zalo: gắn theo conversations, khớp uid có hậu tố _0, đếm cái không khớp', (t) => {
+    const { crm, close } = makeCrm();
+    t.after(close);
+    const a = crm.upsertContact({ displayName: 'A', zaloUid: 'u1' });
+    const b = crm.upsertContact({ displayName: 'B', zaloUid: 'u2' });
+
+    const r = crm.syncZaloLabels(ZALO_LABELS);
+    assert.deepEqual(r, { tags: 2, assigned: 2, unmatched: 1, removed: 0 },
+        'id không có trong CRM (nhóm, người chưa import) phải được ĐẾM chứ không nuốt im');
+    assert.deepEqual(crm.getContact(a.id).tags, ['Khách hàng']);
+    assert.deepEqual(crm.getContact(b.id).tags, ['Khách hàng']);
+    assert.equal(crm.listTags().find(x => x.name === 'Khách hàng').color, '#d91b1b');
+});
+
+test('đồng bộ nhãn Zalo: THAY THẾ nhãn nguồn Zalo, nhưng KHÔNG đụng nhãn tự đặt', (t) => {
+    const { crm, close } = makeCrm();
+    t.after(close);
+    const a = crm.upsertContact({ displayName: 'A', zaloUid: 'u1' });
+    crm.syncZaloLabels(ZALO_LABELS);
+    crm.tagContacts([a.id], 'VIP nội bộ', true);
+
+    // Owner bỏ nhãn "Khách hàng" của u1 trên app Zalo → CRM phải bỏ theo.
+    const r = crm.syncZaloLabels([{ id: 1, text: 'Khách hàng', color: '#d91b1b', conversations: [] }]);
+    assert.equal(r.removed, 1, '"Gia đình" biến mất khỏi Zalo → gỡ khỏi CRM');
+    const tags = crm.getContact(a.id).tags;
+    assert.ok(!tags.includes('Khách hàng'), 'bỏ bên Zalo thì bỏ bên CRM, không thì hai bên lệch dần');
+    assert.ok(tags.includes('VIP nội bộ'), 'nhãn owner tự đặt tuyệt đối không được đụng tới');
+    assert.ok(crm.listTags().some(x => x.name === 'VIP nội bộ'));
+});
+
+test('đồng bộ nhãn Zalo: prune=false (có tài khoản đọc hỏng) thì CHỈ thêm, không xoá', (t) => {
+    const { crm, close } = makeCrm();
+    t.after(close);
+    const a = crm.upsertContact({ displayName: 'A', zaloUid: 'u1' });
+    crm.syncZaloLabels(ZALO_LABELS);
+    assert.ok(crm.getContact(a.id).tags.includes('Khách hàng'));
+
+    // Tài khoản giữ nhãn "Khách hàng" đăng xuất → lần đọc này chỉ thấy nhãn của tài khoản còn lại.
+    // Nếu vẫn áp luật thay-thế thì nhãn của tài khoản hỏng bị gỡ sạch dù owner không đụng gì.
+    const r = crm.syncZaloLabels([{ id: 2, text: 'Gia đình', color: '#f31bc8', conversations: [] }],
+        'system', { prune: false });
+    assert.equal(r.removed, 0);
+    assert.ok(crm.getContact(a.id).tags.includes('Khách hàng'),
+        'dữ liệu thiếu thì chỉ được thêm — thiếu KHÔNG có nghĩa là đã xoá');
+});
+
+test('đồng bộ nhãn Zalo: dữ liệu rỗng/hỏng thì không ném và không xoá gì', (t) => {
+    const { crm, close } = makeCrm();
+    t.after(close);
+    const a = crm.upsertContact({ displayName: 'A', zaloUid: 'u1' });
+    crm.tagContacts([a.id], 'VIP nội bộ', true);
+    assert.deepEqual(crm.syncZaloLabels(null), { tags: 0, assigned: 0, unmatched: 0, removed: 0 });
+    assert.deepEqual(crm.syncZaloLabels([{ text: '' }, null]), { tags: 0, assigned: 0, unmatched: 0, removed: 0 });
+    assert.deepEqual(crm.getContact(a.id).tags, ['VIP nội bộ']);
+});
+
+// ── Thao tác hàng loạt ────────────────────────────────────────────────────
+
+test('hàng loạt: gắn/bỏ nhãn cho nhiều liên hệ, id lạ bị bỏ qua chứ không làm hỏng cả lô', (t) => {
+    const { crm, close } = makeCrm();
+    t.after(close);
+    const a = crm.upsertContact({ displayName: 'A', zaloUid: 'u1' });
+    const b = crm.upsertContact({ displayName: 'B', zaloUid: 'u2' });
+
+    assert.deepEqual(crm.tagContacts([a.id, b.id, 'id-ma'], 'Hot'), { changed: 2, skipped: 1 });
+    assert.deepEqual(crm.getContact(a.id).tags, ['Hot']);
+    // Gắn lại không nhân đôi (contact_tags có khoá chính đôi)
+    crm.tagContacts([a.id], 'Hot');
+    assert.deepEqual(crm.getContact(a.id).tags, ['Hot']);
+
+    assert.deepEqual(crm.tagContacts([a.id], 'Hot', false), { changed: 1, skipped: 0 });
+    assert.deepEqual(crm.getContact(a.id).tags, []);
+    assert.deepEqual(crm.tagContacts([], 'Hot'), { changed: 0, skipped: 0 });
+});
+
+test('hàng loạt: xoá nhiều liên hệ, KHÔNG để lại liên kết nhóm mồ côi', (t) => {
+    const { crm, close } = makeCrm();
+    t.after(close);
+    const a = crm.upsertContact({ displayName: 'A', zaloUid: 'u1' });
+    const b = crm.upsertContact({ displayName: 'B', zaloUid: 'u2' });
+    crm.setContactGroups(a.id, [{ groupId: 'g1', name: 'Nhóm 1' }]);
+    crm.setContactGroups(b.id, [{ groupId: 'g1', name: 'Nhóm 1' }]);
+    const lead = crm.createLead({ title: 'Deal', contactId: a.id });
+
+    assert.deepEqual(crm.deleteContacts([a.id, 'id-ma']), { deleted: 1, skipped: 1 });
+    assert.equal(crm.listContactsByGroup('g1').length, 1,
+        'xoá liên hệ mà quên bảng nối thì mở nhóm ra vẫn đếm cả người đã xoá');
+    assert.equal(crm.getLead(lead.id).contact_id, null, 'lead được gỡ liên kết chứ không mất');
+});
+
+test('listContacts: sắp Tên A→Z không phân biệt HOA/thường, và lọc theo nguồn', (t) => {
+    // Đồng hồ tự tăng: ba bản ghi tạo trong cùng một mili-giây thì `updated_at DESC` hoà nhau và
+    // thứ tự trả về là ngẫu nhiên — không kiểm được nhánh sắp xếp mặc định.
+    const store = openStore(':memory:', { logger: quiet });
+    t.after(() => store.close());
+    let clock = 1_700_000_000_000;
+    const crm = new CrmStore(store.db, { now: () => (clock += 1000) });
+
+    crm.upsertContact({ displayName: 'Zoe', zaloUid: 'u1', source: 'zalo-group' });
+    crm.upsertContact({ displayName: 'an', zaloUid: 'u2', source: 'zalo-friend' });
+    crm.upsertContact({ displayName: 'Minh', zaloUid: 'u3', source: 'zalo-group' });
+
+    crm.upsertContact({ displayName: 'Đặng', zaloUid: 'u4', source: 'zalo-group' });
+    crm.upsertContact({ displayName: 'Em', zaloUid: 'u5', source: 'zalo-group' });
+
+    assert.deepEqual(crm.listContacts({ sort: 'name' }).contacts.map(c => c.display_name),
+        ['an', 'Đặng', 'Em', 'Minh', 'Zoe'],
+        'so theo ASCII thì "Zoe" lên trước "an" và "Đặng" rơi xuống sau cả chữ Z — danh bạ tiếng Việt phải xếp đúng');
+    assert.equal(crm.listContacts({ source: 'zalo-friend' }).total, 1);
+    // Mặc định vẫn là mới-cập-nhật-trước, không đổi hành vi cũ
+    assert.deepEqual(crm.listContacts({}).contacts.map(c => c.display_name),
+        ['Em', 'Đặng', 'Minh', 'an', 'Zoe']);
+});
+
+test('API: nhãn và thao tác hàng loạt đi qua handler, thiếu tham số thì 400', (t) => {
+    const { crm, close } = makeCrm();
+    t.after(close);
+    const a = crm.upsertContact({ displayName: 'A', zaloUid: 'u1' });
+
+    assert.equal(handleCrmAction(crm, 'crm-tag-save', { name: 'Hot', color: '#f00' }).status, 200);
+    assert.equal(handleCrmAction(crm, 'crm-tags', {}).body.data.tags.length, 1);
+    assert.equal(handleCrmAction(crm, 'crm-contacts-tag', { ids: [a.id], tag: 'Hot' }).body.data.changed, 1);
+    assert.equal(handleCrmAction(crm, 'crm-contacts-tag', { ids: [a.id] }).status, 400, 'thiếu tag');
+    assert.equal(handleCrmAction(crm, 'crm-tags-sync-apply', { labels: ZALO_LABELS }).body.data.assigned, 1);
+    assert.equal(handleCrmAction(crm, 'crm-contacts-delete', { ids: [a.id] }).body.data.deleted, 1);
+});
+
 // ── Leads ─────────────────────────────────────────────────────────────────
 
 test('lead: pipeline mặc định New → ... → Won/Lost, move + history + undo', (t) => {

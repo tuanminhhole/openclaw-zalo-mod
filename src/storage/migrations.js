@@ -172,6 +172,33 @@ export const MIGRATIONS = [
             CREATE INDEX IF NOT EXISTS idx_contacts_is_friend ON contacts(is_friend);
         `,
     },
+    {
+        version: 5,
+        name: 'crm-tag-catalog',
+        // `contact_tags` chỉ có chuỗi trần, không màu không emoji — nên nhìn 20 nhãn là một khối
+        // chữ xám như nhau, phân loại xong vẫn không đọc nhanh được. Zalo thì đã có sẵn nhãn KÈM
+        // màu (`getLabels` trả `{id, text, color, emoji, conversations[]}`), và owner đã phân loại
+        // trên app rồi — không có lý do bắt họ phân loại lại lần hai.
+        //
+        // Danh mục nối với `contact_tags` theo TÊN chứ không thêm khoá ngoại: mọi tag đang có vẫn
+        // chạy nguyên vẹn, chỉ là chưa có hàng danh mục thì rơi về màu mặc định. Thêm bảng mà
+        // không phải sửa dữ liệu cũ.
+        //
+        // `zalo_label_id` giữ lại để sau này ghi ngược lên Zalo (`updateLabels`) còn biết sửa nhãn
+        // nào; `source` phân biệt nhãn kéo từ Zalo với nhãn owner tự đặt, để lần đồng bộ sau không
+        // xoá nhầm nhãn tự đặt.
+        sql: `
+            CREATE TABLE IF NOT EXISTS crm_tags (
+                name TEXT PRIMARY KEY,
+                color TEXT,
+                emoji TEXT,
+                zalo_label_id INTEGER,
+                source TEXT NOT NULL DEFAULT 'manual',
+                updated_at INTEGER NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_crm_tags_source ON crm_tags(source);
+        `,
+    },
 ];
 
 /**

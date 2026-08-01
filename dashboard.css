@@ -5924,3 +5924,31 @@ textarea:focus {
 @keyframes chatTypingBounce { 0%, 60%, 100% { transform: translateY(0); opacity: .45; } 30% { transform: translateY(-4px); opacity: 1; } }
 .chat-typing-text { color: var(--primary-deep); font-style: normal; font-weight: 600; }
 @media (prefers-reduced-motion: reduce) { .chat-typing span { animation: none; } }
+
+/* ── Hiệu ứng khi có tin mới ───────────────────────────────────────────────
+   Chỉ gắn cho tin VỪA CHÈN THÊM. Vẽ lại cả luồng rồi mới thêm hiệu ứng thì mọi bong bóng cùng
+   nhấp nháy một lượt — đúng cái "chớp" cần bỏ, chứ không phải cách sửa nó. */
+@keyframes chatMsgIn {
+  from { opacity: 0; transform: translateY(8px) scale(.985); }
+  to   { opacity: 1; transform: none; }
+}
+.chat-msg-new { animation: chatMsgIn .26s cubic-bezier(.22, 1, .36, 1) both; }
+
+/* Dòng hội thoại đổi mềm khi vá lại cột trái (thứ tự, giờ, dòng xem trước). */
+.chat-conv { transition: background-color .18s ease; }
+.chat-conv-last, .chat-conv-time { transition: opacity .18s ease; }
+
+/* Bong bóng vừa gửi đi: nảy nhẹ để thấy ngay là đã đi */
+@keyframes chatSentPop {
+  0% { transform: scale(.96); opacity: .6; }
+  100% { transform: none; opacity: 1; }
+}
+.chat-msg.me.chat-msg-new .chat-bubble { animation: chatSentPop .2s ease-out both; }
+
+@media (prefers-reduced-motion: reduce) {
+  /* Tôn trọng người đã tắt hiệu ứng ở hệ điều hành — với một số người, chuyển động gây chóng mặt
+     thật sự, không phải chuyện thẩm mỹ. */
+  .chat-msg-new,
+  .chat-msg.me.chat-msg-new .chat-bubble { animation: none; }
+  .chat-conv, .chat-conv-last, .chat-conv-time { transition: none; }
+}

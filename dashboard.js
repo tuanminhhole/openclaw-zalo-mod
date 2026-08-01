@@ -6520,7 +6520,10 @@ function chatStartPolling() {
       const res = await crmAction('chat-conversations', { accountId: chatProfile() });
       chatState.conversations = res.conversations || [];
       chatState.lastSig = res.v || chatState.lastSig;
-      chatRenderShell(document.getElementById('chatBody'));
+      // Vá cột trái thay vì dựng lại cả khung — dựng lại là xoá luôn ô soạn tin, luồng tin và cột
+      // trợ lý rồi tạo lại, tức đúng cú "chớp" mà owner thấy mỗi khi có tin mới.
+      const body = document.getElementById('chatBody');
+      if (!chatPatchList(body)) chatRenderShell(body);
       if (chatState.activeId) await chatLoadMessages(chatState.activeId, { keepScroll: true });
     } catch { /* mạng chập chờn — lần sau thử lại */ }
   }, CHAT_POLL_MS);
@@ -6534,19 +6537,7 @@ function chatRenderShell(body) {
     .filter(c => !q || foldVi(c.title).includes(q) || foldVi(c.lastText || '').includes(q));
 
   const active = chatState.conversations.find(c => c.id === chatState.activeId);
-  const rows = list.map(c => `
-    <button type="button" class="chat-conv${c.id === chatState.activeId ? ' active' : ''}" data-chat-conv="${crmEsc(c.id)}">
-      ${c.avatar
-        ? `<img src="${crmEsc(c.avatar)}" alt="" class="chat-ava">`
-        : `<span class="chat-ava chat-ava-empty">${crmEsc((c.title || '?')[0].toUpperCase())}</span>`}
-      <span class="chat-conv-main">
-        <span class="chat-conv-top">
-          <span class="chat-conv-title">${crmEsc(c.title)}</span>
-          <span class="chat-conv-time">${chatTime(c.lastMessageAt)}</span>
-        </span>
-        <span class="chat-conv-last">${c.type === 'group' ? '👥 ' : ''}${crmEsc(c.lastText || '')}</span>
-      </span>
-    </button>`).join('');
+  const rows = list.map(chatConvRowHtml).join('');
 
   // Vẽ lại `innerHTML` là dựng lại cả danh sách → vị trí cuộn về 0. Bấm một người ở cuối danh sách
   // mà bị kéo vọt lên đầu là lỗi thấy ngay và rất khó chịu; polling mỗi 4 giây cũng dính.
@@ -6642,34 +6633,127 @@ async function chatLoadMessages(conversationId, { keepScroll = false } = {}) {
   }
 }
 
+/** HTML một dòng hội thoại — dùng chung cho vẽ cả khung và cho việc vá riêng cột trái. */
+function chatConvRowHtml(c) {
+  return `<button type="button" class="chat-conv${c.id === chatState.activeId ? ' active' : ''}" data-chat-conv="${crmEsc(c.id)}">
+    ${c.avatar
+      ? `<img src="${crmEsc(c.avatar)}" alt="" class="chat-ava">`
+      : `<span class="chat-ava chat-ava-empty">${crmEsc((c.title || '?')[0].toUpperCase())}</span>`}
+    <span class="chat-conv-main">
+      <span class="chat-conv-top">
+        <span class="chat-conv-title">${crmEsc(c.title)}</span>
+        <span class="chat-conv-time">${chatTime(c.lastMessageAt)}</span>
+      </span>
+      <span class="chat-conv-last">${c.type === 'group' ? '👥 ' : ''}${crmEsc(c.lastText || '')}</span>
+    </span>
+  </button>`;
+}
+
+/** HTML một tin — dùng chung cho vẽ lại toàn bộ và cho việc CHÈN THÊM tin mới. */
+function chatMsgHtml(m, { isGroup, lastDay, isNew = false }) {
+  const day = new Date(Number(m.sentAt)).toLocaleDateString('vi-VN');
+  const sep = day !== lastDay ? `<div class="chat-day">${crmEsc(day)}</div>` : '';
+  const media = (m.media || []).map(u => `<a href="${crmEsc(u)}" target="_blank" rel="noopener">
+    <img src="${crmEsc(u)}" alt="" class="chat-media"></a>`).join('');
+  const html = `${sep}<div class="chat-msg${m.fromSelf ? ' me' : ''}${isNew ? ' chat-msg-new' : ''}" data-msg-id="${crmEsc(m.id)}">
+    ${/* Tên người gửi chỉ có nghĩa trong nhóm — DM thì hai bên đã rõ, in thêm chỉ tổ rối. */''}
+    ${isGroup && !m.fromSelf ? `<div class="chat-msg-who">${crmEsc(m.senderName || m.senderId)}</div>` : ''}
+    <div class="chat-bubble">${media}${crmEsc(m.text || '')}</div>
+    <div class="chat-msg-time">${chatTime(m.sentAt)}</div>
+  </div>`;
+  return { html, day };
+}
+
+/**
+ * Vẽ luồng tin. Có tin mới thì CHÈN THÊM, không dựng lại cả luồng.
+ *
+ * Dựng lại `innerHTML` mỗi lần poll thấy đổi là nguyên nhân "chớp" giao diện: mọi bong bóng bị xoá
+ * rồi tạo lại, ảnh phải tải lại, và vùng cuộn nhảy một nhịp. Chèn thêm đúng phần đuôi vừa xuất hiện
+ * thì phần đang đọc đứng yên tuyệt đối, và chỉ tin mới có hiệu ứng trượt vào.
+ *
+ * Vẽ lại toàn bộ chỉ khi luồng thật sự KHÁC (đổi hội thoại, tải lại trang) — nhận biết bằng cách
+ * so id của những tin đang nằm trong DOM với phần đầu của danh sách mới.
+ */
 function chatRenderThread({ keepScroll = false } = {}) {
   const th = document.getElementById('chatThread');
   if (!th) return;
   const atBottom = th.scrollHeight - th.scrollTop - th.clientHeight < 60;
   const active = chatState.conversations.find(c => c.id === chatState.activeId);
   const isGroup = active?.type === 'group';
+  const msgs = chatState.messages;
+
+  const domIds = [...th.querySelectorAll('[data-msg-id]')].map(el => el.dataset.msgId);
+  const isAppendOnly = domIds.length > 0
+    && msgs.length > domIds.length
+    && domIds.every((id, i) => msgs[i] && String(msgs[i].id) === id);
+
+  if (isAppendOnly) {
+    const lastEl = th.querySelector('[data-msg-id]:last-of-type');
+    let lastDay = lastEl ? new Date(Number(msgs[domIds.length - 1].sentAt)).toLocaleDateString('vi-VN') : '';
+    let add = '';
+    for (const m of msgs.slice(domIds.length)) {
+      const r = chatMsgHtml(m, { isGroup, lastDay, isNew: true });
+      add += r.html;
+      lastDay = r.day;
+    }
+    // Chèn trước chỉ báo "đang soạn tin" nếu nó đang hiện, để ba chấm luôn nằm cuối.
+    const typingEl = th.querySelector('.chat-typing');
+    if (typingEl) typingEl.insertAdjacentHTML('beforebegin', add);
+    else th.insertAdjacentHTML('beforeend', add);
+    if (atBottom) th.scrollTo({ top: th.scrollHeight, behavior: 'smooth' });
+    return;
+  }
 
   let lastDay = '';
-  const html = chatState.messages.map(m => {
-    const d = new Date(Number(m.sentAt));
-    const day = d.toLocaleDateString('vi-VN');
-    const sep = day !== lastDay ? `<div class="chat-day">${crmEsc(day)}</div>` : '';
-    lastDay = day;
-    const media = (m.media || []).map(u => `<a href="${crmEsc(u)}" target="_blank" rel="noopener">
-      <img src="${crmEsc(u)}" alt="" class="chat-media"></a>`).join('');
-    return `${sep}<div class="chat-msg${m.fromSelf ? ' me' : ''}">
-      ${/* Tên người gửi chỉ có nghĩa trong nhóm — DM thì hai bên đã rõ, in thêm chỉ tổ rối. */''}
-      ${isGroup && !m.fromSelf ? `<div class="chat-msg-who">${crmEsc(m.senderName || m.senderId)}</div>` : ''}
-      <div class="chat-bubble">${media}${crmEsc(m.text || '')}</div>
-      <div class="chat-msg-time">${chatTime(m.sentAt)}</div>
-    </div>`;
-  }).join('');
-
+  let html = '';
+  for (const m of msgs) {
+    const r = chatMsgHtml(m, { isGroup, lastDay });
+    html += r.html;
+    lastDay = r.day;
+  }
   th.innerHTML = html || `<div class="item-sub" style="padding:14px">${t(
     'Chưa có tin nào được đồng bộ cho hội thoại này.', 'No messages synced for this conversation yet.')}</div>`;
   // Giữ nguyên vị trí cuộn khi polling làm mới, trừ khi owner đang ở sát đáy — lúc đó tin mới nên
   // tự hiện ra như mọi ứng dụng chat.
   if (!keepScroll || atBottom) th.scrollTop = th.scrollHeight;
+}
+
+/**
+ * Vá RIÊNG danh sách hội thoại (thứ tự, giờ, dòng xem trước, dấu đang chọn).
+ *
+ * Nhịp poll trước đây gọi `chatRenderShell` — tức dựng lại cả khung, kể cả ô soạn tin, luồng tin và
+ * cột trợ lý. Đó mới là cú "chớp" thấy rõ nhất. Ở đây chỉ đụng đúng cột trái.
+ */
+function chatPatchList(body) {
+  const listEl = body?.querySelector('.chat-conv-list');
+  if (!listEl) return false;
+  const q = foldVi(chatState.search);
+  const list = chatState.conversations
+    .filter(c => chatState.filter === 'all' || c.type === chatState.filter)
+    .filter(c => !q || foldVi(c.title).includes(q) || foldVi(c.lastText || '').includes(q));
+
+  const scroll = listEl.scrollTop;
+  listEl.innerHTML = list.map(chatConvRowHtml).join('')
+    || `<div class="item-sub" style="padding:14px;font-size:12.5px">${t(
+      'Chưa có hội thoại nào. Bấm Sync account ở Tổng quan để kéo lịch sử về.',
+      'No conversations yet. Use Sync account on the Overview page to pull history.')}</div>`;
+  listEl.scrollTop = scroll;
+  listEl.querySelectorAll('[data-chat-conv]').forEach(el => el.addEventListener('click', async () => {
+    chatState.activeId = el.dataset.chatConv;
+    chatState.suggestions = [];
+    chatState.aiThread = [];
+    chatRenderShell(body);
+    await chatLoadMessages(chatState.activeId);
+  }));
+  // Số tin trên đầu luồng đổi theo — vá tại chỗ thay vì vẽ lại cả tiêu đề.
+  const act = chatState.conversations.find(c => c.id === chatState.activeId);
+  const sub = body.querySelector('.chat-head-sub');
+  if (act && sub) {
+    sub.textContent = `${act.type === 'group' ? t('Nhóm', 'Group') : t('Tin nhắn riêng', 'Direct message')}`
+      + ` · ${act.messageCount} ${t('tin đã đồng bộ', 'messages synced')}`;
+  }
+  chatRenderTyping();
+  return true;
 }
 
 async function chatSend(e) {
@@ -6694,7 +6778,8 @@ async function chatSend(e) {
       id: `tam-${Date.now()}`, senderId: '', senderName: '', text,
       sentAt: Date.now(), fromSelf: true,
     });
-    chatRenderThread();
+    // Đi qua đúng đường chèn-thêm để bong bóng vừa gửi cũng có hiệu ứng, thay vì bật ra khô khốc.
+    chatRenderThread({ keepScroll: true });
   } catch (err) {
     showToast(err.message, 'error');
   } finally {

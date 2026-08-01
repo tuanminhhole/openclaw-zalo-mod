@@ -1,5 +1,20 @@
 ## [Unreleased]
 
+### Changed
+- **★ Hết "chớp" giao diện khi có tin mới.** Nhịp poll thấy dữ liệu đổi là dựng lại **toàn bộ**
+  `innerHTML` của khung chat — xoá rồi tạo lại cả ô soạn tin, luồng tin, danh sách và cột trợ lý.
+  Đó mới là cú chớp; thêm hiệu ứng lên trên nó chỉ làm mọi bong bóng cùng nhấp nháy một lượt.
+
+  Nay tin mới được **chèn thêm** vào đuôi luồng (so id trong DOM với danh sách mới để biết đây là
+  phần thêm hay là luồng khác hẳn), và nhịp poll chỉ **vá cột trái** thay vì dựng lại cả khung.
+  Đo trong trình duyệt khi có tin mới tới: **cả 3 node tin cũ còn sống**, luồng tin / ô soạn /
+  danh sách / cột trợ lý **không cái nào bị dựng lại**, chữ đang gõ và con trỏ còn nguyên.
+
+  Trên nền đó mới thêm hiệu ứng: tin mới trượt vào (.26s), bong bóng vừa gửi nảy nhẹ, dòng hội
+  thoại đổi mềm. Đổi hội thoại vẫn vẽ lại toàn bộ và **không tin nào dính hiệu ứng** — không có
+  cảnh cả luồng cùng nhấp nháy. Có `prefers-reduced-motion`: với một số người chuyển động gây chóng
+  mặt thật sự, không phải chuyện thẩm mỹ.
+
 ### Fixed
 - **★ Dashboard trả lỗi 500 `database is not open`.** Gateway đăng ký lại plugin nhiều lần trong
   cùng một tiến trình — đo trên production: **22 lần trong 40 phút**. Mỗi lần lại mở thêm một

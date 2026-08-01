@@ -355,11 +355,12 @@ function loadDigestParts({ summaries, history, generated = [] }) {
     return new Function('summaries', 'history', 'generated', `
         const getSummary = async (gid, d) => summaries[gid + '|' + d] || null;
         const readChatHistory = async (gid, d) => history[gid + '|' + d] || [];
-        const generateDailySummary = async (gid, d) => {
+        const generateDailySummary = async (gid, d, opts = {}) => {
             generated.push(gid);
             const rows = history[gid + '|' + d] || [];
             const s = { messageCount: rows.length, sections: { highlights: ['h'], participants: ['p'] } };
-            summaries[gid + '|' + d] = s;
+            // Giả lập đúng hợp đồng thật: save === false thì trả kết quả mà KHÔNG ghi.
+            if (opts.save !== false) summaries[gid + '|' + d] = s;
             return s;
         };
         const getGroupName = (g) => 'Nhóm ' + g;
@@ -413,11 +414,14 @@ test('nhóm thật sự không có tin thì bỏ qua, không sinh lại vô ích
     assert.equal(r.groupCount, 0);
 });
 
-test('persist:false (Xem trước) TUYỆT ĐỐI không ghi cache', async () => {
+// Xem trước phải VỪA thật VỪA không đụng cache. Bản đầu tôi làm nó bỏ luôn việc sinh → mọi ngày
+// chưa có cache đều hiện rỗng, nút "Xem trước" thành vô dụng. Đổi một lỗi lấy một lỗi khác.
+test('persist:false (Xem trước) VẪN sinh để hiện nội dung thật, nhưng KHÔNG ghi cache', async () => {
     const generated = [];
     const summaries = { 'g1|2026-07-31': { messageCount: 0, sections: {} } };
-    const build = loadDigestParts({ summaries, history: { 'g1|2026-07-31': [1, 2, 3] }, generated });
-    await build(['g1'], '2026-07-31', { persist: false });
-    assert.deepEqual(generated, [], 'xem trước không được sinh/ghi gì');
-    assert.equal(summaries['g1|2026-07-31'].messageCount, 0, 'cache phải giữ nguyên');
+    const build = loadDigestParts({ summaries, history: { 'g1|2026-07-31': [1, 2, 3] }, generated, saveOnly: true });
+    const r = await build(['g1'], '2026-07-31', { persist: false });
+    assert.deepEqual(generated, ['g1'], 'vẫn phải sinh, không thì xem trước luôn rỗng');
+    assert.equal(r.totalMsgs, 3, 'và phải hiện đúng số tin thật');
+    assert.equal(summaries['g1|2026-07-31'].messageCount, 0, 'nhưng cache trên đĩa phải giữ nguyên');
 });

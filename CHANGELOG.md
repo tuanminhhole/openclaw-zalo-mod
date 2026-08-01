@@ -1,3 +1,14 @@
+## [2.26.1] - 2026-08-01
+
+### Fixed
+- **"Xem trước" vẫn rỗng — bản 2.26.0 sửa quá tay.** Để chặn việc xem trước ghi hỏng cache, 2.26.0 cho nó `persist: false` nhưng lại **bỏ luôn bước sinh summary**. Hệ quả: ngày nào chưa có cache thì xem trước hiện `0 nhóm · 0 tin` — nút Xem trước thành vô dụng, và đúng lúc owner đang nghi ngờ tính năng thì nó lại hiện rỗng lần nữa. Đổi một lỗi lấy một lỗi khác.
+
+  Nay `generateDailySummary` nhận `save: false`: **vẫn tính ra nội dung thật** để owner nhìn, chỉ không ghi xuống đĩa. Xem trước vừa đúng vừa không có tác dụng phụ.
+- **"Xem trước" xem nhầm ngày.** Nó luôn lấy ngày hôm nay, kể cả với lịch `reportFor: yesterday` — nên xem trước một lịch buổi sáng ra tin rỗng của ngày vừa bắt đầu, trong khi lịch đó thật ra báo cáo ngày hôm qua. Nay xem trước dùng đúng ngày mà lịch sẽ báo cáo.
+
+### Notes
+- 245 test xanh; test của `persist:false` đổi từ "không được sinh gì" thành "vẫn sinh, nhưng không ghi cache" — hợp đồng cũ chính là cái sai.
+
 ## [2.26.0] - 2026-08-01
 
 ### Fixed

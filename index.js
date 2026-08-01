@@ -1876,7 +1876,12 @@ Quy tắc:
                 sections: { overview: ai.overview, participants, keySpeakers: ai.keySpeakers, highlights: ai.highlights, repeatedTopics: ai.repeatedTopics, links, notes, memories, appointments: ai.appointments },
             };
 
-            // Lưu JSON (cho UI) + markdown (cho agent đọc)
+            // Lưu JSON (cho UI) + markdown (cho agent đọc).
+            //
+            // `opts.save === false` dành cho XEM TRƯỚC: vẫn tính ra nội dung thật để owner nhìn, nhưng
+            // KHÔNG ghi cache. Ghi thì hỏng dữ liệu — xem trước một ngày mới bắt đầu sẽ đóng băng
+            // `messageCount: 0` cho cả ngày đó (đã xảy ra thật, làm báo cáo hôm sau rỗng).
+            if (opts.save === false) return summary;
             try {
                 const dir = summariesDir(groupId);
                 await fs.mkdir(dir, { recursive: true });
@@ -2701,8 +2706,10 @@ Quy tắc:
                 // So với SỐ DÒNG NHẬT KÝ THẬT của đúng ngày đó — rẻ, chính xác, và chỉ tốn token sinh
                 // lại đúng những nhóm có thêm tin so với lúc cache.
                 const rawCount = (await readChatHistory(gid, date).catch(() => []))?.length || 0;
-                if ((!s || rawCount > (s.messageCount || 0)) && persist) {
-                    s = await generateDailySummary(gid, date, { by: 'auto' }).catch(() => s);
+                if (!s || rawCount > (s.messageCount || 0)) {
+                    // Xem trước cũng phải SINH — không thì ngày nào chưa có cache đều hiện rỗng và
+                    // nút "Xem trước" thành vô dụng. Khác biệt duy nhất là không ghi xuống đĩa.
+                    s = await generateDailySummary(gid, date, { by: 'auto', save: persist }).catch(() => s);
                 }
                 if (!s || !s.messageCount) continue;
                 const x = s.sections || {};

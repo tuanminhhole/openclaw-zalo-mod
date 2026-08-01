@@ -10,7 +10,7 @@ const modalBody = document.getElementById('modalBody');
 const modalCancel = document.getElementById('modalCancel');
 const modalConfirm = document.getElementById('modalConfirm');
 const token = window.ZALO_DASHBOARD_TOKEN || '';
-const pluginVersion = '2.26.0';
+const pluginVersion = '2.26.1';
 let state = null;
 let activeGroupId = '';
 let lang = localStorage.getItem('zaloDashboardLang') || 'vi';
@@ -5225,6 +5225,13 @@ function fmtTs(iso, { withTime = true } = {}) {
   }
 }
 
+/** YYYY-MM-DD của N ngày trước theo GIỜ VN — lịch báo cáo luôn chạy theo giờ VN, không theo máy. */
+function isoDaysAgo(n) {
+  const vnNow = new Date(Date.now() + 7 * 3600 * 1000);
+  vnNow.setUTCDate(vnNow.getUTCDate() - n);
+  return vnNow.toISOString().slice(0, 10);
+}
+
 // ── Lịch sử báo cáo ───────────────────────────────────────────────────────────────────────────
 // Owner hỏi "sáng nay bot gửi gì" và không có chỗ nào xem: gateway chat không hiện tin do plugin
 // gửi, còn digest thì tính lúc chạy rồi thả đi. Trang này đọc bản ĐÃ LƯU lúc gửi — khác với bấm
@@ -5678,7 +5685,13 @@ document.addEventListener('click', async (ev) => {
     const job = reportsState.jobs.find(j => j.id === prevId);
     if (!job) return;
     try {
-      const r = await reportsApi('report-digest-preview', { groups: job.groups });
+      // Xem trước phải theo ĐÚNG NGÀY lịch sẽ báo cáo. Trước đây luôn lấy hôm nay, nên xem trước
+      // một lịch buổi sáng (reportFor: yesterday) ra tin rỗng của ngày vừa bắt đầu — owner tưởng
+      // tính năng hỏng, đúng lúc đang nghi ngờ nó.
+      const r = await reportsApi('report-digest-preview', {
+        groups: job.groups,
+        date: job.reportFor === 'yesterday' ? isoDaysAgo(1) : undefined,
+      });
       await openModal({
         title: uiText('Xem trước báo cáo tổng hợp', 'Digest preview'),
         desc: uiText(`${r.date} · ${r.chars} ký tự · ${r.parts} tin`, `${r.date} · ${r.chars} chars · ${r.parts} message(s)`),

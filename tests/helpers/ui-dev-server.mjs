@@ -269,11 +269,22 @@ const server = http.createServer(async (req, res) => {
                 return send(res, 200, { ok: true, result, state: STATE_STUB });
             }
             // ── Khung chat: đọc thẳng store, giống index.js bên bản thật ──
+            const chatVersion = () => {
+                try {
+                    const r = store.db.prepare(
+                        'SELECT MAX(last_message_at) AS mx, (SELECT COUNT(*) FROM messages) AS n FROM conversations').get();
+                    return `${r?.mx || 0}:${r?.n || 0}`;
+                } catch { return '0:0'; }
+            };
+            if (action === 'chat-version') {
+                return send(res, 200, { ok: true, result: { v: chatVersion() }, state: STATE_STUB });
+            }
             if (action === 'chat-conversations') {
                 const rows = store.listConversations({ accountId: body.payload?.accountId, limit: 200 });
                 return send(res, 200, {
                     ok: true,
                     result: {
+                        v: chatVersion(),
                         conversations: rows.map(c => {
                             const raw = String(c.id || '').split('|').slice(1).join('|');
                             return {

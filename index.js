@@ -5431,12 +5431,34 @@ Quy tắc:
                     return conv.type === 'dm' ? (profCache[raw]?.avatar || '') : '';
                 };
 
+                // Dấu-vân-tay của toàn bộ dữ liệu chat — một truy vấn 0.01ms, rẻ hơn 48 lần so với
+                // dựng lại cả danh sách (0.48ms đo trên 7038 tin / 30 hội thoại).
+                //
+                // Có nó thì dashboard poll dày hơn (4s thay vì 12s) mà tổng chi phí vẫn THẤP HƠN
+                // trước. Đây là lý do không cần SSE: thứ SSE mua được chỉ là độ trễ, mà độ trễ 4
+                // giây đã đủ cho việc trực chat — trong khi SSE phải trả bằng bus sự kiện, heartbeat
+                // chống proxy cắt kết nối nhàn rỗi, và rủi ro Traefik đệm mất luồng.
+                const chatVersion = () => {
+                    try {
+                        const r = store.db?.prepare?.(
+                            'SELECT MAX(last_message_at) AS mx, (SELECT COUNT(*) FROM messages) AS n FROM conversations',
+                        ).get();
+                        return `${r?.mx || 0}:${r?.n || 0}`;
+                    } catch {
+                        return '0:0';
+                    }
+                };
+                if (action === 'chat-version') return { v: chatVersion() };
+
                 if (action === 'chat-conversations') {
                     const rows = store.listConversations({
                         accountId: payload.accountId || undefined,
                         limit: payload.limit || 200,
                     });
                     return {
+                        // Kèm luôn dấu-vân-tay: không có nó thì nhịp poll ĐẦU TIÊN sau khi mở trang
+                        // luôn thấy "có đổi" và vẽ lại — đúng lúc owner có thể đang gõ dở tin nhắn.
+                        v: chatVersion(),
                         conversations: rows.map(c => ({
                             id: c.id,
                             accountId: c.account_id,

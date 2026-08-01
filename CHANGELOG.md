@@ -1,5 +1,26 @@
 ## [Unreleased]
 
+### Changed
+- **★ Khung chat làm mới nhanh gấp 3 mà tốn ít hơn trước — và KHÔNG dùng SSE.** Đo trên William
+  (7038 tin · 30 hội thoại): dựng lại cả danh sách hết `0.48ms`, còn lấy một **dấu-vân-tay**
+  (`MAX(last_message_at)` + tổng số tin) chỉ `0.01ms` — rẻ hơn **48 lần**. Nên nhịp poll giờ chỉ hỏi
+  dấu đó mỗi **4 giây** (trước là dựng cả danh sách mỗi 12 giây), đổi mới gọi tiếp.
+
+  Cân nhắc SSE rồi bỏ, có lý do: polling cũ tốn `0.48ms / 12s` ≈ **0,004% một nhân CPU** — gọi nó
+  "nặng" là không đúng sự thật. Thứ SSE mua được chỉ là độ trễ, mà 4 giây đã đủ để trực chat; đổi
+  lại phải trả bằng bus sự kiện, heartbeat chống proxy cắt kết nối nhàn rỗi, dọn dẹp nhiều tab, và
+  rủi ro Traefik đứng trước đệm mất luồng — loại lỗi chỉ lộ ra trên production.
+
+  `chat-conversations` trả kèm luôn dấu-vân-tay: thiếu nó thì nhịp poll ĐẦU TIÊN sau khi mở trang
+  luôn thấy "có đổi" và vẽ lại — đúng lúc owner có thể đang gõ dở tin nhắn.
+
+### Notes
+- Kiểm bằng cách đếm lượt gọi thật trong 13 giây (3 chu kỳ): **3 lượt `chat-version`, 0 lượt
+  `chat-conversations`, 0 lượt `chat-messages`**, chữ đang gõ còn nguyên và con trỏ vẫn ở ô soạn.
+- Cạm bẫy khi đo: tab của công cụ trình duyệt luôn `document.hidden === true`, mà nhịp poll cố ý bỏ
+  qua khi tab ẩn — nên phép đo đầu tiên cho ra "0 lượt gọi" và trông như poll không chạy. Phải giả
+  lập `document.hidden = false` mới đo được thật.
+
 ### Added
 - **★ Cột trợ lý AI trong khung chat.** Bốn việc, đều đọc đúng hội thoại đang mở: **Soạn hộ** (viết
   sẵn một tin trả lời), **Gợi ý** (4 câu ngắn thành chip ngay trên ô soạn), **Tóm tắt** (khách cần

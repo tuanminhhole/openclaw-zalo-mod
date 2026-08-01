@@ -6386,7 +6386,10 @@ const chatState = {
   suggestions: [],
 };
 
-const CHAT_POLL_MS = 12000;
+// 4 giây thay vì 12: nhịp poll giờ chỉ hỏi một dấu-vân-tay (0.01ms phía server, rẻ hơn 48 lần so
+// với dựng lại cả danh sách), nên poll dày gấp 3 mà tổng chi phí vẫn thấp hơn bản cũ. Đây là lý do
+// KHÔNG cần SSE: thứ SSE mua được chỉ là độ trễ, mà 4 giây đã đủ để trực chat.
+const CHAT_POLL_MS = 4000;
 
 function chatStopPolling() {
   if (chatState.pollTimer) {
@@ -6432,6 +6435,7 @@ async function renderChat() {
     const bot = selBotProfile();
     const res = await crmAction('chat-conversations', { accountId: bot || undefined });
     chatState.conversations = res.conversations || [];
+    chatState.lastSig = res.v || '';
     if (!chatState.conversations.some(c => c.id === chatState.activeId)) {
       chatState.activeId = chatState.conversations[0]?.id || null;
     }
@@ -6452,14 +6456,16 @@ function chatStartPolling() {
     if (!document.getElementById('chat')?.classList.contains('active')) { chatStopPolling(); return; }
     if (document.hidden || chatState.sending) return;
     try {
+      // Nhịp thường: CHỈ hỏi dấu-vân-tay. Không đổi thì dừng ngay — không dựng lại danh sách, và
+      // quan trọng hơn là không vẽ lại gì, vì vẽ lại mỗi vài giây sẽ cướp con trỏ khỏi ô soạn tin.
+      const { v } = await crmAction('chat-version');
+      if (v === chatState.lastSig) return;
+      chatState.lastSig = v;
+
       const bot = selBotProfile();
       const res = await crmAction('chat-conversations', { accountId: bot || undefined });
-      const list = res.conversations || [];
-      // Chỉ vẽ lại khi thật sự có gì đổi — vẽ lại mỗi 12 giây sẽ cướp con trỏ khỏi ô soạn tin.
-      const sig = list.map(c => `${c.id}:${c.lastMessageAt}:${c.messageCount}`).join('|');
-      if (sig === chatState.lastSig) return;
-      chatState.lastSig = sig;
-      chatState.conversations = list;
+      chatState.conversations = res.conversations || [];
+      chatState.lastSig = res.v || chatState.lastSig;
       chatRenderShell(document.getElementById('chatBody'));
       if (chatState.activeId) await chatLoadMessages(chatState.activeId, { keepScroll: true });
     } catch { /* mạng chập chờn — lần sau thử lại */ }

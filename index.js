@@ -5399,9 +5399,25 @@ Quy tắc:
             // sử kéo về), nên mở khung chat không tốn một lượt gọi mạng nào và không đụng hạn mức
             // của Zalo. Đổi lại: chỉ thấy được những gì đã đồng bộ — nên phần mô tả trang nói thẳng
             // là lịch sử về khi bấm Sync account.
-            if (action === 'chat-conversations' || action === 'chat-messages') {
+            if (action === 'chat-conversations' || action === 'chat-messages' || action === 'chat-version') {
                 const store = zEngine?.storage;
                 if (!store?.listConversations) throw new Error('Khung chat cần SQLite (Node >= 22.5).');
+
+                const chatVersion = () => {
+                    try {
+                        const r = store.db?.prepare?.(
+                            'SELECT MAX(last_message_at) AS mx, (SELECT COUNT(*) FROM messages) AS n FROM conversations',
+                        ).get();
+                        return `${r?.mx || 0}:${r?.n || 0}`;
+                    } catch {
+                        return '0:0';
+                    }
+                };
+                // Trả về TRƯỚC hai lần đọc file bên dưới. Đặt sau chúng thì mỗi nhịp poll 4 giây lại
+                // đọc `zalo-profiles-cache.json` + `group-members.json` từ đĩa — đắt hơn hẳn truy vấn
+                // 0.01ms mà nó đang thay thế, tức phá đúng lý do tồn tại của action này.
+                if (action === 'chat-version') return { v: chatVersion() };
+
                 const profCache = await readPluginDataJson('zalo-profiles-cache.json');
                 const memberDir = await readPluginDataJson('group-members.json');
 
@@ -5438,18 +5454,6 @@ Quy tắc:
                 // trước. Đây là lý do không cần SSE: thứ SSE mua được chỉ là độ trễ, mà độ trễ 4
                 // giây đã đủ cho việc trực chat — trong khi SSE phải trả bằng bus sự kiện, heartbeat
                 // chống proxy cắt kết nối nhàn rỗi, và rủi ro Traefik đệm mất luồng.
-                const chatVersion = () => {
-                    try {
-                        const r = store.db?.prepare?.(
-                            'SELECT MAX(last_message_at) AS mx, (SELECT COUNT(*) FROM messages) AS n FROM conversations',
-                        ).get();
-                        return `${r?.mx || 0}:${r?.n || 0}`;
-                    } catch {
-                        return '0:0';
-                    }
-                };
-                if (action === 'chat-version') return { v: chatVersion() };
-
                 if (action === 'chat-conversations') {
                     const rows = store.listConversations({
                         accountId: payload.accountId || undefined,
@@ -5848,11 +5852,27 @@ Quy tắc:
                         return;
                     }
 
+                    // Chỉ đọc, không đổi gì, và dashboard gọi lặp — nên được miễn `state` + audit.
+                    // Thêm action vào đây phải cân nhắc: bỏ audit nghĩa là mất dấu vết.
+                    const POLL_ACTIONS = new Set(['chat-version']);
+
                     if (req.method === 'POST' && url.pathname === '/api/action') {
                         const body = await parseDashboardBody(req);
                         const action = String(body.action || '').trim();
                         if (!action) throw new Error('action is required');
                         const result = await runDashboardAction(action, body.payload || {});
+                        // Action kiểu THĂM DÒ (dashboard gọi lặp vài giây một lần) đi đường nhẹ:
+                        // không dựng lại `state`, không ghi audit.
+                        //
+                        // Vì sao cần: hai thứ đó chạy cho MỌI phản hồi và chính chúng — chứ không
+                        // phải truy vấn — mới là phần đắt. Đo trên William: `chat-version` (một
+                        // truy vấn 0.01ms) vẫn tốn 146ms mỗi lượt vì phải dựng lại toàn bộ state.
+                        // Và ghi audit mỗi 4 giây thì file audit phình lên vì một việc chỉ để hỏi
+                        // "có gì mới không".
+                        if (POLL_ACTIONS.has(action)) {
+                            sendDashboardJson(res, 200, { ok: true, result });
+                            return;
+                        }
                         await appendDashboardAudit({ action, payload: body.payload || {}, ok: true });
                         sendDashboardJson(res, 200, { ok: true, result, state: await buildDashboardState() });
                         return;

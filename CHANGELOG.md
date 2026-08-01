@@ -13,6 +13,23 @@
 
   `chat-conversations` trả kèm luôn dấu-vân-tay: thiếu nó thì nhịp poll ĐẦU TIÊN sau khi mở trang
   luôn thấy "có đổi" và vẽ lại — đúng lúc owner có thể đang gõ dở tin nhắn.
+- **★ Action kiểu thăm dò được miễn `state` + audit — đây mới là phần đắt thật.** Tối ưu SQL ở trên
+  suýt thành vô nghĩa: đo qua HTTP thì `chat-version` vẫn tốn **146ms**, gần bằng
+  `chat-conversations` (138ms). Lý do là **mọi** phản hồi `/api/action` đều gọi
+  `buildDashboardState()` và ghi một dòng audit — chứ không phải truy vấn. Poll 4 giây tức là dựng
+  lại toàn bộ state và ghi đĩa mỗi 4 giây, tệ hơn hẳn bản 12 giây cũ.
+
+  Nay có danh sách `POLL_ACTIONS` đi đường nhẹ: không `state`, không audit. Kết quả đo lại trên
+  William:
+
+  | | Trước | Sau |
+  |---|---|---|
+  | Kích thước phản hồi | 202.304 byte | **68 byte** |
+  | Thời gian mỗi lượt | 146 ms | **31 ms** |
+
+  Tính theo phút: cũ ≈ 690ms CPU + 1MB truyền; mới ≈ 465ms CPU + 1KB — poll dày gấp 3 mà vẫn rẻ hơn
+  cả hai mặt. Bỏ audit là có đánh đổi (mất dấu vết), nên danh sách đó cố ý chỉ chứa action **chỉ
+  đọc, không đổi gì, và bị gọi lặp**.
 
 ### Notes
 - Kiểm bằng cách đếm lượt gọi thật trong 13 giây (3 chu kỳ): **3 lượt `chat-version`, 0 lượt

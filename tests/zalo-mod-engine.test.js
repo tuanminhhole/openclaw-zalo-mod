@@ -205,3 +205,30 @@ test('lịch sử: dữ liệu thiếu/hỏng thì bỏ qua, không ném', (t) =
     assert.equal(engine.captureHistory([{ text: 'thiếu id' }, histEvent({ messageId: '' })]), 0);
     assert.equal(engine.captureHistory([histEvent(), { hỏng: true }]), 1);
 });
+
+test('mốc thời gian: mọi đơn vị vào đều thành mili-giây trong DB', (t) => {
+    const { engine, cleanup } = makeEngine();
+    t.after(cleanup);
+    const ms = 1785603429423;
+
+    // Ba nguồn, ba đơn vị — đúng cảnh đã gặp trên production.
+    engine.captureInbound({
+        accountId: 'default', conversationId: 'group:g1', groupId: 'g1',
+        messageId: 'micro', senderId: 'u1', senderName: 'A', text: 'micro-giây', timestamp: ms * 1000,
+    });
+    engine.captureInbound({
+        accountId: 'default', conversationId: 'group:g1', groupId: 'g1',
+        messageId: 'giay', senderId: 'u1', senderName: 'A', text: 'giây', timestamp: Math.floor(ms / 1000),
+    });
+    engine.captureHistory([{
+        accountId: 'default', conversationId: 'g1', isGroup: true,
+        messageId: 'mili', senderId: 'u1', senderName: 'A', text: 'mili-giây', timestamp: ms,
+    }]);
+
+    const rows = engine.storage.recentMessages('default|group:g1', 10);
+    assert.equal(rows.length, 3, 'lịch sử phải vào ĐÚNG hội thoại của luồng trực tiếp (chuẩn hoá group:)');
+    for (const r of rows) {
+        assert.equal(String(r.sent_at).length, 13, `${r.id} phải là mili-giây, đang là ${r.sent_at}`);
+        assert.ok(new Date(Number(r.sent_at)).getFullYear() === 2026, `${r.id} ra năm lạ`);
+    }
+});

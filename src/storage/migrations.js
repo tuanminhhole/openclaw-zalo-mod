@@ -237,6 +237,21 @@ export const MIGRATIONS = [
                AND replace(id, '|', '|group:') IN (SELECT id FROM conversations);
         `,
     },
+    {
+        version: 8,
+        name: 'fix-microsecond-timestamps',
+        // Cùng một cột `sent_at` chứa HAI đơn vị: đường trực tiếp ghi micro-giây (zalo-connect nhân
+        // 1000 theo comment "Zalo timestamps are seconds" — sai, `data.ts` vốn đã là mili-giây),
+        // còn đường lịch sử ghi mili-giây. Hệ quả: tin trực tiếp và tin lịch sử xếp lẫn lộn trong
+        // khung chat, mốc thời gian hiện ra năm 5xxxx, và `last_message_at` của hội thoại vô nghĩa.
+        //
+        // Nơi ghi đã chuẩn hoá; đây là phần dọn dữ liệu cũ. Ngưỡng 1e14 an toàn: mili-giây hợp lệ
+        // của thế kỷ này là ~1.7e12, còn micro-giây là ~1.7e15 — cách nhau ba bậc.
+        sql: `
+            UPDATE messages SET sent_at = sent_at / 1000 WHERE sent_at > 100000000000000;
+            UPDATE conversations SET last_message_at = last_message_at / 1000 WHERE last_message_at > 100000000000000;
+        `,
+    },
 ];
 
 /**

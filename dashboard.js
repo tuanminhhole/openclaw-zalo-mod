@@ -6403,8 +6403,17 @@ const CHAT_POLL_MS = 4000;
  * bắt owner đi tìm thanh chọn bot.
  */
 function chatProfile() {
-  if (selectedBotFilter && selectedBotFilter !== 'all') return selectedBotFilter;
   const bots = (state && state.bots) || [];
+  const known = (p) => p && bots.some(b => b.profile === p);
+  // 1) Bot đang chọn ở topbar thắng tuyệt đối.
+  if (selectedBotFilter && selectedBotFilter !== 'all') return selectedBotFilter;
+  // 2) Tải lại trang thì `selectedBotFilter` về 'all' và khung chat rơi về bot đầu danh sách — tức
+  //    đang xem hộp thư của người khác so với lúc trước khi tải lại. Nhớ lại lựa chọn gần nhất.
+  //    Kiểm `known()` phòng bot bị gỡ khỏi cấu hình: giá trị cũ trong localStorage sẽ trỏ vào hư vô.
+  try {
+    const saved = localStorage.getItem('zaloChatBot');
+    if (known(saved)) return saved;
+  } catch { /* trình duyệt chặn localStorage */ }
   return bots[0]?.profile || 'default';
 }
 
@@ -6466,6 +6475,7 @@ async function renderChat() {
       chatState.suggestions = [];
       chatState.aiThread = [];
     }
+    try { localStorage.setItem('zaloChatBot', bot); } catch { /* trình duyệt chặn */ }
     const res = await crmAction('chat-conversations', { accountId: bot });
     chatState.conversations = res.conversations || [];
     chatState.lastSig = res.v || '';

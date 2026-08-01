@@ -1,6 +1,19 @@
 ## [Unreleased]
 
 ### Fixed
+- **★ Nhắn thẳng cho bot thì khung chat không hiện tin đó.** Handler inbound mở đầu bằng
+  `if (!event?.isGroup) return;` — bỏ qua **toàn bộ** tin nhắn riêng. Nay DM được ghi vào
+  `context.db` rồi **dừng lại ngay**, cố ý không đi tiếp: phần dưới ghi `.jsonl` mà báo cáo cuối
+  ngày đọc — đó là nhật ký THEO NHÓM, nhét DM vào sẽ làm hỏng báo cáo. (Cần zalo-connect bản mới,
+  nơi bridge bắt đầu phát inbound cho cả DM.)
+- **★ Cùng một cột `sent_at` chứa hai đơn vị thời gian.** Đường trực tiếp ghi **micro-giây** (16 chữ
+  số), đường lịch sử ghi **mili-giây** (13 chữ số) — nên tin trực tiếp và tin lịch sử xếp lẫn lộn
+  trong khung chat và mốc hiện ra **năm 5xxxx**. Nay chuẩn hoá ở **nơi ghi cuối cùng** (`toMs()`
+  trong engine) để dù nguồn nào sai thì DB vẫn chỉ có một đơn vị, kèm **migration v8** chia lại dữ
+  liệu cũ. Trên William: 6897 dòng micro-giây → **0**.
+- **Tải lại trang là khung chat nhảy sang bot khác.** `selectedBotFilter` về `'all'` sau khi tải
+  lại, nên khung chat rơi về bot đầu danh sách — tức đang xem hộp thư của người khác so với lúc
+  trước. Nay nhớ lựa chọn gần nhất trong `localStorage`, có kiểm bot đó còn tồn tại không.
 - **★ Cùng một nhóm bị lưu dưới HAI hội thoại, nên khung chat hiện nó hai lần.** Luồng trực tiếp ghi
   id nhóm kèm tiền tố `group:`, còn luồng lịch sử kéo từ Zalo về ghi id trần — không ai chuẩn hoá.
   Trên production: `default|4272…` giữ 48 tin còn `default|group:4272…` giữ 5815 tin, cùng một nhóm.

@@ -5981,7 +5981,29 @@ Quy tắc:
 
         try { globalThis.__zaloModInboundUnsubscribe?.(); } catch { }
         globalThis.__zaloModInboundUnsubscribe = zEngine.bridge.onInbound(async (event) => {
-            if (!event?.isGroup) return;
+            if (!event) return;
+            // Tin nhắn RIÊNG: chỉ ghi vào context.db cho khung chat rồi dừng.
+            //
+            // Cố ý KHÔNG đi tiếp xuống dưới: phần dưới ghi `.jsonl` mà báo cáo cuối ngày đọc — đó là
+            // nhật ký THEO NHÓM, nhét DM vào sẽ làm hỏng báo cáo; và nhánh slash-command bên dưới
+            // cũng chỉ dành cho nhóm.
+            //
+            // Trước đây `if (!event.isGroup) return` chặn ngay từ đầu, nên owner nhắn thẳng cho bot
+            // thì khung chat không bao giờ thấy tin đó cho tới lần kéo lịch sử kế tiếp.
+            if (!event.isGroup) {
+                zEngine.captureInbound({
+                    accountId: event.accountId,
+                    conversationId: event.conversationId,
+                    messageId: event.messageId,
+                    senderId: event.senderId,
+                    senderName: event.senderName,
+                    text: event.text,
+                    timestamp: event.timestamp,
+                    rawType: event.rawType,
+                    quote: event.quote,
+                });
+                return;
+            }
             zEngine.captureInbound({
                 accountId: event.accountId,
                 conversationId: event.conversationId,

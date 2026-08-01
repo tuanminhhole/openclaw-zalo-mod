@@ -66,6 +66,22 @@ export function createZaloModEngine({ dataDir, logger, runtime, getConfig, confi
         return `${accountId || 'default'}|${conversationId}`;
     }
 
+    /**
+     * Mốc thời gian về MILI-giây, đoán theo độ lớn.
+     *
+     * Cùng một cột `sent_at` từng chứa hai đơn vị: đường trực tiếp ghi micro-giây (zalo-connect
+     * nhân 1000 theo một comment sai), đường lịch sử ghi mili-giây. Hệ quả là tin trực tiếp và tin
+     * lịch sử xếp lẫn lộn trong khung chat, và mốc hiện ra năm 5xxxx. Chuẩn hoá ở ĐÂY — nơi ghi
+     * cuối cùng — để dù nguồn nào sai thì DB vẫn chỉ có một đơn vị.
+     */
+    function toMs(ts) {
+        const n = Number(ts);
+        if (!Number.isFinite(n) || n <= 0) return Date.now();
+        if (n > 1e14) return Math.floor(n / 1000);   // micro-giây
+        if (n < 1e11) return Math.floor(n * 1000);   // giây
+        return Math.floor(n);
+    }
+
     return {
         bridge,
         storage,
@@ -100,7 +116,7 @@ export function createZaloModEngine({ dataDir, logger, runtime, getConfig, confi
                     const rawId = String(e.conversationId);
                     const convId = e.isGroup && !rawId.startsWith('group:') ? `group:${rawId}` : rawId;
                     const key = convKey(acc, convId);
-                    const ts = e.timestamp || Date.now();
+                    const ts = toMs(e.timestamp);
                     rows.push({
                         id: e.messageId,
                         conversationId: key,
@@ -151,12 +167,13 @@ export function createZaloModEngine({ dataDir, logger, runtime, getConfig, confi
         captureInbound({ accountId, conversationId, groupId, messageId, senderId, senderName, text, timestamp, rawType, quote }) {
             try {
                 const acc = accountId || 'default';
+                const ms = toMs(timestamp);
                 storage.upsertConversation?.({
                     id: convKey(acc, conversationId),
                     accountId: acc,
                     groupId: groupId || null,
                     type: groupId ? 'group' : 'dm',
-                    lastMessageAt: timestamp || Date.now(),
+                    lastMessageAt: ms,
                 });
                 return buffer.record({
                     accountId: acc,
@@ -166,7 +183,7 @@ export function createZaloModEngine({ dataDir, logger, runtime, getConfig, confi
                     senderId,
                     senderName,
                     text: text || '',
-                    timestamp: timestamp || Date.now(),
+                    timestamp: ms,
                     rawType: rawType || 'message',
                     quote,
                 });

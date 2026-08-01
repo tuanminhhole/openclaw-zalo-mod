@@ -5403,15 +5403,14 @@ Quy tắc:
                 const store = zEngine?.storage;
                 if (!store?.listConversations) throw new Error('Khung chat cần SQLite (Node >= 22.5).');
 
+                // KHÔNG nuốt lỗi ở đây. Bản đầu bọc try/catch trả '0:0', nên khi SQLite bị đóng thì
+                // nhịp poll vẫn trả 200 và dashboard im lặng đứng yên — che mất đúng cái lỗi 500 mà
+                // hai action kia phơi ra. Thà 500 rõ ràng còn hơn "chạy mà không cập nhật".
                 const chatVersion = () => {
-                    try {
-                        const r = store.db?.prepare?.(
-                            'SELECT MAX(last_message_at) AS mx, (SELECT COUNT(*) FROM messages) AS n FROM conversations',
-                        ).get();
-                        return `${r?.mx || 0}:${r?.n || 0}`;
-                    } catch {
-                        return '0:0';
-                    }
+                    const r = store.db.prepare(
+                        'SELECT MAX(last_message_at) AS mx, (SELECT COUNT(*) FROM messages) AS n FROM conversations',
+                    ).get();
+                    return `${r?.mx || 0}:${r?.n || 0}`;
                 };
                 // Trả về TRƯỚC hai lần đọc file bên dưới. Đặt sau chúng thì mỗi nhịp poll 4 giây lại
                 // đọc `zalo-profiles-cache.json` + `group-members.json` từ đĩa — đắt hơn hẳn truy vấn
@@ -5811,6 +5810,7 @@ Quy tắc:
                 logger.error('[openclaw-zalo-mod] dashboard disabled: non-loopback dashboardHost requires dashboardToken with at least 24 characters');
                 return;
             }
+            let _lastDashboardAction = '';
             const key = '__openclawZaloModDashboard';
             const existing = globalThis[key];
             if (existing?.server) {
@@ -5916,6 +5916,7 @@ Quy tắc:
                     if (req.method === 'POST' && url.pathname === '/api/action') {
                         const body = await parseDashboardBody(req);
                         const action = String(body.action || '').trim();
+                        _lastDashboardAction = action;
                         if (!action) throw new Error('action is required');
                         const result = await runDashboardAction(action, body.payload || {});
                         // Action kiểu THĂM DÒ (dashboard gọi lặp vài giây một lần) đi đường nhẹ:
@@ -5937,7 +5938,9 @@ Quy tắc:
                     sendDashboardJson(res, 404, { ok: false, error: 'Not found' });
 
                 } catch (e) {
-                    logger.warn(`[openclaw-zalo-mod] dashboard error: ${e.message}`);
+                    // Kèm TÊN ACTION: không có nó thì một dòng "dashboard error: database is not
+                    // open" chẳng cho biết đường nào hỏng, và phải đoán giữa vài chục action.
+                    logger.warn(`[openclaw-zalo-mod] dashboard error (${_lastDashboardAction || '?'}): ${e.message}`);
                     try { await appendDashboardAudit({ action: 'error', ok: false, error: e.message }); } catch (_) { }
                     sendDashboardJson(res, 500, { ok: false, error: e.message });
                 }
@@ -5964,7 +5967,15 @@ Quy tắc:
             getConfig: () => api.config,
             config: pluginCfg?.contextEngine || {},
         });
-        try { globalThis.__zaloModEngine?.shutdown?.(); } catch { }
+        // CHỈ tắt engine cũ khi nó thật sự là một engine KHÁC.
+        //
+        // Gateway đăng ký lại plugin nhiều lần trong cùng tiến trình, và engine nay dùng chung theo
+        // `dataDir` — nên `createZaloModEngine` trả về đúng cái đang nằm ở đây. Gọi `shutdown()` vô
+        // điều kiện là tự đóng SQLite của chính engine vừa lấy ra dùng: dashboard sau đó trả 500
+        // `database is not open` / `statement has been finalized`, trong khi dữ liệu vẫn nguyên vẹn.
+        if (globalThis.__zaloModEngine && globalThis.__zaloModEngine !== zEngine) {
+            try { globalThis.__zaloModEngine.shutdown?.(); } catch { }
+        }
         globalThis.__zaloModEngine = zEngine; // dashboard/debug access
         const isZaloChannel = (c) => {
             const id = c?.channelId || c?.channel;

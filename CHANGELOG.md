@@ -1,5 +1,23 @@
 ## [Unreleased]
 
+### Fixed
+- **★ Dashboard trả lỗi 500 `database is not open`.** Gateway đăng ký lại plugin nhiều lần trong
+  cùng một tiến trình — đo trên production: **22 lần trong 40 phút**. Mỗi lần lại mở thêm một
+  `DatabaseSync` trên cùng `context.db` mà không đóng cái cũ (rò rỉ handle), và
+  `globalThis.__zaloModEngine?.shutdown?.()` chạy **vô điều kiện** ở đầu mỗi lần đăng ký.
+
+  Nay engine dùng CHUNG theo `dataDir` — cùng thư mục nghĩa là cùng dữ liệu của một bot, dùng lại
+  là đúng chứ không phải mẹo tiết kiệm. Và `shutdown()` chỉ chạy khi engine cũ **thật sự khác**
+  engine mới: thiếu điều kiện đó thì lần đăng ký thứ hai tự đóng SQLite của chính engine nó vừa
+  lấy ra dùng, khiến dashboard trả 500 trong khi dữ liệu vẫn nguyên vẹn.
+- **`chat-version` nuốt lỗi, che mất sự cố trên.** Bản đầu bọc `try/catch` trả `'0:0'`, nên khi
+  SQLite bị đóng thì nhịp poll vẫn trả **200** và khung chat lặng lẽ đứng yên — chỉ hai action khác
+  mới phơi ra 500. Bỏ hẳn cái bọc đó: thà lỗi rõ ràng còn hơn "chạy mà không cập nhật".
+- **Log lỗi dashboard giờ kèm TÊN ACTION.** Không có nó thì một dòng
+  `dashboard error: database is not open` không cho biết đường nào hỏng, phải đoán giữa vài chục
+  action. Chính dòng này chỉ thẳng ra `chat-messages` báo `statement has been finalized` — bằng
+  chứng quyết định rằng handle SQLite đã bị đóng chứ không phải dữ liệu hỏng.
+
 ### Added
 - **★ Chỉ báo "đang soạn tin" như Zalo Web.** Ba chấm nảy trong luồng tin, và dòng xem-trước trong
   danh sách đổi thành *đang soạn tin…*. Đi kèm **nhịp poll sẵn có** thay vì dựng thêm một đường

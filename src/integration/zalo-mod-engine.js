@@ -25,8 +25,29 @@ import { createOpenclawAdapter } from './openclaw-adapter.js';
 
 const SWEEP_INTERVAL_MS = 60 * 1000;
 
+/**
+ * Engine dùng CHUNG theo thư mục dữ liệu.
+ *
+ * Gateway đăng ký lại plugin nhiều lần trong một tiến trình (đo trên production: **22 lần trong 40
+ * phút**). Trước đây mỗi lần đăng ký mở thêm một `DatabaseSync` trên cùng file `context.db` và
+ * không đóng cái cũ — rò rỉ handle, và bất kỳ handle nào bị đóng/thu hồi cũng làm dashboard trả
+ * `database is not open` (lỗi 500) dù bản thân dữ liệu vẫn nguyên.
+ *
+ * Cùng `dataDir` nghĩa là cùng dữ liệu của một bot, nên dùng lại là đúng — không phải mẹo tiết kiệm.
+ */
+const ENGINE_CACHE_KEY = '__openclawZaloModEngines';
+
 export function createZaloModEngine({ dataDir, logger, runtime, getConfig, config = {} }) {
     const log = logger || console;
+    const cache = globalThis[ENGINE_CACHE_KEY] || (globalThis[ENGINE_CACHE_KEY] = new Map());
+    const cached = cache.get(dataDir);
+    if (cached) {
+        // Adapter ôm `runtime`/`getConfig` của lần đăng ký ĐẦU TIÊN; lần sau chúng vẫn trỏ đúng
+        // cùng một gateway trong cùng tiến trình, nên dùng lại an toàn.
+        log.info?.('[zalo-mod] dùng lại engine sẵn có (đăng ký lại plugin, không mở thêm SQLite).');
+        return cached;
+    }
+
     const storage = openStore(path.join(dataDir, 'context.db'), { logger: log });
     const buffer = new ConversationBuffer({ storage, maxPerConversation: config.bufferSize ?? 200 });
     const turnStore = new TurnContextStore();
@@ -82,7 +103,7 @@ export function createZaloModEngine({ dataDir, logger, runtime, getConfig, confi
         return Math.floor(n);
     }
 
-    return {
+    const engine = {
         bridge,
         storage,
         buffer,
@@ -343,8 +364,12 @@ export function createZaloModEngine({ dataDir, logger, runtime, getConfig, confi
         shutdown() {
             clearInterval(sweepTimer);
             try { storage.close(); } catch { }
+            // Bỏ khỏi cache, không thì lần đăng ký sau nhận lại một engine có DB đã đóng.
+            try { globalThis[ENGINE_CACHE_KEY]?.delete(dataDir); } catch { }
         },
     };
+    cache.set(dataDir, engine);
+    return engine;
 }
 
 function hashLite(s) {

@@ -308,6 +308,32 @@ const server = http.createServer(async (req, res) => {
                     state: STATE_STUB,
                 });
             }
+            // Giả lập trợ lý AI: KHÔNG gọi model thật trong dev (tốn token và cần key), nhưng trả
+            // về đúng hình dạng dữ liệu để kiểm được mọi nhánh giao diện.
+            if (action === 'chat-ai') {
+                const mode = body.payload?.mode || 'draft';
+                const n = Number(body.payload?.contextCount) || 30;
+                const rows = store.recentMessages(String(body.payload?.conversationId || ''), n);
+                const last = rows[rows.length - 1]?.text || '';
+                const out = { mode, contextUsed: rows.length, isGroup: false };
+                if (mode === 'suggest') {
+                    out.suggestions = [
+                        'Dạ vâng, chị nhắn địa chỉ giúp em nhé.',
+                        'Ok ạ, em đang sẵn sàng ghi nhận đây ạ.',
+                        'Sau khi có địa chỉ em sẽ gửi mã đơn cho chị.',
+                        'Chị gửi qua đây em lên đơn luôn ạ.',
+                    ];
+                    out.text = out.suggestions.join('\n');
+                } else if (mode === 'summary') {
+                    out.text = `- Khách hỏi về đơn hàng\n- Đã chốt 2 món\n- Còn chờ địa chỉ giao\n- (dev stub, đọc ${rows.length} tin)`;
+                } else if (mode === 'ask') {
+                    out.text = `(dev stub) Câu hỏi: "${body.payload?.question}" — đọc ${rows.length} tin gần nhất.`;
+                } else {
+                    out.text = `Dạ em xác nhận ạ. Chị cho em xin địa chỉ để em gửi hàng sớm nhất nhé!`
+                        + (last ? `\n(tin cuối: ${String(last).slice(0, 40)})` : '');
+                }
+                return send(res, 200, { ok: true, result: out, state: STATE_STUB });
+            }
             if (action === 'send-message') {
                 // Bản thật gửi qua Zalo; ở dev chỉ ghi vào store để thấy tin hiện lên đúng chỗ.
                 const conv = `${body.payload?.accountId || 'default'}|${body.payload?.targetId}`;

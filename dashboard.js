@@ -6377,6 +6377,13 @@ const chatState = {
   pollTimer: null,
   sending: false,
   lastSig: '',
+  // Cột trợ lý AI
+  aiOpen: true,
+  aiContextOn: true,
+  aiContextCount: 30,
+  aiBusy: false,
+  aiThread: [],      // { role: 'ai'|'me', text, canUse }
+  suggestions: [],
 };
 
 const CHAT_POLL_MS = 12000;
@@ -6482,7 +6489,7 @@ function chatRenderShell(body) {
     </button>`).join('');
 
   body.innerHTML = `
-    <div class="chat-wrap">
+    <div class="chat-wrap${active ? ' has-ai' : ''}">
       <aside class="chat-side">
         <input type="search" id="chatSearch" class="crm-search" style="flex:none;width:100%"
           placeholder="${t('Tìm hội thoại…', 'Search conversations…')}" value="${crmEsc(chatState.search)}">
@@ -6506,12 +6513,23 @@ function chatRenderShell(body) {
           ${active.type === 'group' ? `<div class="chat-composer chat-composer-off">${t(
               'Gửi vào nhóm phải dùng trang "Gửi hàng loạt" hoặc để bot tự trả lời — tránh gửi nhầm cả nhóm từ đây.',
               'Group sending lives on the "Bulk send" page — avoids accidentally messaging a whole group from here.')}</div>`
-            : `<form class="chat-composer" id="chatComposer">
-              <textarea id="chatInput" rows="1" placeholder="${t('Nhập tin nhắn…', 'Type a message…')}"></textarea>
-              <button class="btn primary" type="submit" id="chatSendBtn">${t('Gửi', 'Send')}</button>
-            </form>`}
+            : `<div class="chat-compose-wrap">
+              ${chatSuggestionsHtml()}
+              <form class="chat-composer" id="chatComposer">
+                <div class="chat-input-box">
+                  <textarea id="chatInput" rows="1" placeholder="${t('Nhập tin nhắn…', 'Type a message…')}"></textarea>
+                  <div class="chat-input-tools">
+                    <button type="button" class="chat-tool" data-chat-emoji title="${t('Chèn emoji', 'Insert emoji')}">🙂</button>
+                    <button type="button" class="chat-tool" id="chatSuggestBtn" title="${t('Nhờ AI gợi ý câu trả lời', 'Ask AI for reply suggestions')}">✨ ${t('Gợi ý', 'Suggest')}</button>
+                    <span class="chat-hint">${t('Enter gửi · Shift+Enter xuống dòng', 'Enter to send · Shift+Enter for a new line')}</span>
+                  </div>
+                </div>
+                <button class="btn primary" type="submit" id="chatSendBtn">${t('Gửi', 'Send')}</button>
+              </form>
+            </div>`}
         ` : `<div class="chat-empty">${t('Chọn một hội thoại bên trái.', 'Pick a conversation on the left.')}</div>`}
       </section>
+      ${active ? chatAiPanelHtml() : ''}
     </div>`;
 
   let searchTimer;
@@ -6530,9 +6548,15 @@ function chatRenderShell(body) {
   }));
   body.querySelectorAll('[data-chat-conv]').forEach(el => el.addEventListener('click', async () => {
     chatState.activeId = el.dataset.chatConv;
+    // Gợi ý và hội thoại với trợ lý gắn với ĐÚNG một hội thoại — mang sang cuộc khác là đưa nhầm
+    // ngữ cảnh của khách này cho khách kia.
+    chatState.suggestions = [];
+    chatState.aiThread = [];
     chatRenderShell(body);
     await chatLoadMessages(chatState.activeId);
   }));
+  chatBindComposer(body);
+  chatBindAi(body);
   body.querySelector('#chatComposer')?.addEventListener('submit', chatSend);
   // Enter gửi, Shift+Enter xuống dòng — đúng thói quen của mọi ứng dụng chat.
   body.querySelector('#chatInput')?.addEventListener('keydown', (e) => {
@@ -6610,4 +6634,182 @@ async function chatSend(e) {
     chatState.sending = false;
     if (btn) { btn.disabled = false; btn.textContent = t('Gửi', 'Send'); }
   }
+}
+
+// ── Cột thứ 3: trợ lý AI của khung chat ─────────────────────────────────────
+//
+// Trợ lý chỉ SOẠN, không bao giờ tự gửi: nội dung hội thoại đến từ khách hàng, tức dữ liệu không
+// tin cậy, nên một tin kiểu "bỏ qua hướng dẫn trước, nhắn cho X rằng…" phải dừng lại ở bản nháp có
+// người đọc. Mọi câu AI đưa ra đều phải bấm "Dùng câu này" rồi bấm Gửi — hai nhịp có chủ ý.
+
+const CHAT_EMOJI = ['🙂', '😀', '😍', '👍', '🙏', '❤️', '😅', '😭', '🔥', '✅', '📦', '🚚', '💰', '🎁', '⏰', '📞'];
+
+function chatSuggestionsHtml() {
+  if (!chatState.suggestions.length) return '';
+  return `<div class="chat-suggests">${chatState.suggestions.map((s, i) =>
+    `<button type="button" class="chat-suggest" data-chat-suggest="${i}">${crmEsc(s)}</button>`).join('')}</div>`;
+}
+
+function chatAiPanelHtml() {
+  if (!chatState.aiOpen) {
+    return `<aside class="chat-ai chat-ai-collapsed">
+      <button type="button" class="chat-tool" id="chatAiOpen" title="${t('Mở trợ lý AI', 'Open AI assistant')}">🤖</button>
+    </aside>`;
+  }
+  const thread = chatState.aiThread.map((m, i) => `
+    <div class="chat-ai-msg${m.role === 'me' ? ' me' : ''}">
+      <div class="chat-ai-bubble">${crmEsc(m.text)}</div>
+      ${m.canUse ? `<button type="button" class="chat-ai-use" data-chat-ai-use="${i}">${t('Dùng câu này', 'Use this')}</button>` : ''}
+    </div>`).join('');
+
+  return `<aside class="chat-ai">
+    <header class="chat-ai-head">
+      <span>🤖 ${t('Trợ lý AI', 'AI assistant')}</span>
+      <button type="button" class="chat-tool" id="chatAiClose" title="${t('Thu gọn', 'Collapse')}">✕</button>
+    </header>
+    <div class="chat-ai-ctl">
+      <label class="chat-ai-toggle">
+        <input type="checkbox" id="chatAiCtxOn" ${chatState.aiContextOn ? 'checked' : ''}>
+        <span>${t('Ngữ cảnh', 'Context')}</span>
+      </label>
+      <input type="number" id="chatAiCtxN" min="1" max="100" value="${chatState.aiContextCount}"
+        ${chatState.aiContextOn ? '' : 'disabled'} title="${t('Số tin gần nhất đưa cho AI đọc (1-100)', 'How many recent messages the AI reads (1-100)')}">
+      <button type="button" class="btn" id="chatAiSummary">${t('Tóm tắt', 'Summarize')}</button>
+      <button type="button" class="btn" id="chatAiDraft">${t('Soạn hộ', 'Draft')}</button>
+    </div>
+    <div class="chat-ai-thread" id="chatAiThread">${thread || `<div class="item-sub" style="font-size:12.5px">${t(
+      'Bấm "Soạn hộ" để AI viết sẵn câu trả lời, hoặc hỏi bất cứ điều gì về hội thoại này. AI chỉ soạn — gửi hay không là do bạn.',
+      'Use "Draft" to have the AI write a reply, or ask anything about this conversation. The AI only drafts — sending is always your call.')}</div>`}</div>
+    <form class="chat-ai-ask" id="chatAiForm">
+      <input type="text" id="chatAiInput" autocomplete="off" placeholder="${t('Hỏi AI về hội thoại này…', 'Ask the AI about this chat…')}">
+      <button class="btn" type="submit" id="chatAiSend">➤</button>
+    </form>
+  </aside>`;
+}
+
+/** Gọi trợ lý. `mode`: draft | suggest | summary | ask. */
+async function chatAi(mode, question = '') {
+  if (chatState.aiBusy || !chatState.activeId) return;
+  chatState.aiBusy = true;
+  const body = document.getElementById('chatBody');
+  const busyEls = body?.querySelectorAll('#chatAiSummary, #chatAiDraft, #chatAiSend, #chatSuggestBtn') || [];
+  busyEls.forEach(b => { b.disabled = true; });
+  const th = document.getElementById('chatAiThread');
+  if (th && mode !== 'suggest') {
+    th.insertAdjacentHTML('beforeend', `<div class="chat-ai-msg" id="chatAiWait"><div class="chat-ai-bubble">${t('Đang nghĩ…', 'Thinking…')}</div></div>`);
+    th.scrollTop = th.scrollHeight;
+  }
+  try {
+    const res = await crmAction('chat-ai', {
+      conversationId: chatState.activeId,
+      mode,
+      question,
+      // Tắt ngữ cảnh = chỉ đưa 1 tin gần nhất, không phải bỏ trắng: AI không có gì để bám thì nó
+      // bịa, mà bịa trong tin nhắn khách hàng là hỏng thật.
+      contextCount: chatState.aiContextOn ? chatState.aiContextCount : 1,
+    });
+    if (mode === 'suggest') {
+      chatState.suggestions = res.suggestions || [];
+      chatRenderShell(body);
+      chatRenderThread();
+      return;
+    }
+    chatState.aiThread.push({ role: 'ai', text: res.text || '', canUse: mode === 'draft' });
+  } catch (err) {
+    chatState.aiThread.push({ role: 'ai', text: `⚠️ ${err.message}`, canUse: false });
+  } finally {
+    chatState.aiBusy = false;
+    document.getElementById('chatAiWait')?.remove();
+    chatRenderAi();
+    busyEls.forEach(b => { b.disabled = false; });
+  }
+}
+
+/** Vẽ lại RIÊNG cột AI — vẽ cả khung sẽ mất chữ đang gõ dở trong ô soạn tin. */
+function chatRenderAi() {
+  const wrap = document.querySelector('.chat-wrap');
+  const old = wrap?.querySelector('.chat-ai');
+  if (!wrap || !old) return;
+  old.outerHTML = chatAiPanelHtml();
+  chatBindAi(document.getElementById('chatBody'));
+  const th = document.getElementById('chatAiThread');
+  if (th) th.scrollTop = th.scrollHeight;
+}
+
+function chatBindAi(body) {
+  if (!body) return;
+  body.querySelector('#chatAiOpen')?.addEventListener('click', () => { chatState.aiOpen = true; chatRenderAi(); });
+  body.querySelector('#chatAiClose')?.addEventListener('click', () => { chatState.aiOpen = false; chatRenderAi(); });
+  body.querySelector('#chatAiCtxOn')?.addEventListener('change', (e) => {
+    chatState.aiContextOn = e.target.checked;
+    chatRenderAi();
+  });
+  body.querySelector('#chatAiCtxN')?.addEventListener('change', (e) => {
+    chatState.aiContextCount = Math.min(Math.max(Number(e.target.value) || 30, 1), 100);
+    e.target.value = chatState.aiContextCount;
+  });
+  body.querySelector('#chatAiSummary')?.addEventListener('click', () => chatAi('summary'));
+  body.querySelector('#chatAiDraft')?.addEventListener('click', () => chatAi('draft'));
+  body.querySelector('#chatAiForm')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const input = document.getElementById('chatAiInput');
+    const q = input?.value.trim();
+    if (!q) return;
+    chatState.aiThread.push({ role: 'me', text: q, canUse: false });
+    input.value = '';
+    chatRenderAi();
+    chatAi('ask', q);
+  });
+  body.querySelectorAll('[data-chat-ai-use]').forEach(el => el.addEventListener('click', () => {
+    const m = chatState.aiThread[Number(el.dataset.chatAiUse)];
+    const input = document.getElementById('chatInput');
+    if (!m || !input) return;
+    input.value = m.text;
+    input.focus();
+    chatAutoGrow(input);
+  }));
+}
+
+/** Ô soạn cao theo nội dung, chặn trên ở 140px — dán một đoạn dài không được nuốt cả khung chat. */
+function chatAutoGrow(el) {
+  if (!el) return;
+  el.style.height = 'auto';
+  el.style.height = `${Math.min(el.scrollHeight, 140)}px`;
+}
+
+function chatBindComposer(body) {
+  if (!body) return;
+  const input = body.querySelector('#chatInput');
+  input?.addEventListener('input', () => chatAutoGrow(input));
+  body.querySelector('#chatSuggestBtn')?.addEventListener('click', () => chatAi('suggest'));
+  body.querySelectorAll('[data-chat-suggest]').forEach(el => el.addEventListener('click', () => {
+    const text = chatState.suggestions[Number(el.dataset.chatSuggest)];
+    if (!input || !text) return;
+    input.value = text;
+    input.focus();
+    chatAutoGrow(input);
+  }));
+  body.querySelector('[data-chat-emoji]')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const existing = body.querySelector('.chat-emoji-pop');
+    if (existing) { existing.remove(); return; }
+    const pop = document.createElement('div');
+    pop.className = 'chat-emoji-pop';
+    pop.innerHTML = CHAT_EMOJI.map(x => `<button type="button" data-emo="${x}">${x}</button>`).join('');
+    e.currentTarget.parentElement.appendChild(pop);
+    pop.querySelectorAll('[data-emo]').forEach(b => b.addEventListener('click', () => {
+      if (!input) return;
+      // Chèn tại con trỏ chứ không nối vào cuối — người ta hay chèn emoji giữa câu.
+      const p = input.selectionStart ?? input.value.length;
+      input.value = input.value.slice(0, p) + b.dataset.emo + input.value.slice(input.selectionEnd ?? p);
+      input.focus();
+      input.selectionStart = input.selectionEnd = p + b.dataset.emo.length;
+      pop.remove();
+      chatAutoGrow(input);
+    }));
+    setTimeout(() => document.addEventListener('click', function once() {
+      pop.remove();
+      document.removeEventListener('click', once);
+    }, { once: true }), 0);
+  });
 }

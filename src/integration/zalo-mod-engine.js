@@ -93,7 +93,13 @@ export function createZaloModEngine({ dataDir, logger, runtime, getConfig, confi
                 for (const e of list) {
                     if (!e?.conversationId || !e?.messageId) continue;
                     const acc = e.accountId || 'default';
-                    const key = convKey(acc, e.conversationId);
+                    // Luồng TRỰC TIẾP ghi id nhóm kèm tiền tố `group:`, còn zalo-connect trả về id
+                    // trần — không chuẩn hoá thì CÙNG một nhóm nằm ở hai hàng hội thoại khác nhau,
+                    // và khung chat hiện nó hai lần với hai số đếm tin rời rạc. Đã gặp thật trên
+                    // production: `default|4272…` 48 tin và `default|group:4272…` 5815 tin.
+                    const rawId = String(e.conversationId);
+                    const convId = e.isGroup && !rawId.startsWith('group:') ? `group:${rawId}` : rawId;
+                    const key = convKey(acc, convId);
                     const ts = e.timestamp || Date.now();
                     rows.push({
                         id: e.messageId,

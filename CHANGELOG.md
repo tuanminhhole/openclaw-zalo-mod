@@ -1,6 +1,22 @@
 ## [Unreleased]
 
 ### Fixed
+- **★ Cùng một nhóm bị lưu dưới HAI hội thoại, nên khung chat hiện nó hai lần.** Luồng trực tiếp ghi
+  id nhóm kèm tiền tố `group:`, còn luồng lịch sử kéo từ Zalo về ghi id trần — không ai chuẩn hoá.
+  Trên production: `default|4272…` giữ 48 tin còn `default|group:4272…` giữ 5815 tin, cùng một nhóm.
+  Bản không-tiền-tố còn bị đoán nhầm thành **tin nhắn riêng**, rơi vào tab "Riêng" rồi đi tra tên
+  người — tất nhiên không ra, cuối cùng hiện uid trần.
+
+  Sửa hai đầu: nơi ghi chuẩn hoá về dạng có tiền tố, và **migration v7** gộp phần đã lỡ tách (chỉ
+  gộp khi cả hai cùng tồn tại — id trần đứng một mình có thể là DM thật). Kết quả trên William:
+  23 → 19 hội thoại, nhóm đông nhất từ 48+5815 thành **5863 tin**, hết uid trần.
+- **`getGroupName()` trả `'Nhóm'` cho id lạ chứ không trả rỗng** — nên mọi phép kiểm kiểu "có tên ⇒
+  là nhóm" đều luôn đúng và xếp cả tin nhắn riêng thành nhóm, và nhiều nhóm chưa sync tên cùng hiện
+  một chữ "Nhóm" không phân biệt được. Nay tra thẳng `groupNames`, và nhóm chưa có tên hiện
+  `Nhóm <6 số cuối>`.
+- **Uid chưa tra được tên giờ tự xếp hàng cho job đồng bộ hồ sơ nền** — nhưng phải **gọi khởi động
+  job**: nó chỉ tự chạy khi lúc nạp trang Thành viên phát hiện member thiếu trong cache, nên cache
+  đã đầy thì thứ vừa xếp hàng nằm đó vĩnh viễn.
 - **★ Khung chat trộn hộp thư của nhiều bot nên lịch sử không khớp Zalo thật.** Mỗi bot là một tài
   khoản Zalo riêng: cùng một người mang uid khác nhau ở mỗi tài khoản, và hộp thư của bot này không
   phải hộp thư của bot kia. Chế độ "Tất cả bot" gộp chung ra một danh sách **không khớp lịch sử của

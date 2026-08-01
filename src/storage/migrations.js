@@ -216,6 +216,27 @@ export const MIGRATIONS = [
             CREATE INDEX IF NOT EXISTS idx_conversations_last ON conversations(last_message_at);
         `,
     },
+    {
+        version: 7,
+        name: 'merge-split-group-conversations',
+        // Cùng một nhóm bị lưu dưới HAI id: luồng trực tiếp ghi `<account>|group:<id>`, còn luồng
+        // lịch sử kéo từ Zalo về ghi `<account>|<id>` trần. Hệ quả trên production: khung chat hiện
+        // nhóm đó hai lần, mỗi lần một số đếm tin rời rạc (48 tin và 5815 tin cho cùng một nhóm),
+        // và bản không-tiền-tố còn bị đoán nhầm thành tin nhắn riêng.
+        //
+        // Nơi ghi đã được chuẩn hoá; migration này dọn phần đã lỡ tách. Chỉ gộp khi CẢ HAI cùng tồn
+        // tại — id trần đứng một mình có thể là DM thật, không được đụng vào.
+        sql: `
+            UPDATE messages
+               SET conversation_id = replace(conversation_id, '|', '|group:')
+             WHERE conversation_id NOT LIKE '%|group:%'
+               AND replace(conversation_id, '|', '|group:') IN (SELECT id FROM conversations);
+
+            DELETE FROM conversations
+             WHERE id NOT LIKE '%|group:%'
+               AND replace(id, '|', '|group:') IN (SELECT id FROM conversations);
+        `,
+    },
 ];
 
 /**

@@ -5421,12 +5421,35 @@ Quy tắc:
                 const profCache = await readPluginDataJson('zalo-profiles-cache.json');
                 const memberDir = await readPluginDataJson('group-members.json');
 
+                const rawIdOf = (conv) => String(conv.id || '').split('|').slice(1).join('|');
+
+                /**
+                 * Kiểu hội thoại THẬT, không tin cột `type` đã lưu.
+                 *
+                 * Đã gặp trên production: Test1/Test2/Test3 là NHÓM nhưng nằm trong DB với
+                 * `type: 'dm'` — nên chúng lọt vào tab "Riêng" và đi tra tên người, tất nhiên không
+                 * ra, cuối cùng hiện uid trần. `group-names.json` được đồng bộ thẳng từ Zalo nên nó
+                 * là nguồn đáng tin hơn cột đã lưu; sửa ở tầng ĐỌC thì mọi bản ghi cũ tự đúng lại
+                 * mà không phải chạy migration.
+                 */
+                const typeOf = (conv) => {
+                    if (conv.type === 'group') return 'group';
+                    // Tra THẲNG `groupNames`, KHÔNG dùng `getGroupName()`: hàm đó trả 'Nhóm' cho id
+                    // lạ chứ không trả rỗng, nên mọi phép kiểm "có tên ⇒ là nhóm" đều luôn đúng và
+                    // xếp cả tin nhắn riêng thành nhóm.
+                    const plain = rawIdOf(conv).replace(/^group:/, '');
+                    return groupNames[plain]?.name ? 'group' : (conv.type || 'dm');
+                };
+
                 // Tên hiển thị của một hội thoại. `conversations.title` hay rỗng vì luồng ghi tin
                 // không biết tên; dựng lại ở tầng đọc từ nguồn tốt nhất đang có.
                 const titleOf = (conv) => {
                     if (conv.title) return conv.title;
-                    const raw = String(conv.id || '').split('|').slice(1).join('|');
-                    if (conv.type === 'group') return getGroupName(raw) || raw;
+                    const raw = rawIdOf(conv);
+                    // KHÔNG dùng `getGroupName()` ở đây: nó trả 'Nhóm' cho nhóm không có trong
+                    // `group-names.json` (bot đã rời, hoặc chưa sync), nên nhiều nhóm khác nhau
+                    // cùng hiện một chữ "Nhóm" — không phân biệt được cuộc nào với cuộc nào.
+                    if (typeOf(conv) === 'group') return groupNames[raw.replace(/^group:/, '')]?.name || `Nhóm ${raw.replace(/^group:/, '').slice(-6)}`;
                     if (profCache[raw]?.displayName) return profCache[raw].displayName;
                     for (const users of Object.values(memberDir)) {
                         if (users?.[raw]) return typeof users[raw] === 'string' ? users[raw] : (users[raw].name || raw);
@@ -5440,20 +5463,31 @@ Quy tắc:
                         if (c?.display_name) return c.display_name;
                     } catch { /* CRM tắt hoặc bảng rỗng */ }
                     // Cuối cùng mới lấy tên người gửi trong chính hội thoại — chỉ đúng với DM.
-                    if (conv.type === 'dm') {
+                    if (typeOf(conv) === 'dm') {
                         try {
                             const m = store.db?.prepare?.(
                                 'SELECT sender_name FROM messages WHERE conversation_id = ? AND from_self = 0 AND sender_name != \'\' ORDER BY sent_at DESC LIMIT 1',
                             ).get(conv.id);
                             if (m?.sender_name) return m.sender_name;
                         } catch { /* store rỗng */ }
+                        // Hết đường tra tại chỗ → nhờ job đồng bộ hồ sơ nền đi hỏi Zalo, để lần mở
+                        // sau có tên. Đây là những cuộc CHỈ có bot nhắn ra (vd tin kiểm thử cron):
+                        // không có tin đến thì không có tên ở bất kỳ nguồn cục bộ nào.
+                        // Chỉ xếp hàng, không gọi mạng tại đây — đường này bị polling gọi lặp.
+                        try {
+                            if (/^\d{5,}$/.test(raw)) {
+                                profileSyncQueue.add(raw);
+                                // PHẢI gọi khởi động: job chỉ tự chạy khi lúc nạp trang Thành viên
+                                // phát hiện member nhóm thiếu trong cache. Cache đã đầy thì nó không
+                                // bao giờ khởi động, và thứ vừa xếp hàng sẽ nằm đó vĩnh viễn.
+                                // Hàm này tự bảo vệ bằng cờ `isProfileSyncing` nên gọi nhiều lần vô hại.
+                                startProfileSyncJob();
+                            }
+                        } catch { /* queue/job chưa sẵn sàng */ }
                     }
                     return raw;
                 };
-                const avatarOf = (conv) => {
-                    const raw = String(conv.id || '').split('|').slice(1).join('|');
-                    return conv.type === 'dm' ? (profCache[raw]?.avatar || '') : '';
-                };
+                const avatarOf = (conv) => (typeOf(conv) === 'dm' ? (profCache[rawIdOf(conv)]?.avatar || '') : '');
 
                 // Dấu-vân-tay của toàn bộ dữ liệu chat — một truy vấn 0.01ms, rẻ hơn 48 lần so với
                 // dựng lại cả danh sách (0.48ms đo trên 7038 tin / 30 hội thoại).
@@ -5474,7 +5508,7 @@ Quy tắc:
                         conversations: rows.map(c => ({
                             id: c.id,
                             accountId: c.account_id,
-                            type: c.type,
+                            type: typeOf(c),
                             title: titleOf(c),
                             avatar: avatarOf(c),
                             lastMessageAt: Number(c.last_message_at) || 0,
@@ -5528,9 +5562,13 @@ Quy tắc:
 
                 // Lấy từ bảng `conversations` chứ không đoán theo hình dạng id: id nhóm của Zalo
                 // không phải lúc nào cũng mang tiền tố `group:`.
+                // Cùng luật với `typeOf` ở khối danh sách hội thoại: cột `type` đã lưu có thể sai
+                // (đã gặp nhóm bị ghi thành 'dm'), nên `group-names.json` được ưu tiên.
                 let isGroup = false;
                 try {
-                    isGroup = store.db?.prepare?.('SELECT type FROM conversations WHERE id = ?').get(convId)?.type === 'group';
+                    const plain = String(convId).split('|').slice(1).join('|').replace(/^group:/, '');
+                    isGroup = !!groupNames[plain]?.name
+                        || store.db?.prepare?.('SELECT type FROM conversations WHERE id = ?').get(convId)?.type === 'group';
                 } catch { /* store rỗng */ }
                 const transcript = rows.map(r => {
                     const who = r.from_self ? 'SHOP' : (r.sender_name || r.sender_id || 'KHÁCH');

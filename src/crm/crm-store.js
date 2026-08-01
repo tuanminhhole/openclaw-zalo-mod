@@ -8,6 +8,7 @@
  */
 
 import crypto from 'node:crypto';
+import { birthdayDayMonth, daysUntilBirthday, normalizeGender, normalizePhone } from './zalo-people.js';
 
 export const LEAD_STAGES = Object.freeze(['new', 'contacted', 'qualified', 'quoted', 'won', 'lost']);
 
@@ -65,23 +66,32 @@ export class CrmStore {
                 .get(accountId, zaloUid) || null;
         }
 
+        // Sync lại từ Zalo KHÔNG được ghi đè trường đã có bằng chuỗi rỗng: hồ sơ Zalo chỉ lộ sđt/ngày
+        // sinh với bot đã kết bạn, nên một lần sync từ bot khác sẽ trả về rỗng — ghi đè thì mất luôn
+        // dữ liệu import được lần trước. Rỗng nghĩa là "lần này không biết", không phải "đã bị xoá".
+        const keepIfBlank = (next, prev) => (next === undefined || next === null || next === '' ? prev : next);
+
         if (existing) {
             const merged = {
                 display_name: name,
                 avatar_url: fields.avatarUrl !== undefined ? s(fields.avatarUrl, 1000) : existing.avatar_url,
-                phone: fields.phone !== undefined ? s(fields.phone, 30) : existing.phone,
+                phone: fields.phone !== undefined ? keepIfBlank(s(normalizePhone(fields.phone), 30), existing.phone) : existing.phone,
                 friend_status: fields.friendStatus !== undefined ? s(fields.friendStatus, 20) : existing.friend_status,
                 source: fields.source !== undefined ? s(fields.source) : existing.source,
                 owner: fields.owner !== undefined ? s(fields.owner) : existing.owner,
                 consent: fields.consent !== undefined ? s(fields.consent, 20) : existing.consent,
                 notes: fields.notes !== undefined ? s(fields.notes, MAX_NOTES) : existing.notes,
                 last_contact_at: fields.lastContactAt !== undefined ? num(fields.lastContactAt) : existing.last_contact_at,
+                gender: fields.gender !== undefined ? keepIfBlank(normalizeGender(fields.gender), existing.gender) : existing.gender,
+                birthday: fields.birthday !== undefined ? keepIfBlank(s(fields.birthday, 40), existing.birthday) : existing.birthday,
+                is_friend: fields.isFriend !== undefined ? (fields.isFriend ? 1 : 0) : existing.is_friend,
             };
             this.db.prepare(`UPDATE contacts SET display_name=?, avatar_url=?, phone=?, friend_status=?,
-                source=?, owner=?, consent=?, notes=?, last_contact_at=?, updated_at=? WHERE id=?`)
+                source=?, owner=?, consent=?, notes=?, last_contact_at=?, gender=?, birthday=?, is_friend=?,
+                updated_at=? WHERE id=?`)
                 .run(merged.display_name, merged.avatar_url, merged.phone, merged.friend_status,
                     merged.source, merged.owner, merged.consent, merged.notes, merged.last_contact_at,
-                    now, existing.id);
+                    merged.gender, merged.birthday, merged.is_friend, now, existing.id);
             this._audit(actor, 'contact.update', existing.id, name);
             return this.getContact(existing.id);
         }
@@ -89,11 +99,12 @@ export class CrmStore {
         const id = crypto.randomUUID();
         this.db.prepare(`INSERT INTO contacts
             (id, account_id, zalo_uid, display_name, avatar_url, phone, friend_status, source, owner,
-             consent, notes, first_contact_at, last_contact_at, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-            .run(id, accountId, zaloUid, name, s(fields.avatarUrl, 1000), s(fields.phone, 30),
+             consent, notes, gender, birthday, is_friend, first_contact_at, last_contact_at, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+            .run(id, accountId, zaloUid, name, s(fields.avatarUrl, 1000), s(normalizePhone(fields.phone), 30) || null,
                 s(fields.friendStatus, 20) || 'unknown', s(fields.source), s(fields.owner),
                 s(fields.consent, 20) || 'unknown', s(fields.notes, MAX_NOTES) || '',
+                normalizeGender(fields.gender), s(fields.birthday, 40) || null, fields.isFriend ? 1 : 0,
                 num(fields.firstContactAt, now), num(fields.lastContactAt, now), now, now);
         this._audit(actor, 'contact.create', id, name);
         return this.getContact(id);
@@ -181,17 +192,49 @@ export class CrmStore {
         // mở được lịch sử chat, không biết ở nhóm nào.
         if (opts.linked === 'only') where.push('zalo_uid IS NOT NULL');
         if (opts.linked === 'none') where.push('zalo_uid IS NULL');
+        if (opts.gender === 'male' || opts.gender === 'female') { where.push('gender = ?'); params.push(opts.gender); }
+        if (opts.friend === 'only') where.push('is_friend = 1');
+        if (opts.friend === 'none') where.push('(is_friend IS NULL OR is_friend = 0)');
         const cond = where.length ? `WHERE ${where.join(' AND ')}` : '';
+
+        // "Sinh nhật trong N ngày tới" phải lọc TRONG JS, không phải SQL: `birthday` là chuỗi thô của
+        // Zalo (nhiều định dạng, có cái thiếu năm), và khoảng ngày còn phải vòng qua giao thừa. Nhét
+        // vào SQL thì hoặc sai, hoặc phải chuẩn hoá lúc ghi — mà chuẩn hoá lúc ghi sẽ nuốt mất những
+        // chuỗi không parse được. Đổi lại phải đọc hết rồi mới cắt trang, nên chỉ làm khi có lọc này.
+        const withinDays = num(opts.birthdayWithin, null);
+        if (withinDays != null && withinDays >= 0) {
+            const today = opts.today instanceof Date ? opts.today : new Date(this._now());
+            const all = this.db.prepare(`SELECT * FROM contacts ${cond} ORDER BY updated_at DESC`).all(...params);
+            const matched = [];
+            for (const r of all) {
+                const days = daysUntilBirthday(birthdayDayMonth(r.birthday), today);
+                if (days == null || days > withinDays) continue;
+                r.birthdayInDays = days;
+                matched.push(r);
+            }
+            // Sắp theo sinh nhật gần nhất — đây là thứ duy nhất owner cần khi mở bộ lọc này.
+            matched.sort((a, b) => a.birthdayInDays - b.birthdayInDays);
+            const page = matched.slice(offset, offset + limit);
+            this._hydrate(page);
+            return { contacts: page, total: matched.length, limit, offset };
+        }
+
         const rows = this.db.prepare(
             `SELECT * FROM contacts ${cond} ORDER BY updated_at DESC LIMIT ? OFFSET ?`)
             .all(...params, limit, offset);
         const total = this.db.prepare(`SELECT COUNT(*) AS n FROM contacts ${cond}`).all(...params)[0].n;
+        this._hydrate(rows);
+        return { contacts: rows, total, limit, offset };
+    }
+
+    /** Gắn tags + groups cho một trang contact (dùng chung cho mọi nhánh lọc). */
+    _hydrate(rows) {
         const tagStmt = this.db.prepare('SELECT tag FROM contact_tags WHERE contact_id = ? ORDER BY tag');
         for (const r of rows) {
             r.tags = tagStmt.all(r.id).map(t => t.tag);
             r.groups = this.listContactGroups(r.id);
         }
-        return { contacts: rows, total, limit, offset };
+        return rows;
     }
 
     setContactTags(contactId, tags, actor = 'system') {
@@ -235,6 +278,13 @@ export class CrmStore {
                 avatarUrl: m.avatar,
                 source: m.source || 'zalo-group',
                 lastContactAt: m.lastSeen,
+                // Bốn trường này là lý do tồn tại của bản import mới: trước đây khách nhập vào CRM chỉ
+                // có tên + avatar, nên mọi bộ lọc đều lọc trên bảng trống. `upsertContact` bỏ qua
+                // undefined và không ghi đè bằng rỗng, nên sync lại từ bot chưa kết bạn không xoá mất.
+                phone: m.phone,
+                birthday: m.birthday,
+                gender: m.gender,
+                isFriend: m.isFriend,
             }, actor);
             if (before) updated++; else created++;
             if (Array.isArray(m.groups) && m.groups.length) {

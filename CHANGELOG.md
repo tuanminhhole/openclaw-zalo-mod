@@ -1,3 +1,54 @@
+## [Unreleased]
+
+### Added
+- **★ Khách hàng import từ Zalo giờ CÓ sđt · ngày sinh · giới tính · cờ đã-kết-bạn (CRM lớp 1).**
+  Owner nói CRM *"vẫn là demo không có giá trị"*. Đối chiếu với một CRM Zalo khác cho thấy sự thật
+  ngược với giả định: CRM của họ **mỏng hơn** (không có deal/pipeline/task), nhưng **trông** hữu ích
+  vì danh sách của họ tự đầy và giàu trường — lọc theo giới tính, sinh nhật, lần tương tác cuối.
+  Của mình thì đủ tính năng mà bảng `contacts` chỉ có tên + avatar. *Danh sách nghèo trường thì bộ
+  lọc nào cũng lọc trên bảng trống.*
+
+  Chỗ đau nhất: **dữ liệu đã có sẵn từ lâu, chỉ chưa có đường nối**. `zalo-profiles-cache.json` (job
+  sync nền ghi) vẫn giữ `sdob` + `phoneNumber` cho từng uid, còn `get-friends` biết ai đã kết bạn.
+  Nhưng bản import cũ gom danh sách ở **trình duyệt** từ `state.members` — nơi chỉ có tên và avatar,
+  vì hồ sơ giàu trường nằm ở đĩa của gateway. Nay việc gộp chạy **phía server** (`crm-zalo-people` +
+  `crm-import-zalo`), lấy đủ ba nguồn.
+- **Migration v4**: `contacts` thêm `gender`, `birthday`, `is_friend`. `birthday` để **chuỗi thô**
+  đúng như Zalo trả: định dạng của họ không đảm bảo, ép kiểu lúc ghi sẽ nuốt mất dữ liệu không parse
+  được — chuẩn hoá ở tầng đọc thay vì tầng ghi.
+- **Bộ lọc mới trên trang Khách hàng**: kết bạn (đã/chưa), giới tính, và **🎂 sinh nhật hôm nay /
+  7 ngày / 30 ngày tới** — sắp theo ngày gần nhất, thẻ ghi rõ *"còn N ngày"*. Cột "Hồ sơ" hiện ngày
+  sinh + giới tính; ai đã kết bạn có nhãn `bạn bè` cạnh tên.
+- **Bạn bè KHÔNG ở nhóm nào cũng vào danh sách** (`source: zalo-friend`). Bản cũ chỉ quét member
+  nhóm nên bỏ sót trọn nhóm khách chỉ nhắn riêng.
+- **Hộp xác nhận import nói trước sẽ nhập được bao nhiêu TRƯỜNG**, không chỉ bao nhiêu người: hồ sơ
+  đồng bộ dần ở nền và chỉ lộ với bot đã kết bạn, nên import sớm sẽ ra danh sách nghèo trường mà
+  owner không hiểu vì sao.
+
+### Fixed
+- **Sync lại từ Zalo không còn xoá dữ liệu đã có.** Zalo chỉ lộ sđt/ngày sinh với bot **đã kết bạn**,
+  nên cùng một người, bot khác đọc ra rỗng. Ghi đè bằng rỗng thì một lần sync sai làm mất luôn dữ
+  liệu import được lần trước. Nay rỗng nghĩa là *"lần này không biết"*, không phải *"đã bị xoá"*.
+  Tương tự, `get-friends` hỏng → cờ bạn bè giữ nguyên chứ không bị đặt hết thành "chưa kết bạn"
+  (phân biệt `null` = không biết với `[]` = biết và không có ai).
+- **Giới tính không còn mất một nửa số hồ sơ.** Zalo mã hoá nam = `0`, mà `0` là falsy nên
+  `acc.gender || f.gender` vứt sạch hồ sơ nam. Job sync nền giờ kiểm tra tường minh.
+- **Bốn bộ lọc không còn xếp thành tường dọc.** Luật chung `input, select, textarea { width: 100%;
+  min-height: 40px }` khiến mỗi ô chiếm trọn một dòng — cùng loại bẫy với `.btn { min-height: 38px }`
+  ở 2.22.1. Phải ghi đè cả `width` lẫn `min-height`; dưới 768px thì 4 ô thành lưới 2×2.
+
+### Notes
+- 264 test xanh (thêm 19: 12 cho bộ gộp nguồn — chuẩn hoá sđt/giới tính, parse ngày sinh nhiều định
+  dạng, đếm ngày qua giao thừa và 29/02, gộp uid có hậu tố `_0`, bạn-bè-ngoài-nhóm, `null` vs `[]`;
+  7 cho store — giữ trường khi sync rỗng, import mang đủ trường, lọc giới tính/bạn bè/sinh nhật kèm
+  phân trang). Kiểm trên trình duyệt thật ở cả desktop và mobile 375px: import 6 người, 4 có sđt,
+  2 có ngày sinh, lọc từng trục và cộng dồn, không tràn ngang.
+- Dev server `tests/helpers/ui-dev-server.mjs` được dạy hai action mới kèm fixture hồ sơ **thiếu
+  trường có chủ ý** — nếu không, nút Import sẽ vỡ trong dev mà vẫn chạy trên production.
+- **Bài học:** một tính năng đủ chức năng vẫn vô dụng nếu dữ liệu của nó nghèo trường. Và trước khi
+  đi port tính năng của đối thủ, hãy hỏi *"cái làm nó trông hữu ích là tính năng hay là dữ liệu?"* —
+  ở đây là dữ liệu, và toàn bộ dữ liệu đó đã nằm sẵn trên đĩa từ nhiều bản trước.
+
 ## [2.27.0] - 2026-08-01
 
 ### Changed

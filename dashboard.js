@@ -4420,7 +4420,7 @@ window.addEventListener('resize', () => {
 
 const crmState = {
   contacts: null, contactsTotal: 0, contactsPage: 1, contactsSearch: '', contactsTag: '',
-  contactsGroup: '', contactsLinked: '',
+  contactsGroup: '', contactsLinked: '', contactsGender: '', contactsFriend: '', contactsBirthday: '',
   pipeline: null, tasks: null, taskFilter: 'open', undoLead: null,
 };
 const CRM_PAGE_SIZE = 50;
@@ -4495,6 +4495,9 @@ async function renderCrmContacts() {
       tag: crmState.contactsTag || undefined,
       groupId: crmState.contactsGroup || undefined,
       linked: crmState.contactsLinked || undefined,
+      gender: crmState.contactsGender || undefined,
+      friend: crmState.contactsFriend || undefined,
+      birthdayWithin: crmState.contactsBirthday ? Number(crmState.contactsBirthday) : undefined,
       limit: CRM_PAGE_SIZE,
       offset: (crmState.contactsPage - 1) * CRM_PAGE_SIZE,
     });
@@ -4504,6 +4507,32 @@ async function renderCrmContacts() {
   } catch (err) {
     crmErrorCard(body, err, renderCrmContacts);
   }
+}
+
+/**
+ * Ngày sinh thô của Zalo (`sdob`) → `DD/MM` để đọc.
+ *
+ * Không parse được thì trả nguyên chuỗi thay vì `—`: hồ sơ ghi "tháng 5" vẫn là thông tin,
+ * nuốt đi thì owner tưởng hệ thống không có gì.
+ */
+function crmBirthdayLabel(raw) {
+  if (!raw) return '';
+  const str = String(raw).trim();
+  const iso = /^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/.exec(str);
+  if (iso) return `${String(iso[3]).padStart(2, '0')}/${String(iso[2]).padStart(2, '0')}`;
+  const vn = /^(\d{1,2})[-/](\d{1,2})(?:[-/]\d{2,4})?$/.exec(str);
+  if (vn) {
+    let d = Number(vn[1]), m = Number(vn[2]);
+    if (m > 12 && d <= 12) [d, m] = [m, d];
+    if (m >= 1 && m <= 12 && d >= 1 && d <= 31) return `${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}`;
+  }
+  return str;
+}
+
+function crmGenderLabel(g) {
+  if (g === 'male') return t('Nam', 'Male');
+  if (g === 'female') return t('Nữ', 'Female');
+  return '';
 }
 
 function crmRenderContactsTable(body) {
@@ -4517,7 +4546,10 @@ function crmRenderContactsTable(body) {
             ? `<img src="${crmEsc(c.avatar_url)}" alt="" style="width:32px;height:32px;border-radius:50%;object-fit:cover">`
             : `<span style="width:32px;height:32px;border-radius:50%;background:var(--primary-soft);color:var(--primary-deep);display:inline-flex;align-items:center;justify-content:center;font-weight:600">${crmEsc((c.display_name || '?')[0].toUpperCase())}</span>`}
           <div style="min-width:0">
-            <div style="font-weight:600">${crmEsc(c.display_name)}</div>
+            <div style="font-weight:600">${crmEsc(c.display_name)}${c.is_friend
+              ? ` <span class="chip" title="${t('Đã kết bạn Zalo — nhắn riêng được', 'Zalo friend — can DM')}"
+                  style="font-size:10px;background:rgba(52,211,153,.16);vertical-align:middle">${t('bạn bè', 'friend')}</span>`
+              : ''}</div>
             ${/* Nói rõ khách nào CHƯA nối được với người Zalo — đó là khách không mở được lịch sử
                   chat, tức phần dữ liệu vẫn là sổ tay gõ tay. */''}
             <div style="color:var(--muted);font-size:12px">${c.zalo_uid
@@ -4531,6 +4563,18 @@ function crmRenderContactsTable(body) {
         </div>
       </td>
       <td>${crmEsc(c.phone || '—')}</td>
+      ${/* Cột hồ sơ: ngày sinh + giới tính. Đây là hai trường khiến danh sách "đầy" và lọc được —
+            trước 2.28 chúng không tồn tại nên mọi bộ lọc đều lọc trên bảng trống. */''}
+      <td style="white-space:nowrap">${(() => {
+        const bd = crmBirthdayLabel(c.birthday);
+        const g = crmGenderLabel(c.gender);
+        if (!bd && !g) return '<span style="color:var(--muted)">—</span>';
+        const soon = c.birthdayInDays != null && c.birthdayInDays <= 30
+          ? `<span style="color:var(--primary-deep);font-size:11px"> · ${c.birthdayInDays === 0
+              ? t('hôm nay!', 'today!') : t(`còn ${c.birthdayInDays} ngày`, `in ${c.birthdayInDays}d`)}</span>`
+          : '';
+        return `${bd ? `🎂 ${crmEsc(bd)}${soon}` : ''}${bd && g ? '<br>' : ''}${g ? `<span style="color:var(--muted);font-size:12px">${crmEsc(g)}</span>` : ''}`;
+      })()}</td>
       <td><div class="chips">${(c.tags || []).map(tag =>
         `<span class="chip" data-crm-tag="${crmEsc(tag)}" style="cursor:pointer">${crmEsc(tag)}</span>`).join('') || '—'}</div></td>
       <td>${crmEsc(c.source || '—')}</td>
@@ -4547,10 +4591,28 @@ function crmRenderContactsTable(body) {
       ${crmState.contactsTag ? `<span class="chip" id="crmTagClear" style="cursor:pointer">🏷 ${crmEsc(crmState.contactsTag)} ✕</span>` : ''}
       ${crmState.contactsGroup ? `<span class="chip" id="crmGroupClear" style="cursor:pointer;background:rgba(96,165,250,.16)">👥 ${crmEsc(
         (state.groups || []).find(g => g.groupId === crmState.contactsGroup)?.name || crmState.contactsGroup)} ✕</span>` : ''}
-      <select id="crmLinkedFilter" style="padding:6px 9px;border-radius:8px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font-size:12.5px">
+      <select id="crmLinkedFilter" class="crm-filter-select">
         <option value="">${t('Nối Zalo: tất cả', 'Zalo link: all')}</option>
         <option value="only" ${crmState.contactsLinked === 'only' ? 'selected' : ''}>${t('Đã nối Zalo', 'Linked')}</option>
         <option value="none" ${crmState.contactsLinked === 'none' ? 'selected' : ''}>${t('Chưa nối Zalo', 'Not linked')}</option>
+      </select>
+      <select id="crmFriendFilter" class="crm-filter-select">
+        <option value="">${t('Kết bạn: tất cả', 'Friend: all')}</option>
+        <option value="only" ${crmState.contactsFriend === 'only' ? 'selected' : ''}>${t('Đã kết bạn', 'Friends')}</option>
+        <option value="none" ${crmState.contactsFriend === 'none' ? 'selected' : ''}>${t('Chưa kết bạn', 'Not friends')}</option>
+      </select>
+      <select id="crmGenderFilter" class="crm-filter-select">
+        <option value="">${t('Giới tính: tất cả', 'Gender: all')}</option>
+        <option value="male" ${crmState.contactsGender === 'male' ? 'selected' : ''}>${t('Nam', 'Male')}</option>
+        <option value="female" ${crmState.contactsGender === 'female' ? 'selected' : ''}>${t('Nữ', 'Female')}</option>
+      </select>
+      ${/* Sinh nhật sắp tới là lý do chính owner mở CRM ra hằng tuần — để nó ngay trên thanh lọc,
+            không giấu trong menu. */''}
+      <select id="crmBirthdayFilter" class="crm-filter-select">
+        <option value="">${t('Sinh nhật: tất cả', 'Birthday: all')}</option>
+        <option value="0" ${crmState.contactsBirthday === '0' ? 'selected' : ''}>🎂 ${t('Hôm nay', 'Today')}</option>
+        <option value="7" ${crmState.contactsBirthday === '7' ? 'selected' : ''}>🎂 ${t('7 ngày tới', 'Next 7 days')}</option>
+        <option value="30" ${crmState.contactsBirthday === '30' ? 'selected' : ''}>🎂 ${t('30 ngày tới', 'Next 30 days')}</option>
       </select>
       <span style="margin-left:auto;color:var(--muted);font-size:13px">${t(`${crmState.contactsTotal} khách`, `${crmState.contactsTotal} contacts`)}</span>
     </div>
@@ -4559,10 +4621,11 @@ function crmRenderContactsTable(body) {
         <table>
           <thead><tr>
             <th>${t('Khách hàng', 'Contact')}</th><th>${t('SĐT', 'Phone')}</th>
+            <th>${t('Hồ sơ', 'Profile')}</th>
             <th>Tags</th><th>${t('Nguồn', 'Source')}</th>
             <th>${t('Tương tác cuối', 'Last contact')}</th><th></th>
           </tr></thead>
-          <tbody>${rowsHtml || `<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:28px">${t('Chưa có khách hàng. Bấm "Import từ Zalo" hoặc "+ Thêm khách".', 'No contacts yet. Use "Import from Zalo" or "+ Add contact".')}</td></tr>`}</tbody>
+          <tbody>${rowsHtml || `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:28px">${t('Chưa có khách hàng. Bấm "Import từ Zalo" hoặc "+ Thêm khách".', 'No contacts yet. Use "Import from Zalo" or "+ Add contact".')}</td></tr>`}</tbody>
         </table>
       </div>
       ${totalPages > 1 ? `<div class="crm-pager">
@@ -4590,11 +4653,15 @@ function crmRenderContactsTable(body) {
     crmState.contactsPage = 1;
     renderCrmContacts();
   });
-  body.querySelector('#crmLinkedFilter')?.addEventListener('change', (e) => {
-    crmState.contactsLinked = e.target.value;
-    crmState.contactsPage = 1;
+  const bindFilter = (id, key) => body.querySelector(id)?.addEventListener('change', (e) => {
+    crmState[key] = e.target.value;
+    crmState.contactsPage = 1;   // đổi bộ lọc mà giữ nguyên trang 5 thì ra danh sách trống
     renderCrmContacts();
   });
+  bindFilter('#crmLinkedFilter', 'contactsLinked');
+  bindFilter('#crmFriendFilter', 'contactsFriend');
+  bindFilter('#crmGenderFilter', 'contactsGender');
+  bindFilter('#crmBirthdayFilter', 'contactsBirthday');
   body.querySelector('#crmPrevPage')?.addEventListener('click', () => { crmState.contactsPage--; renderCrmContacts(); });
   body.querySelector('#crmNextPage')?.addEventListener('click', () => { crmState.contactsPage++; renderCrmContacts(); });
   body.querySelectorAll('[data-crm-tag]').forEach(el => el.addEventListener('click', () => {
@@ -4735,17 +4802,6 @@ async function crmContactModal(contact) {
 //
 // Hiển thị theo TÊN nhưng lưu `uid`: tên Zalo trùng nhau và đổi được, nối theo tên sẽ sai âm thầm.
 
-/** Các nhóm mà một uid đang có mặt, lấy từ state.members. */
-function crmPersonGroups(uid) {
-  const membersMap = (state && state.members) || {};
-  const out = [];
-  for (const groupId of Object.keys(membersMap)) {
-    if (!membersMap[groupId]?.[uid]) continue;
-    out.push({ groupId, name: (state.groups || []).find(g => g.groupId === groupId)?.name || groupId });
-  }
-  return out;
-}
-
 /** Gộp member mọi nhóm thành danh sách người, kèm các nhóm họ đang ở. */
 function crmZaloPeople() {
   const membersMap = (state && state.members) || {};
@@ -4822,40 +4878,55 @@ function crmGroupSelect(id, current = '') {
   </select>`;
 }
 
+/**
+ * Import người Zalo vào CRM — việc gộp chạy PHÍA SERVER.
+ *
+ * Bản cũ gom danh sách ở đây từ `state.members`, nên mỗi khách chỉ có tên + avatar: sđt và ngày
+ * sinh nằm trong `zalo-profiles-cache.json` ở đĩa của gateway, trình duyệt không thấy. Kết quả là
+ * CRM đầy bản ghi trống trường, và mọi bộ lọc đều lọc trên bảng trống — đúng thứ khiến nó "không
+ * có giá trị". Nay hỏi server một nhịp để xem trước sẽ nhập gì, rồi bảo server tự nhập.
+ */
 async function crmImportFromZalo() {
-  const membersMap = (state && state.members) || {};
-  const seen = new Map();
-  for (const groupId of Object.keys(membersMap)) {
-    for (const [uid, raw] of Object.entries(membersMap[groupId] || {})) {
-      if (!uid || seen.has(uid)) continue;
-      const name = raw?.name || raw?.displayName || raw?.dName || raw?.zaloName || '';
-      if (!name) continue;
-      seen.set(uid, {
-        uid,
-        name,
-        avatar: raw?.avatar || raw?.avatarUrl || raw?.avatar_url || raw?.photo || '',
-        source: 'zalo-group',
-        // Nối luôn nhóm — trước đây import xong khách nằm rời, không biết đến từ nhóm nào, nên CRM
-        // không dùng được chính dữ liệu bot đã có.
-        groups: crmPersonGroups(uid),
-      });
-    }
-  }
-  const members = [...seen.values()];
-  if (!members.length) {
-    showToast(t('Chưa có member nào trong state — mở trang Thành viên để sync trước.',
-      'No members in state — open the Members page to sync first.'), 'error');
+  let preview;
+  try {
+    preview = await crmAction('crm-zalo-people');
+  } catch (err) { showToast(err.message, 'error'); return; }
+
+  if (!preview.total) {
+    showToast(t('Chưa có member nào để import — mở trang Thành viên để sync trước.',
+      'No members to import — open the Members page to sync first.'), 'error');
     return;
   }
+
+  // Nói rõ SẼ NHẬP ĐƯỢC BAO NHIÊU TRƯỜNG, không chỉ bao nhiêu người: hồ sơ đồng bộ dần ở nền, nên
+  // import sớm sẽ ra danh sách nghèo trường mà owner không hiểu vì sao.
+  const lines = [
+    t(`${preview.total} người (đã có thì cập nhật, không nhân đôi).`,
+      `${preview.total} people (existing ones are updated, no duplicates).`),
+    t(`Kèm sđt: ${preview.withPhone} · kèm ngày sinh: ${preview.withBirthday}`,
+      `With phone: ${preview.withPhone} · with birthday: ${preview.withBirthday}`),
+  ];
+  if (preview.friendsKnown) {
+    lines.push(t(`Đã kết bạn: ${preview.friends}`, `Friends: ${preview.friends}`));
+  } else {
+    lines.push(t('⚠️ Không đọc được danh sách bạn bè lần này — cờ "đã kết bạn" sẽ giữ nguyên như cũ.',
+      '⚠️ Could not read the friend list this time — existing "friend" flags are kept as-is.'));
+  }
+  if (preview.withPhone === 0 && preview.withBirthday === 0) {
+    lines.push(t('Hồ sơ chi tiết đồng bộ dần ở nền và chỉ hiện với bot đã kết bạn — import lại sau sẽ đầy thêm.',
+      'Detailed profiles sync in the background and only appear for befriended bots — re-import later to fill in more.'));
+  }
+
+  // Dùng `body` (HTML) chứ không nhồi `\n` vào `desc`: `desc` gán bằng `textContent` nên xuống dòng
+  // sẽ bị nuốt, cả khối dính thành một câu dài không ai đọc.
   const ok = await openModal({
-    title: t('Import member Zalo vào CRM', 'Import Zalo members into CRM'),
-    desc: t(`Sẽ import ${members.length} member (đã có thì cập nhật, không nhân đôi).`,
-      `Will import ${members.length} members (existing ones are updated, no duplicates).`),
+    title: t('Import người Zalo vào CRM', 'Import Zalo people into CRM'),
+    body: `<ul style="margin:0;padding-left:18px;line-height:1.7">${lines.map(l => `<li>${crmEsc(l)}</li>`).join('')}</ul>`,
     confirmText: 'Import',
   });
   if (!ok) return;
   try {
-    const res = await crmAction('crm-contacts-import', { members });
+    const res = await crmAction('crm-import-zalo');
     showToast(t(`Import xong: ${res.created} mới, ${res.updated} cập nhật`,
       `Imported: ${res.created} new, ${res.updated} updated`), 'success');
     renderCrmContacts();

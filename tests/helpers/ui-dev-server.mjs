@@ -18,6 +18,7 @@ import { fileURLToPath } from 'node:url';
 import { openStore } from '../../src/storage/database.js';
 import { CrmStore } from '../../src/crm/crm-store.js';
 import { handleCrmAction } from '../../src/crm/crm-api.js';
+import { buildZaloPeople } from '../../src/crm/zalo-people.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const PORT = Number(process.argv[2]) || 19791;
@@ -107,6 +108,28 @@ const STATE_STUB = {
     totals: { groups: 0, members: 0, warnings: 0, violations: 0 },
 };
 
+// Bản sao `zalo-profiles-cache.json` — thứ mà bản thật đọc từ đĩa gateway. Cố ý KHÔNG cho mọi
+// người đủ trường: hồ sơ Zalo chỉ lộ sđt/ngày sinh với bot đã kết bạn, nên UI phải trông tử tế
+// cả với người trống trường. Ngày sinh trải nhiều định dạng + một cái sắp tới để thử bộ lọc.
+const nextWeek = new Date(Date.now() + 5 * 86400000);
+const DEV_PROFILE_CACHE = {
+    'uid-1001': {
+        userId: 'uid-1001', displayName: 'Nguyễn Văn An', avatar: '',
+        sdob: '1990-05-17', phoneNumber: '+84901234567', gender: 0,
+    },
+    'uid-1002': {
+        userId: 'uid-1002', displayName: 'Trần Thị Bích', avatar: '',
+        // Sinh nhật trong 5 ngày tới → thử được bộ lọc "7 ngày tới" ngay khi mở trang.
+        sdob: `${String(nextWeek.getDate()).padStart(2, '0')}/${String(nextWeek.getMonth() + 1).padStart(2, '0')}/1995`,
+        phoneNumber: '0912345678', gender: 1,
+    },
+    'uid-1003': { userId: 'uid-1003', displayName: 'Lê Minh Châu', phoneNumber: '84987654321' },
+    // uid-1004 và uid-2001 KHÔNG có hồ sơ → phải hiện "—" chứ không được vỡ.
+    'uid-9001': { userId: 'uid-9001', displayName: 'Bạn chỉ nhắn riêng', phoneNumber: '0977000111', gender: 0 },
+};
+// Bạn bè: có một người KHÔNG ở nhóm nào (uid-9001) để thử nhánh gộp bạn-bè-ngoài-nhóm.
+const DEV_FRIEND_IDS = ['uid-1001', 'uid-9001'];
+
 const MIME = {
     '.html': 'text/html; charset=utf-8',
     '.js': 'text/javascript; charset=utf-8',
@@ -140,6 +163,28 @@ const server = http.createServer(async (req, res) => {
             try { body = JSON.parse(raw || '{}'); } catch { }
             const action = String(body.action || '').trim();
             console.log(`[dev] action: ${action}`);
+            // Hai action này ở bản thật nằm trong index.js (phải đọc file phía server), không nằm
+            // trong crm-api.js. Dựng lại đúng đường đi đó ở đây, nếu không nút "Import từ Zalo" sẽ
+            // vỡ trong dev mà vẫn chạy trên production — kiểu lệch harness khó chịu nhất.
+            if (action === 'crm-zalo-people' || action === 'crm-import-zalo') {
+                const people = buildZaloPeople({
+                    memberDir: STATE_STUB.members,
+                    profileCache: DEV_PROFILE_CACHE,
+                    friendIds: DEV_FRIEND_IDS,
+                    groupNameOf: (gid) => STATE_STUB.groups.find(g => g.groupId === gid)?.name || gid,
+                });
+                const stats = {
+                    total: people.length,
+                    withPhone: people.filter(p => p.phone).length,
+                    withBirthday: people.filter(p => p.birthday).length,
+                    friendsKnown: true,
+                    friends: people.filter(p => p.isFriend).length,
+                };
+                const result = action === 'crm-zalo-people'
+                    ? { ...stats, people: people.slice(0, 500) }
+                    : { ...crm.importMembers(people, 'default', 'dev-ui'), ...stats };
+                return send(res, 200, { ok: true, result, state: STATE_STUB });
+            }
             if (action.startsWith('crm-')) {
                 const r = handleCrmAction(crm, action, body.payload || {}, 'dev-ui');
                 if (!r.body.ok) return send(res, r.status, { ok: false, error: r.body.error });

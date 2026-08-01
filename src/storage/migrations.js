@@ -152,6 +152,26 @@ export const MIGRATIONS = [
             CREATE INDEX IF NOT EXISTS idx_tasks_group ON tasks(group_id);
         `,
     },
+    {
+        version: 4,
+        name: 'crm-contact-profile-fields',
+        // CRM v3 nối được khách với nhóm, nhưng bản ghi vẫn NGHÈO: chỉ tên + avatar + sđt gõ tay. Danh
+        // sách nghèo trường thì lọc kiểu gì cũng vô nghĩa — đó là lý do CRM "trông không hữu ích" dù đã
+        // có pipeline và task.
+        //
+        // Ba trường này KHÔNG phải gõ tay: `zalo-profiles-cache.json` (job sync nền) đã giữ sẵn ngày
+        // sinh + sđt cho từng uid, và danh sách bạn bè cho biết ai đã kết bạn. Chỉ thiếu đường nối.
+        //
+        // `birthday` để TEXT thô đúng như Zalo trả (`sdob`) thay vì ép sang INTEGER: định dạng của Zalo
+        // không đảm bảo, ép kiểu lúc ghi sẽ nuốt mất dữ liệu không parse được. Chuẩn hoá ở tầng đọc.
+        // `gender` cũng TEXT ('male'/'female'/null) — số 0/1 của Zalo không tự giải thích được.
+        sql: `
+            ALTER TABLE contacts ADD COLUMN gender TEXT;
+            ALTER TABLE contacts ADD COLUMN birthday TEXT;
+            ALTER TABLE contacts ADD COLUMN is_friend INTEGER DEFAULT 0;
+            CREATE INDEX IF NOT EXISTS idx_contacts_is_friend ON contacts(is_friend);
+        `,
+    },
 ];
 
 /**

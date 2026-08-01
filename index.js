@@ -27,6 +27,7 @@ import { fileURLToPath } from 'node:url';
 import { definePluginEntry } from 'openclaw/plugin-sdk/plugin-entry';
 import { createZaloModEngine } from './src/integration/zalo-mod-engine.js';
 import { handleCrmAction } from './src/crm/crm-api.js';
+import { buildZaloPeople } from './src/crm/zalo-people.js';
 import { createZcaFacade } from './src/integration/zca-facade.js';
 import { ReplyMentionCorrelator } from './src/messaging/reply-mention-correlator.js';
 import { matchesOwnerClaimDeviceId } from './src/integration/owner-claim.js';
@@ -5324,6 +5325,44 @@ Quy tắc:
                 return { sent: true, targetId, messageId: result?.messageId };
             }
 
+            // ── CRM: nguồn người Zalo giàu trường ──
+            //
+            // Hai action này KHÔNG nằm trong crm-api.js vì chúng phải đọc file phía server
+            // (`group-members.json`, `zalo-profiles-cache.json`) — crm-api.js cố ý thuần, không dính
+            // I/O, để test được mà không dựng server. Việc gộp nằm ở `buildZaloPeople` (cũng thuần),
+            // ở đây chỉ còn đọc file rồi truyền vào.
+            //
+            // Vì sao import chạy phía SERVER thay vì trình duyệt gom rồi POST lên: hồ sơ giàu trường
+            // nằm ở đĩa của gateway, `state.members` bên trình duyệt chỉ có tên + avatar. Bản import
+            // cũ gom ở trình duyệt nên mọi khách nhập vào CRM đều trống sđt và ngày sinh.
+            if (action === 'crm-zalo-people' || action === 'crm-import-zalo') {
+                if (!zEngine?.crm) throw new Error('CRM cần SQLite (Node >= 22.5). Storage hiện tại: in-memory.');
+                const memberDir = await readPluginDataJson('group-members.json');
+                const profileCache = await readPluginDataJson('zalo-profiles-cache.json');
+                let friendIds = null;
+                try {
+                    friendIds = extractFriendList(await runDashboardZcaAction('get-friends', {}))
+                        .map(f => String(f.id || '')).filter(Boolean);
+                } catch (_) {
+                    // Giữ `null` = "không biết ai là bạn". Đổi thành `[]` thì một lần Zalo lỗi sẽ xoá
+                    // sạch cờ bạn bè của mọi khách đã import trước đó.
+                }
+                const people = buildZaloPeople({
+                    memberDir, profileCache, friendIds,
+                    groupNameOf: (gid) => getGroupName(gid),
+                });
+                const stats = {
+                    total: people.length,
+                    withPhone: people.filter(p => p.phone).length,
+                    withBirthday: people.filter(p => p.birthday).length,
+                    friendsKnown: friendIds != null,
+                    friends: friendIds != null ? people.filter(p => p.isFriend).length : null,
+                };
+                if (action === 'crm-zalo-people') return { ...stats, people: people.slice(0, 500) };
+                const res = zEngine.crm.importMembers(people, payload.accountId || 'default', 'dashboard');
+                return { ...res, ...stats };
+            }
+
             // ── CRM actions (crm-*) → src/crm/crm-api.js ──
             if (action.startsWith('crm-')) {
                 const res = handleCrmAction(zEngine?.crm ?? null, action, payload, 'dashboard');
@@ -5401,7 +5440,7 @@ Quy tắc:
                     // ĐA-AGENT: thử TỪNG bot; sđt/ngày sinh chỉ hiện với bot đã KẾT BẠN → gộp field, bot nào có thì lấy.
                     const _bots = await getZaloBots().catch(() => []);
                     const profiles = (_bots && _bots.length ? _bots.map(b => b.profile) : ['default']).filter(Boolean);
-                    const acc = { userId: cleanId, displayName: '', avatar: '', sdob: '', phoneNumber: '' };
+                    const acc = { userId: cleanId, displayName: '', avatar: '', sdob: '', phoneNumber: '', gender: '' };
                     for (const prof of profiles) {
                         try {
                             const raw = await withZaloApi(prof, async (zaloApi) => await zaloApi.getUserInfo(cleanId).catch(() => null));
@@ -5411,6 +5450,9 @@ Quy tắc:
                                 acc.avatar = acc.avatar || (f.avatar || f.avatarUrl || f.avatar_url || '');
                                 acc.sdob = acc.sdob || (f.sdob || '');
                                 acc.phoneNumber = acc.phoneNumber || (f.phoneNumber || f.phone || '');
+                                // KHÔNG dùng `||` cho gender: Zalo mã hoá nam = 0, mà 0 là falsy nên
+                                // `acc.gender || f.gender` sẽ vứt đúng một nửa số hồ sơ.
+                                if (acc.gender === '' && f.gender != null && f.gender !== '') acc.gender = String(f.gender);
                             }
                             if (acc.displayName && acc.avatar && acc.sdob && acc.phoneNumber) break; // đủ hết → dừng
                         } catch (_) { /* bot này không lấy được → thử bot kế */ }

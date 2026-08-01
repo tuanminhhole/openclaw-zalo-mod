@@ -88,6 +88,102 @@ test('listContacts: search theo tên/phone, filter theo tag, phân trang', (t) =
     assert.equal(page2.contacts.length, 11);
 });
 
+// ── Trường hồ sơ Zalo (v4): giới tính · ngày sinh · đã kết bạn ────────────
+
+test('contact: lưu và đọc lại gender/birthday/isFriend', (t) => {
+    const { crm, close } = makeCrm();
+    t.after(close);
+    const c = crm.upsertContact({
+        displayName: 'Nguyễn Văn A', zaloUid: 'u1',
+        gender: 0, birthday: '1990-05-17', isFriend: true, phone: '+84901234567',
+    });
+    assert.equal(c.gender, 'male', 'số 0 của Zalo được chuẩn hoá lúc ghi');
+    assert.equal(c.birthday, '1990-05-17');
+    assert.equal(c.is_friend, 1);
+    assert.equal(c.phone, '0901234567', 'sđt chuẩn hoá về dạng 0…');
+});
+
+test('contact: sync lại bằng trường RỖNG không được xoá dữ liệu đã có', (t) => {
+    const { crm, close } = makeCrm();
+    t.after(close);
+    crm.upsertContact({ displayName: 'A', zaloUid: 'u1', phone: '0901234567', birthday: '1990-05-17', gender: 1 });
+
+    // Bot thứ hai chưa kết bạn nên Zalo giấu sđt/ngày sinh → hồ sơ trả về rỗng.
+    const after = crm.upsertContact({ displayName: 'A', zaloUid: 'u1', phone: '', birthday: '', gender: '' });
+    assert.equal(after.phone, '0901234567', 'rỗng = "lần này không biết", không phải "đã bị xoá"');
+    assert.equal(after.birthday, '1990-05-17');
+    assert.equal(after.gender, 'female');
+});
+
+test('importMembers mang theo sđt/ngày sinh/giới tính/bạn bè', (t) => {
+    const { crm, close } = makeCrm();
+    t.after(close);
+    crm.importMembers([
+        { uid: 'u1', name: 'An', phone: '0901234567', birthday: '1990-05-17', gender: 'male', isFriend: true },
+        { uid: 'u2', name: 'Bình' },
+    ], 'acc1');
+    const an = crm.listContacts({ search: 'An' }).contacts[0];
+    assert.equal(an.phone, '0901234567');
+    assert.equal(an.birthday, '1990-05-17');
+    assert.equal(an.gender, 'male');
+    assert.equal(an.is_friend, 1);
+    const binh = crm.listContacts({ search: 'Bình' }).contacts[0];
+    assert.equal(binh.is_friend, 0, 'không truyền isFriend thì mặc định là chưa kết bạn');
+});
+
+test('importMembers: isFriend undefined (get-friends hỏng) KHÔNG xoá cờ đã có', (t) => {
+    const { crm, close } = makeCrm();
+    t.after(close);
+    crm.importMembers([{ uid: 'u1', name: 'An', isFriend: true }], 'acc1');
+    crm.importMembers([{ uid: 'u1', name: 'An' }], 'acc1');
+    assert.equal(crm.listContacts({ search: 'An' }).contacts[0].is_friend, 1);
+});
+
+test('listContacts: lọc theo giới tính và theo đã-kết-bạn', (t) => {
+    const { crm, close } = makeCrm();
+    t.after(close);
+    crm.upsertContact({ displayName: 'Anh A', zaloUid: 'u1', gender: 'male', isFriend: true });
+    crm.upsertContact({ displayName: 'Chị B', zaloUid: 'u2', gender: 'female' });
+    crm.upsertContact({ displayName: 'Ẩn danh', zaloUid: 'u3' });
+
+    assert.equal(crm.listContacts({ gender: 'male' }).total, 1);
+    assert.equal(crm.listContacts({ gender: 'female' }).total, 1);
+    assert.equal(crm.listContacts({ friend: 'only' }).total, 1);
+    assert.equal(crm.listContacts({ friend: 'none' }).total, 2, 'chưa kết bạn tính cả NULL lẫn 0');
+    assert.equal(crm.listContacts({ gender: 'lạ' }).total, 3, 'giá trị lọc lạ thì bỏ qua, không lọc rỗng');
+});
+
+test('listContacts: sinh nhật sắp tới — sắp theo ngày gần nhất, vòng qua giao thừa', (t) => {
+    const { crm, close } = makeCrm();
+    t.after(close);
+    crm.upsertContact({ displayName: 'Sinh nhật 02/01', zaloUid: 'u1', birthday: '1990-01-02' });
+    crm.upsertContact({ displayName: 'Sinh nhật 31/12', zaloUid: 'u2', birthday: '1991-12-31' });
+    crm.upsertContact({ displayName: 'Sinh nhật tháng 6', zaloUid: 'u3', birthday: '1992-06-15' });
+    crm.upsertContact({ displayName: 'Không rõ ngày sinh', zaloUid: 'u4' });
+
+    // Đứng ở 30/12: 31/12 là 1 ngày nữa, 02/01 là 3 ngày nữa — phải vòng sang năm sau, không âm.
+    const today = new Date(2026, 11, 30);
+    const soon = crm.listContacts({ birthdayWithin: 7, today });
+    assert.deepEqual(soon.contacts.map(c => c.display_name), ['Sinh nhật 31/12', 'Sinh nhật 02/01']);
+    assert.deepEqual(soon.contacts.map(c => c.birthdayInDays), [1, 3]);
+    assert.equal(soon.total, 2, 'người không có ngày sinh không lọt vào');
+
+    assert.equal(crm.listContacts({ birthdayWithin: 0, today }).total, 0);
+    assert.equal(crm.listContacts({ birthdayWithin: 400, today }).total, 3);
+});
+
+test('listContacts: lọc sinh nhật cộng dồn được với lọc khác, và phân trang đúng', (t) => {
+    const { crm, close } = makeCrm();
+    t.after(close);
+    crm.upsertContact({ displayName: 'Nam sinh 02/01', zaloUid: 'u1', birthday: '1990-01-02', gender: 'male' });
+    crm.upsertContact({ displayName: 'Nữ sinh 03/01', zaloUid: 'u2', birthday: '1990-01-03', gender: 'female' });
+    const today = new Date(2026, 11, 30);
+    assert.equal(crm.listContacts({ birthdayWithin: 30, gender: 'male', today }).total, 1);
+    const page = crm.listContacts({ birthdayWithin: 30, limit: 1, today });
+    assert.equal(page.contacts.length, 1);
+    assert.equal(page.total, 2, 'total là tổng đã lọc, không phải số bản ghi trên trang');
+});
+
 // ── Leads ─────────────────────────────────────────────────────────────────
 
 test('lead: pipeline mặc định New → ... → Won/Lost, move + history + undo', (t) => {

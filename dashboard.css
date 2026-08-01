@@ -5446,6 +5446,26 @@ textarea:focus {
   font: inherit;
 }
 .crm-search:focus { outline: 2px solid var(--primary-soft); border-color: var(--primary); }
+/* Bốn bộ lọc đứng cạnh nhau nên phải cùng một kiểu — trước đây lọc "Nối Zalo" mang style inline,
+   thêm cái thứ hai là lệch ngay.
+
+   PHẢI ghi đè `width` và `min-height`: luật chung ở đầu file cho `input, select, textarea` là
+   `width: 100%; min-height: 40px`, nên chỉ đặt padding/font-size là vô ích — mỗi ô chiếm trọn một
+   dòng và bốn bộ lọc thành một bức tường dọc. Cùng loại bẫy với `.btn { min-height: 38px }`.
+   `.crm-toolbar` đã `flex-wrap` nên màn hẹp chúng tự xuống dòng. */
+.crm-filter-select {
+  width: auto;
+  flex: 0 1 auto;
+  min-height: 34px;
+  padding: 6px 9px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 12.5px;
+  max-width: 100%;
+}
+.crm-filter-select:focus { outline: 2px solid var(--primary-soft); border-color: var(--primary); }
 .crm-pager {
   display: flex;
   align-items: center;
@@ -5582,6 +5602,9 @@ textarea:focus {
 @media (max-width: 768px) {
   .crm-toolbar { gap: 8px; }
   .crm-search { flex: 1 1 100%; }
+  /* Màn hẹp thì chia đôi: 4 bộ lọc thành lưới 2×2 thay vì 4 dòng đầy màn hình đẩy danh sách
+     khách xuống dưới màn hình đầu tiên. */
+  .crm-filter-select { flex: 1 1 calc(50% - 4px); }
   .crm-undo { flex-direction: column; align-items: flex-start; gap: 8px; }
 }
 /* ═══ END CRM MODULE ═══ */

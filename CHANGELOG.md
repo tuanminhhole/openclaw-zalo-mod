@@ -1,6 +1,30 @@
 ## [Unreleased]
 
 ### Added
+- **★ Khung chat trong dashboard (trang "Tin nhắn → Khung chat").** Đọc lại hội thoại Zalo và trả
+  lời trực tiếp: cột trái là danh sách hội thoại (lọc Tất cả / Riêng / Nhóm + ô tìm không dấu), cột
+  phải là luồng tin có bong bóng trái–phải, mốc ngày, tên người gửi trong nhóm và ảnh đính kèm.
+
+  Đọc thẳng từ `context.db`, **không hỏi Zalo mỗi lần mở** — chuyển hội thoại là tức thì và không
+  đụng hạn mức API. Đổi lại chỉ thấy phần đã đồng bộ, nên mô tả trang nói thẳng "lịch sử kéo về khi
+  bấm Sync account" thay vì để owner tưởng mất tin.
+- **Ô soạn tin CHỈ có ở tin nhắn riêng.** Nhóm hiện một dòng nhắc chuyển sang trang "Gửi hàng loạt".
+  Chặn ở cả hai lớp — giao diện không vẽ ô soạn, và hàm gửi kiểm lại `type === 'dm'` trước khi gọi
+  API: gửi nhầm vào nhóm khách là thứ không rút lại được, không nên phụ thuộc mỗi việc ẩn nút.
+- Mục điều hướng "Tin nhắn" tách thành hai: **Khung chat** và **Gửi hàng loạt** (trang composer cũ,
+  đổi nhãn để hai anh em không trùng tên).
+
+### Notes
+- Làm mới bằng **polling 12 giây**, chưa phải SSE — và cố ý tách rời: khi có đường đẩy realtime chỉ
+  cần thay đúng hàm hẹn giờ, không phải dựng lại giao diện. Ba thứ giữ cho polling không phá trải
+  nghiệm: ngừng hẳn khi rời trang (không thì mỗi lần mở rồi đi chỗ khác lại để lại một vòng lặp gọi
+  API mãi mãi), bỏ qua khi tab ẩn hoặc đang gửi, và **chỉ vẽ lại khi chữ ký danh sách đổi** — vẽ lại
+  mỗi 12 giây sẽ cướp con trỏ khỏi ô soạn tin.
+- Vị trí cuộn được giữ nguyên khi polling làm mới, trừ khi owner đang ở sát đáy — lúc đó tin mới tự
+  hiện ra như mọi ứng dụng chat.
+- Tên hội thoại dựng ở **tầng đọc** (nhóm → tên nhóm; DM → hồ sơ Zalo → danh bạ nhóm → tên người gửi
+  gần nhất), vì `conversations.title` hay rỗng: luồng ghi tin không biết tên.
+
 - **★ Nhận LỊCH SỬ chat từ Zalo và ghi vào `context.db` (cần zalo-connect bridge v5).** Trước nay
   chỉ có tin đến từ lúc bot đang chạy, và **tin nhắn riêng không được lưu ở đâu cả** — nên bất cứ
   khung chat nào dựng lên cũng mở ra danh sách trống. Nay đăng ký kênh `subscribeHistory` (kênh

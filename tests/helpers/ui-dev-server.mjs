@@ -77,6 +77,32 @@ if (store.kind !== 'sqlite') {
     process.exit(1);
 }
 const crm = new CrmStore(store.db);
+
+// Vài hội thoại mẫu để khung chat có thứ mà vẽ: một DM hai chiều, một nhóm nhiều người, và một
+// hội thoại rỗng (ca dễ vỡ nhất — hội thoại có trong danh sách mà chưa tin nào được đồng bộ).
+(function seedChat() {
+    if (store.listConversations({ limit: 1 }).length) return;
+    const now = Date.now();
+    const mk = (id, accountId, type, lastMessageAt) => store.upsertConversation({ id, accountId, type, lastMessageAt });
+    const say = (conv, id, who, name, text, minsAgo, fromSelf = false, mediaUrls) => store.insertMessage({
+        id, conversationId: conv, senderId: who, senderName: name, text,
+        sentAt: now - minsAgo * 60000, fromSelf, mediaUrls, rawType: 'history',
+    });
+
+    mk('default|uid-1001', 'default', 'dm', now - 2 * 60000);
+    say('default|uid-1001', 'd1', 'uid-1001', 'Nguyễn Văn An', 'Shop ơi, váy này còn size M không?', 40);
+    say('default|uid-1001', 'd2', 'bot', 'DevBot', 'Dạ còn size M ạ, chị lấy giúp em nhé.', 38, true);
+    say('default|uid-1001', 'd3', 'uid-1001', 'Nguyễn Văn An', 'Cho mình 2 cái nhé', 2);
+
+    mk('default|group-demo', 'default', 'group', now - 15 * 60000);
+    say('default|group-demo', 'g1', 'uid-1002', 'Trần Thị Bích', 'Đơn hôm nay gửi chưa mọi người?', 90);
+    say('default|group-demo', 'g2', 'uid-1003', 'Lê Minh Châu', 'Gửi rồi nha, mã VD123', 60,
+        false, ['https://example.invalid/anh-van-don.jpg']);
+    say('default|group-demo', 'g3', 'bot', 'DevBot', 'Em ghi nhận mã VD123 vào sổ rồi ạ.', 15, true);
+
+    mk('default|uid-9001', 'default', 'dm', now - 3 * 86400000);
+})();
+
 console.log(`[dev] CRM DB: ${DB_PATH}`);
 
 const STATE_STUB = {
@@ -242,6 +268,57 @@ const server = http.createServer(async (req, res) => {
                     : { created, updated, linked, ...stats };
                 return send(res, 200, { ok: true, result, state: STATE_STUB });
             }
+            // ── Khung chat: đọc thẳng store, giống index.js bên bản thật ──
+            if (action === 'chat-conversations') {
+                const rows = store.listConversations({ accountId: body.payload?.accountId, limit: 200 });
+                return send(res, 200, {
+                    ok: true,
+                    result: {
+                        conversations: rows.map(c => {
+                            const raw = String(c.id || '').split('|').slice(1).join('|');
+                            return {
+                                id: c.id,
+                                accountId: c.account_id,
+                                type: c.type,
+                                title: c.type === 'group'
+                                    ? (STATE_STUB.groups.find(g => g.groupId === raw)?.name || raw)
+                                    : (DEV_PROFILE_CACHE[raw]?.displayName || raw),
+                                avatar: DEV_PROFILE_CACHE[raw]?.avatar || '',
+                                lastMessageAt: Number(c.last_message_at) || 0,
+                                lastText: c.last_text || '',
+                                messageCount: Number(c.message_count) || 0,
+                            };
+                        }),
+                    },
+                    state: STATE_STUB,
+                });
+            }
+            if (action === 'chat-messages') {
+                const msgs = store.recentMessages(String(body.payload?.conversationId || ''), 100);
+                return send(res, 200, {
+                    ok: true,
+                    result: {
+                        conversationId: body.payload?.conversationId,
+                        messages: msgs.map(m => ({
+                            id: m.id, senderId: m.sender_id, senderName: m.sender_name, text: m.text,
+                            sentAt: Number(m.sent_at) || 0, fromSelf: !!m.from_self,
+                            media: m.media_json ? JSON.parse(m.media_json) : undefined,
+                        })),
+                    },
+                    state: STATE_STUB,
+                });
+            }
+            if (action === 'send-message') {
+                // Bản thật gửi qua Zalo; ở dev chỉ ghi vào store để thấy tin hiện lên đúng chỗ.
+                const conv = `${body.payload?.accountId || 'default'}|${body.payload?.targetId}`;
+                store.upsertConversation({ id: conv, accountId: 'default', type: 'dm', lastMessageAt: Date.now() });
+                store.insertMessage({
+                    id: `dev-${Date.now()}`, conversationId: conv, senderId: 'bot', senderName: 'DevBot',
+                    text: String(body.payload?.text || ''), sentAt: Date.now(), fromSelf: true,
+                });
+                return send(res, 200, { ok: true, result: { sent: true }, state: STATE_STUB });
+            }
+
             // Cũng nằm ở index.js bên bản thật (cần gọi Zalo), không nằm trong crm-api.js.
             if (action === 'crm-sync-zalo-labels') {
                 const wanted = body.payload?.profile

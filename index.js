@@ -5393,6 +5393,81 @@ Quy tắc:
                 return { created, updated, linked, ...stats };
             }
 
+            // ── Khung chat ──
+            //
+            // Đọc từ `context.db` chứ không hỏi Zalo: tin đã nằm sẵn ở đó (luồng trực tiếp + lịch
+            // sử kéo về), nên mở khung chat không tốn một lượt gọi mạng nào và không đụng hạn mức
+            // của Zalo. Đổi lại: chỉ thấy được những gì đã đồng bộ — nên phần mô tả trang nói thẳng
+            // là lịch sử về khi bấm Sync account.
+            if (action === 'chat-conversations' || action === 'chat-messages') {
+                const store = zEngine?.storage;
+                if (!store?.listConversations) throw new Error('Khung chat cần SQLite (Node >= 22.5).');
+                const profCache = await readPluginDataJson('zalo-profiles-cache.json');
+                const memberDir = await readPluginDataJson('group-members.json');
+
+                // Tên hiển thị của một hội thoại. `conversations.title` hay rỗng vì luồng ghi tin
+                // không biết tên; dựng lại ở tầng đọc từ nguồn tốt nhất đang có.
+                const titleOf = (conv) => {
+                    if (conv.title) return conv.title;
+                    const raw = String(conv.id || '').split('|').slice(1).join('|');
+                    if (conv.type === 'group') return getGroupName(raw) || raw;
+                    if (profCache[raw]?.displayName) return profCache[raw].displayName;
+                    for (const users of Object.values(memberDir)) {
+                        if (users?.[raw]) return typeof users[raw] === 'string' ? users[raw] : (users[raw].name || raw);
+                    }
+                    // Cuối cùng mới lấy tên người gửi trong chính hội thoại — chỉ đúng với DM.
+                    if (conv.type === 'dm') {
+                        try {
+                            const m = store.db?.prepare?.(
+                                'SELECT sender_name FROM messages WHERE conversation_id = ? AND from_self = 0 AND sender_name != \'\' ORDER BY sent_at DESC LIMIT 1',
+                            ).get(conv.id);
+                            if (m?.sender_name) return m.sender_name;
+                        } catch { /* store rỗng */ }
+                    }
+                    return raw;
+                };
+                const avatarOf = (conv) => {
+                    const raw = String(conv.id || '').split('|').slice(1).join('|');
+                    return conv.type === 'dm' ? (profCache[raw]?.avatar || '') : '';
+                };
+
+                if (action === 'chat-conversations') {
+                    const rows = store.listConversations({
+                        accountId: payload.accountId || undefined,
+                        limit: payload.limit || 200,
+                    });
+                    return {
+                        conversations: rows.map(c => ({
+                            id: c.id,
+                            accountId: c.account_id,
+                            type: c.type,
+                            title: titleOf(c),
+                            avatar: avatarOf(c),
+                            lastMessageAt: Number(c.last_message_at) || 0,
+                            lastText: c.last_text || '',
+                            messageCount: Number(c.message_count) || 0,
+                        })),
+                    };
+                }
+
+                const convId = String(payload.conversationId || '').trim();
+                if (!convId) throw new Error('thiếu tham số: conversationId');
+                const limit = Math.min(Number(payload.limit) || 80, 300);
+                const msgs = store.recentMessages(convId, limit);
+                return {
+                    conversationId: convId,
+                    messages: msgs.map(m => ({
+                        id: m.id,
+                        senderId: m.sender_id,
+                        senderName: m.sender_name,
+                        text: m.text,
+                        sentAt: Number(m.sent_at) || 0,
+                        fromSelf: !!m.from_self,
+                        media: m.media_json ? JSON.parse(m.media_json) : undefined,
+                    })),
+                };
+            }
+
             // ── CRM: kéo nhãn phân loại có sẵn của Zalo về ──
             //
             // Owner đã phân loại chat trên app Zalo rồi (nhãn kèm màu: Khách hàng, Gia đình, Trả lời

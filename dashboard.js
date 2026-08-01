@@ -165,6 +165,7 @@ function setSection(id) {
   if (id === 'reports') renderReports();
   if (id === 'reportlog') renderReportLog();
   if (id === 'settings') renderSettings();
+  if (id === 'chat') renderChat();
   if (id === 'contacts') renderCrmContacts();
   if (id === 'leads') renderCrmLeads();
   if (id === 'tasks') renderCrmTasks();
@@ -180,6 +181,7 @@ function refreshActiveOnDemandSection() {
     case 'reports': renderReports(); break;
     case 'reportlog': renderReportLog(); break;
     case 'settings': renderSettings(); break;
+    case 'chat': renderChat(); break;
     case 'contacts': renderCrmContacts(); break;
     case 'leads': renderCrmLeads(); break;
     case 'tasks': renderCrmTasks(); break;
@@ -296,9 +298,12 @@ const NAV_LABELS = {
   journal: ['Theo nhóm', 'By group'],
   reports: ['Lịch báo cáo', 'Schedules'],
   reportlog: ['Lịch sử báo cáo', 'Report log'],
-  messages: ['Tin nhắn', 'Messages'],
+  // Nhãn ĐIỀU HƯỚNG, không phải tiêu đề trang: từ khi có "Khung chat" nằm cùng nhóm "Tin nhắn",
+  // để mục cũ tên "Tin nhắn" thì hai anh em trùng tên và không ai biết bấm cái nào.
+  messages: ['Gửi hàng loạt', 'Bulk send'],
   templates: ['Template', 'Templates'],
   permissions: ['Phân quyền', 'Permissions'],
+  chat: ['Khung chat', 'Chat'],
   contacts: ['Liên hệ', 'Contacts'],
   leads: ['Pipeline', 'Pipeline'],
   tasks: ['Công việc', 'Tasks'],
@@ -6353,3 +6358,256 @@ document.addEventListener('input', (ev) => {
     if (again) { again.focus(); try { again.setSelectionRange(sel, sel); } catch {} }
   }
 });
+
+// ── Khung chat ──────────────────────────────────────────────────────────────
+//
+// Đọc từ `context.db` (tin trực tiếp + lịch sử kéo về), KHÔNG hỏi Zalo mỗi lần mở — nên chuyển
+// hội thoại là tức thì và không đụng hạn mức API. Đổi lại chỉ thấy được phần đã đồng bộ, nên mô tả
+// trang nói thẳng điều đó thay vì để owner tưởng mất tin.
+//
+// Làm mới bằng POLLING chứ chưa phải SSE: đường đẩy realtime là việc riêng, và tách ra thế này thì
+// khi có SSE chỉ cần thay đúng hàm hẹn giờ, không phải dựng lại giao diện.
+
+const chatState = {
+  conversations: [],
+  activeId: null,
+  messages: [],
+  search: '',
+  filter: 'all',       // all | dm | group
+  pollTimer: null,
+  sending: false,
+  lastSig: '',
+};
+
+const CHAT_POLL_MS = 12000;
+
+function chatStopPolling() {
+  if (chatState.pollTimer) {
+    clearInterval(chatState.pollTimer);
+    chatState.pollTimer = null;
+  }
+}
+
+/** Mốc thời gian ngắn kiểu ứng dụng chat: hôm nay thì giờ:phút, cũ hơn thì ngày/tháng. */
+function chatTime(ts) {
+  if (!ts) return '';
+  const d = new Date(Number(ts));
+  const now = new Date();
+  const sameDay = d.toDateString() === now.toDateString();
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  if (sameDay) return `${hh}:${mm}`;
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mo = String(d.getMonth() + 1).padStart(2, '0');
+  return `${dd}/${mo}`;
+}
+
+async function renderChat() {
+  const head = document.querySelector('#chat .page-head');
+  if (head) {
+    head.querySelector('h2').textContent = t('Khung chat', 'Chat');
+    head.querySelector('p').textContent = t(
+      'Đọc lại hội thoại Zalo và trả lời trực tiếp — lịch sử kéo về khi bấm Sync account.',
+      'Read Zalo conversations and reply directly — history is pulled on Sync account.');
+  }
+  const actions = document.getElementById('chatActions');
+  if (actions) {
+    actions.innerHTML = `<button class="btn" id="chatReloadBtn">${t('⟳ Làm mới', '⟳ Refresh')}</button>`;
+    actions.querySelector('#chatReloadBtn').addEventListener('click', () => renderChat());
+  }
+
+  const body = document.getElementById('chatBody');
+  if (!body) return;
+  if (!chatState.conversations.length) {
+    body.innerHTML = `<div class="card" style="padding:24px;color:var(--muted)">${t('Đang tải…', 'Loading…')}</div>`;
+  }
+  try {
+    const bot = selBotProfile();
+    const res = await crmAction('chat-conversations', { accountId: bot || undefined });
+    chatState.conversations = res.conversations || [];
+    if (!chatState.conversations.some(c => c.id === chatState.activeId)) {
+      chatState.activeId = chatState.conversations[0]?.id || null;
+    }
+    chatRenderShell(body);
+    if (chatState.activeId) await chatLoadMessages(chatState.activeId);
+    chatStartPolling();
+  } catch (err) {
+    chatStopPolling();
+    crmErrorCard(body, err, renderChat);
+  }
+}
+
+function chatStartPolling() {
+  chatStopPolling();
+  chatState.pollTimer = setInterval(async () => {
+    // Trang không còn hiển thị → ngừng hẳn. Không có nhịp này thì mỗi lần owner mở khung chat rồi
+    // đi chỗ khác lại để lại một vòng lặp gọi API mãi mãi.
+    if (!document.getElementById('chat')?.classList.contains('active')) { chatStopPolling(); return; }
+    if (document.hidden || chatState.sending) return;
+    try {
+      const bot = selBotProfile();
+      const res = await crmAction('chat-conversations', { accountId: bot || undefined });
+      const list = res.conversations || [];
+      // Chỉ vẽ lại khi thật sự có gì đổi — vẽ lại mỗi 12 giây sẽ cướp con trỏ khỏi ô soạn tin.
+      const sig = list.map(c => `${c.id}:${c.lastMessageAt}:${c.messageCount}`).join('|');
+      if (sig === chatState.lastSig) return;
+      chatState.lastSig = sig;
+      chatState.conversations = list;
+      chatRenderShell(document.getElementById('chatBody'));
+      if (chatState.activeId) await chatLoadMessages(chatState.activeId, { keepScroll: true });
+    } catch { /* mạng chập chờn — lần sau thử lại */ }
+  }, CHAT_POLL_MS);
+}
+
+function chatRenderShell(body) {
+  if (!body) return;
+  const q = foldVi(chatState.search);
+  const list = chatState.conversations
+    .filter(c => chatState.filter === 'all' || c.type === chatState.filter)
+    .filter(c => !q || foldVi(c.title).includes(q) || foldVi(c.lastText || '').includes(q));
+
+  const active = chatState.conversations.find(c => c.id === chatState.activeId);
+  const rows = list.map(c => `
+    <button type="button" class="chat-conv${c.id === chatState.activeId ? ' active' : ''}" data-chat-conv="${crmEsc(c.id)}">
+      ${c.avatar
+        ? `<img src="${crmEsc(c.avatar)}" alt="" class="chat-ava">`
+        : `<span class="chat-ava chat-ava-empty">${crmEsc((c.title || '?')[0].toUpperCase())}</span>`}
+      <span class="chat-conv-main">
+        <span class="chat-conv-top">
+          <span class="chat-conv-title">${crmEsc(c.title)}</span>
+          <span class="chat-conv-time">${chatTime(c.lastMessageAt)}</span>
+        </span>
+        <span class="chat-conv-last">${c.type === 'group' ? '👥 ' : ''}${crmEsc(c.lastText || '')}</span>
+      </span>
+    </button>`).join('');
+
+  body.innerHTML = `
+    <div class="chat-wrap">
+      <aside class="chat-side">
+        <input type="search" id="chatSearch" class="crm-search" style="flex:none;width:100%"
+          placeholder="${t('Tìm hội thoại…', 'Search conversations…')}" value="${crmEsc(chatState.search)}">
+        <div class="chat-tabs">
+          ${[['all', t('Tất cả', 'All')], ['dm', t('Riêng', 'DM')], ['group', t('Nhóm', 'Groups')]]
+            .map(([k, label]) => `<button type="button" class="chat-tab${chatState.filter === k ? ' active' : ''}" data-chat-filter="${k}">${label}</button>`).join('')}
+        </div>
+        <div class="chat-conv-list">${rows
+          || `<div class="item-sub" style="padding:14px;font-size:12.5px">${t('Chưa có hội thoại nào. Bấm Sync account ở Tổng quan để kéo lịch sử về.', 'No conversations yet. Use Sync account on the Overview page to pull history.')}</div>`}</div>
+      </aside>
+      <section class="chat-main">
+        ${active ? `
+          <header class="chat-head">
+            <div style="min-width:0">
+              <div class="chat-head-title">${crmEsc(active.title)}</div>
+              <div class="chat-head-sub">${active.type === 'group' ? t('Nhóm', 'Group') : t('Tin nhắn riêng', 'Direct message')}
+                · ${active.messageCount} ${t('tin đã đồng bộ', 'messages synced')}</div>
+            </div>
+          </header>
+          <div class="chat-thread" id="chatThread"></div>
+          ${active.type === 'group' ? `<div class="chat-composer chat-composer-off">${t(
+              'Gửi vào nhóm phải dùng trang "Gửi hàng loạt" hoặc để bot tự trả lời — tránh gửi nhầm cả nhóm từ đây.',
+              'Group sending lives on the "Bulk send" page — avoids accidentally messaging a whole group from here.')}</div>`
+            : `<form class="chat-composer" id="chatComposer">
+              <textarea id="chatInput" rows="1" placeholder="${t('Nhập tin nhắn…', 'Type a message…')}"></textarea>
+              <button class="btn primary" type="submit" id="chatSendBtn">${t('Gửi', 'Send')}</button>
+            </form>`}
+        ` : `<div class="chat-empty">${t('Chọn một hội thoại bên trái.', 'Pick a conversation on the left.')}</div>`}
+      </section>
+    </div>`;
+
+  let searchTimer;
+  body.querySelector('#chatSearch')?.addEventListener('input', (e) => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+      chatState.search = e.target.value.trim();
+      chatRenderShell(body);
+      if (chatState.activeId) chatRenderThread();
+    }, 250);
+  });
+  body.querySelectorAll('[data-chat-filter]').forEach(el => el.addEventListener('click', () => {
+    chatState.filter = el.dataset.chatFilter;
+    chatRenderShell(body);
+    if (chatState.activeId) chatRenderThread();
+  }));
+  body.querySelectorAll('[data-chat-conv]').forEach(el => el.addEventListener('click', async () => {
+    chatState.activeId = el.dataset.chatConv;
+    chatRenderShell(body);
+    await chatLoadMessages(chatState.activeId);
+  }));
+  body.querySelector('#chatComposer')?.addEventListener('submit', chatSend);
+  // Enter gửi, Shift+Enter xuống dòng — đúng thói quen của mọi ứng dụng chat.
+  body.querySelector('#chatInput')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); chatSend(e); }
+  });
+}
+
+async function chatLoadMessages(conversationId, { keepScroll = false } = {}) {
+  try {
+    const res = await crmAction('chat-messages', { conversationId, limit: 100 });
+    chatState.messages = res.messages || [];
+    chatRenderThread({ keepScroll });
+  } catch (err) {
+    const th = document.getElementById('chatThread');
+    if (th) th.innerHTML = `<div class="item-sub" style="padding:14px">${crmEsc(err.message)}</div>`;
+  }
+}
+
+function chatRenderThread({ keepScroll = false } = {}) {
+  const th = document.getElementById('chatThread');
+  if (!th) return;
+  const atBottom = th.scrollHeight - th.scrollTop - th.clientHeight < 60;
+  const active = chatState.conversations.find(c => c.id === chatState.activeId);
+  const isGroup = active?.type === 'group';
+
+  let lastDay = '';
+  const html = chatState.messages.map(m => {
+    const d = new Date(Number(m.sentAt));
+    const day = d.toLocaleDateString('vi-VN');
+    const sep = day !== lastDay ? `<div class="chat-day">${crmEsc(day)}</div>` : '';
+    lastDay = day;
+    const media = (m.media || []).map(u => `<a href="${crmEsc(u)}" target="_blank" rel="noopener">
+      <img src="${crmEsc(u)}" alt="" class="chat-media"></a>`).join('');
+    return `${sep}<div class="chat-msg${m.fromSelf ? ' me' : ''}">
+      ${/* Tên người gửi chỉ có nghĩa trong nhóm — DM thì hai bên đã rõ, in thêm chỉ tổ rối. */''}
+      ${isGroup && !m.fromSelf ? `<div class="chat-msg-who">${crmEsc(m.senderName || m.senderId)}</div>` : ''}
+      <div class="chat-bubble">${media}${crmEsc(m.text || '')}</div>
+      <div class="chat-msg-time">${chatTime(m.sentAt)}</div>
+    </div>`;
+  }).join('');
+
+  th.innerHTML = html || `<div class="item-sub" style="padding:14px">${t(
+    'Chưa có tin nào được đồng bộ cho hội thoại này.', 'No messages synced for this conversation yet.')}</div>`;
+  // Giữ nguyên vị trí cuộn khi polling làm mới, trừ khi owner đang ở sát đáy — lúc đó tin mới nên
+  // tự hiện ra như mọi ứng dụng chat.
+  if (!keepScroll || atBottom) th.scrollTop = th.scrollHeight;
+}
+
+async function chatSend(e) {
+  e?.preventDefault?.();
+  const input = document.getElementById('chatInput');
+  const text = input?.value.trim();
+  if (!text || chatState.sending) return;
+  const active = chatState.conversations.find(c => c.id === chatState.activeId);
+  // Chặn ở cả hai lớp: giao diện không hiện ô soạn cho nhóm, và ở đây kiểm lại — gửi nhầm vào nhóm
+  // khách là thứ không rút lại được.
+  if (!active || active.type !== 'dm') return;
+  const peerId = String(active.id).split('|').slice(1).join('|');
+
+  chatState.sending = true;
+  const btn = document.getElementById('chatSendBtn');
+  if (btn) { btn.disabled = true; btn.textContent = t('Đang gửi…', 'Sending…'); }
+  try {
+    await runAction('send-message', { targetType: 'user', targetId: peerId, text }, null);
+    if (input) input.value = '';
+    // Vẽ lạc quan để owner thấy tin ngay; lần polling kế tiếp sẽ thay bằng bản thật từ DB.
+    chatState.messages.push({
+      id: `tam-${Date.now()}`, senderId: '', senderName: '', text,
+      sentAt: Date.now(), fromSelf: true,
+    });
+    chatRenderThread();
+  } catch (err) {
+    showToast(err.message, 'error');
+  } finally {
+    chatState.sending = false;
+    if (btn) { btn.disabled = false; btn.textContent = t('Gửi', 'Send'); }
+  }
+}

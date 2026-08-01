@@ -4610,6 +4610,8 @@ function crmRenderContactsTable(body) {
   const totalPages = Math.max(Math.ceil(crmState.contactsTotal / CRM_PAGE_SIZE), 1);
   const sel = crmState.selected;
   const pageIds = rows.map(c => c.id);
+  // Chỉ gắn badge bot khi thật sự có nhiều bot — một bot thì badge chỉ là nhiễu.
+  const showBotBadge = (state.bots || []).length > 1;
   const allOnPage = pageIds.length > 0 && pageIds.every(id => sel.has(id));
   const rowsHtml = rows.map(c => `
     <tr data-contact-id="${crmEsc(c.id)}">
@@ -4624,10 +4626,9 @@ function crmRenderContactsTable(body) {
             <div style="font-weight:600">${crmEsc(c.display_name)}${c.is_friend
               ? ` <span class="chip" title="${t('Đã kết bạn Zalo — nhắn riêng được', 'Zalo friend — can DM')}"
                   style="font-size:10px;background:rgba(52,211,153,.16);vertical-align:middle">${t('bạn bè', 'friend')}</span>`
-              : ''}${c.mergedIds?.length > 1
-              ? ` <span class="chip" title="${t('Cùng một người ở nhiều bot — Zalo cấp uid khác nhau cho mỗi tài khoản',
-                  'Same person across bots — Zalo issues a different uid per account')}"
-                  style="font-size:10px;background:rgba(167,139,250,.18);vertical-align:middle">${c.mergedIds.length} bot</span>`
+              : ''}${showBotBadge && (c.accounts?.length || c.account_id)
+              ? ` <span title="${t('Bot đang có liên hệ này', 'Bots holding this contact')}"
+                  style="vertical-align:middle">${getBotBadge((c.accounts || [c.account_id]).join(','))}</span>`
               : ''}</div>
             ${/* Nói rõ ai CHƯA nối được với người Zalo — đó là liên hệ không mở được lịch sử chat,
                   tức phần dữ liệu vẫn là sổ tay gõ tay. */''}
@@ -4663,11 +4664,17 @@ function crmRenderContactsTable(body) {
           : '';
         return `${bd ? `🎂 ${crmEsc(bd)}${soon}` : ''}${bd && g ? '<br>' : ''}${g ? `<span style="color:var(--muted);font-size:12px">${crmEsc(g)}</span>` : ''}`;
       })()}</td>
-      <td style="white-space:nowrap">${crmEsc(crmSourceLabel(c.source))}</td>
-      <td style="white-space:nowrap">${crmDate(c.last_contact_at)}</td>
+      <td style="white-space:nowrap"><span class="chip" style="background:rgba(148,163,184,.16)">${crmEsc(crmSourceLabel(c.source))}</span></td>
+      ${/* Thao tác đặt ngay cạnh người: mở dashboard ra để nhắn cho một khách mà phải sang trang
+            Tin nhắn rồi tự dò lại uid thì không ai làm. Nút chỉ hiện khi đã nối được người Zalo —
+            không có uid thì cả nhắn tin lẫn kết bạn đều vô nghĩa. */''}
       <td style="white-space:nowrap;text-align:right">
-        <button class="btn" data-crm-edit="${crmEsc(c.id)}">${t('Sửa', 'Edit')}</button>
-        <button class="btn danger" data-crm-del="${crmEsc(c.id)}">✕</button>
+        <div class="crm-row-actions">
+          ${c.zalo_uid ? `<button class="btn" data-crm-dm="${crmEsc(c.id)}" title="${t('Nhắn tin riêng', 'Send DM')}">💬</button>
+          ${c.is_friend ? '' : `<button class="btn" data-crm-addfriend="${crmEsc(c.id)}" title="${t('Gửi lời mời kết bạn', 'Send friend request')}">➕</button>`}` : ''}
+          <button class="btn" data-crm-edit="${crmEsc(c.id)}">${t('Sửa', 'Edit')}</button>
+          <button class="btn danger" data-crm-del="${crmEsc(c.id)}">✕</button>
+        </div>
       </td>
     </tr>`).join('');
 
@@ -4679,24 +4686,24 @@ function crmRenderContactsTable(body) {
       ${crmState.contactsGroup ? `<span class="chip" id="crmGroupClear" style="cursor:pointer;background:rgba(96,165,250,.16)">👥 ${crmEsc(
         (state.groups || []).find(g => g.groupId === crmState.contactsGroup)?.name || crmState.contactsGroup)} ✕</span>` : ''}
       <select id="crmLinkedFilter" class="crm-filter-select">
-        <option value="">${t('Nối Zalo: tất cả', 'Zalo link: all')}</option>
+        <option value="">${t('Nối Zalo', 'Zalo link')}</option>
         <option value="only" ${crmState.contactsLinked === 'only' ? 'selected' : ''}>${t('Đã nối Zalo', 'Linked')}</option>
         <option value="none" ${crmState.contactsLinked === 'none' ? 'selected' : ''}>${t('Chưa nối Zalo', 'Not linked')}</option>
       </select>
       <select id="crmFriendFilter" class="crm-filter-select">
-        <option value="">${t('Kết bạn: tất cả', 'Friend: all')}</option>
+        <option value="">${t('Kết bạn', 'Friend')}</option>
         <option value="only" ${crmState.contactsFriend === 'only' ? 'selected' : ''}>${t('Đã kết bạn', 'Friends')}</option>
         <option value="none" ${crmState.contactsFriend === 'none' ? 'selected' : ''}>${t('Chưa kết bạn', 'Not friends')}</option>
       </select>
       <select id="crmGenderFilter" class="crm-filter-select">
-        <option value="">${t('Giới tính: tất cả', 'Gender: all')}</option>
+        <option value="">${t('Giới tính', 'Gender')}</option>
         <option value="male" ${crmState.contactsGender === 'male' ? 'selected' : ''}>${t('Nam', 'Male')}</option>
         <option value="female" ${crmState.contactsGender === 'female' ? 'selected' : ''}>${t('Nữ', 'Female')}</option>
       </select>
       ${/* Sinh nhật sắp tới là lý do chính owner mở CRM ra hằng tuần — để nó ngay trên thanh lọc,
             không giấu trong menu. */''}
       <select id="crmBirthdayFilter" class="crm-filter-select">
-        <option value="">${t('Sinh nhật: tất cả', 'Birthday: all')}</option>
+        <option value="">${t('Sinh nhật', 'Birthday')}</option>
         <option value="0" ${crmState.contactsBirthday === '0' ? 'selected' : ''}>🎂 ${t('Hôm nay', 'Today')}</option>
         <option value="7" ${crmState.contactsBirthday === '7' ? 'selected' : ''}>🎂 ${t('7 ngày tới', 'Next 7 days')}</option>
         <option value="30" ${crmState.contactsBirthday === '30' ? 'selected' : ''}>🎂 ${t('30 ngày tới', 'Next 30 days')}</option>
@@ -4704,17 +4711,17 @@ function crmRenderContactsTable(body) {
       ${/* Bộ lọc Nhãn dựng từ danh mục, kèm số liên hệ — owner thấy ngay nhãn nào còn dùng, nhãn
             nào rỗng. Nhãn Zalo hiện màu ngay trong <option> không được, nên gắn emoji phía trước. */''}
       <select id="crmTagFilter" class="crm-filter-select">
-        <option value="">${t('Nhãn: tất cả', 'Label: all')}</option>
+        <option value="">${t('Nhãn', 'Label')}</option>
         ${(crmState.tags || []).map(tg => `<option value="${crmEsc(tg.name)}" ${crmState.contactsTag === tg.name ? 'selected' : ''}>
           ${tg.emoji ? `${crmEsc(tg.emoji)} ` : '🏷 '}${crmEsc(tg.name)} (${tg.n})</option>`).join('')}
       </select>
       <select id="crmSourceFilter" class="crm-filter-select">
-        <option value="">${t('Loại: tất cả', 'Type: all')}</option>
+        <option value="">${t('Loại', 'Type')}</option>
         <option value="zalo-friend" ${crmState.contactsSource === 'zalo-friend' ? 'selected' : ''}>${t('Bạn bè Zalo', 'Zalo friend')}</option>
         <option value="zalo-group" ${crmState.contactsSource === 'zalo-group' ? 'selected' : ''}>${t('Từ nhóm Zalo', 'From Zalo group')}</option>
       </select>
       <select id="crmSortSelect" class="crm-filter-select">
-        <option value="">${t('Mới cập nhật', 'Recently updated')}</option>
+        <option value="">${t('Mới nhất', 'Newest')}</option>
         <option value="name" ${crmState.contactsSort === 'name' ? 'selected' : ''}>${t('Tên A → Z', 'Name A → Z')}</option>
       </select>
       <span style="margin-left:auto;color:var(--muted);font-size:13px">${t(`${crmState.contactsTotal} liên hệ`, `${crmState.contactsTotal} contacts`)}</span>
@@ -4733,10 +4740,9 @@ function crmRenderContactsTable(body) {
             <th>${t('Nhóm', 'Groups')}</th>
             <th>${t('SĐT', 'Phone')}</th>
             <th>${t('Hồ sơ', 'Profile')}</th>
-            <th>${t('Loại', 'Type')}</th>
-            <th>${t('Tương tác cuối', 'Last contact')}</th><th></th>
+            <th>${t('Loại', 'Type')}</th><th></th>
           </tr></thead>
-          <tbody>${rowsHtml || `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:28px">${t('Chưa có liên hệ nào. Bấm "Import từ Zalo" hoặc "+ Thêm liên hệ".', 'No contacts yet. Use "Import from Zalo" or "+ Add contact".')}</td></tr>`}</tbody>
+          <tbody>${rowsHtml || `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:28px">${t('Chưa có liên hệ nào. Bấm "Import từ Zalo" hoặc "+ Thêm liên hệ".', 'No contacts yet. Use "Import from Zalo" or "+ Add contact".')}</td></tr>`}</tbody>
         </table>
       </div>
       ${totalPages > 1 ? `<div class="crm-pager">
@@ -4826,6 +4832,38 @@ function crmRenderContactsTable(body) {
     crmState.contactsPage = 1;
     renderCrmContacts();
   }));
+  const findContact = (id) => (crmState.contacts || []).find(c => c.id === id);
+  body.querySelectorAll('[data-crm-dm]').forEach(el => el.addEventListener('click', async () => {
+    const c = findContact(el.dataset.crmDm);
+    if (!c?.zalo_uid) return;
+    const ok = await openModal({
+      title: t(`Nhắn riêng cho ${c.display_name}`, `Message ${c.display_name}`),
+      desc: t('Tin gửi từ tài khoản bot, không phải từ tài khoản cá nhân của bạn.',
+        'Sent from the bot account, not your personal account.'),
+      body: `<label class="crm-field"><span>${t('Nội dung', 'Message')}</span><textarea id="crmDmText"></textarea></label>`,
+      confirmText: t('Gửi', 'Send'),
+    });
+    if (!ok) return;
+    const text = document.getElementById('crmDmText')?.value.trim();
+    if (!text) { showToast(t('Chưa nhập nội dung.', 'No message entered.'), 'error'); return; }
+    await runAction('send-message', { targetType: 'user', targetId: c.zalo_uid, text },
+      t('Đã gửi tin nhắn', 'Message sent'));
+  }));
+  body.querySelectorAll('[data-crm-addfriend]').forEach(el => el.addEventListener('click', async () => {
+    const c = findContact(el.dataset.crmAddfriend);
+    if (!c?.zalo_uid) return;
+    const ok = await openModal({
+      title: t(`Gửi lời mời kết bạn tới ${c.display_name}?`, `Send friend request to ${c.display_name}?`),
+      desc: t('Kết bạn xong bot mới đọc được sđt và ngày sinh của người này ở lần đồng bộ sau.',
+        'Once connected, the bot can read this person’s phone and birthday on the next sync.'),
+      body: `<label class="crm-field"><span>${t('Lời nhắn', 'Message')}</span><input id="crmFrMsg" autocomplete="off" value="${crmEsc(t('Xin chào, mình muốn kết nối.', 'Hi, I would like to connect.'))}"></label>`,
+      confirmText: t('Gửi lời mời', 'Send request'),
+    });
+    if (!ok) return;
+    await runAction('send-friend-request',
+      { userId: c.zalo_uid, message: document.getElementById('crmFrMsg')?.value.trim() || '' },
+      t('Đã gửi lời mời kết bạn', 'Friend request sent'));
+  }));
   body.querySelectorAll('[data-crm-edit]').forEach(el => el.addEventListener('click', () => {
     const contact = (crmState.contacts || []).find(c => c.id === el.dataset.crmEdit);
     if (contact) crmContactModal(contact);
@@ -4875,8 +4913,11 @@ async function crmContactModal(contact) {
       ${f('crmFPhone', t('SĐT', 'Phone'), contact?.phone)}
       ${f('crmFTags', 'Tags', (contact?.tags || []).join(', '), 'text', t('vd: vip, khách sỉ', 'e.g. vip, wholesale'))}
       ${f('crmFSource', t('Nguồn', 'Source'), contact?.source, 'text', t('vd: zalo-group, giới thiệu', 'e.g. zalo-group, referral'))}
+      ${/* CHỈ HIỂN THỊ, không cho tick. Việc một người ở nhóm nào là dữ kiện Zalo đã có và mỗi lần
+            sync lại đúng theo thực tế — cho sửa tay thì lần sync kế tiếp ghi đè, thành ra cái nút
+            hứa một chuyện rồi lặng lẽ nuốt lời. Muốn đổi thì đổi ở Zalo, không phải ở đây. */''}
       <label class="crm-field"><span>${t('Thuộc nhóm', 'In groups')}</span>
-        ${crmGroupChecklist((contact?.groups || []).map(g => g.groupId))}</label>
+        ${crmGroupsReadonly(contact?.groups || [])}</label>
       <label class="crm-field"><span>${t('Ghi chú', 'Notes')}</span>
         <textarea id="crmFNotes" rows="3">${crmEsc(contact?.notes ?? '')}</textarea></label>
     </div>`,
@@ -4900,10 +4941,10 @@ async function crmContactModal(contact) {
     if (nameEl && !nameEl.value.trim()) nameEl.value = person.name;
     const srcEl = document.getElementById('crmFSource');
     if (srcEl && !srcEl.value.trim()) srcEl.value = 'zalo-group';
-    const want = new Set(person.groups.map(g => String(g.groupId)));
-    for (const cb of modalBody.querySelectorAll('[data-crm-group]')) {
-      if (want.has(String(cb.getAttribute('data-crm-group')))) cb.checked = true;
-    }
+    // Nhóm không còn sửa tay ở đây; chọn người xong thì hiện luôn nhóm của người đó cho owner thấy,
+    // còn việc ghi liên kết để lần sync gần nhất lo.
+    const host = modalBody.querySelector('[data-crm-groups-view]');
+    if (host) host.outerHTML = crmGroupsReadonly(person.groups || []);
     redrawLink();
   };
   const onInput = (ev) => {
@@ -4922,10 +4963,6 @@ async function crmContactModal(contact) {
   modalBody.removeEventListener('click', onClick);
   modalBody.removeEventListener('input', onInput);
   if (!ok) return;
-  const pickedGroups = [...modalBody.querySelectorAll('[data-crm-group]:checked')].map(el => {
-    const gid = el.getAttribute('data-crm-group');
-    return { groupId: gid, name: (state.groups || []).find(g => g.groupId === gid)?.name || gid };
-  });
   const name = document.getElementById('crmFName')?.value.trim();
   if (!name) { showToast(t('Tên là bắt buộc', 'Name is required'), 'error'); return; }
   try {
@@ -4939,8 +4976,9 @@ async function crmContactModal(contact) {
     });
     const tags = document.getElementById('crmFTags').value.split(',').map(s => s.trim()).filter(Boolean);
     await crmAction('crm-contact-tags', { id: saved.id, tags });
-    await crmAction('crm-contact-groups', { id: saved.id, groups: pickedGroups });
-    showToast(t('Đã lưu khách hàng', 'Contact saved'), 'success');
+    // KHÔNG gọi `crm-contact-groups` nữa: nó replace toàn bộ, mà form giờ chỉ hiển thị nhóm chứ
+    // không cho chọn — gửi lên sẽ là mảng rỗng và xoá sạch liên kết nhóm mà sync vừa dựng.
+    showToast(t('Đã lưu liên hệ', 'Contact saved'), 'success');
     renderCrmContacts();
   } catch (err) { showToast(err.message, 'error'); }
 }
@@ -5007,23 +5045,22 @@ function crmPersonPickerHtml() {
       `${people.length} people from followed groups · linked by uid, not by name`)}</div>`;
 }
 
-/** Ô chọn nhiều nhóm — dùng đúng danh sách nhóm bot đang theo, không gõ tay groupId. */
-function crmGroupChecklist(selectedIds = []) {
-  const groups = (state.groups || []).slice().sort((a, b) => String(a.name).localeCompare(String(b.name), 'vi'));
-  if (!groups.length) return `<div class="item-sub">${t('Chưa có nhóm nào trong state.', 'No groups in state.')}</div>`;
-  const sel = new Set(selectedIds.map(String));
-  return `<div style="max-height:150px;overflow:auto;border:1px solid var(--line);border-radius:9px;padding:6px;background:var(--surface-2)">
-    ${/* Cỡ ô tick đặt THẲNG inline, không dựa vào dashboard.css: quy tắc chung
-          `input { width:100%; min-height:40px }` áp cả cho checkbox, và nó từng kéo ô tick rộng hết
-          dòng khiến tên nhóm bị đẩy mất — cả khối chỉ còn ba ô vuông trống. dashboard.css nay đã có
-          rule đè, nhưng inline thì không lệ thuộc vào thứ tự cascade lẫn bộ nhớ đệm CSS của trình
-          duyệt (file nạp qua URL có dấu vân bản, sửa CSS mà quên đổi dấu là người dùng vẫn thấy bản
-          cũ). */''}
-    ${groups.map(g => `<label style="display:flex;align-items:center;gap:8px;padding:4px 6px;border-radius:6px;cursor:pointer;font-size:13px">
-      <input type="checkbox" data-crm-group="${crmEsc(g.groupId)}" ${sel.has(String(g.groupId)) ? 'checked' : ''}
-        style="width:16px;min-width:16px;height:16px;min-height:0;padding:0;margin:0;flex:none"/>
-      <span style="flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${crmEsc(g.name)}</span>
-    </label>`).join('')}</div>`;
+/**
+ * Các nhóm của một liên hệ — CHỈ HIỂN THỊ.
+ *
+ * Trước đây đây là checklist chọn tay mọi nhóm bot đang theo. Bỏ vì nó hứa một chuyện rồi nuốt lời:
+ * việc ai ở nhóm nào là dữ kiện của Zalo, và mỗi lần sync `importMembers` dựng lại đúng theo thực
+ * tế — nên nhóm tick tay sẽ bị ghi đè ở lần sync kế tiếp mà không báo gì. Thêm nữa, danh sách phải
+ * liệt kê MỌI nhóm để tick được, trong khi thứ owner cần chỉ là "người này đang ở đâu".
+ */
+function crmGroupsReadonly(groups = []) {
+  if (!groups.length) {
+    return `<div data-crm-groups-view class="item-sub" style="font-size:12px">${t(
+      'Chưa thuộc nhóm nào bot đang theo. Nhóm được điền tự động khi Sync account.',
+      'Not in any followed group. Groups are filled in automatically on Sync account.')}</div>`;
+  }
+  return `<div data-crm-groups-view class="chips" style="max-height:120px;overflow:auto">${groups.map(g =>
+    `<span class="chip" title="${crmEsc(g.name)}" style="background:rgba(96,165,250,.14)">${crmEsc(g.name)}</span>`).join('')}</div>`;
 }
 
 /** Một <select> nhóm cho lead/task — chỉ chọn được MỘT nhóm nên dùng select, không dùng checklist. */

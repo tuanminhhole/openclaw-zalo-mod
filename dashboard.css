@@ -145,10 +145,19 @@ button {
   font-size: 12px;
 }
 
+/* Sidebar cao đúng 100vh và là flex dọc, nhưng khi menu dài hơn màn hình thì cả cụm tràn xuống
+   dưới — khối cuối (giấy phép, phiên bản) trôi khỏi tầm nhìn và chỉ thấy lại khi cuộn trang.
+   Cho riêng vùng menu cuộn, footer đứng yên. `min-height:0` là bắt buộc: mặc định flex item không
+   co nhỏ hơn nội dung nên `overflow` sẽ không bao giờ kích hoạt. */
 .nav {
   display: grid;
   gap: 4px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
+.sidebar-footer { flex: none; }
 
 .nav button {
   width: 100%;
@@ -5448,9 +5457,11 @@ textarea:focus {
   margin-bottom: 14px;
   flex-wrap: wrap;
 }
+/* Hẹp lại từ 320px: thanh lọc có 7 ô, ô tìm rộng là đẩy hai ô cuối rớt xuống dòng thứ hai trên
+   màn hình thường. Vẫn co giãn được nên màn rộng nó tự nới ra. */
 .crm-search {
-  flex: 0 1 320px;
-  min-width: 180px;
+  flex: 0 1 170px;
+  min-width: 120px;
   padding: 9px 12px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -5494,6 +5505,10 @@ textarea:focus {
   background: var(--primary-soft);
 }
 .crm-bulkbar .btn { min-height: 32px; padding: 5px 10px; font-size: 12.5px; white-space: nowrap; }
+
+/* Cụm nút cuối mỗi dòng: 4 nút mà giữ cỡ mặc định thì cột phình và bảng phải cuộn ngang. */
+.crm-row-actions { display: flex; gap: 4px; justify-content: flex-end; }
+.crm-row-actions .btn { min-height: 30px; padding: 4px 8px; font-size: 12px; white-space: nowrap; }
 
 /* Khối "Kết bạn & lời mời" gấp lại — phần còn sót của trang Bạn bè cũ, hiếm dùng nên không được
    chiếm chỗ phía trên danh sách. */

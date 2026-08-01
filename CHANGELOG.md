@@ -1,5 +1,26 @@
 ## [Unreleased]
 
+### Changed
+- **Thanh lọc trang Liên hệ về ĐÚNG MỘT dòng** (cao 84px → 40px). Gốc không phải ô tìm quá rộng mà
+  là quy tắc chung `select { width: 100% }` — mỗi ô lọc đòi rộng cả dòng (đo được 342px cho ô chỉ
+  cần ~120px). Cùng họ với bẫy checkbox: quy tắc dựng cho form dọc rò sang thứ nằm ngang. Kèm rút
+  nhãn mặc định cho gọn: `Nhãn: tất cả` → `Nhãn`, `Loại: tất cả` → `Loại`…
+- **Badge bot ghi TÊN bot thay vì đếm số.** `2 bot` không cho biết là bot nào; nay dùng chung
+  `getBotBadge` với trang Nhóm nên đọc một kiểu ở mọi trang. Chỉ hiện khi thật sự có nhiều bot.
+- **Cột "Loại" thành badge**, **bỏ cột "Tương tác cuối"** (mọi dòng cùng một mốc import nên không
+  phân biệt được gì), và **cột thao tác thêm nút 💬 nhắn riêng + ➕ kết bạn**. Hai nút chỉ hiện khi
+  đã nối được người Zalo — không có uid thì cả hai đều vô nghĩa; nút kết bạn tự ẩn với người đã là
+  bạn.
+- **Form Liên hệ: khối "Thuộc nhóm" chuyển sang CHỈ HIỂN THỊ.** Trước đó là checklist tick tay mọi
+  nhóm bot đang theo — nó hứa một chuyện rồi nuốt lời, vì `importMembers` dựng lại liên kết nhóm
+  theo đúng thực tế ở mỗi lần Sync account, nên nhóm tick tay bị ghi đè mà không báo gì. Bỏ luôn lời
+  gọi `crm-contact-groups` lúc lưu: form không còn ô tick thì nó sẽ gửi mảng rỗng và **xoá sạch**
+  liên kết nhóm mà sync vừa dựng.
+- **Chân sidebar không trôi theo cuộn trang nữa.** Sidebar cao 100vh và là flex dọc, nhưng menu dài
+  hơn màn hình thì cả cụm tràn xuống dưới. Nay vùng menu cuộn riêng (`flex:1;min-height:0;
+  overflow-y:auto` — thiếu `min-height:0` thì flex item không co và `overflow` không bao giờ kích
+  hoạt), chân sidebar đứng yên.
+
 ### Fixed
 - **★ Liên hệ không tách theo bot: bot này thấy liên hệ của bot kia, và một người thành hai dòng.**
   Owner báo hai triệu chứng, chung một gốc: CRM **chưa bao giờ truyền `accountId`**. Import luôn ghi

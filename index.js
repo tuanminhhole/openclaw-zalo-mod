@@ -6188,6 +6188,15 @@ Quy tắc:
         });
 
         // ── Event: before_dispatch (legacy command/moderation hook) ──
+        // Text-alias của lệnh built-in OpenClaw (nguồn: textAlias trong openclaw dist).
+        // Gate chặn-lệnh-bot-lạ trong group phải cho các lệnh này đi tiếp xuống core.
+        const OPENCLAW_BUILTIN_COMMANDS = new Set([
+            '/acp', '/activation', '/agents', '/allowlist', '/approve', '/bash', '/commands',
+            '/compact', '/config', '/context', '/debug', '/diagnostics', '/elevated', '/exec',
+            '/fast', '/focus', '/goal', '/help', '/mcp', '/model', '/models', '/new', '/queue',
+            '/reasoning', '/reset', '/restart', '/send', '/session', '/skill', '/subagents',
+            '/tasks', '/think', '/tools', '/trace', '/tts', '/unfocus', '/usage', '/verbose', '/whoami',
+        ]);
         handleZaloDispatch = async (event, ctx) => {
             // 1. Chỉ bắt event từ OpenClaw Zalo Connect
             if (pluginCfg.debug === true) { console.log('[ZALO-MOD-DEBUG] ctx:', JSON.stringify(ctx || {})); console.log('[ZALO-MOD-DEBUG] body:', event?.body); }
@@ -6417,6 +6426,11 @@ Quy tắc:
             const slashMatch = content.match(/(?:^|\s)(\/[a-z][a-z0-9-]*)(.*)$/i);
             if (slashMatch) {
                 const rawCommand = slashMatch[1].toLowerCase();
+                // Lệnh built-in của OpenClaw (/new, /compact, /model...) phải RƠI XUỐNG core
+                // dispatcher — claim ở đây từng làm chúng chết trong group (DM vẫn chạy vì
+                // DM không đi qua gate này). Core xử lý lệnh zero-token, không có LLM reply,
+                // nên pass-through không mở lại lỗ "bot lạ trả lời lệnh của bot khác".
+                if (OPENCLAW_BUILTIN_COMMANDS.has(rawCommand)) return undefined;
                 // Slash command thuộc bot khác (prefix không match) → chặn, không để LLM reply
                 // (tránh trường hợp 2 bot cùng group: /williams-noi-quy lọt vào Mkt và LLM của Mkt trả lời)
                 if (!rawCommand.startsWith(cmdPrefix)) return { handled: true };

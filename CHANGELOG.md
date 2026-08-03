@@ -1,3 +1,13 @@
+## [2.28.1] - 2026-08-03
+
+### Fixed
+
+- **Lệnh built-in của OpenClaw (`/new`, `/compact`, `/model`…) hoạt động trở lại trong nhóm.**
+  Gate "chặn lệnh của bot khác" (để hai bot cùng nhóm không trả lời nhầm lệnh của nhau) nuốt luôn
+  cả lệnh built-in trước khi chúng tới core — trong nhóm lệnh chết im lặng, nhắn riêng vẫn chạy
+  nên rất khó lần ra. Nay lệnh built-in được cho đi xuyên xuống core dispatcher; core xử lý lệnh
+  zero-token, không có LLM reply, nên không mở lại đúng cái lỗ mà gate này sinh ra để bịt.
+
 ## [2.28.0] - 2026-08-02
 
 ### Added

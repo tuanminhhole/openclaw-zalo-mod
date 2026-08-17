@@ -1808,6 +1808,25 @@ Quy tắc:
         }
 
         const SUMMARY_TRANSCRIPT_MAX = 15000; // ký tự transcript tối đa đưa cho AI
+        const OPEN_ITEM_STATES = new Set(['pending', 'done', 'blocked']);
+
+        /**
+         * Phòng vệ output của AI cho `openItems` — prompt đã dặn tối đa 8 việc/≤120 ký tự/state hợp lệ,
+         * nhưng model không đảm bảo tuân thủ. Parse lỗi hay field lạ thì cắt/bỏ, KHÔNG ném lỗi làm hỏng
+         * các field khác của bản tổng hợp (giữ đúng cách phòng vệ đang có cho `appointments`/`highlights`).
+         */
+        function normalizeOpenItems(raw) {
+            if (!Array.isArray(raw)) return [];
+            return raw.slice(0, 8)
+                .map((it) => ({
+                    what: String(it?.what ?? '').trim().slice(0, 120),
+                    who: String(it?.who ?? '').trim(),
+                    due: String(it?.due ?? '').trim(),
+                    state: OPEN_ITEM_STATES.has(it?.state) ? it.state : 'pending',
+                    evidence: String(it?.evidence ?? '').trim(),
+                }))
+                .filter((it) => it.what);
+        }
 
         /** Tạo bản tổng hợp 1 ngày: trích xuất link/note/memory (chính xác) + AI lo overview/nổi bật/lặp/hẹn lịch */
         async function generateDailySummary(groupId, dateStr, opts = {}) {
@@ -1842,12 +1861,16 @@ Quy tắc:
             const participants = [...talkCount.entries()].sort((a, b) => b[1] - a[1]).map(([name, count]) => ({ name, count }));
 
             // Phần AI
-            let ai = { overview: '', keySpeakers: [], highlights: [], repeatedTopics: [], appointments: [] };
+            let ai = { overview: '', keySpeakers: [], highlights: [], repeatedTopics: [], appointments: [], openItems: [] };
             let aiOk = false;
             if (history.length > 0) {
                 let transcript = history.filter(e => !_botLc.has(String(e.dispName || '').toLowerCase())).map(e => `${e.t} ${e.dispName}: ${e.text}`).join('\n');
                 if (transcript.length > SUMMARY_TRANSCRIPT_MAX) transcript = '(…đã rút gọn, chỉ phần gần nhất trong ngày)\n' + transcript.slice(-SUMMARY_TRANSCRIPT_MAX);
-                const prompt = `Bạn là trợ lý tổng hợp hội thoại nhóm chat Zalo. Dưới đây là tin nhắn trong ngày ${date} (giờ VN) của nhóm "${getGroupName(groupId)}".\n\n[TIN NHẮN]\n${transcript}\n\nTrả về DUY NHẤT một JSON (không kèm giải thích, không markdown) theo schema:\n{"overview":"tóm tắt 3-5 câu nội dung chính","keySpeakers":[{"name":"","gist":""}],"highlights":["điểm quan trọng/nổi bật"],"repeatedTopics":["chủ đề nhắc lại nhiều lần"],"appointments":[{"name":"","what":"hẹn việc gì","when":"thời gian nếu có"}]}\nMục nào không có thì để mảng rỗng. Viết tiếng Việt tự nhiên, ngắn gọn.`;
+                // openItems (P2): việc còn treo/chưa xong RÕ RÀNG trong ngày — nguồn duy nhất nuôi kanban,
+                // nên phải nghiêm hơn các field khác. "Chỉ ghi việc có người nói rõ, cấm suy diễn/gộp
+                // nhiều việc thành một" — dedupe + đối soát với việc đã có nằm ở task-reconcile.js, không
+                // phải ở đây; ở đây chỉ RÚT ra, không quyết định trạng thái cuối cùng.
+                const prompt = `Bạn là trợ lý tổng hợp hội thoại nhóm chat Zalo. Dưới đây là tin nhắn trong ngày ${date} (giờ VN) của nhóm "${getGroupName(groupId)}".\n\n[TIN NHẮN]\n${transcript}\n\nTrả về DUY NHẤT một JSON (không kèm giải thích, không markdown) theo schema:\n{"overview":"tóm tắt 3-5 câu nội dung chính","keySpeakers":[{"name":"","gist":""}],"highlights":["điểm quan trọng/nổi bật"],"repeatedTopics":["chủ đề nhắc lại nhiều lần"],"appointments":[{"name":"","what":"hẹn việc gì","when":"thời gian nếu có"}],"openItems":[{"what":"việc cần làm/còn treo, dạng động từ+đối tượng, tối đa 120 ký tự","who":"ai chịu trách nhiệm nếu nói rõ, để trống nếu không rõ — KHÔNG đoán tên","due":"deadline nếu có","state":"pending|done|blocked","evidence":"giờ HH:MM của tin nhắn làm bằng chứng"}]}\nMục nào không có thì để mảng rỗng. openItems: CHỈ ghi việc có người nói RÕ trong ngày, CẤM suy diễn và CẤM gộp nhiều việc thành một, tối đa 8 việc. Viết tiếng Việt tự nhiên, ngắn gọn.`;
                 try {
                     const raw = await callSmartRoute(prompt);
                     const m = raw.match(/\{[\s\S]*\}/);
@@ -1859,6 +1882,7 @@ Quy tắc:
                             highlights: Array.isArray(p.highlights) ? p.highlights : [],
                             repeatedTopics: Array.isArray(p.repeatedTopics) ? p.repeatedTopics : [],
                             appointments: Array.isArray(p.appointments) ? p.appointments : [],
+                            openItems: normalizeOpenItems(p.openItems),
                         };
                         aiOk = true;
                     }
@@ -1874,7 +1898,7 @@ Quy tắc:
                 by: opts.by || 'manual',
                 messageCount: history.length,
                 aiOk,
-                sections: { overview: ai.overview, participants, keySpeakers: ai.keySpeakers, highlights: ai.highlights, repeatedTopics: ai.repeatedTopics, links, notes, memories, appointments: ai.appointments },
+                sections: { overview: ai.overview, participants, keySpeakers: ai.keySpeakers, highlights: ai.highlights, repeatedTopics: ai.repeatedTopics, links, notes, memories, appointments: ai.appointments, openItems: ai.openItems },
             };
 
             // Lưu JSON (cho UI) + markdown (cho agent đọc).
@@ -1891,6 +1915,17 @@ Quy tắc:
                 await fs.writeFile(path.join(getMemoryDir(groupId), `daily-summary-${date}.md`), summaryToMarkdown(summary), 'utf8');
             } catch (e) {
                 logger.warn(`[openclaw-zalo-mod] save summary failed: ${e.message}`);
+            }
+            // Kanban (P2): đối soát TẤT ĐỊNH, 0 lượt AI tăng thêm — `openItems` đã rút xong ở trên,
+            // đây chỉ còn là ghi DB. `zEngine.crm` là null khi storage rơi về in-memory (Node <22.5)
+            // — bỏ qua, không phải lỗi. Lỗi đối soát KHÔNG được làm hỏng bản tổng hợp đã lưu thành
+            // công ở trên (đúng nguyên tắc phòng vệ đang có cho AI/parse lỗi).
+            if (ai.openItems.length && zEngine?.crm) {
+                try {
+                    zEngine.crm.reconcileGroupOpenItems(String(groupId).replace(/^group:/, ''), date, ai.openItems);
+                } catch (e) {
+                    logger.warn(`[openclaw-zalo-mod] reconcile openItems failed: ${e.message}`);
+                }
             }
             return summary;
         }

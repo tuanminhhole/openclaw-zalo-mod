@@ -1,3 +1,38 @@
+## [2.30.0] - 2026-08-18
+
+### Added
+
+- **Bản tổng hợp ngày rút thêm `openItems`** (việc còn treo được người nói RÕ trong ngày) — dùng
+  chung schema JSON đã có của `generateDailySummary`, **0 lượt gọi AI tăng thêm**. Tối đa 8
+  việc/ngày/nhóm, `what` ≤ 120 ký tự, `who` để trống nếu không rõ ai chịu trách nhiệm (không đoán
+  tên) — AI tuân thủ prompt nhưng code vẫn tự phòng vệ (`normalizeOpenItems`) vì model không đảm
+  bảo giới hạn.
+- **Kanban việc tồn đọng** — migration **v9** trên `context.db` thêm `source`/`status`/
+  `review_state`/`dedupe_key`/`evidence`/`first_seen_date`/`last_seen_date` vào bảng `tasks` sẵn có
+  (việc gõ tay cũ tự suy `status` từ `done_at`, không mất dữ liệu). `src/crm/task-reconcile.js`
+  (hàm thuần, không I/O) đối soát `openItems` mỗi ngày với việc đã có: việc mới → thêm với
+  `source='ai'` + `review_state='pending'` ("Chờ xác nhận"); gặp lại → chỉ cập nhật ngày thấy gần
+  nhất; AI báo "done" → đóng việc; **trùng với việc gõ tay thì bỏ qua, AI không bao giờ được xoá
+  hay tự đóng việc `source='manual'`** (luật cứng Kent chốt 18/08).
+  `CrmStore` có thêm `reconcileGroupOpenItems`/`listOpenItemsBoard`/`approveTask`/`rejectTask`/
+  `setTaskStatus`, và 4 action mới (`crm-tasks-board`, `crm-task-approve`, `crm-task-reject`,
+  `crm-task-status`) cho dashboard gọi.
+
+### Fixed
+
+- `createTask` (việc gõ tay) giờ cũng ghi `dedupe_key` — thiếu bước này thì luật "AI không được
+  chạm việc gõ tay" không có cách nào phát hiện được va chạm (đối soát khớp theo `dedupe_key`, không
+  phải theo tiêu đề thô). Hai việc gõ tay trùng tên trong cùng nhóm **vẫn tạo được bình thường**
+  (đó là quyền của người) — chỉ bản ghi trùng thứ hai không giữ `dedupe_key`, coi như đứng ngoài
+  đối soát tự động thay vì làm hỏng thao tác tạo việc.
+
+### Chưa xong trong bản này (còn treo cho phase sau)
+
+- **Giao diện kanban 4 cột trên dashboard** (trang Công việc) — backend (`listOpenItemsBoard` +
+  4 action) đã sẵn, còn thiếu phần hiển thị/kéo-thả trên `dashboard.js`.
+- **Bot đọc kanban qua tin nhắn** (`zalo_mod_action`/tool riêng, chỉ đọc) — owner chưa hỏi được
+  "nhóm này còn việc gì chưa làm" bằng lời, phải vào dashboard.
+
 ## [2.29.0] - 2026-08-18
 
 ### Added

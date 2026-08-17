@@ -14,8 +14,14 @@ function extract(signature) {
     return match[0];
 }
 
+// REPORT_FOR_VALUES/ISO_DATE_RE là `const` (extract() chỉ bắt được `function`) — khai lại tại đây,
+// y hệt định nghĩa trong index.js gần `normalizeReportForFields`.
+const REPORT_FOR_CONSTS = `
+    const REPORT_FOR_VALUES = new Set(['today', 'yesterday', 'last7', 'last30', 'thisMonth', 'custom']);
+    const ISO_DATE_RE = /^\\d{4}-\\d{2}-\\d{2}$/;
+`;
 const normalizeReportJob = new Function(
-    `${extract('normReportTime')}\n${extract('normalizeReportJob')}\nreturn normalizeReportJob;`,
+    `${REPORT_FOR_CONSTS}\n${extract('normReportTime')}\n${extract('normalizeReportForFields')}\n${extract('normalizeReportJob')}\nreturn normalizeReportJob;`,
 )();
 
 test('digest KHÔNG được giữ eachGroup — một tin gộp không thuộc nhóm nào để gửi vào', () => {
@@ -60,14 +66,14 @@ function loadSplitter(parts, safeChars = 3500) {
     return new Function('parts', 'DIGEST_SAFE_CHARS', `
         const buildDigestParts = async () => parts;
         ${extract('buildDigestMessages')}
-        return buildDigestMessages([], '2026-07-29');
+        return buildDigestMessages([], { from: '2026-07-29', to: '2026-07-29' });
     `)(parts, safeChars);
 }
 
 const block = (name, size) => `📋 ${name} — 10 tin · 3 người\n  • ${'x'.repeat(size)}`;
 
 test('ít nhóm → đúng một tin, không có nhãn phần', async () => {
-    const texts = await loadSplitter({
+    const { texts } = await loadSplitter({
         blocks: [block('A', 50), block('B', 50)], totalMsgs: 20, totalLinks: 2, totalAppts: 1, groupCount: 2,
     });
     assert.equal(texts.length, 1);
@@ -78,7 +84,7 @@ test('ít nhóm → đúng một tin, không có nhãn phần', async () => {
 
 test('nhiều nhóm → cắt thành nhiều phần, mỗi phần có tiêu đề và nhãn phần', async () => {
     const blocks = Array.from({ length: 12 }, (_, i) => block(`Nhóm ${i}`, 400));
-    const texts = await loadSplitter({ blocks, totalMsgs: 300, totalLinks: 0, totalAppts: 0, groupCount: 12 });
+    const { texts } = await loadSplitter({ blocks, totalMsgs: 300, totalLinks: 0, totalAppts: 0, groupCount: 12 });
     assert.ok(texts.length > 1, 'phải tách thành nhiều tin');
     for (const [i, tx] of texts.entries()) {
         assert.match(tx, /^📊 TỔNG HỢP 2026-07-29/, `tin ${i + 1} phải có tiêu đề`);
@@ -88,7 +94,7 @@ test('nhiều nhóm → cắt thành nhiều phần, mỗi phần có tiêu đ�
 
 test('cắt ĐÚNG ranh giới nhóm — không nhóm nào bị xé làm hai', async () => {
     const blocks = Array.from({ length: 12 }, (_, i) => block(`Nhóm ${i}`, 400));
-    const texts = await loadSplitter({ blocks, totalMsgs: 300, totalLinks: 0, totalAppts: 0, groupCount: 12 });
+    const { texts } = await loadSplitter({ blocks, totalMsgs: 300, totalLinks: 0, totalAppts: 0, groupCount: 12 });
     const joined = texts.join('\n');
     for (const b of blocks) {
         assert.ok(joined.includes(b), 'mỗi block phải còn nguyên vẹn trong đúng một tin');
@@ -98,15 +104,136 @@ test('cắt ĐÚNG ranh giới nhóm — không nhóm nào bị xé làm hai', a
 
 test('footer chỉ nằm ở tin cuối', async () => {
     const blocks = Array.from({ length: 12 }, (_, i) => block(`Nhóm ${i}`, 400));
-    const texts = await loadSplitter({ blocks, totalMsgs: 300, totalLinks: 5, totalAppts: 2, groupCount: 12 });
+    const { texts } = await loadSplitter({ blocks, totalMsgs: 300, totalLinks: 5, totalAppts: 2, groupCount: 12 });
     assert.equal(texts.filter(tx => tx.includes('xem chi tiết ở dashboard')).length, 1);
     assert.match(texts.at(-1), /xem chi tiết ở dashboard/);
 });
 
 test('không nhóm nào có tin → nói rõ, không gửi tin rỗng', async () => {
-    const texts = await loadSplitter({ blocks: [], totalMsgs: 0, totalLinks: 0, totalAppts: 0, groupCount: 0 });
+    const { texts } = await loadSplitter({ blocks: [], totalMsgs: 0, totalLinks: 0, totalAppts: 0, groupCount: 0 });
     assert.equal(texts.length, 1);
     assert.match(texts[0], /Không có nhóm nào có tin nhắn/);
+});
+
+// ── Digest nhiều ngày (P1) — chỉ đọc cache, cấm sinh lại, gộp theo NHÓM ───────────────────────
+// Range >1 ngày không được đụng LLM: 30 nhóm × 7 ngày sinh lại là 210 lượt gọi model cho một tin.
+function loadRangeDigest(summaries) {
+    return new Function('summaries', `
+        // CỐ Ý không định nghĩa generateDailySummary/readChatHistory/callSmartRoute: nếu nhánh
+        // nhiều-ngày lỡ gọi tới, test phải nổ ReferenceError ngay — bằng chứng mạnh hơn spy đếm 0 lần.
+        const getSummary = async (gid, d) => summaries[gid + '|' + d] || null;
+        const getGroupName = (g) => 'Nhóm ' + g;
+        ${extract('addDaysStr')}
+        ${extract('dateRangeList')}
+        ${extract('buildDigestParts')}
+        ${extract('buildDigestMessages')}
+        return { buildDigestParts, buildDigestMessages };
+    `)(summaries);
+}
+
+test('range nhiều ngày: KHÔNG gọi generateDailySummary dù thiếu cache (chỉ đọc, không sinh lại)', async () => {
+    const { buildDigestParts } = loadRangeDigest({
+        'g1|2026-08-12': { messageCount: 3, sections: { highlights: ['a'], participants: ['p'] } },
+        'g1|2026-08-14': { messageCount: 2, sections: { highlights: ['b'], participants: ['p'] } },
+        // 2026-08-13, 15, 16 KHÔNG có cache — nhánh nhiều-ngày không được tự sinh để lấp.
+    });
+    const r = await buildDigestParts(['g1'], { from: '2026-08-12', to: '2026-08-16' });
+    assert.equal(r.totalMsgs, 5, 'chỉ cộng đúng những ngày có cache');
+    assert.deepEqual(r.missingDates, ['2026-08-13', '2026-08-15', '2026-08-16'], '3/5 ngày thiếu');
+});
+
+test('last7 thiếu 2 ngày → dòng cảnh báo đúng số lượng và đúng ngày', async () => {
+    const { buildDigestMessages } = loadRangeDigest({
+        'g1|2026-08-12': { messageCount: 1, sections: {} },
+        'g1|2026-08-13': { messageCount: 1, sections: {} },
+        'g1|2026-08-15': { messageCount: 1, sections: {} },
+        'g1|2026-08-16': { messageCount: 1, sections: {} },
+        'g1|2026-08-17': { messageCount: 1, sections: {} },
+        // 7 ngày 11..17, thiếu đúng 11 và 14.
+    });
+    const { texts, missingDates } = await buildDigestMessages(['g1'], { from: '2026-08-11', to: '2026-08-17' });
+    assert.deepEqual(missingDates, ['2026-08-11', '2026-08-14']);
+    assert.match(texts.join('\n'), /⚠️ 2\/7 ngày chưa có bản tổng hợp: 2026-08-11 · 2026-08-14/);
+});
+
+test('gộp nhiều ngày CỘNG số tin, ưu tiên highlight ngày MỚI NHẤT trước', async () => {
+    const { buildDigestParts } = loadRangeDigest({
+        'g1|2026-08-10': { messageCount: 2, sections: { highlights: ['cũ'], participants: ['a'] } },
+        'g1|2026-08-11': { messageCount: 3, sections: { highlights: ['mới'], participants: ['a', 'b'] } },
+    });
+    const r = await buildDigestParts(['g1'], { from: '2026-08-10', to: '2026-08-11' });
+    assert.equal(r.totalMsgs, 5, 'cộng dồn tin cả kỳ, không lấy ngày cuối');
+    assert.match(r.blocks[0], /^📋 Nhóm g1 — 5 tin · 2 người/, 'participants lấy MAX quan sát được trong kỳ');
+    const bulletLines = r.blocks[0].split('\n').slice(1);
+    assert.deepEqual(bulletLines, ['  • mới', '  • cũ'], 'ngày mới nhất (08-11) phải đứng trước ngày cũ hơn');
+});
+
+// ── Xem trước (dashboard) phải ra ĐÚNG range của lịch, không phải luôn "hôm nay" ──────────────
+// Mô phỏng lại đúng pipeline của action `report-digest-preview` trong runDashboardAction:
+// normalizeReportForFields(payload) → reportRangeFor(...) → buildDigestMessages(...). Không chạy
+// được nút thật trên dashboard ở máy Mac (không có gateway/session Zalo sống ở đây), nên đây là
+// bằng chứng thay thế: ghép đúng 3 hàm thật của index.js, không phải hàm giả lập lại logic.
+function simulatePreview({ summaries, payload, runDate }) {
+    return new Function('summaries', 'payload', 'runDate', `
+        ${REPORT_FOR_CONSTS}
+        const getSummary = async (gid, d) => summaries[gid + '|' + d] || null;
+        const getGroupName = (g) => 'Nhóm ' + g;
+        // Range 1 ngày (ví dụ 'yesterday') đi nhánh cũ của buildDigestParts, cần đủ hai phụ thuộc
+        // này — cache đã đủ (rawCount 0 <= cache.messageCount) nên không chạm generateDailySummary.
+        const readChatHistory = async () => [];
+        const generateDailySummary = async () => { throw new Error('KHÔNG được sinh lại trong xem trước'); };
+        ${extract('addDaysStr')}
+        ${extract('dateRangeList')}
+        ${extract('normalizeReportForFields')}
+        ${extract('reportRangeFor')}
+        ${extract('buildDigestParts')}
+        ${extract('buildDigestMessages')}
+        return (async () => {
+            const forFields = normalizeReportForFields(payload);
+            const range = reportRangeFor(forFields, runDate);
+            const { texts, missingDates } = await buildDigestMessages(['g1'], range, { persist: false });
+            return { from: range.from, to: range.to, texts, missingDates };
+        })();
+    `)(summaries, payload, runDate);
+}
+
+test('[d] Xem trước lịch buổi sáng (reportFor:yesterday) ra ĐÚNG hôm qua, không phải hôm nay', async () => {
+    const r = await simulatePreview({
+        summaries: { 'g1|2026-08-17': { messageCount: 4, sections: { highlights: ['x'], participants: ['a'] } } },
+        payload: { reportFor: 'yesterday' },
+        runDate: '2026-08-18',
+    });
+    assert.deepEqual({ from: r.from, to: r.to }, { from: '2026-08-17', to: '2026-08-17' });
+    assert.match(r.texts[0], /^📊 TỔNG HỢP 2026-08-17/);
+});
+
+test('[d] Xem trước lịch last7 ra ĐÚNG 7 ngày kết thúc hôm qua, kèm cảnh báo ngày thiếu', async () => {
+    const r = await simulatePreview({
+        summaries: { 'g1|2026-08-17': { messageCount: 1, sections: {} } }, // 6/7 ngày thiếu
+        payload: { reportFor: 'last7' },
+        runDate: '2026-08-18',
+    });
+    assert.deepEqual({ from: r.from, to: r.to }, { from: '2026-08-11', to: '2026-08-17' });
+    assert.equal(r.missingDates.length, 6);
+    assert.match(r.texts.join('\n'), /⚠️ 6\/7 ngày chưa có bản tổng hợp/);
+});
+
+test('[d] Xem trước lịch custom quá 92 ngày tự clamp — preview không âm thầm đọc cả năm', async () => {
+    const r = await simulatePreview({
+        summaries: {},
+        payload: { reportFor: 'custom', rangeFrom: '2025-01-01', rangeTo: '2026-08-18' },
+        runDate: '2026-08-18',
+    });
+    const dayCount = (new Date(`${r.to}T00:00:00Z`) - new Date(`${r.from}T00:00:00Z`)) / 86400000 + 1;
+    assert.equal(dayCount, 92, 'phải bị clamp về 92 ngày, không đọc nguyên rangeFrom gốc');
+});
+
+test('range nhiều ngày mà không nhóm nào có tin → nói rõ trong tin, không gửi rỗng-im-lặng', async () => {
+    const { buildDigestMessages } = loadRangeDigest({});
+    const { texts } = await buildDigestMessages(['g1'], { from: '2026-08-10', to: '2026-08-11' });
+    assert.equal(texts.length, 1);
+    assert.match(texts[0], /Không có nhóm nào có tin nhắn được ghi trong khoảng này/);
+    assert.match(texts[0], /⚠️ 2\/2 ngày chưa có bản tổng hợp/);
 });
 
 // ── Migration chỉ chạy MỘT LẦN ────────────────────────────────────────────────────────────────
@@ -158,9 +285,10 @@ async function runScheduler({ jobs, now, today, state = {} }) {
         const vnTimeStr = () => now;
         const readPluginDataJson = async (n) => files[n] || {};
         const writePluginDataJson = async (n, v) => { files[n] = v; };
-        const runReportJob = async (job, date) => { sent.push(job.id); reported.push(date); return { sent: 1, groups: 28 }; };
+        const runReportJob = async (job, range) => { sent.push(job.id); reported.push(range); return { sent: 1, groups: 28 }; };
         const logger = { info() {}, warn(m) { warns.push(String(m)); } };
-        ${extract('reportDateFor')}
+        ${extract('addDaysStr')}
+        ${extract('reportRangeFor')}
         ${extract('runDueReports')}
         return runDueReports().then(() => ({ sent, reported, warns, state: files['report-state.json'] }));
     `)({ jobs, now, today, files, sent, reported, warns });
@@ -259,30 +387,71 @@ test('chốt ngày không ghi đè dấu đã có (giữ nguyên giờ đã gử
     assert.deepEqual(r.state.byJob.j1, { date: '2026-07-30', time: '22:30' });
 });
 
-// ── reportFor: lịch buổi sáng phải báo cáo NGÀY HÔM QUA ───────────────────────────────────────
-// Bẫy im lặng phát hiện trước khi kịp gây hại (2026-07-31): owner muốn báo cáo 08:00, nhưng digest
-// chỉ tóm tắt NGÀY HIỆN TẠI — nên 08:00 sẽ tóm tắt ~8 tiếng đầu ngày (preview ra "0 nhóm · 0 tin"),
-// còn trọn ngày hôm trước không bao giờ được báo. Lịch vẫn chạy, vẫn gửi → owner tưởng bot hỏng.
-const reportDateFor = new Function(`${extract('reportDateFor')}\nreturn reportDateFor;`)();
+// ── reportRangeFor: bộ chọn khoảng thời gian (P1) ─────────────────────────────────────────────
+// Bẫy im lặng gốc (2026-07-31): owner muốn báo cáo 08:00, nhưng digest chỉ tóm tắt NGÀY HIỆN TẠI —
+// nên 08:00 sẽ tóm tắt ~8 tiếng đầu ngày (preview ra "0 nhóm · 0 tin"), còn trọn ngày hôm trước
+// không bao giờ được báo. Lịch vẫn chạy, vẫn gửi → owner tưởng bot hỏng. `reportRangeFor` generalize
+// hoá đúng bài học đó cho 6 giá trị `reportFor`, thay `reportDateFor` (đã bỏ, không còn ai gọi).
+const reportRangeFor = new Function(`${extract('addDaysStr')}\n${extract('reportRangeFor')}\nreturn reportRangeFor;`)();
 
-test('reportFor "yesterday" trừ đúng một ngày, kể cả khi vắt qua tháng và năm', () => {
-    assert.equal(reportDateFor({ reportFor: 'yesterday' }, '2026-07-31'), '2026-07-30');
-    assert.equal(reportDateFor({ reportFor: 'yesterday' }, '2026-08-01'), '2026-07-31', 'vắt qua tháng');
-    assert.equal(reportDateFor({ reportFor: 'yesterday' }, '2026-01-01'), '2025-12-31', 'vắt qua năm');
-    assert.equal(reportDateFor({ reportFor: 'yesterday' }, '2028-03-01'), '2028-02-29', 'năm nhuận');
+test('today/yesterday: giữ ĐÚNG hành vi cũ, kể cả vắt qua tháng/năm/năm nhuận', () => {
+    assert.deepEqual(reportRangeFor({}, '2026-07-31'), { from: '2026-07-31', to: '2026-07-31' }, 'mặc định vẫn hôm nay');
+    assert.deepEqual(reportRangeFor({ reportFor: 'today' }, '2026-07-31'), { from: '2026-07-31', to: '2026-07-31' });
+    assert.deepEqual(reportRangeFor({ reportFor: 'rác' }, '2026-07-31'), { from: '2026-07-31', to: '2026-07-31' }, 'giá trị lạ → today');
+    assert.deepEqual(reportRangeFor({ reportFor: 'yesterday' }, '2026-07-31'), { from: '2026-07-30', to: '2026-07-30' });
+    assert.deepEqual(reportRangeFor({ reportFor: 'yesterday' }, '2026-08-01'), { from: '2026-07-31', to: '2026-07-31' }, 'vắt qua tháng');
+    assert.deepEqual(reportRangeFor({ reportFor: 'yesterday' }, '2026-01-01'), { from: '2025-12-31', to: '2025-12-31' }, 'vắt qua năm');
+    assert.deepEqual(reportRangeFor({ reportFor: 'yesterday' }, '2028-03-01'), { from: '2028-02-29', to: '2028-02-29' }, 'năm nhuận');
 });
 
-test('mặc định vẫn là hôm nay — lịch cuối ngày đang chạy không được đổi hành vi', () => {
-    assert.equal(reportDateFor({}, '2026-07-31'), '2026-07-31');
-    assert.equal(reportDateFor({ reportFor: 'today' }, '2026-07-31'), '2026-07-31');
-    assert.equal(reportDateFor({ reportFor: 'rác' }, '2026-07-31'), '2026-07-31', 'giá trị lạ → today');
+test('last7/last30: 7/30 ngày kết thúc HÔM QUA, không tính hôm nay dở dang', () => {
+    assert.deepEqual(reportRangeFor({ reportFor: 'last7' }, '2026-08-18'), { from: '2026-08-11', to: '2026-08-17' });
+    assert.deepEqual(reportRangeFor({ reportFor: 'last30' }, '2026-08-18'), { from: '2026-07-19', to: '2026-08-17' });
 });
 
-test('normalizeReportJob chỉ nhận đúng hai giá trị cho reportFor', () => {
-    assert.equal(normalizeReportJob({ reportFor: 'yesterday' }).reportFor, 'yesterday');
-    assert.equal(normalizeReportJob({ reportFor: 'today' }).reportFor, 'today');
+test('thisMonth: từ ngày 1 tháng này tới hôm qua; chạy đúng ngày 1 thì coi là một ngày (hôm qua)', () => {
+    assert.deepEqual(reportRangeFor({ reportFor: 'thisMonth' }, '2026-08-18'), { from: '2026-08-01', to: '2026-08-17' });
+    assert.deepEqual(reportRangeFor({ reportFor: 'thisMonth' }, '2026-08-01'), { from: '2026-07-31', to: '2026-07-31' },
+        'ngày 1 đầu tháng: "hôm qua" thuộc tháng trước → không để from > to');
+});
+
+test('custom: nhận đúng rangeFrom/rangeTo khi hợp lệ và from<=to', () => {
+    assert.deepEqual(reportRangeFor({ reportFor: 'custom', rangeFrom: '2026-08-01', rangeTo: '2026-08-10' }, '2026-08-18'),
+        { from: '2026-08-01', to: '2026-08-10' });
+});
+
+test('custom: thiếu/lệch thứ tự → coi như một ngày runDate, không crash', () => {
+    assert.deepEqual(reportRangeFor({ reportFor: 'custom' }, '2026-08-18'), { from: '2026-08-18', to: '2026-08-18' }, 'thiếu cả hai');
+    assert.deepEqual(
+        reportRangeFor({ reportFor: 'custom', rangeFrom: '2026-08-10', rangeTo: '2026-08-01' }, '2026-08-18'),
+        { from: '2026-08-18', to: '2026-08-18' }, 'from > to là dữ liệu hỏng');
+});
+
+test('custom: quá 92 ngày thì tự CLAMP về 92 ngày gần "đến ngày" nhất, có cờ `clamped`', () => {
+    const r = reportRangeFor({ reportFor: 'custom', rangeFrom: '2026-01-01', rangeTo: '2026-08-18' }, '2026-08-18');
+    assert.equal(r.to, '2026-08-18');
+    assert.equal(r.clamped, true);
+    const dayCount = (new Date(`${r.to}T00:00:00Z`) - new Date(`${r.from}T00:00:00Z`)) / 86400000 + 1;
+    assert.equal(dayCount, 92, 'đúng 92 ngày kể cả hai đầu');
+});
+
+test('custom: đúng 92 ngày thì KHÔNG clamp', () => {
+    // 92 ngày kể cả hai đầu: from = to - 91 ngày.
+    const r = reportRangeFor({ reportFor: 'custom', rangeFrom: '2026-05-19', rangeTo: '2026-08-18' }, '2026-08-18');
+    assert.equal(r.clamped, undefined);
+    assert.deepEqual(r, { from: '2026-05-19', to: '2026-08-18' });
+});
+
+test('normalizeReportJob nhận đủ 6 giá trị reportFor + rangeFrom/rangeTo hợp lệ', () => {
+    for (const v of ['today', 'yesterday', 'last7', 'last30', 'thisMonth', 'custom']) {
+        assert.equal(normalizeReportJob({ reportFor: v }).reportFor, v, `phải nhận '${v}'`);
+    }
     assert.equal(normalizeReportJob({}).reportFor, 'today', 'thiếu → today, giữ hành vi cũ');
     assert.equal(normalizeReportJob({ reportFor: 'YESTERDAY' }).reportFor, 'today', 'không nhận hoa/thường lẫn');
+    assert.equal(normalizeReportJob({ reportFor: 'custom', rangeFrom: '2026-08-01', rangeTo: '2026-08-10' }).rangeFrom, '2026-08-01');
+    assert.equal(normalizeReportJob({ reportFor: 'custom', rangeFrom: '2026-08-01', rangeTo: '2026-08-10' }).rangeTo, '2026-08-10');
+    assert.equal(normalizeReportJob({ rangeFrom: '18/08/2026' }).rangeFrom, '', 'dạng sai (không phải YYYY-MM-DD) → rỗng');
+    assert.equal(normalizeReportJob({}).rangeFrom, '', 'thiếu → rỗng, không phải undefined (giữ JSON gọn)');
 });
 
 test('chốt-ngày theo NGÀY CHẠY, không theo ngày được báo cáo', async () => {
@@ -305,12 +474,12 @@ test('lịch sáng lấy nội dung NGÀY HÔM QUA, lịch cuối ngày lấy h�
     const sang = await runScheduler({
         jobs: [job({ time: '08:00', reportFor: 'yesterday' })], now: '08:00', today: '2026-07-31',
     });
-    assert.deepEqual(sang.reported, ['2026-07-30'], 'runReportJob phải nhận ngày hôm qua');
+    assert.deepEqual(sang.reported, [{ from: '2026-07-30', to: '2026-07-30' }], 'runReportJob phải nhận range = hôm qua');
 
     const cuoiNgay = await runScheduler({
         jobs: [job({ time: '22:30' })], now: '22:30', today: '2026-07-31',
     });
-    assert.deepEqual(cuoiNgay.reported, ['2026-07-31'], 'lịch cuối ngày vẫn là hôm nay');
+    assert.deepEqual(cuoiNgay.reported, [{ from: '2026-07-31', to: '2026-07-31' }], 'lịch cuối ngày vẫn là hôm nay');
 });
 
 test('scheduler không ném lỗi ngầm — warns rỗng ở đường chạy bình thường', async () => {
@@ -376,7 +545,7 @@ test('cache ghi 0 tin nhưng nhật ký có tin → phải sinh lại, không b�
         history: { 'g1|2026-07-31': [1, 2, 3, 4, 5] },
         generated,
     });
-    const r = await build(['g1'], '2026-07-31');
+    const r = await build(['g1'], { from: '2026-07-31', to: '2026-07-31' });
     assert.deepEqual(generated, ['g1'], 'phải sinh lại vì nhật ký nhiều tin hơn cache');
     assert.equal(r.groupCount, 1);
     assert.equal(r.totalMsgs, 5);
@@ -389,7 +558,7 @@ test('cache đã khớp nhật ký thì KHÔNG sinh lại — không đốt toke
         history: { 'g1|2026-07-31': [1, 2, 3, 4, 5] },
         generated,
     });
-    const r = await build(['g1'], '2026-07-31');
+    const r = await build(['g1'], { from: '2026-07-31', to: '2026-07-31' });
     assert.deepEqual(generated, [], 'cache còn đúng thì dùng lại');
     assert.equal(r.totalMsgs, 5);
 });
@@ -397,7 +566,7 @@ test('cache đã khớp nhật ký thì KHÔNG sinh lại — không đốt toke
 test('chưa có cache thì sinh mới như cũ', async () => {
     const generated = [];
     const build = loadDigestParts({ summaries: {}, history: { 'g1|2026-07-31': [1, 2] }, generated });
-    const r = await build(['g1'], '2026-07-31');
+    const r = await build(['g1'], { from: '2026-07-31', to: '2026-07-31' });
     assert.deepEqual(generated, ['g1']);
     assert.equal(r.totalMsgs, 2);
 });
@@ -409,7 +578,7 @@ test('nhóm thật sự không có tin thì bỏ qua, không sinh lại vô ích
         history: { 'g1|2026-07-31': [] },
         generated,
     });
-    const r = await build(['g1'], '2026-07-31');
+    const r = await build(['g1'], { from: '2026-07-31', to: '2026-07-31' });
     assert.deepEqual(generated, [], 'nhật ký rỗng = cache đúng, không cần sinh');
     assert.equal(r.groupCount, 0);
 });
@@ -420,7 +589,7 @@ test('persist:false (Xem trước) VẪN sinh để hiện nội dung thật, nh
     const generated = [];
     const summaries = { 'g1|2026-07-31': { messageCount: 0, sections: {} } };
     const build = loadDigestParts({ summaries, history: { 'g1|2026-07-31': [1, 2, 3] }, generated, saveOnly: true });
-    const r = await build(['g1'], '2026-07-31', { persist: false });
+    const r = await build(['g1'], { from: '2026-07-31', to: '2026-07-31' }, { persist: false });
     assert.deepEqual(generated, ['g1'], 'vẫn phải sinh, không thì xem trước luôn rỗng');
     assert.equal(r.totalMsgs, 3, 'và phải hiện đúng số tin thật');
     assert.equal(summaries['g1|2026-07-31'].messageCount, 0, 'nhưng cache trên đĩa phải giữ nguyên');

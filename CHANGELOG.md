@@ -1,3 +1,26 @@
+## [2.29.0] - 2026-08-18
+
+### Added
+
+- **Lịch báo cáo chọn được khoảng thời gian, không chỉ "hôm nay/hôm qua".** `reportFor` thêm 4 giá
+  trị: `last7` · `last30` · `thisMonth` · `custom` (tự chọn ngày bắt đầu/kết thúc, tối đa 92 ngày —
+  vượt quá tự rút ngắn về 92 ngày gần "Đến ngày" nhất và báo rõ trong tin). Mặc định vẫn `today` nên
+  3 lịch báo cáo thật đang chạy (`today`/`yesterday`) **không đổi hành vi**.
+
+  Khoảng nhiều ngày **chỉ đọc** bản tổng hợp đã có sẵn (`summaries/`), **không gọi lại AI** dù thiếu
+  cache — 30 nhóm × 7 ngày sinh lại là 210 lượt gọi model cho một tin nhắn. Ngày nào chưa có bản
+  tổng hợp thì báo rõ trong tin (`⚠️ N/M ngày chưa có bản tổng hợp: ...`), không âm thầm bỏ qua và
+  không đoán lại bằng AI.
+
+  Nút "Xem trước" trên dashboard giờ ra đúng khoảng của lịch (kể cả dòng cảnh báo ngày thiếu), thay
+  vì luôn xem theo hôm nay/hôm qua như trước.
+
+### Fixed
+
+- Cảnh báo "giờ gửi buổi sáng mà nội dung để hôm nay" (`reportMorningWarning`) trước đây so sai điều
+  kiện — sau khi mở rộng `reportFor` thì lẽ ra chỉ áp dụng cho giá trị `today`, không phải mọi giá
+  trị khác `yesterday`.
+
 ## [2.28.1] - 2026-08-03
 
 ### Fixed

@@ -5765,6 +5765,50 @@ function isoDaysAgo(n) {
   return vnNow.toISOString().slice(0, 10);
 }
 
+/**
+ * Nhãn ngắn cho `reportFor` — dùng ở chip thẻ lịch + gợi ý trong trình sửa.
+ * Không có 'custom' vì chỗ gọi luôn tự ghép ngày cụ thể cho trường hợp đó.
+ */
+const REPORT_FOR_LABELS = {
+  today: () => uiText('hôm nay', 'today'),
+  yesterday: () => uiText('hôm qua', 'yesterday'),
+  last7: () => uiText('7 ngày qua', 'last 7 days'),
+  last30: () => uiText('30 ngày qua', 'last 30 days'),
+  thisMonth: () => uiText('tháng này', 'this month'),
+};
+
+/**
+ * Khoảng ngày ƯỚC TÍNH ở client theo `reportFor` của job — CHỈ để hiển thị trước khi gọi server
+ * (xác nhận gửi, chip thẻ lịch). Server (`reportRangeFor` trong index.js) là nguồn sự thật khi
+ * thật sự chạy; hai bên có thể lệch 1 ngày nếu bấm đúng lúc nửa đêm, không sao vì đây chỉ là hiển thị.
+ */
+function reportForRangeDates(job) {
+  const reportFor = job.reportFor || 'today';
+  if (reportFor === 'today') return { from: isoDaysAgo(0), to: isoDaysAgo(0) };
+  if (reportFor === 'yesterday') return { from: isoDaysAgo(1), to: isoDaysAgo(1) };
+  if (reportFor === 'last7') return { from: isoDaysAgo(7), to: isoDaysAgo(1) };
+  if (reportFor === 'last30') return { from: isoDaysAgo(30), to: isoDaysAgo(1) };
+  if (reportFor === 'thisMonth') {
+    const y = isoDaysAgo(1);
+    const from = y.slice(0, 7) + '-01';
+    return { from: from > y ? y : from, to: y };
+  }
+  // custom
+  return { from: job.rangeFrom || isoDaysAgo(0), to: job.rangeTo || isoDaysAgo(0) };
+}
+
+/** "12/08" cho ngắn gọn trên chip/thẻ; giữ YYYY-MM-DD ở mọi nơi cần chính xác (modal, log). */
+function ddmm(iso) {
+  const m = /^\d{4}-(\d{2})-(\d{2})$/.exec(iso || '');
+  return m ? `${m[2]}/${m[1]}` : (iso || '');
+}
+
+function reportForRangeLabel(job, { short = false } = {}) {
+  const { from, to } = reportForRangeDates(job);
+  if (short) return from === to ? ddmm(from) : `${ddmm(from)}–${ddmm(to)}`;
+  return from === to ? from : `${from} – ${to}`;
+}
+
 // ── Lịch sử báo cáo ───────────────────────────────────────────────────────────────────────────
 // Owner hỏi "sáng nay bot gửi gì" và không có chỗ nào xem: gateway chat không hiện tin do plugin
 // gửi, còn digest thì tính lúc chạy rồi thả đi. Trang này đọc bản ĐÃ LƯU lúc gửi — khác với bấm
@@ -5900,6 +5944,12 @@ function reportLogRenderList() {
   }
 }
 
+/** `from`/`to` chỉ có từ khi ghi thêm field range (P1) — bản ghi cũ chỉ có `date`, vẫn phải hiện được. */
+function entryRangeLabel(e) {
+  if (e.from && e.to) return e.from === e.to ? e.from : `${e.from} – ${e.to}`;
+  return e.date || '';
+}
+
 function reportLogCard(e) {
   const isDigest = e.kind === 'digest';
   const full = (e.texts || []).join('\n\n');
@@ -5915,7 +5965,8 @@ function reportLogCard(e) {
           ${e.trigger === 'manual' ? `<span class="chip" style="background:rgba(251,191,36,.18)">${uiText('Gửi tay', 'Manual')}</span>` : ''}
         </div>
         <div class="item-sub" style="margin-top:6px;line-height:1.65">
-          ${uiText('Gửi', 'Sent')} <b>${esc(when)}</b> · ${uiText('nội dung ngày', 'covers')} <b>${esc(e.date || '')}</b>
+          ${uiText('Gửi', 'Sent')} <b>${esc(when)}</b> · ${uiText('nội dung', 'covers')} <b>${esc(entryRangeLabel(e))}</b>
+          ${e.missingDates?.length ? ` · ⚠️ ${e.missingDates.length} ${uiText('ngày thiếu', 'day(s) missing')}` : ''}
           ${/* "phạm vi" chứ không phải "nhóm" trần: con số này là số nhóm lịch QUÉT, khác với số nhóm
                 CÓ TIN in trong thân báo cáo. Hai số nằm cạnh nhau mà cùng gọi là "nhóm" thì owner
                 đọc vào tưởng số liệu đá nhau — đã hỏi thật. */''}
@@ -5939,7 +5990,7 @@ function reportLogOpen(id) {
     <pre style="white-space:pre-wrap;word-break:break-word;margin:0;font-family:inherit;font-size:13px;line-height:1.65;
       background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:12px">${esc(t)}</pre>`).join('');
   openModal({
-    title: `${e.jobName || e.jobId} — ${e.date}`,
+    title: `${e.jobName || e.jobId} — ${entryRangeLabel(e)}`,
     body: `<div class="item-sub" style="margin-bottom:10px">${uiText('Gửi lúc', 'Sent at')} ${esc(fmtTs(e.sentAt))}
       · ${uiText('tới', 'to')} ${(e.targets || []).map(t => esc(t.name)).join(', ') || '—'}</div>${body}`,
     confirmText: uiText('Đóng', 'Close'),
@@ -6002,7 +6053,8 @@ const REPORT_ICONS = {
  */
 function reportMorningWarning(job) {
   const hour = Number(String(job.time || '').slice(0, 2));
-  if (!Number.isFinite(hour) || hour >= 12 || job.reportFor === 'yesterday') return '';
+  // Chỉ 'today' đúng dạng dính bẫy này — mọi giá trị khác (yesterday/last7/…) đều loại hôm nay rồi.
+  if (!Number.isFinite(hour) || hour >= 12 || job.reportFor !== 'today') return '';
   return `<br><span style="color:var(--warn,#f59e0b)">⚠️ ${uiText(
     `Gửi lúc ${job.time} nhưng nội dung lấy "hôm nay" — sẽ gần như trống. Sửa thành "Hôm qua".`,
     `Runs at ${job.time} but covers "today" — will be nearly empty. Change it to "Yesterday".`)}</span>`;
@@ -6026,8 +6078,8 @@ function reportJobCardHtml(job) {
           <span class="chip" style="background:${isDigest ? 'rgba(96,165,250,.16)' : 'rgba(148,163,184,.16)'}">
             ${isDigest ? '📊 ' + uiText('Tổng hợp', 'Digest') : '📋 ' + uiText('Từng nhóm', 'Per group')}
           </span>
-          ${job.reportFor === 'yesterday'
-            ? `<span class="chip" style="background:rgba(52,211,153,.16)">🌅 ${uiText('Nội dung: hôm qua', 'Covers: yesterday')}</span>`
+          ${job.reportFor !== 'today'
+            ? `<span class="chip" style="background:rgba(52,211,153,.16)">🌅 ${uiText('Nội dung', 'Covers')}: ${esc(reportForRangeLabel(job, { short: true }))}</span>`
             : ''}
         </div>
         <div class="item-sub" style="margin-top:8px;line-height:1.7">
@@ -6053,6 +6105,22 @@ function reportJobCardHtml(job) {
       <button class="btn danger" data-report-delete="${job.id}">${REPORT_ICONS.del}<span>${uiText('Xoá', 'Delete')}</span></button>
     </div>
   </div>`;
+}
+
+/** Gợi ý dưới select `reportFor` trong trình sửa — mỗi loại một câu, cùng logic với server. */
+function reportForHint(j) {
+  const rf = j.reportFor || 'today';
+  if (rf === 'yesterday') return uiText('Đúng cho lịch sáng: 08:00 hôm nay sẽ báo cáo trọn ngày hôm qua.',
+    'Right for a morning run: 08:00 today reports all of yesterday.');
+  if (rf === 'last7' || rf === 'last30') return uiText(
+    `Gộp ${rf === 'last7' ? '7' : '30'} ngày trước HÔM NAY (không tính hôm nay, vì còn dở dang). Ngày nào chưa có bản tổng hợp sẽ được ghi rõ trong tin, không bịa lại bằng AI.`,
+    `Combines the ${rf === 'last7' ? '7' : '30'} days before today (today is excluded — still in progress). Days without a saved summary are called out in the message, never re-guessed by AI.`);
+  if (rf === 'thisMonth') return uiText('Từ ngày 1 tháng này tới hôm qua. Ngày nào chưa có bản tổng hợp sẽ được ghi rõ trong tin.',
+    "From the 1st of this month up to yesterday. Days without a saved summary are called out in the message.");
+  if (rf === 'custom') return uiText('Tối đa 92 ngày — vượt quá sẽ tự rút ngắn về 92 ngày gần "Đến ngày" nhất và báo trong tin.',
+    'Up to 92 days — longer ranges are automatically clamped to the 92 days closest to "To" and flagged in the message.');
+  return uiText('⚠️ Nếu giờ gửi vào buổi sáng, chọn "Hôm qua" — không thì báo cáo chỉ có mấy tiếng đầu ngày, gần như trống.',
+    '⚠️ For a morning time, pick "Yesterday" — otherwise the report only covers the first hours of the day.');
 }
 
 // ── Trình sửa lịch ────────────────────────────────────────────────────────────────────────────
@@ -6088,18 +6156,22 @@ function reportEditorHtml() {
     ${field(uiText('Giờ gửi mỗi ngày', 'Daily time'), `<input type="time" value="${j.time}" data-report-draft-time
       style="padding:9px 11px;border-radius:9px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font-size:13.5px"/>`)}
 
-    ${field(uiText('Báo cáo cho ngày nào', 'Report covers'), `
+    ${field(uiText('Báo cáo cho khoảng nào', 'Report covers'), `
       <select data-report-for style="width:100%;padding:9px 11px;border-radius:9px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font-size:13.5px">
-        <option value="today" ${j.reportFor !== 'yesterday' ? 'selected' : ''}>${uiText('Hôm nay — dùng cho lịch cuối ngày', 'Today — for end-of-day schedules')}</option>
+        <option value="today" ${j.reportFor === 'today' || !j.reportFor ? 'selected' : ''}>${uiText('Hôm nay — dùng cho lịch cuối ngày', 'Today — for end-of-day schedules')}</option>
         <option value="yesterday" ${j.reportFor === 'yesterday' ? 'selected' : ''}>${uiText('Hôm qua — dùng cho lịch buổi sáng', 'Yesterday — for morning schedules')}</option>
+        <option value="last7" ${j.reportFor === 'last7' ? 'selected' : ''}>${uiText('7 ngày qua (không tính hôm nay)', 'Last 7 days (not counting today)')}</option>
+        <option value="last30" ${j.reportFor === 'last30' ? 'selected' : ''}>${uiText('30 ngày qua (không tính hôm nay)', 'Last 30 days (not counting today)')}</option>
+        <option value="thisMonth" ${j.reportFor === 'thisMonth' ? 'selected' : ''}>${uiText('Tháng này (tới hôm qua)', 'This month (up to yesterday)')}</option>
+        <option value="custom" ${j.reportFor === 'custom' ? 'selected' : ''}>${uiText('Tuỳ chọn khoảng ngày…', 'Custom date range…')}</option>
       </select>
-      <div class="item-sub" style="margin-top:5px;font-size:11.5px">${
-        j.reportFor === 'yesterday'
-          ? uiText('Đúng cho lịch sáng: 08:00 hôm nay sẽ báo cáo trọn ngày hôm qua.',
-            'Right for a morning run: 08:00 today reports all of yesterday.')
-          : uiText('⚠️ Nếu giờ gửi vào buổi sáng, chọn "Hôm qua" — không thì báo cáo chỉ có mấy tiếng đầu ngày, gần như trống.',
-            '⚠️ For a morning time, pick "Yesterday" — otherwise the report only covers the first hours of the day.')
-      }</div>`)}
+      ${j.reportFor === 'custom' ? `<div style="display:flex;gap:8px;margin-top:8px">
+        <input type="date" value="${esc(j.rangeFrom || '')}" data-report-range-from
+          style="flex:1;padding:8px 10px;border-radius:9px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font-size:13px"/>
+        <input type="date" value="${esc(j.rangeTo || '')}" data-report-range-to
+          style="flex:1;padding:8px 10px;border-radius:9px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font-size:13px"/>
+      </div>` : ''}
+      <div class="item-sub" style="margin-top:5px;font-size:11.5px">${reportForHint(j)}</div>`)}
 
     ${field(`${uiText('Nhóm áp dụng', 'Groups')} — ${all ? uiText('tất cả', 'all') : `${picked.size}/${reportsState.groups.length}`}`, `
       <label class="report-check report-check--center" style="padding:9px 11px;border-radius:9px;background:var(--surface-2);margin-bottom:8px">
@@ -6163,6 +6235,7 @@ function newReportJob() {
     // Mặc định 22:30 là lịch cuối ngày, nên nội dung 'today' mới đúng. Owner đổi sang giờ sáng thì
     // thẻ lịch hiện cảnh báo (reportMorningWarning) nhắc đổi sang 'yesterday'.
     name: '', enabled: true, kind: 'digest', groups: '*', time: '22:30', reportFor: 'today',
+    rangeFrom: '', rangeTo: '',
     deliver: { ownerDm: true, eachGroup: false, groups: [] },
   };
 }
@@ -6223,7 +6296,7 @@ document.addEventListener('click', async (ev) => {
       desc: uiText('Đây là gửi THẬT, không phải chạy thử.', 'This sends for real — not a dry run.'),
       body: `<div class="item-sub" style="line-height:1.8">
         <div>${uiText('Lịch', 'Schedule')}: <b>${esc(job.name)}</b></div>
-        <div>${uiText('Nội dung ngày', 'Covers')}: <b>${job.reportFor === 'yesterday' ? isoDaysAgo(1) : isoDaysAgo(0)}</b></div>
+        <div>${uiText('Nội dung', 'Covers')}: <b>${esc(reportForRangeLabel(job))}</b></div>
         <div>${uiText('Sẽ gửi tới', 'Sends to')}: <b>${esc(dests.join(', ') || '—')}</b></div>
         <div>${uiText('Số tin', 'Messages')}: <b>${msgCount}</b></div>
       </div>`,
@@ -6249,16 +6322,23 @@ document.addEventListener('click', async (ev) => {
     const job = reportsState.jobs.find(j => j.id === prevId);
     if (!job) return;
     try {
-      // Xem trước phải theo ĐÚNG NGÀY lịch sẽ báo cáo. Trước đây luôn lấy hôm nay, nên xem trước
-      // một lịch buổi sáng (reportFor: yesterday) ra tin rỗng của ngày vừa bắt đầu — owner tưởng
-      // tính năng hỏng, đúng lúc đang nghi ngờ nó.
+      // Xem trước phải theo ĐÚNG RANGE của lịch. Trước đây luôn lấy hôm nay (hoặc hôm qua với
+      // reportFor:'yesterday'), nên xem trước một lịch buổi sáng ra tin rỗng của ngày vừa bắt đầu —
+      // owner tưởng tính năng hỏng, đúng lúc đang nghi ngờ nó (2026-07-31). Server tự tính range
+      // thật từ 3 field này, không đoán ở client.
       const r = await reportsApi('report-digest-preview', {
         groups: job.groups,
-        date: job.reportFor === 'yesterday' ? isoDaysAgo(1) : undefined,
+        reportFor: job.reportFor,
+        rangeFrom: job.rangeFrom,
+        rangeTo: job.rangeTo,
       });
+      const rangeLabel = r.from === r.to ? r.from : `${r.from} – ${r.to}`;
+      const missingNote = r.missingDates?.length
+        ? uiText(` · ⚠️ ${r.missingDates.length} ngày thiếu bản tổng hợp`, ` · ⚠️ ${r.missingDates.length} day(s) missing a summary`)
+        : '';
       await openModal({
         title: uiText('Xem trước báo cáo tổng hợp', 'Digest preview'),
-        desc: uiText(`${r.date} · ${r.chars} ký tự · ${r.parts} tin`, `${r.date} · ${r.chars} chars · ${r.parts} message(s)`),
+        desc: uiText(`${rangeLabel} · ${r.chars} ký tự · ${r.parts} tin${missingNote}`, `${rangeLabel} · ${r.chars} chars · ${r.parts} message(s)${missingNote}`),
         body: r.texts.map((tx, i) => `<div style="margin-bottom:12px">
           ${r.texts.length > 1 ? `<div style="font-size:11.5px;opacity:.7;margin-bottom:4px">${uiText('Tin', 'Message')} ${i + 1}/${r.texts.length}</div>` : ''}
           <pre style="white-space:pre-wrap;word-break:break-word;font-size:12.5px;line-height:1.65;background:var(--surface-2);padding:12px;border-radius:9px;margin:0;font-family:inherit">${esc(tx)}</pre></div>`).join(''),
@@ -6326,6 +6406,8 @@ document.addEventListener('change', async (ev) => {
   if (t.hasAttribute?.('data-report-name')) { d.name = t.value; return; }
   if (t.hasAttribute?.('data-report-draft-time')) { d.time = t.value || d.time; return; }
   if (t.hasAttribute?.('data-report-for')) { d.reportFor = t.value; reportsRerenderEditor(); return; }
+  if (t.hasAttribute?.('data-report-range-from')) { d.rangeFrom = t.value; return; }
+  if (t.hasAttribute?.('data-report-range-to')) { d.rangeTo = t.value; return; }
   if (t.hasAttribute?.('data-report-all')) {
     d.groups = t.checked ? '*' : [];
     reportsRerenderEditor();

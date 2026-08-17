@@ -2547,6 +2547,21 @@ Quy tắc:
         // Zalo tự cắt tin quá dài, cắt giữa câu, nên digest tự cắt trước theo ranh giới NHÓM.
         // ~3500 ký tự là ngưỡng an toàn quan sát được cho một tin nhóm.
         const DIGEST_SAFE_CHARS = 3500;
+        const REPORT_FOR_VALUES = new Set(['today', 'yesterday', 'last7', 'last30', 'thisMonth', 'custom']);
+        const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+        /**
+         * Chuẩn hoá 3 field khoảng thời gian, dùng chung cho job đã lưu (`normalizeReportJob`) VÀ
+         * payload xem trước tạm (`report-digest-preview`) — hai chỗ đều phải chấp cùng luật.
+         */
+        function normalizeReportForFields(j) {
+            return {
+                // Giá trị lạ → 'today', để mọi lịch cuối ngày đang chạy giữ nguyên hành vi.
+                reportFor: REPORT_FOR_VALUES.has(j?.reportFor) ? j.reportFor : 'today',
+                rangeFrom: ISO_DATE_RE.test(j?.rangeFrom) ? j.rangeFrom : '',
+                rangeTo: ISO_DATE_RE.test(j?.rangeTo) ? j.rangeTo : '',
+            };
+        }
 
         function normalizeReportJob(j) {
             if (!j || typeof j !== 'object') return null;
@@ -2561,10 +2576,7 @@ Quy tắc:
                 kind,
                 groups,
                 time: normReportTime(j.time),
-                // Lịch buổi SÁNG phải báo cáo ngày HÔM QUA, không thì nó tóm tắt mấy tiếng đầu ngày
-                // (gần như trống) và hoạt động cả ngày hôm trước không bao giờ được báo. Mặc định
-                // 'today' để mọi lịch cuối ngày đang chạy giữ nguyên hành vi.
-                reportFor: j.reportFor === 'yesterday' ? 'yesterday' : 'today',
+                ...normalizeReportForFields(j),
                 deliver: {
                     ownerDm: d.ownerDm === true,
                     // Một digest không có "nhóm của chính nó" để gửi vào.
@@ -2574,17 +2586,48 @@ Quy tắc:
             };
         }
 
-        /**
-         * Ngày mà nội dung báo cáo nói về — KHÁC ngày chạy khi `reportFor: 'yesterday'`.
-         *
-         * Tính bằng cách trừ đúng 1 ngày trên chuỗi YYYY-MM-DD của giờ VN (không dùng Date của máy),
-         * để không bị lệch khi máy chạy ở múi giờ khác.
-         */
-        function reportDateFor(job, runDate) {
-            if (job?.reportFor !== 'yesterday') return runDate;
-            const d = new Date(`${runDate}T00:00:00Z`);
-            d.setUTCDate(d.getUTCDate() - 1);
+        /** N ngày (dương/âm) từ chuỗi YYYY-MM-DD, tính trên UTC nửa đêm — không lệch theo giờ máy. */
+        function addDaysStr(dateStr, n) {
+            const d = new Date(`${dateStr}T00:00:00Z`);
+            d.setUTCDate(d.getUTCDate() + n);
             return d.toISOString().slice(0, 10);
+        }
+
+        /** Danh sách YYYY-MM-DD liên tục từ `from` đến `to`, bao gồm cả hai đầu. */
+        function dateRangeList(from, to) {
+            const out = [];
+            for (let d = from; d <= to; d = addDaysStr(d, 1)) out.push(d);
+            return out;
+        }
+
+        /**
+         * Khoảng ngày mà NỘI DUNG báo cáo nói tới — khác `runDate` (ngày lịch CHẠY) trừ khi
+         * `reportFor: 'today'`. `last7`/`last30`/`thisMonth` đều loại HÔM NAY: hôm nay còn dở dang,
+         * tính vào sẽ ra số liệu thấp giả tạo mỗi lần chạy sớm trong ngày.
+         */
+        function reportRangeFor(job, runDate) {
+            const reportFor = job?.reportFor || 'today';
+            if (reportFor === 'today') return { from: runDate, to: runDate };
+            if (reportFor === 'yesterday') { const y = addDaysStr(runDate, -1); return { from: y, to: y }; }
+            const yesterday = addDaysStr(runDate, -1);
+            if (reportFor === 'last7') return { from: addDaysStr(yesterday, -6), to: yesterday };
+            if (reportFor === 'last30') return { from: addDaysStr(yesterday, -29), to: yesterday };
+            if (reportFor === 'thisMonth') {
+                // Tháng của RUNDATE (hôm nay đang chạy), không phải tháng của `yesterday` — nếu không
+                // thì chạy đúng ngày 1 đầu tháng sẽ lấy nhầm mốc "ngày 1" của THÁNG TRƯỚC.
+                const from = `${runDate.slice(0, 7)}-01`;
+                // Chạy đúng ngày 1 đầu tháng: "hôm qua" thuộc tháng trước → tháng này chưa có ngày
+                // nào. Coi khoảng là một ngày (hôm qua) thay vì để from > to làm hỏng phép lặp ngày.
+                return from > yesterday ? { from: yesterday, to: yesterday } : { from, to: yesterday };
+            }
+            // 'custom' — dạng chuỗi đã được `normalizeReportForFields` kiểm; ở đây chỉ còn lo thứ tự
+            // (thiếu/lệch thì coi như một ngày `runDate`, không crash) và giới hạn độ dài.
+            let from = job?.rangeFrom || runDate;
+            let to = job?.rangeTo || runDate;
+            if (from > to) { from = runDate; to = runDate; }
+            // 92 ngày — bằng SENT_KEEP_DAYS (giữ lịch sử báo cáo), để custom không hỏi thứ không còn lưu.
+            const minFrom = addDaysStr(to, -91);
+            return from < minFrom ? { from: minFrom, to, clamped: true } : { from, to };
         }
 
         async function readReportJobs() {
@@ -2693,55 +2736,100 @@ Quy tắc:
          * Bản tóm tắt từng nhóm đã được model viết và lưu ở summaries/<gid>/<date>.json, nên digest chỉ
          * chọn lọc lại: mỗi nhóm lấy tối đa 3 điểm (ưu tiên highlights của model), việc có hẹn/chưa xong
          * gắn ⚠️. Nhờ vậy thêm digest tốn 0 token — quan trọng vì mỗi request đang ~26k prompt token.
+         *
+         * `range` là `{from, to}` (YYYY-MM-DD, from<=to). `from === to` (1 ngày) giữ NGUYÊN nhánh cũ —
+         * kể cả việc so cache với nhật ký thô rồi sinh lại — vì đó là bản vá sự cố "0 nhóm · 0 tin"
+         * 01/08, không được động vào. `from < to` (nhiều ngày) là nhánh MỚI: CHỈ đọc cache đã có, cấm
+         * gọi `generateDailySummary` dù thiếu — 30 nhóm × 7 ngày sinh lại là 210 lượt gọi model cho
+         * một tin nhắn. Ngày không có cache thì tính là "thiếu", trả ra để bên gọi ghi rõ trong tin.
          */
-        async function buildDigestParts(groupIds, date, { persist = true } = {}) {
+        async function buildDigestParts(groupIds, range, { persist = true } = {}) {
+            const { from, to } = range;
+            if (from === to) {
+                const date = from;
+                const blocks = [];
+                let totalMsgs = 0, totalLinks = 0, totalAppts = 0;
+                for (const gid of groupIds) {
+                    let s = await getSummary(gid, date);
+                    // Cache summary có thể đã được sinh GIỮA ngày, lúc nhóm chưa có tin nào — khi đó nó
+                    // ghi `messageCount: 0` và không bao giờ tự làm mới. Dùng lại nguyên si thì báo cáo
+                    // sáng hôm sau rỗng trong khi nhật ký thô đầy tin. Đã xảy ra thật: 2026-08-01 digest
+                    // gửi "0 nhóm · 0 tin" cho 24 nhóm, vì cache bị sinh lúc 01:56 ngày hôm trước.
+                    //
+                    // So với SỐ DÒNG NHẬT KÝ THẬT của đúng ngày đó — rẻ, chính xác, và chỉ tốn token sinh
+                    // lại đúng những nhóm có thêm tin so với lúc cache.
+                    const rawCount = (await readChatHistory(gid, date).catch(() => []))?.length || 0;
+                    if (!s || rawCount > (s.messageCount || 0)) {
+                        // Xem trước cũng phải SINH — không thì ngày nào chưa có cache đều hiện rỗng và
+                        // nút "Xem trước" thành vô dụng. Khác biệt duy nhất là không ghi xuống đĩa.
+                        s = await generateDailySummary(gid, date, { by: 'auto', save: persist }).catch(() => s);
+                    }
+                    if (!s || !s.messageCount) continue;
+                    const x = s.sections || {};
+                    totalMsgs += s.messageCount;
+                    totalLinks += (x.links || []).length;
+                    totalAppts += (x.appointments || []).length;
+                    const bullets = [];
+                    for (const h of (x.highlights || [])) {
+                        if (bullets.length >= 3) break;
+                        bullets.push(`  • ${h}`);
+                    }
+                    for (const a of (x.appointments || [])) {
+                        if (bullets.length >= 3) break;
+                        bullets.push(`  • ⚠️ ${a.name ? `${a.name}: ` : ''}${a.what}${a.when ? ` (${a.when})` : ''}`);
+                    }
+                    if (!bullets.length && x.overview) bullets.push(`  • ${String(x.overview).split(/(?<=[.!?])\s/)[0]}`);
+                    blocks.push(`📋 ${getGroupName(gid)} — ${s.messageCount} tin · ${(x.participants || []).length} người\n${bullets.join('\n')}`);
+                }
+                return { blocks, totalMsgs, totalLinks, totalAppts, groupCount: blocks.length, missingDates: [] };
+            }
+
+            const dates = dateRangeList(from, to);
+            const perGroup = new Map(groupIds.map(gid => [gid, { msgs: 0, links: 0, appts: 0, participants: 0, bullets: [] }]));
+            const dateHasAnySummary = new Map(dates.map(d => [d, false]));
+            // Mới nhất trước, để bullet của mỗi nhóm ưu tiên tin gần nhất trong kỳ.
+            for (const date of [...dates].reverse()) {
+                for (const gid of groupIds) {
+                    const s = await getSummary(gid, date);
+                    if (!s) continue;
+                    dateHasAnySummary.set(date, true);
+                    const g = perGroup.get(gid);
+                    g.msgs += s.messageCount || 0;
+                    const x = s.sections || {};
+                    g.links += (x.links || []).length;
+                    g.appts += (x.appointments || []).length;
+                    g.participants = Math.max(g.participants, (x.participants || []).length);
+                    for (const h of (x.highlights || [])) { if (g.bullets.length >= 3) break; g.bullets.push(`  • ${h}`); }
+                    for (const a of (x.appointments || [])) { if (g.bullets.length >= 3) break; g.bullets.push(`  • ⚠️ ${a.name ? `${a.name}: ` : ''}${a.what}${a.when ? ` (${a.when})` : ''}`); }
+                }
+            }
             const blocks = [];
             let totalMsgs = 0, totalLinks = 0, totalAppts = 0;
             for (const gid of groupIds) {
-                let s = await getSummary(gid, date);
-                // Cache summary có thể đã được sinh GIỮA ngày, lúc nhóm chưa có tin nào — khi đó nó
-                // ghi `messageCount: 0` và không bao giờ tự làm mới. Dùng lại nguyên si thì báo cáo
-                // sáng hôm sau rỗng trong khi nhật ký thô đầy tin. Đã xảy ra thật: 2026-08-01 digest
-                // gửi "0 nhóm · 0 tin" cho 24 nhóm, vì cache bị sinh lúc 01:56 ngày hôm trước.
-                //
-                // So với SỐ DÒNG NHẬT KÝ THẬT của đúng ngày đó — rẻ, chính xác, và chỉ tốn token sinh
-                // lại đúng những nhóm có thêm tin so với lúc cache.
-                const rawCount = (await readChatHistory(gid, date).catch(() => []))?.length || 0;
-                if (!s || rawCount > (s.messageCount || 0)) {
-                    // Xem trước cũng phải SINH — không thì ngày nào chưa có cache đều hiện rỗng và
-                    // nút "Xem trước" thành vô dụng. Khác biệt duy nhất là không ghi xuống đĩa.
-                    s = await generateDailySummary(gid, date, { by: 'auto', save: persist }).catch(() => s);
-                }
-                if (!s || !s.messageCount) continue;
-                const x = s.sections || {};
-                totalMsgs += s.messageCount;
-                totalLinks += (x.links || []).length;
-                totalAppts += (x.appointments || []).length;
-                const bullets = [];
-                for (const h of (x.highlights || [])) {
-                    if (bullets.length >= 3) break;
-                    bullets.push(`  • ${h}`);
-                }
-                for (const a of (x.appointments || [])) {
-                    if (bullets.length >= 3) break;
-                    bullets.push(`  • ⚠️ ${a.name ? `${a.name}: ` : ''}${a.what}${a.when ? ` (${a.when})` : ''}`);
-                }
-                if (!bullets.length && x.overview) bullets.push(`  • ${String(x.overview).split(/(?<=[.!?])\s/)[0]}`);
-                blocks.push(`📋 ${getGroupName(gid)} — ${s.messageCount} tin · ${(x.participants || []).length} người\n${bullets.join('\n')}`);
+                const g = perGroup.get(gid);
+                if (!g.msgs) continue;
+                totalMsgs += g.msgs; totalLinks += g.links; totalAppts += g.appts;
+                blocks.push(`📋 ${getGroupName(gid)} — ${g.msgs} tin · ${g.participants} người\n${g.bullets.join('\n')}`);
             }
-            return { blocks, totalMsgs, totalLinks, totalAppts, groupCount: blocks.length };
+            const missingDates = dates.filter(d => !dateHasAnySummary.get(d));
+            return { blocks, totalMsgs, totalLinks, totalAppts, groupCount: blocks.length, missingDates };
         }
 
-        /** Digest đã format, cắt sẵn theo ranh giới nhóm để Zalo không cắt giữa câu. */
-        async function buildDigestMessages(groupIds, date, opts = {}) {
-            const { blocks, totalMsgs, totalLinks, totalAppts, groupCount } = await buildDigestParts(groupIds, date, opts);
-            const head = `📊 TỔNG HỢP ${date} · ${groupCount} nhóm · ${totalMsgs} tin`;
-            if (!groupCount) return [`${head}\n\n(Không có nhóm nào có tin nhắn được ghi trong ngày này.)`];
+        /** Digest đã format, cắt sẵn theo ranh giới nhóm để Zalo không cắt giữa câu. `range` = `{from,to}`. */
+        async function buildDigestMessages(groupIds, range, opts = {}) {
+            const { blocks, totalMsgs, totalLinks, totalAppts, groupCount, missingDates = [] } = await buildDigestParts(groupIds, range, opts);
+            const { from, to } = range;
+            const label = from === to ? from : `${from}–${to}`;
+            const head = `📊 TỔNG HỢP ${label} · ${groupCount} nhóm · ${totalMsgs} tin`;
+            const missingLine = missingDates.length
+                ? `\n\n⚠️ ${missingDates.length}/${dateRangeList(from, to).length} ngày chưa có bản tổng hợp: ${missingDates.join(' · ')}`
+                : '';
+            if (!groupCount) return { texts: [`${head}${missingLine}\n\n(Không có nhóm nào có tin nhắn được ghi trong khoảng này.)`], missingDates };
             const foot = [
                 totalLinks ? `🔗 ${totalLinks} link` : '',
                 totalAppts ? `📅 ${totalAppts} hẹn lịch` : '',
             ].filter(Boolean).join(' · ');
-            const tail = foot ? `\n\n${foot} → xem chi tiết ở dashboard` : '';
+            const tail = (foot ? `\n\n${foot} → xem chi tiết ở dashboard` : '') + missingLine;
 
             // Gom block cho tới ngưỡng an toàn, rồi sang phần mới. Cắt GIỮA CÁC NHÓM, không giữa câu.
             const pages = [];
@@ -2754,11 +2842,12 @@ Quy tắc:
                 cur.push(b); len += b.length + 2;
             }
             if (cur.length) pages.push(cur);
-            return pages.map((page, i) => {
-                const label = pages.length > 1 ? `${head}  (phần ${i + 1}/${pages.length})` : head;
+            const texts = pages.map((page, i) => {
+                const label2 = pages.length > 1 ? `${head}  (phần ${i + 1}/${pages.length})` : head;
                 const isLast = i === pages.length - 1;
-                return `${label}\n\n${page.join('\n\n')}${isLast ? tail : ''}`;
+                return `${label2}\n\n${page.join('\n\n')}${isLast ? tail : ''}`;
             });
+            return { texts, missingDates };
         }
 
         /** Gửi một danh sách tin tới các đích của job (DM owner / nhóm nhận chỉ định). */
@@ -2826,32 +2915,46 @@ Quy tắc:
             return out;
         }
 
-        /** Chạy một job ngay (dùng cho scheduler và cho nút "Gửi thử" trên dashboard). */
-        async function runReportJob(job, date, { trigger = 'schedule' } = {}) {
+        /**
+         * Chạy một job ngay (dùng cho scheduler và cho nút "Gửi ngay"/xem trước trên dashboard).
+         *
+         * `range` = `{from, to}` — do bên gọi tính sẵn bằng `reportRangeFor(job, runDate)`. Giữ việc
+         * tính range TÁCH khỏi hàm này (giống tách CHỐT-NGÀY khỏi NGÀY-BÁO-CÁO ở `runDueReports`):
+         * `runReportJob` chỉ cần biết "báo cáo về khoảng nào", không cần biết "hôm nay lịch là bao
+         * nhiêu" — hai khái niệm trộn vào nhau là nguồn của bug lịch 'yesterday' tự chốt sai ngày.
+         */
+        async function runReportJob(job, range, { trigger = 'schedule' } = {}) {
             const gids = resolveJobGroups(job);
             if (!gids.length) return { sent: 0, groups: 0 };
-            const scope = gids.map(g => ({ groupId: g, name: groupNames[g]?.name || g }));
+            const { from, to } = range;
             if (job.kind === 'digest') {
-                const texts = await buildDigestMessages(gids, date);
+                const { texts, missingDates } = await buildDigestMessages(gids, range);
                 await deliverReportTexts(job, texts);
                 await recordReportSent({
                     jobId: job.id, jobName: job.name, kind: job.kind, reportFor: job.reportFor,
-                    date, time: job.time, trigger, scope, texts,
+                    date: to, from, to, time: job.time, trigger,
+                    scope: gids.map(g => ({ groupId: g, name: groupNames[g]?.name || g })), texts,
                     targets: reportDeliveryTargets(job),
                     chars: texts.reduce((n, t) => n + t.length, 0),
+                    missingDates,
                 });
                 return { sent: texts.length, groups: gids.length };
             }
             let sent = 0;
             for (const gid of gids) {
-                const summary = await generateDailySummary(gid, date, { by: 'auto' });
-                const text = formatSummaryText(summary);
-                await deliverReportTexts(job, [text], { selfGroupId: gid });
+                // Range 1 ngày ('today'/'yesterday', mặc định) giữ NGUYÊN hành vi cũ — báo cáo đầy đủ
+                // theo `formatSummaryText`, không đổi sang format digest. Chỉ range nhiều ngày (owner
+                // tự chọn last7/last30/…) mới cần gộp nhiều ngày, và cách gộp duy nhất đã có sẵn là
+                // digest — dùng lại cho MỘT nhóm thay vì phát minh format thứ ba.
+                const texts = (from === to)
+                    ? [formatSummaryText(await generateDailySummary(gid, to, { by: 'auto' }))]
+                    : (await buildDigestMessages([gid], range)).texts;
+                await deliverReportTexts(job, texts, { selfGroupId: gid });
                 await recordReportSent({
                     jobId: job.id, jobName: job.name, kind: job.kind, reportFor: job.reportFor,
-                    date, time: job.time, trigger,
+                    date: to, from, to, time: job.time, trigger,
                     scope: [{ groupId: gid, name: groupNames[gid]?.name || gid }],
-                    texts: [text], targets: reportDeliveryTargets(job, gid), chars: text.length,
+                    texts, targets: reportDeliveryTargets(job, gid), chars: texts.reduce((n, t) => n + t.length, 0),
                 });
                 sent++;
                 await new Promise(r => setTimeout(r, 2000)); // tránh rate limit
@@ -2882,11 +2985,13 @@ Quy tắc:
                 byJob[job.id] = { date: today, time: job.time };
                 await writePluginDataJson('report-state.json', { byJob, byGroup });
                 try {
-                    // Chốt-ngày dùng NGÀY CHẠY (`today`), còn nội dung dùng NGÀY ĐƯỢC BÁO CÁO. Trộn hai
-                    // cái này là sai: lịch 'yesterday' sẽ tự chốt vào ngày hôm qua rồi chạy lại mỗi phút.
-                    const reportDate = reportDateFor(job, today);
-                    const r = await runReportJob(job, reportDate);
-                    logger.info(`[openclaw-zalo-mod] [REPORT] lịch "${job.name}" (${job.kind}, giờ ${job.time}) → ${r.sent} tin cho ${r.groups} nhóm, ngày ${reportDate}`);
+                    // Chốt-ngày dùng NGÀY CHẠY (`today`), còn nội dung dùng KHOẢNG NGÀY ĐƯỢC BÁO CÁO.
+                    // Trộn hai cái này là sai: lịch 'yesterday' sẽ tự chốt vào ngày hôm qua rồi chạy
+                    // lại mỗi phút.
+                    const range = reportRangeFor(job, today);
+                    const r = await runReportJob(job, range);
+                    const rangeLabel = range.from === range.to ? `ngày ${range.from}` : `${range.from}–${range.to}`;
+                    logger.info(`[openclaw-zalo-mod] [REPORT] lịch "${job.name}" (${job.kind}, giờ ${job.time}) → ${r.sent} tin cho ${r.groups} nhóm, ${rangeLabel}`);
                 } catch (e) {
                     logger.warn(`[openclaw-zalo-mod] [REPORT] lỗi lịch "${job.name}": ${e.message}`);
                 }
@@ -4858,12 +4963,13 @@ Quy tắc:
                 const id = String(payload.id || '').trim();
                 const job = (await ensureReportJobsMigrated()).find(j => j.id === id);
                 if (!job) throw new Error('Không tìm thấy lịch này');
-                // "Gửi thử" phải cho ra ĐÚNG thứ lịch sẽ gửi thật, nên mặc định theo `reportFor` của
+                // "Gửi ngay" phải cho ra ĐÚNG thứ lịch sẽ gửi thật, nên mặc định theo `reportFor` của
                 // lịch — không phải luôn luôn hôm nay. Lịch buổi sáng thử ra tin rỗng thì owner tưởng hỏng.
-                const date = String(payload.date || reportDateFor(job, vnDateStr()));
-                const r = await runReportJob(job, date, { trigger: 'manual' });
+                const runDate = String(payload.date || vnDateStr());
+                const range = reportRangeFor(job, runDate);
+                const r = await runReportJob(job, range, { trigger: 'manual' });
                 await appendDashboardAudit({ action: 'report-job-run', jobId: id, sent: r.sent });
-                return { ok: true, ...r, date };
+                return { ok: true, ...r, from: range.from, to: range.to, date: range.to };
             }
             if (action === 'report-sent') {
                 // Chỉ đọc. Trả nguyên bản ghi kèm text — mỗi ngày vài bản, vài KB, nên lọc nốt ở
@@ -4887,13 +4993,22 @@ Quy tắc:
                 const ids = payload.groups === '*'
                     ? watchGroupIds.filter(gid => isFollowOn(gid))
                     : (Array.isArray(payload.groups) ? payload.groups.map(String) : []);
-                const date = String(payload.date || vnDateStr());
+                // Xem trước phải theo ĐÚNG range của LỊCH (reportFor/rangeFrom/rangeTo), không phải
+                // luôn luôn hôm nay — bẫy cũ: lịch buổi sáng (reportFor:'yesterday') xem trước ra tin
+                // rỗng của ngày vừa bắt đầu, owner tưởng tính năng hỏng (2026-07-31).
+                const forFields = normalizeReportForFields(payload);
+                const runDate = String(payload.runDate || vnDateStr());
+                const range = reportRangeFor(forFields, runDate);
                 // `persist: false` — XEM TRƯỚC KHÔNG ĐƯỢC GHI CACHE. Đây là lỗi thật đã làm hỏng cả
                 // một ngày dữ liệu: xem trước lúc 01:56 sinh ra 24 summary `messageCount: 0` cho ngày
                 // vừa bắt đầu, và báo cáo sáng hôm sau đọc đúng mấy cache rỗng đó. Một thao tác chỉ
-                // để NHÌN thì không được đổi trạng thái.
-                const texts = await buildDigestMessages(ids, date, { persist: false });
-                return { date, parts: texts.length, texts, chars: texts.reduce((n, t) => n + t.length, 0) };
+                // để NHÌN thì không được đổi trạng thái. Range >1 ngày còn cấm cả sinh lại (đọc cache
+                // thôi), nên `persist` vô nghĩa với nhánh đó — vẫn truyền cho nhánh 1-ngày dùng lại.
+                const { texts, missingDates } = await buildDigestMessages(ids, range, { persist: false });
+                return {
+                    from: range.from, to: range.to, date: range.to, clamped: !!range.clamped, missingDates,
+                    parts: texts.length, texts, chars: texts.reduce((n, t) => n + t.length, 0),
+                };
             }
             if (action === 'get-permissions') {
                 const perms = livePermissions();

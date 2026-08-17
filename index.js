@@ -2811,7 +2811,20 @@ Quy tắc:
                 totalMsgs += g.msgs; totalLinks += g.links; totalAppts += g.appts;
                 blocks.push(`📋 ${getGroupName(gid)} — ${g.msgs} tin · ${g.participants} người\n${g.bullets.join('\n')}`);
             }
-            const missingDates = dates.filter(d => !dateHasAnySummary.get(d));
+            // Ứng viên "thiếu bản tổng hợp": không nhóm nào có summary cho ngày đó. Nhưng chủ nhật/ngày lễ
+            // không ai nhắn thì KHÔNG thiếu gì cả (số đo thật 2026-08-16: digest ra "0 nhóm · 0 tin" với
+            // 33 nhóm raw = 0) — chỉ gọi thêm `readChatHistory` (đọc file, không LLM) cho đúng NHỮNG NGÀY
+            // ứng viên này để phân biệt "không ai nhắn" với "có tin mà thiếu summary".
+            const missingCandidates = dates.filter(d => !dateHasAnySummary.get(d));
+            const missingDates = [];
+            for (const d of missingCandidates) {
+                let hasRaw = false;
+                for (const gid of groupIds) {
+                    const rawCount = (await readChatHistory(gid, d).catch(() => []))?.length || 0;
+                    if (rawCount > 0) { hasRaw = true; break; }
+                }
+                if (hasRaw) missingDates.push(d);
+            }
             return { blocks, totalMsgs, totalLinks, totalAppts, groupCount: blocks.length, missingDates };
         }
 

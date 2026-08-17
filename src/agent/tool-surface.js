@@ -268,10 +268,23 @@ const REPORTS_SCHEMA = {
         time: { type: 'string', description: 'Giờ gửi mỗi ngày, dạng HH:MM giờ VN. Ví dụ "09:00".' },
         reportFor: {
             type: 'string',
-            enum: ['today', 'yesterday'],
-            description: 'Báo cáo nói về ngày nào. Lịch BUỔI SÁNG phải dùng "yesterday" — nếu để "today" thì '
-                + 'lúc 08:00 nó chỉ tóm tắt mấy tiếng đầu ngày (gần như trống) và cả ngày hôm trước không '
-                + 'bao giờ được báo. Lịch cuối ngày (sau ~20:00) thì dùng "today". Mặc định "today".',
+            enum: ['today', 'yesterday', 'last7', 'last30', 'thisMonth', 'custom'],
+            description: 'Báo cáo nói về khoảng thời gian nào. Lịch BUỔI SÁNG phải dùng "yesterday" — nếu để '
+                + '"today" thì lúc 08:00 nó chỉ tóm tắt mấy tiếng đầu ngày (gần như trống) và cả ngày hôm trước '
+                + 'không bao giờ được báo. Lịch cuối ngày (sau ~20:00) thì dùng "today". "last7"/"last30" = 7/30 '
+                + 'ngày kết thúc HÔM QUA, "thisMonth" = từ đầu tháng tới hôm qua — owner nói "tổng hợp 7 ngày", '
+                + '"báo cáo tháng này" thì dùng các giá trị này. "custom" cần thêm rangeFrom/rangeTo. '
+                + '⚠️ "last7"/"last30"/"thisMonth"/"custom" CHỈ ĐỌC bản tổng hợp NGÀY đã có sẵn (summaries/), '
+                + 'TUYỆT ĐỐI không sinh lại bằng AI — ngày nào chưa có bản tổng hợp thì báo cáo tự ghi rõ '
+                + 'ngày đó thiếu, không phải lỗi, không phải bịa. Mặc định "today".',
+        },
+        rangeFrom: {
+            type: 'string',
+            description: 'Chỉ dùng khi reportFor="custom". Ngày bắt đầu, dạng YYYY-MM-DD.',
+        },
+        rangeTo: {
+            type: 'string',
+            description: 'Chỉ dùng khi reportFor="custom". Ngày kết thúc, dạng YYYY-MM-DD.',
         },
         kind: {
             type: 'string',
@@ -572,7 +585,11 @@ export function createZaloModAgentTools(host) {
                         }
                         if (op === 'preview') {
                             const groups = normalizeReportGroups(params.groups);
-                            const result = await runAction('report-digest-preview', { groups: groups ?? '*' });
+                            const previewPayload = { groups: groups ?? '*' };
+                            if (params.reportFor !== undefined) previewPayload.reportFor = params.reportFor;
+                            if (params.rangeFrom !== undefined) previewPayload.rangeFrom = params.rangeFrom;
+                            if (params.rangeTo !== undefined) previewPayload.rangeTo = params.rangeTo;
+                            const result = await runAction('report-digest-preview', previewPayload);
                             await logRun('zalo_mod_reports', params, result);
                             return ok({ ok: true, ...result });
                         }
@@ -613,6 +630,8 @@ export function createZaloModAgentTools(host) {
                         if (params.name !== undefined) job.name = params.name;
                         if (params.time !== undefined) job.time = params.time;
                         if (params.reportFor !== undefined) job.reportFor = params.reportFor;
+                        if (params.rangeFrom !== undefined) job.rangeFrom = params.rangeFrom;
+                        if (params.rangeTo !== undefined) job.rangeTo = params.rangeTo;
                         if (params.kind !== undefined) job.kind = params.kind;
                         if (params.enabled !== undefined) job.enabled = params.enabled;
                         const groups = normalizeReportGroups(params.groups);

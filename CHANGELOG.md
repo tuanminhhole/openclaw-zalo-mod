@@ -15,11 +15,21 @@
   Nút "Xem trước" trên dashboard giờ ra đúng khoảng của lịch (kể cả dòng cảnh báo ngày thiếu), thay
   vì luôn xem theo hôm nay/hôm qua như trước.
 
+  **Bot cũng đổi được khoảng thời gian bằng lời, không chỉ qua dashboard.** Tool `zalo_mod_reports`
+  mở đủ 6 giá trị `reportFor` (trước chỉ `today`/`yesterday`) và nhận thêm `rangeFrom`/`rangeTo` cho
+  `custom` — owner nhắn "đổi báo cáo thành tổng hợp 7 ngày" giờ có hiệu lực thật, không bị schema
+  chặn. Op `preview` cũng nhận được các field này, nên "xem thử báo cáo 7 ngày" không còn luôn ra
+  đúng hôm nay.
+
 ### Fixed
 
 - Cảnh báo "giờ gửi buổi sáng mà nội dung để hôm nay" (`reportMorningWarning`) trước đây so sai điều
   kiện — sau khi mở rộng `reportFor` thì lẽ ra chỉ áp dụng cho giá trị `today`, không phải mọi giá
   trị khác `yesterday`.
+- **Dòng cảnh báo "chưa có bản tổng hợp" không còn bắn sai vào ngày không ai nhắn** (chủ nhật, ngày
+  lễ). Trước đây `missingDates` chỉ xét "không nhóm nào có summary", nên `last7`/`last30` luôn dính
+  ít nhất một ngày không hoạt động và bị gắn cờ thiếu oan — nay ngày ứng viên "thiếu" được kiểm thêm
+  nhật ký thô (không gọi AI): mọi nhóm raw = 0 thì coi là ngày không hoạt động, không phải thiếu.
 
 ## [2.28.1] - 2026-08-03
 

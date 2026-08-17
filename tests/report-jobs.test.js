@@ -117,18 +117,26 @@ test('không nhóm nào có tin → nói rõ, không gửi tin rỗng', async ()
 
 // ── Digest nhiều ngày (P1) — chỉ đọc cache, cấm sinh lại, gộp theo NHÓM ───────────────────────
 // Range >1 ngày không được đụng LLM: 30 nhóm × 7 ngày sinh lại là 210 lượt gọi model cho một tin.
-function loadRangeDigest(summaries) {
-    return new Function('summaries', `
-        // CỐ Ý không định nghĩa generateDailySummary/readChatHistory/callSmartRoute: nếu nhánh
-        // nhiều-ngày lỡ gọi tới, test phải nổ ReferenceError ngay — bằng chứng mạnh hơn spy đếm 0 lần.
+// `rawHistory` (tuỳ chọn) mô phỏng nhật ký thô cho phép kiểm P1b: khoá `gid|date` → mảng tin.
+// Không khai key nào = mặc định CÓ tin thật (giữ đúng kỳ vọng test cũ: thiếu summary = thiếu thật).
+// Chỉ khai `[]` cho đúng ngày/nhóm muốn mô phỏng "chủ nhật không ai nhắn".
+function loadRangeDigest(summaries, rawHistory = {}) {
+    return new Function('summaries', 'rawHistory', `
+        // CỐ Ý không định nghĩa generateDailySummary/callSmartRoute: nếu nhánh nhiều-ngày lỡ gọi
+        // tới, test phải nổ ReferenceError ngay — bằng chứng mạnh hơn spy đếm 0 lần. readChatHistory
+        // THÌ ĐƯỢC PHÉP (P1b: phân biệt "thiếu summary" với "không ai nhắn") — nạp bản giả riêng.
         const getSummary = async (gid, d) => summaries[gid + '|' + d] || null;
+        const readChatHistory = async (gid, d) => {
+            const key = gid + '|' + d;
+            return key in rawHistory ? rawHistory[key] : [{ fake: true }];
+        };
         const getGroupName = (g) => 'Nhóm ' + g;
         ${extract('addDaysStr')}
         ${extract('dateRangeList')}
         ${extract('buildDigestParts')}
         ${extract('buildDigestMessages')}
         return { buildDigestParts, buildDigestMessages };
-    `)(summaries);
+    `)(summaries, rawHistory);
 }
 
 test('range nhiều ngày: KHÔNG gọi generateDailySummary dù thiếu cache (chỉ đọc, không sinh lại)', async () => {
@@ -156,6 +164,42 @@ test('last7 thiếu 2 ngày → dòng cảnh báo đúng số lượng và đún
     assert.match(texts.join('\n'), /⚠️ 2\/7 ngày chưa có bản tổng hợp: 2026-08-11 · 2026-08-14/);
 });
 
+// ── P1b: chủ nhật không ai nhắn KHÔNG được coi là "thiếu bản tổng hợp" ────────────────────────
+// Số đo thật 2026-08-16 (chủ nhật): digest ra "0 nhóm · 0 tin" với 33 nhóm raw = 0 — không thiếu gì
+// cả. last7 luôn chứa 1 chủ nhật ⇒ nếu không vá thì tin nào cũng có dòng ⚠️ sai, owner lại tưởng
+// bot hỏng (đúng vòng lặp đã đi hai lần 31/07 → 09/08).
+test('ngày không ai nhắn (raw=0 mọi nhóm) → KHÔNG vào missingDates', async () => {
+    const { buildDigestParts } = loadRangeDigest(
+        { 'g1|2026-08-15': { messageCount: 2, sections: {} }, 'g1|2026-08-17': { messageCount: 1, sections: {} } },
+        // 2026-08-16 (chủ nhật): không nhóm nào có summary VÀ không nhóm nào có tin thô → không thiếu.
+        { 'g1|2026-08-16': [] },
+    );
+    const r = await buildDigestParts(['g1'], { from: '2026-08-15', to: '2026-08-17' });
+    assert.deepEqual(r.missingDates, [], 'ngày chủ nhật không hoạt động không được ghi là thiếu');
+});
+
+test('ngày có tin mà thiếu summary (raw>0) → VẪN vào missingDates', async () => {
+    const { buildDigestParts } = loadRangeDigest(
+        { 'g1|2026-08-15': { messageCount: 2, sections: {} }, 'g1|2026-08-17': { messageCount: 1, sections: {} } },
+        // 2026-08-16: có tin thô thật nhưng chưa từng sinh summary — đây là thiếu THẬT, phải cảnh báo.
+        { 'g1|2026-08-16': [{ t: '10:00', text: 'có tin' }] },
+    );
+    const r = await buildDigestParts(['g1'], { from: '2026-08-15', to: '2026-08-17' });
+    assert.deepEqual(r.missingDates, ['2026-08-16']);
+});
+
+test('range 2 ngày, một ngày cả hai nhóm im lặng và ngày kia một nhóm có tin → chỉ ngày có tin bị coi thiếu', async () => {
+    const { buildDigestParts } = loadRangeDigest(
+        {},
+        {
+            'g1|2026-08-16': [], 'g2|2026-08-16': [],
+            'g1|2026-08-17': [], 'g2|2026-08-17': [{ t: '08:00', text: 'x' }],
+        },
+    );
+    const r = await buildDigestParts(['g1', 'g2'], { from: '2026-08-16', to: '2026-08-17' });
+    assert.deepEqual(r.missingDates, ['2026-08-17']);
+});
+
 test('gộp nhiều ngày CỘNG số tin, ưu tiên highlight ngày MỚI NHẤT trước', async () => {
     const { buildDigestParts } = loadRangeDigest({
         'g1|2026-08-10': { messageCount: 2, sections: { highlights: ['cũ'], participants: ['a'] } },
@@ -179,8 +223,11 @@ function simulatePreview({ summaries, payload, runDate }) {
         const getSummary = async (gid, d) => summaries[gid + '|' + d] || null;
         const getGroupName = (g) => 'Nhóm ' + g;
         // Range 1 ngày (ví dụ 'yesterday') đi nhánh cũ của buildDigestParts, cần đủ hai phụ thuộc
-        // này — cache đã đủ (rawCount 0 <= cache.messageCount) nên không chạm generateDailySummary.
-        const readChatHistory = async () => [];
+        // này — cache đã đủ (rawCount 1 <= cache.messageCount) nên không chạm generateDailySummary.
+        // Trả về 1 tin "có thật" (không phải mảng rỗng): nhánh nhiều-ngày giờ dùng readChatHistory để
+        // phân biệt "thiếu summary dù có tin" với "chủ nhật không ai nhắn" (P1b) — test last7 dưới
+        // đây giả định 6 ngày thiếu là thiếu THẬT (có tin, chỉ là chưa có summary), không phải ngày rỗng.
+        const readChatHistory = async () => [{ fake: true }];
         const generateDailySummary = async () => { throw new Error('KHÔNG được sinh lại trong xem trước'); };
         ${extract('addDaysStr')}
         ${extract('dateRangeList')}

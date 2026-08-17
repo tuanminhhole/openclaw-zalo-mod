@@ -300,12 +300,25 @@ test('zalo_mod_reports phẳng: mọi thứ owner hay nhờ là một field ở 
     const reports = tools.find((t) => t.name === 'zalo_mod_reports');
     assert.ok(reports, 'phải có tool zalo_mod_reports');
     const props = reports.parameters.properties;
-    for (const k of ['operation', 'id', 'time', 'kind', 'groups', 'toOwnerDm', 'toGroups', 'toEachGroup', 'enabled', 'confirm']) {
+    for (const k of ['operation', 'id', 'time', 'kind', 'groups', 'toOwnerDm', 'toGroups', 'toEachGroup', 'enabled', 'confirm', 'reportFor', 'rangeFrom', 'rangeTo']) {
         assert.ok(props[k], `thiếu field phẳng ${k}`);
         assert.notEqual(props[k].type, 'object', `${k} phải phẳng, không lồng object`);
     }
     assert.deepEqual(reports.parameters.required, ['operation']);
     assert.deepEqual(props.operation.enum, ['list', 'save', 'run', 'preview', 'delete']);
+});
+
+// P1b: dashboard đã mở 6 giá trị (2.29.0) nhưng owner ra lệnh bằng TIN NHẮN ZALO, không vào dashboard
+// — enum của tool phải khớp, không thì "đổi báo cáo thành tổng hợp 7 ngày" bị schema chặn ngay
+// (đúng dạng sự cố 31/07: bot báo "đã đổi" mà lịch không đổi).
+test('reportFor mở đủ 6 giá trị — bot phải nhận lệnh đổi khoảng thời gian bằng lời', () => {
+    const { host } = makeHost();
+    const tools = createZaloModAgentTools(host)({ requesterSenderId: OWNER });
+    const reports = tools.find((t) => t.name === 'zalo_mod_reports');
+    assert.deepEqual(
+        reports.parameters.properties.reportFor.enum,
+        ['today', 'yesterday', 'last7', 'last30', 'thisMonth', 'custom'],
+    );
 });
 
 // Bot đọc AGENTS.md mỗi lượt, và AGENTS.md dạy "Cron khi cần giờ chính xác, kết quả gửi thẳng vào
@@ -384,6 +397,50 @@ test('save dựng payload lồng HỘ model, và tự đọc lại state sau khi
     assert.deepEqual(save.payload.job.deliver.groups, ['ASACHINA ZALO'], 'tên nhóm được chuyển nguyên xuống tầng resolve');
     assert.equal(save.payload.job.groups, undefined, 'không gửi field mà owner không nhắc — tránh ghi đè groups');
     assert.ok(calls.some((c) => c.action === 'report-jobs'), 'sau khi ghi phải đọc lại để trả state thật');
+});
+
+// P1b (1): owner nhắn "đổi báo cáo thành tổng hợp 7 ngày" — bot phải dựng đúng job.reportFor +
+// job.rangeFrom/rangeTo (custom), không chỉ dashboard mới làm được việc này.
+test('save với reportFor:"last7" dựng đúng job.reportFor', async () => {
+    const { host, calls } = makeHost();
+    const tools = createZaloModAgentTools(host)({ requesterSenderId: OWNER });
+    const reports = tools.find((t) => t.name === 'zalo_mod_reports');
+    await reports.execute('c1', { operation: 'save', id: 'job-x', reportFor: 'last7' });
+    const save = calls.find((c) => c.action === 'report-job-save');
+    assert.equal(save.payload.job.reportFor, 'last7');
+});
+
+test('save với reportFor:"custom" chuyển được rangeFrom/rangeTo xuống job', async () => {
+    const { host, calls } = makeHost();
+    const tools = createZaloModAgentTools(host)({ requesterSenderId: OWNER });
+    const reports = tools.find((t) => t.name === 'zalo_mod_reports');
+    await reports.execute('c1', {
+        operation: 'save', id: 'job-x', reportFor: 'custom', rangeFrom: '2026-08-01', rangeTo: '2026-08-15',
+    });
+    const save = calls.find((c) => c.action === 'report-job-save');
+    assert.equal(save.payload.job.rangeFrom, '2026-08-01');
+    assert.equal(save.payload.job.rangeTo, '2026-08-15');
+});
+
+// P1b (1): op "preview" gọi thẳng report-digest-preview chỉ với `groups` trước đây, nên bot xem
+// trước LUÔN ra hôm nay dù owner hỏi "xem trước báo cáo 7 ngày" — phải truyền được cả 3 field range.
+test('preview truyền được reportFor/rangeFrom/rangeTo xuống report-digest-preview', async () => {
+    const { host, calls } = makeHost();
+    const tools = createZaloModAgentTools(host)({ requesterSenderId: OWNER });
+    const reports = tools.find((t) => t.name === 'zalo_mod_reports');
+    await reports.execute('c1', { operation: 'preview', reportFor: 'last7' });
+    const preview = calls.find((c) => c.action === 'report-digest-preview');
+    assert.ok(preview, 'phải gọi report-digest-preview');
+    assert.equal(preview.payload.reportFor, 'last7');
+});
+
+test('preview mặc định (không nói gì) vẫn không gửi reportFor lạ — giữ hành vi cũ (hôm nay)', async () => {
+    const { host, calls } = makeHost();
+    const tools = createZaloModAgentTools(host)({ requesterSenderId: OWNER });
+    const reports = tools.find((t) => t.name === 'zalo_mod_reports');
+    await reports.execute('c1', { operation: 'preview' });
+    const preview = calls.find((c) => c.action === 'report-digest-preview');
+    assert.equal(preview.payload.reportFor, undefined, 'không nói gì thì không gửi field, tầng dưới tự mặc định today');
 });
 
 test('groups:["all"] thành "*" nên nhóm thêm sau tự vào lịch', async () => {

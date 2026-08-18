@@ -93,13 +93,20 @@ test('listOpenItemsBoard: việc AI mới vào cột "pending_review", việc g�
     assert.equal(board.todo[0].title, 'Việc tay');
 });
 
-test('approveTask: bỏ review_state, task chuyển từ "pending_review" sang "todo"', (t) => {
+test('approveTask: CHỈ bỏ review_state, không đổi gì khác (P4)', (t) => {
     const { crm, close } = makeCrm();
     t.after(close);
-    crm.reconcileGroupOpenItems('g1', '2026-08-18', [{ what: 'Việc AI', state: 'pending' }]);
-    const id = crm.listTasks({ filter: 'all' })[0].id;
-    const approved = crm.approveTask(id);
-    assert.equal(approved.review_state, null);
+    crm.reconcileGroupOpenItems('g1', '2026-08-18', [
+        { what: 'Việc AI', who: 'An', due: '19/08', state: 'pending', evidence: '09:15' },
+    ]);
+    const before = crm.listTasks({ filter: 'all' })[0];
+    const approved = crm.approveTask(before.id);
+    assert.equal(approved.review_state, null, 'chỉ field này được đổi');
+    // Mọi field khác giữ nguyên byte-for-byte so với trước khi duyệt.
+    for (const key of ['title', 'status', 'source', 'dedupe_key', 'group_id', 'assignee', 'note',
+        'evidence', 'first_seen_date', 'last_seen_date', 'done_at', 'due_at', 'created_at']) {
+        assert.equal(approved[key], before[key], `field "${key}" không được đổi khi duyệt`);
+    }
     const board = crm.listOpenItemsBoard('g1');
     assert.equal(board.pending_review.length, 0);
     assert.equal(board.todo.length, 1);

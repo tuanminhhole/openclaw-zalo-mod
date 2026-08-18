@@ -4437,7 +4437,16 @@ const crmState = {
   // cho người này" chỉ gắn cho bản ghi của một bot.
   mergedMap: new Map(),
   pipeline: null, tasks: null, taskFilter: 'open', undoLead: null,
+  // Kanban việc tồn đọng (P4) — mặc định 'board' vì đây là chỗ DUYỆT việc AI đề xuất, không có UI
+  // thì lịch backlog (P3) mãi chỉ đếm "N việc chờ xác nhận" mà không ai xử được.
+  taskView: 'board', tasksBoard: null,
 };
+const CRM_TASK_COLUMNS = [
+  ['pending_review', 'Chờ xác nhận', 'Pending review'],
+  ['todo', 'Cần làm', 'To do'],
+  ['doing', 'Đang làm', 'Doing'],
+  ['done', 'Xong', 'Done'],
+];
 const CRM_PAGE_SIZE = 50;
 const CRM_STAGE_LABELS = {
   new: ['Mới', 'New'], contacted: ['Đã liên hệ', 'Contacted'],
@@ -5598,22 +5607,131 @@ async function renderCrmTasks() {
   const head = document.querySelector('#tasks .page-head');
   if (head) {
     head.querySelector('h2').textContent = t('Công việc', 'Tasks');
-    head.querySelector('p').textContent = t('Việc cần làm, hạn chót, nhắc quá hạn — gắn với khách hàng hoặc lead.',
-      'To-dos with due dates and overdue alerts — linked to contacts or leads.');
+    head.querySelector('p').textContent = crmState.taskView === 'board'
+      ? t('Việc còn treo của các nhóm — duyệt việc AI đề xuất, kéo-thả để đổi cột.',
+        'Open items across groups — review AI-proposed tasks, drag to change column.')
+      : t('Việc cần làm, hạn chót, nhắc quá hạn — gắn với khách hàng hoặc lead.',
+        'To-dos with due dates and overdue alerts — linked to contacts or leads.');
   }
   const actions = document.getElementById('crmTasksActions');
-  actions.innerHTML = `<button class="btn primary" id="crmAddTaskBtn">${t('+ Thêm việc', '+ Add task')}</button>`;
+  const viewBtn = crmState.taskView === 'board'
+    ? `<button class="btn" id="crmTaskViewBtn">☰ ${t('Danh sách', 'List')}</button>`
+    : `<button class="btn" id="crmTaskViewBtn">🗂 ${t('Kanban', 'Kanban')}</button>`;
+  actions.innerHTML = `${viewBtn}<button class="btn primary" id="crmAddTaskBtn">${t('+ Thêm việc', '+ Add task')}</button>`;
   actions.querySelector('#crmAddTaskBtn').addEventListener('click', () => crmTaskModal());
+  actions.querySelector('#crmTaskViewBtn').addEventListener('click', () => {
+    crmState.taskView = crmState.taskView === 'board' ? 'list' : 'board';
+    renderCrmTasks();
+  });
 
   const body = document.getElementById('crmTasksBody');
   body.innerHTML = `<div class="card" style="padding:24px;color:var(--muted)">${t('Đang tải…', 'Loading…')}</div>`;
   try {
-    const res = await crmAction('crm-tasks-list', { filter: crmState.taskFilter });
-    crmState.tasks = res.tasks;
-    crmRenderTasksList(body);
+    if (crmState.taskView === 'board') {
+      crmState.tasksBoard = (await crmAction('crm-tasks-board', {})).columns;
+      crmRenderTasksBoard(body);
+    } else {
+      const res = await crmAction('crm-tasks-list', { filter: crmState.taskFilter });
+      crmState.tasks = res.tasks;
+      crmRenderTasksList(body);
+    }
   } catch (err) {
     crmErrorCard(body, err, renderCrmTasks);
   }
+}
+
+/**
+ * Kanban việc tồn đọng (P4) — cùng khuôn `.kanban`/`.kanban-col`/`.kanban-card` đã có cho Leads,
+ * KHÔNG dựng CSS mới. Khác Leads ở hai điểm: cột "Chờ xác nhận" không kéo-thả được (phải bấm Duyệt/
+ * Từ chối — kéo nhầm một việc AI đề xuất vào "Cần làm" coi như đã duyệt lén, sai luật review), và
+ * mọi việc `source==='ai'` có nhãn 🤖 để KHÔNG BAO GIỜ lẫn với việc người tự gõ.
+ */
+function crmRenderTasksBoard(body) {
+  const cols = crmState.tasksBoard || {};
+  const groupName = (gid) => (state.groups || []).find(g => g.groupId === gid)?.name || gid || '—';
+  const metaLine = (task) => {
+    const bits = [];
+    if (task.group_id) bits.push(`👥 ${crmEsc(groupName(task.group_id))}`);
+    if (task.evidence) bits.push(`🕐 ${crmEsc(task.evidence)}`);
+    if (task.due_at) bits.push(`⏰ ${crmDate(task.due_at)}`);
+    else if (task.first_seen_date) bits.push(`${t('treo từ', 'open since')} ${crmEsc(task.first_seen_date)}`);
+    return bits.length ? `<div class="kanban-card-meta">${bits.map(b => `<span class="kanban-card-contact">${b}</span>`).join('')}</div>` : '';
+  };
+  const aiBadge = (task) => task.source === 'ai'
+    ? `<span class="chip" style="background:rgba(139,92,246,.16);color:#8b5cf6;font-size:10.5px">🤖 ${t('AI đề xuất', 'AI-proposed')}</span>`
+    : '';
+
+  const colsHtml = CRM_TASK_COLUMNS.map(([key, viLabel, enLabel]) => {
+    const tasks = cols[key] || [];
+    const isPending = key === 'pending_review';
+    const cards = tasks.map(task => `
+      <div class="kanban-card" ${isPending ? '' : `draggable="true"`} data-task-id="${crmEsc(task.id)}">
+        <div class="kanban-card-title">${crmEsc(task.title)}</div>
+        ${aiBadge(task)}
+        ${metaLine(task)}
+        ${task.note ? `<div class="kanban-card-next">${crmEsc(task.note)}</div>` : ''}
+        ${isPending ? `<div class="kanban-card-meta" style="margin-top:8px">
+          <button class="btn primary" data-task-approve="${crmEsc(task.id)}" style="padding:4px 10px;font-size:12px">✓ ${t('Duyệt', 'Approve')}</button>
+          <button class="btn danger" data-task-reject="${crmEsc(task.id)}" style="padding:4px 10px;font-size:12px">✕ ${t('Từ chối', 'Reject')}</button>
+        </div>` : ''}
+      </div>`).join('');
+    return `
+      <div class="kanban-col" data-status="${key}">
+        <div class="kanban-col-head">
+          <span class="kanban-col-title">${t(viLabel, enLabel)}</span>
+          <span class="kanban-col-count">${tasks.length}</span>
+        </div>
+        <div class="kanban-col-body" data-status-body="${key}">${cards
+      || `<div style="padding:16px;text-align:center;color:var(--muted);font-size:12px">${t('Trống', 'Empty')}</div>`}</div>
+      </div>`;
+  }).join('');
+  body.innerHTML = `<div class="kanban">${colsHtml}</div>`;
+
+  body.querySelectorAll('[data-task-approve]').forEach(el => el.addEventListener('click', async () => {
+    try {
+      await crmAction('crm-task-approve', { id: el.dataset.taskApprove });
+      renderCrmTasks();
+    } catch (err) { showToast(err.message, 'error'); }
+  }));
+  body.querySelectorAll('[data-task-reject]').forEach(el => el.addEventListener('click', async () => {
+    const ok = await openModal({
+      title: t('Từ chối việc AI đề xuất?', 'Reject AI-proposed task?'),
+      desc: t('Việc này sẽ bị xoá vĩnh viễn, không vào luồng làm việc.', 'This will be permanently removed, never entering the workflow.'),
+      confirmText: t('Từ chối', 'Reject'), danger: true, tone: 'danger',
+    });
+    if (!ok) return;
+    try {
+      await crmAction('crm-task-reject', { id: el.dataset.taskReject });
+      renderCrmTasks();
+    } catch (err) { showToast(err.message, 'error'); }
+  }));
+
+  // Kéo-thả chỉ đổi STATUS (todo/doing/done) — "Chờ xác nhận" không phải đích thả, và không phải
+  // nguồn kéo (card ở đó không có draggable="true").
+  body.querySelectorAll('.kanban-card[draggable="true"]').forEach(card => {
+    card.addEventListener('dragstart', (e) => {
+      e.dataTransfer.setData('text/plain', card.dataset.taskId);
+      e.dataTransfer.effectAllowed = 'move';
+      card.classList.add('dragging');
+    });
+    card.addEventListener('dragend', () => card.classList.remove('dragging'));
+  });
+  body.querySelectorAll('.kanban-col').forEach(col => {
+    if (col.dataset.status === 'pending_review') return; // không phải đích thả hợp lệ
+    col.addEventListener('dragover', (e) => { e.preventDefault(); col.classList.add('dragover'); });
+    col.addEventListener('dragleave', () => col.classList.remove('dragover'));
+    col.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      col.classList.remove('dragover');
+      const taskId = e.dataTransfer.getData('text/plain');
+      const toStatus = col.dataset.status;
+      if (!taskId) return;
+      try {
+        await crmAction('crm-task-status', { id: taskId, status: toStatus });
+        renderCrmTasks();
+      } catch (err) { showToast(err.message, 'error'); }
+    });
+  });
 }
 
 function crmRenderTasksList(body) {

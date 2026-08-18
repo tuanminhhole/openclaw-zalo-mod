@@ -898,11 +898,14 @@ export class CrmStore {
         const rows = this.db.prepare(
             `SELECT * FROM tasks ${cond} ORDER BY (due_at IS NULL), due_at ASC, last_seen_date DESC, created_at DESC LIMIT 500`,
         ).all(...params);
-        const columns = { pending_review: [], todo: [], blocked: [], done: [] };
+        // 4 cột đúng như UI (P4): Chờ xác nhận · Cần làm · Đang làm · Xong. `status='blocked'` (đã
+        // duyệt nhưng vướng) gộp chung với `doing` — vẫn là "đang làm", chỉ là dở dang; DB vẫn giữ
+        // nguyên giá trị `blocked` cho `setTaskStatus`, đây chỉ là gộp ở tầng HIỂN THỊ.
+        const columns = { pending_review: [], todo: [], doing: [], done: [] };
         for (const r of rows) {
             const col = r.review_state === 'pending' ? 'pending_review'
-                : r.status === 'blocked' ? 'blocked'
-                    : r.status === 'done' ? 'done'
+                : r.status === 'done' ? 'done'
+                    : (r.status === 'doing' || r.status === 'blocked') ? 'doing'
                         : 'todo';
             columns[col].push(r);
         }

@@ -1,3 +1,28 @@
+## [2.32.0] - 2026-08-18
+
+### Added
+
+- **Kanban việc tồn đọng trên trang Công việc** — mảnh cuối của mạch báo cáo, đủ để owner **duyệt**
+  việc AI đề xuất chứ không chỉ đếm số trong tin `backlog` (2.31.0). Vẫn trang Công việc cũ (không
+  dựng trang mới), có nút chuyển giữa **Kanban** (mặc định) và **Danh sách** (giao diện cũ, còn đủ
+  bộ lọc quá hạn/đã xong).
+  4 cột: **Chờ xác nhận** (`review_state='pending'`) · **Cần làm** · **Đang làm** · **Xong**. Việc
+  `source='ai'` luôn có nhãn 🤖 để không lẫn với việc người tự gõ — rõ nhất ở cột "Chờ xác nhận", nơi
+  mỗi thẻ có nút **Duyệt** (bỏ `review_state`, không đổi gì khác) và **Từ chối** (xoá hẳn, có xác
+  nhận vì không hoàn tác được). Việc đã duyệt kéo-thả được giữa 3 cột còn lại — thả gọi
+  `crm-task-status`, không đi qua review lại.
+  **Cột "Chờ xác nhận" không phải đích thả** (kéo-thả một việc AI đề xuất vào "Cần làm" coi như
+  duyệt lén, sai luật review) và card ở đó **không kéo được** — phải bấm Duyệt/Từ chối tường minh.
+  Mỗi thẻ hiện nhóm, `evidence` (giờ tin nhắn làm bằng chứng), và ngày treo/hạn.
+  Dùng lại nguyên `.kanban`/`.kanban-col`/`.kanban-card` đã có cho Leads — không thêm CSS mới.
+
+### Verified
+
+- **Migration v9 (2.30.0) diễn tập trên bản copy `context.db` THẬT của khách** (không phải DB mô
+  phỏng) — chạy 2 lần không lỗi, `schema_migrations` lên 9, đủ 7 cột mới, **4013 tin nhắn + 182 liên
+  hệ + 1817 audit log giữ nguyên 100%**, `integrity_check`=`ok`. Điều kiện cuối còn thiếu của P2 coi
+  như đã xong; bản copy đã xoá ngay sau khi đối soát.
+
 ## [2.31.0] - 2026-08-18
 
 ### Added

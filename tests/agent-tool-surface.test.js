@@ -308,6 +308,18 @@ test('classifyAction: chặn cứng tiền/license/permission, chặn mềm nhó
     assert.equal(classifyAction('').allowed, false);
 });
 
+// P4: kanban việc tồn đọng — luật cứng là "AI không được xoá/tự đóng việc source='manual'". Cách
+// thực thi chắc nhất là bot KHÔNG CÓ ĐƯỜNG nào tới action đó, kể cả với allowDestructive=true —
+// crm-task-* chỉ đi qua HTTP dashboard (`runDashboardAction` → `handleCrmAction`), không qua
+// `zalo_mod_action`/`classifyAction` (bot không có tool nào gọi tới nhánh CRM này).
+test('classifyAction: crm-task-* KHÔNG có đường nào cho bot chạm — không nằm trong SAFE lẫn DESTRUCTIVE', () => {
+    for (const action of ['crm-task-done', 'crm-task-delete', 'crm-task-status', 'crm-task-approve', 'crm-task-reject']) {
+        assert.equal(classifyAction(action).allowed, false, `${action} không được có trong allowlist mặc định`);
+        assert.equal(classifyAction(action, { allowDestructive: true }).allowed, false,
+            `${action} vẫn phải chặn dù bật allowDestructive — không phải cờ này quyết định`);
+    }
+});
+
 test('zalo_mod_action: list-actions phản ánh đúng cờ allowDestructive', async () => {
     const { host } = makeHost({ isDestructiveAllowed: () => true });
     const tools = createZaloModAgentTools(host)({ requesterSenderId: OWNER });

@@ -2601,12 +2601,13 @@ Quy tắc:
         function normalizeReportJob(j) {
             if (!j || typeof j !== 'object') return null;
             const id = String(j.id || '').trim() || `job-${Math.random().toString(36).slice(2, 10)}`;
-            const kind = j.kind === 'digest' ? 'digest' : 'group';
+            const kind = (j.kind === 'digest' || j.kind === 'backlog') ? j.kind : 'group';
             const groups = j.groups === '*' ? '*' : (Array.isArray(j.groups) ? j.groups.map(String).filter(Boolean) : []);
             const d = j.deliver || {};
+            const DEFAULT_NAME = { digest: 'Báo cáo tổng hợp', group: 'Báo cáo từng nhóm', backlog: 'Việc còn treo' };
             return {
                 id,
-                name: String(j.name || '').trim() || (kind === 'digest' ? 'Báo cáo tổng hợp' : 'Báo cáo từng nhóm'),
+                name: String(j.name || '').trim() || DEFAULT_NAME[kind],
                 enabled: j.enabled !== false,
                 kind,
                 groups,
@@ -2898,6 +2899,60 @@ Quy tắc:
             return { texts, missingDates };
         }
 
+        /**
+         * Text "việc còn treo" (P3, `kind:'backlog'`) — TRUY VẤN kanban đã đối soát sẵn ở P2, KHÔNG
+         * gọi LLM (30 nhóm sinh lại bằng AI cho một câu hỏi tất định là phí, đúng nguyên tắc kiến
+         * trúc đã chốt cho cả 3 phase). `rows` lấy từ `CrmStore.listBacklog` — đã sắp quá hạn trước
+         * rồi treo lâu nhất.
+         *
+         * Tách RÕ 2 phần (bổ sung của Leader sau khi P2 có `review_state`): việc `review_state=
+         * 'pending'` là AI ĐỀ XUẤT, CHƯA ai duyệt — liệt ngang hàng việc đã xác nhận là chủ Asa đọc
+         * số AI đoán tưởng việc đã chốt thật. Nên chỉ đếm gộp ở dòng cuối, trỏ ra dashboard để duyệt.
+         */
+        function buildBacklogText(rows, groupNameOf, range) {
+            const { from, to } = range;
+            const label = from === to ? from : `${from}–${to}`;
+            const confirmed = rows.filter(r => r.review_state !== 'pending');
+            const pendingCount = rows.length - confirmed.length;
+            const pendingLine = pendingCount
+                ? `\n\n⚠️ ${pendingCount} việc do AI đề xuất đang chờ xác nhận → xem dashboard`
+                : '';
+
+            const byGroup = new Map();
+            for (const r of confirmed) {
+                if (!byGroup.has(r.group_id)) byGroup.set(r.group_id, []);
+                byGroup.get(r.group_id).push(r);
+            }
+            const head = `📌 VIỆC CÒN TREO ${label} · ${byGroup.size} nhóm · ${confirmed.length} việc`;
+            if (!confirmed.length) {
+                return { texts: [`${head}${pendingLine}\n\n(Không có việc nào còn treo trong khoảng này.)`], pendingCount };
+            }
+
+            const bulletOf = (r) => (r.due_at != null)
+                ? `  • ${r.title} — đến hạn ${vnDateStr(new Date(Number(r.due_at) + 7 * 3600 * 1000))}`
+                : `  • ${r.title} — treo từ ${r.first_seen_date || '?'}`;
+            const blocks = [...byGroup.entries()].map(([gid, items]) =>
+                `📋 ${groupNameOf(gid)} (${items.length})\n${items.map(bulletOf).join('\n')}`);
+
+            // Cắt trang GIỐNG digest — cắt giữa các nhóm, không giữa dòng.
+            const pages = [];
+            let cur = [];
+            let len = head.length + pendingLine.length;
+            for (const b of blocks) {
+                if (cur.length && len + b.length + 2 > DIGEST_SAFE_CHARS) {
+                    pages.push(cur); cur = []; len = head.length + pendingLine.length;
+                }
+                cur.push(b); len += b.length + 2;
+            }
+            if (cur.length) pages.push(cur);
+            const texts = pages.map((page, i) => {
+                const label2 = pages.length > 1 ? `${head}  (phần ${i + 1}/${pages.length})` : head;
+                const isLast = i === pages.length - 1;
+                return `${label2}\n\n${page.join('\n\n')}${isLast ? pendingLine : ''}`;
+            });
+            return { texts, pendingCount };
+        }
+
         /** Gửi một danh sách tin tới các đích của job (DM owner / nhóm nhận chỉ định). */
         async function deliverReportTexts(job, texts, { selfGroupId = '' } = {}) {
             const prof = primaryProfile(groupNames[selfGroupId]?.profile);
@@ -2985,6 +3040,22 @@ Quy tắc:
                     targets: reportDeliveryTargets(job),
                     chars: texts.reduce((n, t) => n + t.length, 0),
                     missingDates,
+                });
+                return { sent: texts.length, groups: gids.length };
+            }
+            if (job.kind === 'backlog') {
+                // `zEngine.crm` là null khi storage rơi về in-memory (Node <22.5) — không có kanban để
+                // đọc thì gửi tin trống thay vì ném lỗi làm chết cả lượt chạy lịch.
+                const rows = zEngine?.crm ? zEngine.crm.listBacklog(gids) : [];
+                const { texts, pendingCount } = buildBacklogText(rows, (gid) => groupNames[gid]?.name || gid, range);
+                await deliverReportTexts(job, texts);
+                await recordReportSent({
+                    jobId: job.id, jobName: job.name, kind: job.kind, reportFor: job.reportFor,
+                    date: to, from, to, time: job.time, trigger,
+                    scope: gids.map(g => ({ groupId: g, name: groupNames[g]?.name || g })), texts,
+                    targets: reportDeliveryTargets(job),
+                    chars: texts.reduce((n, t) => n + t.length, 0),
+                    pendingCount,
                 });
                 return { sent: texts.length, groups: gids.length };
             }

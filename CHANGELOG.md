@@ -1,3 +1,27 @@
+## [2.31.0] - 2026-08-18
+
+### Added
+
+- **Lịch báo cáo "việc còn treo"** (`kind: 'backlog'`) — đúng thứ chủ Asa yêu cầu ở R0: một tin mỗi
+  ngày liệt kê việc chưa xong của các nhóm. **TRUY VẤN kanban đã đối soát sẵn ở 2.30.0, KHÔNG gọi
+  AI** — sắp quá hạn trước rồi treo lâu nhất, cắt trang theo nhóm như digest. Tin **tách rõ 2 phần**:
+  việc đã xác nhận liệt theo nhóm, việc AI đề xuất còn "Chờ xác nhận" chỉ đếm gộp ở dòng cuối kèm
+  hướng dẫn ra dashboard duyệt — không trộn chung để tránh chủ Asa đọc số AI đoán tưởng là đã chốt.
+  Tạo được qua chat: `zalo_mod_reports` mở thêm `kind: 'backlog'`.
+- **`zalo_mod_groups` khớp tên theo TỪNG TỪ, không cần đúng thứ tự** — vá sự cố thật 09/08: "39 Cùng
+  rèn" không khớp chuỗi-con của "[39] RÈN CÙNG NHAU" (thứ tự chữ khác nhau) nên bot từng kết luận sai
+  "nhóm chưa được quản lý" dù nhóm đã bật follow/silent thật. Không khớp tuyệt đối vẫn thử lại bằng
+  token (quá nửa số từ trong câu hỏi phải khớp, làm tròn lên); vẫn 0 kết quả thì trả `suggestions`
+  (5 nhóm gần giống) + `note` cấm bot tự kết luận "chưa được quản lý" — luật nằm ngay trong **mô tả
+  tool** (không chỉ SKILL.md) vì đó là nơi luôn nằm trong prompt.
+
+### Chưa xong trong bản này
+
+- Dashboard chưa có lựa chọn "Việc còn treo" trong bộ chọn loại lịch (`kindBtn` ở trang Lịch báo
+  cáo) — lịch `backlog` hiện chỉ tạo/sửa được qua chat hoặc chỉnh thẳng `report-jobs.json`. Cố tình
+  không thêm nửa vời (nút bấm ra nhưng nút "Xem trước" vẫn hiện digest sai) — gộp cùng đợt kanban UI
+  sau (xem mục "Chưa xong" ở `[2.30.0]`).
+
 ## [2.30.0] - 2026-08-18
 
 ### Added

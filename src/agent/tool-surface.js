@@ -96,6 +96,36 @@ export function foldGroupName(value) {
         .trim();
 }
 
+/**
+ * Khớp tên nhóm theo TỪNG TỪ, không cần đúng thứ tự -- bỏ dấu qua `foldGroupName` trước (P3b).
+ *
+ * Sự cố thật 09/08: owner nhờ bật silent cho "39 Cùng rèn", so khớp CHUỖI CON không ra `[39] RÈN
+ * CÙNG NHAU` vì thứ tự chữ khác nhau ("cung ren" không phải chuỗi con của "ren cung nhau") -> bot kết
+ * luận sai "nhóm chưa được quản lý" dù nhóm đã bật follow/silent thật.
+ *
+ * Đòi khớp ĐỦ mọi từ vẫn quá cứng: người nhớ tên hay lẫn một từ (owner có thể gõ "39 - tự rèn" thay
+ * vì "cùng rèn"). Ngược lại khớp lỏng quá (chỉ cần 1 từ) thì một chữ số như "39" trùng ngẫu nhiên
+ * hàng chục nhóm. Chọn mốc giữa: **quá NỬA số từ phải khớp** (làm tròn lên) -- với truy vấn 1 từ thì
+ * vẫn đòi khớp tuyệt đối, không có chỗ cho sai.
+ */
+export function tokenMatchGroupName(name, query) {
+    const tokens = foldGroupName(query).split(' ').filter(Boolean);
+    if (!tokens.length) return false;
+    const foldedName = foldGroupName(name);
+    const matched = tokens.filter((t) => foldedName.includes(t)).length;
+    return matched >= Math.ceil(tokens.length / 2);
+}
+
+/** 5 nhóm "gần giống" nhất theo số từ trùng -- dùng khi khớp tên ra 0 kết quả, để owner còn cái chọn. */
+export function suggestGroupNames(query, groups, limit = 5) {
+    const tokens = foldGroupName(query).split(' ').filter(Boolean);
+    return groups
+        .map((g) => ({ name: g.name, score: tokens.filter((t) => foldGroupName(g.name).includes(t)).length }))
+        .sort((a, b) => b.score - a.score)
+        .slice(0, limit)
+        .map((s) => s.name);
+}
+
 function toolText(payload, isError = false) {
     const text = typeof payload === 'string' ? payload : JSON.stringify(payload, null, 2);
     return { content: [{ type: 'text', text, ...(isError ? { isError: true } : {}) }], details: payload };
@@ -288,8 +318,10 @@ const REPORTS_SCHEMA = {
         },
         kind: {
             type: 'string',
-            enum: ['digest', 'group'],
-            description: 'digest = gộp tất cả nhóm vào MỘT tin ngắn. group = mỗi nhóm một tin đầy đủ.',
+            enum: ['digest', 'group', 'backlog'],
+            description: 'digest = gộp tất cả nhóm vào MỘT tin ngắn. group = mỗi nhóm một tin đầy đủ. '
+                + 'backlog = "việc còn treo" của các nhóm — TRUY VẤN kanban đã có, KHÔNG dùng AI để sinh lại. '
+                + 'Dùng "backlog" khi owner nói kiểu "báo cáo còn việc gì chưa làm", "việc tồn đọng", "nhắc việc chưa xong".',
         },
         groups: {
             type: 'array',
@@ -356,12 +388,19 @@ export function createZaloModAgentTools(host) {
                     'Liệt kê mọi nhóm Zalo mà bot đang quản lý kèm TRẠNG THÁI THẬT của từng toggle',
                     '(muted/silent/welcome/follow/autoSummary) — đúng những badge hiển thị trên dashboard Zalo Mod.',
                     'Gọi tool này TRƯỚC khi trả lời bất kỳ câu hỏi về cấu hình nhóm, và SAU mỗi lần đổi cấu hình để xác nhận.',
+                    'query khớp THEO TỪNG TỪ, không dấu, không cần đúng thứ tự — "39 cùng rèn" vẫn ra đúng nhóm dù',
+                    'tên thật là "[39] RÈN CÙNG NHAU". Nếu trả về "total: 0" kèm "suggestions": tin có nhóm gần giống,',
+                    // Bài học 09/08: khớp chuỗi-con thất bại vì thứ tự chữ khác nhau → bot tự kết luận "nhóm chưa
+                    // được quản lý" dù nhóm ĐÃ follow/silent thật, nghe y như bịa. Luật phải nằm ở mô tả tool (nơi
+                    // LUÔN nằm trong prompt) để thắng được hướng dẫn "phải đi tìm" của SKILL.md.
+                    '⛔ TUYỆT ĐỐI đừng tự kết luận "nhóm chưa được Zalo Mod quản lý" chỉ vì không khớp đúng tên owner',
+                    'gõ — hỏi lại owner tên chính xác hơn, hoặc gợi ý một trong các suggestions.',
                     'Chỉ owner dùng được.',
                 ].join(' '),
                 parameters: {
                     type: 'object',
                     properties: {
-                        query: { type: 'string', description: 'Lọc theo tên nhóm (không dấu cũng được). Bỏ trống = tất cả.' },
+                        query: { type: 'string', description: 'Lọc theo tên nhóm (không dấu cũng được, không cần đúng thứ tự từ). Bỏ trống = tất cả.' },
                         includeCommands: { type: 'boolean', description: 'true = kèm danh sách slash command đầy đủ của từng bot.' },
                     },
                     additionalProperties: false,
@@ -371,13 +410,24 @@ export function createZaloModAgentTools(host) {
                     if (blocked) return blocked;
                     const all = await groupsSnapshot();
                     const folded = foldGroupName(params.query);
-                    const groups = folded ? all.filter((g) => foldGroupName(g.name).includes(folded)) : all;
+                    let groups = folded ? all.filter((g) => foldGroupName(g.name).includes(folded)) : all;
+                    // Khớp chuỗi-con thất bại (thứ tự từ khác nhau, sự cố "39 Cùng rèn" 09/08) → thử lại
+                    // bằng TOKEN trước khi kết luận "không có nhóm nào khớp".
+                    if (folded && !groups.length) {
+                        groups = all.filter((g) => tokenMatchGroupName(g.name, params.query));
+                    }
+                    const zeroResult = !!folded && !groups.length;
                     const result = ok({
                         ok: true,
                         total: all.length,
                         groups,
                         ...(params.includeCommands ? { commands: listCommands() } : {}),
-                        note: 'Đây là state thật đọc từ store của plugin. Báo lại đúng các giá trị này, không suy diễn.',
+                        ...(zeroResult
+                            ? {
+                                suggestions: suggestGroupNames(params.query, all),
+                                note: 'KHÔNG tìm thấy nhóm theo tên này. ĐỪNG kết luận nhóm chưa được quản lý — hỏi lại owner hoặc chọn trong suggestions.',
+                            }
+                            : { note: 'Đây là state thật đọc từ store của plugin. Báo lại đúng các giá trị này, không suy diễn.' }),
                     });
                     await logRun('zalo_mod_groups', params, result);
                     return result;

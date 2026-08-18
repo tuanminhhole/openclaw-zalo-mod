@@ -31,6 +31,19 @@ test('digest KHÔNG được giữ eachGroup — một tin gộp không thuộc 
     assert.equal(j.deliver.ownerDm, true);
 });
 
+// P3: kind:'backlog' — một tin gộp như digest, không có "nhóm của chính nó" nên cũng phải tự tắt eachGroup.
+test('backlog cũng KHÔNG giữ eachGroup, và có tên mặc định riêng', () => {
+    const j = normalizeReportJob({ kind: 'backlog', groups: '*', deliver: { eachGroup: true } });
+    assert.equal(j.kind, 'backlog');
+    assert.equal(j.deliver.eachGroup, false);
+    assert.equal(j.name, 'Việc còn treo');
+});
+
+test('kind lạ (không phải digest/backlog) → mặc định group, giữ hành vi cũ', () => {
+    assert.equal(normalizeReportJob({ kind: 'rác' }).kind, 'group');
+    assert.equal(normalizeReportJob({}).kind, 'group');
+});
+
 test('báo cáo lẻ thì eachGroup được giữ', () => {
     const j = normalizeReportJob({ kind: 'group', groups: ['a'], deliver: { eachGroup: true } });
     assert.equal(j.deliver.eachGroup, true);
@@ -640,4 +653,77 @@ test('persist:false (Xem trước) VẪN sinh để hiện nội dung thật, nh
     assert.deepEqual(generated, ['g1'], 'vẫn phải sinh, không thì xem trước luôn rỗng');
     assert.equal(r.totalMsgs, 3, 'và phải hiện đúng số tin thật');
     assert.equal(summaries['g1|2026-07-31'].messageCount, 0, 'nhưng cache trên đĩa phải giữ nguyên');
+});
+
+// ── P3: lịch kind:'backlog' — buildBacklogText là TRUY VẤN, không LLM ───────────────────────────
+// `rows` mô phỏng đúng shape trả về bởi `CrmStore.listBacklog` (đã sắp sẵn quá-hạn-trước-rồi-treo-
+// lâu-nhất — buildBacklogText chỉ gộp theo nhóm, không tự sắp lại).
+function loadBacklog() {
+    return new Function(`
+        // CỐ Ý không định nghĩa generateDailySummary/callSmartRoute/readChatHistory: đây là truy vấn
+        // kanban tất định, nếu code lỡ đụng LLM thì test phải nổ ReferenceError ngay.
+        const DIGEST_SAFE_CHARS = 3500;
+        ${extract('vnDateStr')}
+        ${extract('buildBacklogText')}
+        return buildBacklogText;
+    `)();
+}
+const groupNameOf = (gid) => `Nhóm ${gid}`;
+
+test('backlog: gộp theo nhóm, đếm đúng số nhóm/việc ở đầu tin', () => {
+    const buildBacklogText = loadBacklog();
+    const rows = [
+        { group_id: 'g1', title: 'Việc A', first_seen_date: '2026-08-12', due_at: null },
+        { group_id: 'g1', title: 'Việc B', first_seen_date: '2026-08-14', due_at: null },
+        { group_id: 'g2', title: 'Việc C', first_seen_date: '2026-08-15', due_at: null },
+    ];
+    const { texts } = buildBacklogText(rows, groupNameOf, { from: '2026-08-12', to: '2026-08-18' });
+    assert.match(texts[0], /^📌 VIỆC CÒN TREO 2026-08-12–2026-08-18 · 2 nhóm · 3 việc/);
+    assert.match(texts.join('\n'), /📋 Nhóm g1 \(2\)/);
+    assert.match(texts.join('\n'), /📋 Nhóm g2 \(1\)/);
+});
+
+test('backlog: có due_at → "đến hạn", không có → "treo từ"', () => {
+    const buildBacklogText = loadBacklog();
+    const rows = [
+        { group_id: 'g1', title: 'Chốt phí hợp quy', first_seen_date: '2026-08-10', due_at: Date.UTC(2026, 7, 19) - 7 * 3600 * 1000 },
+        { group_id: 'g1', title: 'Gửi bổ sung giấy tờ', first_seen_date: '2026-08-12', due_at: null },
+    ];
+    const { texts } = buildBacklogText(rows, groupNameOf, { from: '2026-08-12', to: '2026-08-18' });
+    assert.match(texts.join('\n'), /Chốt phí hợp quy — đến hạn 2026-08-19/);
+    assert.match(texts.join('\n'), /Gửi bổ sung giấy tờ — treo từ 2026-08-12/);
+});
+
+test('backlog: TÁCH RÕ 2 phần — review_state=pending KHÔNG lẫn vào danh sách đã xác nhận', () => {
+    const buildBacklogText = loadBacklog();
+    const rows = [
+        { group_id: 'g1', title: 'Việc đã duyệt', first_seen_date: '2026-08-12', due_at: null, review_state: null },
+        { group_id: 'g1', title: 'Việc AI đề xuất', first_seen_date: '2026-08-16', due_at: null, review_state: 'pending' },
+        { group_id: 'g2', title: 'Việc AI đề xuất 2', first_seen_date: '2026-08-17', due_at: null, review_state: 'pending' },
+    ];
+    const { texts, pendingCount } = buildBacklogText(rows, groupNameOf, { from: '2026-08-12', to: '2026-08-18' });
+    const joined = texts.join('\n');
+    assert.equal(pendingCount, 2);
+    assert.match(joined, /VIỆC CÒN TREO 2026-08-12–2026-08-18 · 1 nhóm · 1 việc/, 'đầu tin chỉ đếm việc ĐÃ xác nhận');
+    assert.doesNotMatch(joined, /Việc AI đề xuất\b/, 'việc pending không được liệt trong danh sách theo nhóm');
+    assert.match(joined, /⚠️ 2 việc do AI đề xuất đang chờ xác nhận → xem dashboard/);
+});
+
+test('backlog: không có việc nào (tất cả done hoặc rỗng) → nói rõ, không có dòng ⚠️ nếu không có pending', () => {
+    const buildBacklogText = loadBacklog();
+    const { texts, pendingCount } = buildBacklogText([], groupNameOf, { from: '2026-08-12', to: '2026-08-18' });
+    assert.equal(pendingCount, 0);
+    assert.match(texts[0], /0 nhóm · 0 việc/);
+    assert.match(texts[0], /Không có việc nào còn treo/);
+    assert.doesNotMatch(texts[0], /chờ xác nhận/);
+});
+
+test('backlog: chỉ toàn việc pending (chưa ai duyệt gì) → 0 việc xác nhận nhưng vẫn báo có pending', () => {
+    const buildBacklogText = loadBacklog();
+    const rows = [{ group_id: 'g1', title: 'X', first_seen_date: '2026-08-17', due_at: null, review_state: 'pending' }];
+    const { texts, pendingCount } = buildBacklogText(rows, groupNameOf, { from: '2026-08-12', to: '2026-08-18' });
+    assert.equal(pendingCount, 1);
+    assert.match(texts[0], /0 nhóm · 0 việc/);
+    assert.match(texts[0], /Không có việc nào còn treo/);
+    assert.match(texts[0], /⚠️ 1 việc do AI đề xuất đang chờ xác nhận/);
 });

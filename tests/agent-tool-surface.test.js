@@ -12,6 +12,8 @@ import {
     isOwnerRequester,
     isTrustedOwnerContext,
     resolveGroupTargets,
+    suggestGroupNames,
+    tokenMatchGroupName,
 } from '../src/agent/tool-surface.js';
 
 const OWNER = '111';
@@ -103,6 +105,67 @@ test('foldGroupName bỏ dấu để owner gõ tên nhóm kiểu nào cũng kh�
     assert.equal(foldGroupName('Kỹ Thuật'), 'ky thuat');
     assert.equal(foldGroupName('  KINH-DOANH  '), 'kinh doanh');
     assert.equal(foldGroupName(null), '');
+});
+
+// P3b — sự cố thật 09/08: "39 Cùng rèn" không khớp CHUỖI CON của "[39] RÈN CÙNG NHAU" vì thứ tự chữ
+// khác nhau → bot kết luận sai "nhóm chưa được quản lý" dù nhóm đã bật follow/silent thật.
+const REAL_GROUP_ID = '3164072224874003242';
+const REAL_GROUP_NAME = '[39] RÈN CÙNG NHAU';
+
+test('tokenMatchGroupName: đủ 4 biến thể sự cố 09/08 đều khớp tên thật', () => {
+    for (const q of ['39 cùng rèn', '39 - tự rèn', 'RÈN CÙNG NHAU', 'ren cung nhau']) {
+        assert.ok(tokenMatchGroupName(REAL_GROUP_NAME, q), `"${q}" phải khớp "${REAL_GROUP_NAME}"`);
+    }
+});
+
+test('tokenMatchGroupName: không được khớp lỏng tới mức vô nghĩa', () => {
+    assert.equal(tokenMatchGroupName(REAL_GROUP_NAME, 'kinh doanh'), false, 'không từ nào trùng thì không khớp');
+    assert.equal(tokenMatchGroupName(REAL_GROUP_NAME, ''), false, 'query rỗng không khớp gì cả');
+    // Truy vấn 1 từ không có chỗ cho sai — "40" không phải "39", không được khớp nhầm nhóm khác số.
+    assert.equal(tokenMatchGroupName(REAL_GROUP_NAME, '40'), false);
+});
+
+test('suggestGroupNames: gợi ý nhóm gần giống nhất khi 0 kết quả, tối đa 5', () => {
+    const groups = [
+        { name: REAL_GROUP_NAME }, { name: 'Kinh Doanh' }, { name: 'Kỹ Thuật' },
+        { name: 'Hành Chính' }, { name: 'Hậu Cần' }, { name: '[40] RÈN KHÁC NHÓM' },
+    ];
+    const suggestions = suggestGroupNames('ren nhom la', groups);
+    assert.ok(suggestions.length <= 5);
+    assert.ok(suggestions.includes(REAL_GROUP_NAME) || suggestions.includes('[40] RÈN KHÁC NHÓM'),
+        'ít nhất một gợi ý phải liên quan tới từ "ren"/"nhom" trong query');
+});
+
+test('zalo_mod_groups: query khớp theo TOKEN khi khớp chuỗi-con thất bại (đúng sự cố 09/08)', async () => {
+    const { host } = makeHost({
+        listGroups: async () => [{ groupId: REAL_GROUP_ID, name: REAL_GROUP_NAME, profile: 'default', tracking: true, follow: true, silent: true }],
+    });
+    const tools = createZaloModAgentTools(host)({ requesterSenderId: OWNER });
+    const groupsTool = tools.find((t) => t.name === 'zalo_mod_groups');
+    const res = JSON.parse((await groupsTool.execute('c1', { query: '39 cùng rèn' })).content[0].text);
+    assert.equal(res.groups.length, 1);
+    assert.equal(res.groups[0].groupId, REAL_GROUP_ID);
+    assert.ok(!res.suggestions, 'khớp được rồi thì không cần suggestions');
+});
+
+test('zalo_mod_groups: 0 kết quả → trả suggestions + note cấm kết luận "chưa được quản lý"', async () => {
+    const { host } = makeHost({
+        listGroups: async () => [{ groupId: REAL_GROUP_ID, name: REAL_GROUP_NAME, profile: 'default' }],
+    });
+    const tools = createZaloModAgentTools(host)({ requesterSenderId: OWNER });
+    const groupsTool = tools.find((t) => t.name === 'zalo_mod_groups');
+    const res = JSON.parse((await groupsTool.execute('c1', { query: 'nhóm không tồn tại nào cả' })).content[0].text);
+    assert.equal(res.groups.length, 0);
+    assert.deepEqual(res.suggestions, [REAL_GROUP_NAME]);
+    assert.match(res.note, /ĐỪNG kết luận nhóm chưa được quản lý/);
+});
+
+test('mô tả tool zalo_mod_groups phải nói rõ luật khớp-theo-từ + cấm kết luận "chưa được quản lý"', () => {
+    const { host } = makeHost();
+    const tools = createZaloModAgentTools(host)({ requesterSenderId: OWNER });
+    const groupsTool = tools.find((t) => t.name === 'zalo_mod_groups');
+    assert.match(groupsTool.description, /TỪNG TỪ/);
+    assert.match(groupsTool.description, /đừng tự kết luận/i);
 });
 
 test('resolveGroupTargets: tên có dấu, không dấu, groupId, và "all"', () => {
@@ -311,6 +374,15 @@ test('zalo_mod_reports phẳng: mọi thứ owner hay nhờ là một field ở 
 // P1b: dashboard đã mở 6 giá trị (2.29.0) nhưng owner ra lệnh bằng TIN NHẮN ZALO, không vào dashboard
 // — enum của tool phải khớp, không thì "đổi báo cáo thành tổng hợp 7 ngày" bị schema chặn ngay
 // (đúng dạng sự cố 31/07: bot báo "đã đổi" mà lịch không đổi).
+// P3: owner nói "báo cáo còn việc gì chưa làm" qua Zalo → bot phải tạo được lịch kind:'backlog',
+// không chỉ qua dashboard.
+test('kind mở thêm "backlog" — bot tạo được lịch việc còn treo bằng lời', () => {
+    const { host } = makeHost();
+    const tools = createZaloModAgentTools(host)({ requesterSenderId: OWNER });
+    const reports = tools.find((t) => t.name === 'zalo_mod_reports');
+    assert.deepEqual(reports.parameters.properties.kind.enum, ['digest', 'group', 'backlog']);
+});
+
 test('reportFor mở đủ 6 giá trị — bot phải nhận lệnh đổi khoảng thời gian bằng lời', () => {
     const { host } = makeHost();
     const tools = createZaloModAgentTools(host)({ requesterSenderId: OWNER });

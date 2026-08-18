@@ -870,6 +870,25 @@ export class CrmStore {
         return { inserted: insert.length, updated: update.length, closed: close.length, skipped };
     }
 
+    /**
+     * P3: nguồn dữ liệu cho lịch `kind:'backlog'` — TRUY VẤN, không LLM. Sắp **quá hạn trước** (có
+     * `due_at` và gần nhất trước), **rồi treo lâu nhất** (`first_seen_date` cũ nhất trước) cho phần
+     * còn lại. `review_state='pending'` (AI đề xuất chưa duyệt) vẫn nằm trong kết quả — tách 2 phần
+     * là việc của `buildBacklogText` phía trên (index.js), không phải của tầng đọc DB.
+     */
+    listBacklog(groupIds) {
+        const now = this._now();
+        const gids = Array.isArray(groupIds) ? groupIds.filter(Boolean) : [];
+        if (!gids.length) return [];
+        const placeholders = gids.map(() => '?').join(',');
+        const rows = this.db.prepare(
+            `SELECT * FROM tasks WHERE status != 'done' AND group_id IN (${placeholders})
+             ORDER BY (due_at IS NULL), due_at ASC, first_seen_date ASC, created_at ASC`,
+        ).all(...gids);
+        for (const r of rows) r.overdue = !r.done_at && r.due_at != null && r.due_at < now;
+        return rows;
+    }
+
     /** Kanban: 4 cột theo `review_state`/`status`. Chỉ nhóm được truyền, hoặc mọi nhóm nếu bỏ trống. */
     listOpenItemsBoard(groupId) {
         const where = [];

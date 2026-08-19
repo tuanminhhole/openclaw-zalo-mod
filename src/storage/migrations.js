@@ -252,6 +252,35 @@ export const MIGRATIONS = [
             UPDATE conversations SET last_message_at = last_message_at / 1000 WHERE last_message_at > 100000000000000;
         `,
     },
+    {
+        version: 9,
+        name: 'ai-open-items-kanban',
+        // P2: báo cáo 7/30 ngày "còn việc gì chưa làm" không giải bằng cách đọc lại N ngày tóm tắt rồi
+        // cho AI đoán — giải bằng TÍCH LUỸ trạng thái: mỗi ngày rút `openItems` ra một lần (đã có sẵn
+        // trong generateDailySummary, 0 lượt AI tăng thêm), ghi vào đây, rồi báo cáo kỳ = truy vấn bảng
+        // này. `tasks` đã có sẵn từ v2 cho việc GÕ TAY; các cột dưới đây phân biệt việc AI đề xuất với
+        // việc người tự tạo, để AI không bao giờ được xoá/đóng việc không phải của nó.
+        //
+        // SQLite không cho `ALTER TABLE ... ADD COLUMN UNIQUE` nên `dedupe_key` phải đi kèm INDEX
+        // riêng, và là PARTIAL INDEX (`WHERE dedupe_key IS NOT NULL`) — việc gõ tay không có
+        // `dedupe_key` (NULL) không được tính là trùng nhau, NULL vốn không so trùng NULL trong SQL.
+        //
+        // `status` mặc định `'todo'` cho cột mới, nhưng việc gõ tay cũ đã đóng (`done_at` có giá trị)
+        // phải được suy ra `'done'` ngay — không thì kanban hiện lại các việc đã xong từ trước migration.
+        sql: `
+            ALTER TABLE tasks ADD COLUMN source          TEXT DEFAULT 'manual';
+            ALTER TABLE tasks ADD COLUMN status          TEXT DEFAULT 'todo';
+            ALTER TABLE tasks ADD COLUMN review_state    TEXT;
+            ALTER TABLE tasks ADD COLUMN dedupe_key      TEXT;
+            ALTER TABLE tasks ADD COLUMN evidence        TEXT;
+            ALTER TABLE tasks ADD COLUMN first_seen_date TEXT;
+            ALTER TABLE tasks ADD COLUMN last_seen_date  TEXT;
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_tasks_dedupe
+                ON tasks(group_id, dedupe_key) WHERE dedupe_key IS NOT NULL;
+            CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
+            UPDATE tasks SET status = 'done' WHERE done_at IS NOT NULL AND status = 'todo';
+        `,
+    },
 ];
 
 /**

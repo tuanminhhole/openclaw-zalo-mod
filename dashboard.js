@@ -10,7 +10,7 @@ const modalBody = document.getElementById('modalBody');
 const modalCancel = document.getElementById('modalCancel');
 const modalConfirm = document.getElementById('modalConfirm');
 const token = window.ZALO_DASHBOARD_TOKEN || '';
-const pluginVersion = '2.28.3';
+const pluginVersion = '2.29.0';
 let state = null;
 let activeGroupId = '';
 let lang = localStorage.getItem('zaloDashboardLang') || 'vi';
@@ -305,7 +305,10 @@ const NAV_LABELS = {
   permissions: ['Phân quyền', 'Permissions'],
   chat: ['Khung chat', 'Chat'],
   contacts: ['Liên hệ', 'Contacts'],
-  leads: ['Pipeline', 'Pipeline'],
+  // P8: đổi nhãn hiển thị cho dễ hiểu + phân biệt rõ với trang "Công việc" (kanban việc tồn đọng) —
+  // hai trang giờ trông giống nhau vì dùng chung style kanban (P4). CHỈ đổi nhãn, không đổi action
+  // API (`crm-pipeline`), không đổi key state (`crmState.pipeline`), không đổi bảng DB (`leads`).
+  leads: ['Cơ hội bán hàng', 'Sales Pipeline'],
   tasks: ['Công việc', 'Tasks'],
   upgrade: ['Nâng cấp', 'Upgrade'],
   settings: ['Cài đặt', 'Settings'],
@@ -4437,7 +4440,18 @@ const crmState = {
   // cho người này" chỉ gắn cho bản ghi của một bot.
   mergedMap: new Map(),
   pipeline: null, tasks: null, taskFilter: 'open', undoLead: null,
+  // Kanban việc tồn đọng (P4) — mặc định 'board' vì đây là chỗ DUYỆT việc AI đề xuất, không có UI
+  // thì lịch backlog (P3) mãi chỉ đếm "N việc chờ xác nhận" mà không ai xử được.
+  taskView: 'board', tasksBoard: null,
+  // P13: bộ lọc nhóm trên kanban — 'all' | '__report' (chỉ nhóm có backlogInclude hiệu lực) | groupId.
+  taskGroupFilter: 'all',
 };
+const CRM_TASK_COLUMNS = [
+  ['pending_review', 'Chờ xác nhận', 'Pending review'],
+  ['todo', 'Cần làm', 'To do'],
+  ['doing', 'Đang làm', 'Doing'],
+  ['done', 'Xong', 'Done'],
+];
 const CRM_PAGE_SIZE = 50;
 const CRM_STAGE_LABELS = {
   new: ['Mới', 'New'], contacted: ['Đã liên hệ', 'Contacted'],
@@ -5400,7 +5414,7 @@ async function crmSyncFromZalo(profile = '') {
 async function renderCrmLeads() {
   const head = document.querySelector('#leads .page-head');
   if (head) {
-    head.querySelector('h2').textContent = t('Pipeline', 'Pipeline');
+    head.querySelector('h2').textContent = t('Cơ hội bán hàng', 'Sales Pipeline');
     head.querySelector('p').textContent = t('Kéo thả lead qua các giai đoạn: Mới → Đã liên hệ → Tiềm năng → Đã báo giá → Thắng/Thua.',
       'Drag leads across stages: New → Contacted → Qualified → Quoted → Won/Lost.');
   }
@@ -5580,7 +5594,7 @@ document.addEventListener('click', async (e) => {
     if (!leadId) return;
     const ok = await openModal({
       title: t('Xoá lead?', 'Delete lead?'),
-      desc: t(`"${leadTitle}" sẽ bị xoá vĩnh viễn khỏi pipeline.`, `"${leadTitle}" will be permanently removed.`),
+      desc: t(`"${leadTitle}" sẽ bị xoá vĩnh viễn khỏi Cơ hội bán hàng.`, `"${leadTitle}" will be permanently removed.`),
       confirmText: t('Xoá', 'Delete'), danger: true, tone: 'danger',
     });
     if (!ok) return;
@@ -5598,22 +5612,315 @@ async function renderCrmTasks() {
   const head = document.querySelector('#tasks .page-head');
   if (head) {
     head.querySelector('h2').textContent = t('Công việc', 'Tasks');
-    head.querySelector('p').textContent = t('Việc cần làm, hạn chót, nhắc quá hạn — gắn với khách hàng hoặc lead.',
-      'To-dos with due dates and overdue alerts — linked to contacts or leads.');
+    head.querySelector('p').textContent = crmState.taskView === 'board'
+      ? t('Việc còn treo của các nhóm — kéo thẻ "Chờ xác nhận" sang cột khác để duyệt luôn; muốn từ chối thì bấm nút.',
+        'Open items across groups — drag a "Pending review" card to another column to approve it; use the Reject button to decline.')
+      : t('Việc cần làm, hạn chót, nhắc quá hạn — gắn với khách hàng hoặc lead.',
+        'To-dos with due dates and overdue alerts — linked to contacts or leads.');
   }
   const actions = document.getElementById('crmTasksActions');
-  actions.innerHTML = `<button class="btn primary" id="crmAddTaskBtn">${t('+ Thêm việc', '+ Add task')}</button>`;
+  const viewBtn = crmState.taskView === 'board'
+    ? `<button class="btn" id="crmTaskViewBtn">☰ ${t('Danh sách', 'List')}</button>`
+    : `<button class="btn" id="crmTaskViewBtn">🗂 ${t('Kanban', 'Kanban')}</button>`;
+  actions.innerHTML = `${viewBtn}<button class="btn primary" id="crmAddTaskBtn">${t('+ Thêm việc', '+ Add task')}</button>`;
   actions.querySelector('#crmAddTaskBtn').addEventListener('click', () => crmTaskModal());
+  actions.querySelector('#crmTaskViewBtn').addEventListener('click', () => {
+    crmState.taskView = crmState.taskView === 'board' ? 'list' : 'board';
+    renderCrmTasks();
+  });
 
   const body = document.getElementById('crmTasksBody');
   body.innerHTML = `<div class="card" style="padding:24px;color:var(--muted)">${t('Đang tải…', 'Loading…')}</div>`;
   try {
-    const res = await crmAction('crm-tasks-list', { filter: crmState.taskFilter });
-    crmState.tasks = res.tasks;
-    crmRenderTasksList(body);
+    if (crmState.taskView === 'board') {
+      crmState.tasksBoard = (await crmAction('crm-tasks-board', {})).columns;
+      crmRenderTasksBoard(body);
+    } else {
+      const res = await crmAction('crm-tasks-list', { filter: crmState.taskFilter });
+      crmState.tasks = res.tasks;
+      crmRenderTasksList(body);
+    }
+    crmTasksStartAutoRefresh();
   } catch (err) {
     crmErrorCard(body, err, renderCrmTasks);
   }
+}
+
+let crmTasksAutoRefreshTimer = null;
+
+function crmTasksStopAutoRefresh() {
+  if (crmTasksAutoRefreshTimer) {
+    clearInterval(crmTasksAutoRefreshTimer);
+    crmTasksAutoRefreshTimer = null;
+  }
+}
+
+/**
+ * P15: bot ghi task cùng DB qua `zalo_mod_tasks` (owner nhắn "việc X xong rồi" qua Zalo) — dữ liệu
+ * đã đúng ngay, nhưng trang "Công việc" đang mở trên dashboard vẫn hiện số cũ tới khi ai đó thao tác
+ * lại thủ công. Tự làm mới mỗi ~20s, CHỈ khi trang đang mở VÀ tab đang hiển thị (`document.hidden`) —
+ * dùng lại đúng khuôn `chatStartPolling`/`chatStopPolling` đã có cho khung chat, không dựng websocket.
+ * Bỏ qua một nhịp nếu đang có card kéo dở — refresh giữa chừng sẽ dựng lại DOM và mất luôn thao tác.
+ */
+function crmTasksStartAutoRefresh() {
+  crmTasksStopAutoRefresh();
+  crmTasksAutoRefreshTimer = setInterval(() => {
+    if (!document.getElementById('tasks')?.classList.contains('active')) { crmTasksStopAutoRefresh(); return; }
+    if (document.hidden) return;
+    if (document.querySelector('.kanban-card.dragging')) return;
+    renderCrmTasks();
+  }, 20000);
+}
+
+/** P13: mặc định `backlogInclude` khi owner chưa từng đặt tay — PHẢI khớp `defaultBacklogInclude`
+ * trong index.js (regex `/asa/i`, sửa lại P11 sau khi loại nhầm 7 nhóm khách thật). Đổi một bên mà
+ * quên bên kia là kanban với báo cáo lệch nhau ngay. */
+function crmEffectiveBacklogInclude(group) {
+  const explicit = botSettings(group || {}).backlogInclude;
+  if (explicit !== undefined) return explicit !== false;
+  return /asa/i.test(group?.name || '');
+}
+
+/**
+ * Kanban việc tồn đọng (P4, sửa lại P12/P13) — cùng khuôn `.kanban`/`.kanban-col`/`.kanban-card` đã
+ * có cho Leads, KHÔNG dựng CSS mới. Card ở cột "Chờ xác nhận" GIỜ kéo được (P12): kéo sang cột khác
+ * = một thao tác duyệt tường minh của người (bỏ review_state + đổi status trong một lượt gọi API,
+ * `crm-task-approve-move`) — không phải kéo lén, vì kéo-thả CHÍNH LÀ hành động xác nhận. Cột "Chờ
+ * xác nhận" chỉ là NGUỒN kéo, không nhận thả — đã duyệt thì không quay lại chờ được. Nút Duyệt/Từ
+ * chối vẫn giữ cho ai thích bấm, và Từ chối không có tương đương bên kéo-thả. Mọi việc `source==='ai'`
+ * có nhãn 🤖. Bộ lọc nhóm (P13) lọc HOÀN TOÀN ở client trên dữ liệu đã tải (không gọi lại server mỗi
+ * lần đổi lựa chọn) — `crmState.tasksBoard` luôn là dữ liệu MỌI nhóm.
+ */
+function crmRenderTasksBoard(body) {
+  const all = crmState.tasksBoard || {};
+  const allKeys = ['pending_review', 'todo', 'doing', 'done'];
+  const groupOf = (gid) => (state.groups || []).find(g => g.groupId === gid);
+  const groupName = (gid) => groupOf(gid)?.name || gid || '—';
+
+  // ── P13(1): đếm theo nhóm + nhóm "trong báo cáo" để dựng dropdown ────────────────────────────
+  const byGroup = new Map();
+  for (const k of allKeys) for (const task of (all[k] || [])) {
+    const gid = task.group_id || '';
+    byGroup.set(gid, (byGroup.get(gid) || 0) + 1);
+  }
+  const totalCount = [...byGroup.values()].reduce((a, b) => a + b, 0);
+  const reportGids = new Set([...byGroup.keys()].filter(gid => crmEffectiveBacklogInclude(groupOf(gid))));
+  let reportCount = 0;
+  for (const k of allKeys) for (const task of (all[k] || [])) if (reportGids.has(task.group_id || '')) reportCount++;
+  const groupOptions = [...byGroup.entries()]
+    .map(([gid, n]) => ({ gid, n, name: groupName(gid) }))
+    .sort((a, b) => a.name.localeCompare(b.name, 'vi'));
+
+  const filterVal = crmState.taskGroupFilter || 'all';
+  const matchFilter = (task) => {
+    if (filterVal === 'all') return true;
+    if (filterVal === '__report') return reportGids.has(task.group_id || '');
+    return (task.group_id || '') === filterVal;
+  };
+  const cols = {};
+  for (const k of allKeys) cols[k] = (all[k] || []).filter(matchFilter);
+
+  const filterBarHtml = `<div class="kanban-filterbar" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px">
+    <select id="crmTaskGroupFilter" class="input" style="max-width:320px">
+      <option value="all" ${filterVal === 'all' ? 'selected' : ''}>${t('Tất cả nhóm', 'All groups')} (${totalCount})</option>
+      <option value="__report" ${filterVal === '__report' ? 'selected' : ''}>${t('Chỉ nhóm trong báo cáo', 'Report groups only')} (${reportCount})</option>
+      ${groupOptions.map(o => `<option value="${crmEsc(o.gid)}" ${filterVal === o.gid ? 'selected' : ''}>${crmEsc(o.name)} (${o.n})</option>`).join('')}
+    </select>
+  </div>`;
+
+  const metaLine = (task) => {
+    const bits = [];
+    if (task.group_id) bits.push(`👥 ${crmEsc(groupName(task.group_id))}`);
+    if (task.evidence) bits.push(`🕐 ${crmEsc(task.evidence)}`);
+    if (task.due_at) bits.push(`⏰ ${crmDate(task.due_at)}`);
+    else if (task.first_seen_date) bits.push(`${t('treo từ', 'open since')} ${crmEsc(task.first_seen_date)}`);
+    return bits.length ? `<div class="kanban-card-meta">${bits.map(b => `<span class="kanban-card-contact">${b}</span>`).join('')}</div>` : '';
+  };
+  const aiBadge = (task) => task.source === 'ai'
+    ? `<span class="chip" style="background:rgba(139,92,246,.16);color:#8b5cf6;font-size:10.5px">🤖 ${t('AI đề xuất', 'AI-proposed')}</span>`
+    : '';
+
+  const colsHtml = CRM_TASK_COLUMNS.map(([key, viLabel, enLabel]) => {
+    const tasks = cols[key] || [];
+    const cards = tasks.map(task => `
+      <div class="kanban-card" draggable="true" data-task-id="${crmEsc(task.id)}" data-task-pending="${task.review_state === 'pending' ? '1' : '0'}">
+        <div class="kanban-card-title">${crmEsc(task.title)}</div>
+        ${aiBadge(task)}
+        ${metaLine(task)}
+        ${task.note ? `<div class="kanban-card-next">${crmEsc(task.note)}</div>` : ''}
+        ${key === 'pending_review' ? `<div class="kanban-card-meta" style="margin-top:8px">
+          <button class="btn primary" data-task-approve="${crmEsc(task.id)}" style="padding:4px 10px;font-size:12px">✓ ${t('Duyệt', 'Approve')}</button>
+          <button class="btn danger" data-task-reject="${crmEsc(task.id)}" style="padding:4px 10px;font-size:12px">✕ ${t('Từ chối', 'Reject')}</button>
+        </div>` : ''}
+      </div>`).join('');
+    return `
+      <div class="kanban-col" data-status="${key}">
+        <div class="kanban-col-head">
+          <span class="kanban-col-title">${t(viLabel, enLabel)}</span>
+          <span class="kanban-col-count">${tasks.length}</span>
+        </div>
+        <div class="kanban-col-body" data-status-body="${key}">${cards
+      || `<div data-kanban-empty="1" style="padding:16px;text-align:center;color:var(--muted);font-size:12px">${t('Trống', 'Empty')}</div>`}</div>
+      </div>`;
+  }).join('');
+
+  // ── P13(2): nút "Duyệt tất cả" — chỉ khi đang lọc theo ĐÚNG MỘT nhóm cụ thể (không phải "Tất cả"
+  // / "Chỉ nhóm trong báo cáo", vì luật là duyệt theo nhóm đang chọn, không phải nhiều nhóm cùng lúc).
+  const isSingleGroup = filterVal !== 'all' && filterVal !== '__report';
+  const pendingInFilteredGroup = isSingleGroup
+    ? (all.pending_review || []).filter(task => (task.group_id || '') === filterVal).length : 0;
+  const approveGroupBtnHtml = (isSingleGroup && pendingInFilteredGroup > 0)
+    ? `<button class="btn primary" id="crmApproveGroupBtn" data-group-id="${crmEsc(filterVal)}" data-count="${pendingInFilteredGroup}">
+        ✓ ${t(`Duyệt tất cả (${pendingInFilteredGroup})`, `Approve all (${pendingInFilteredGroup})`)}</button>`
+    : '';
+
+  body.innerHTML = `${filterBarHtml.replace('</div>', `${approveGroupBtnHtml}</div>`)}<div class="kanban">${colsHtml}</div>`;
+
+  body.querySelector('#crmTaskGroupFilter')?.addEventListener('change', (e) => {
+    crmState.taskGroupFilter = e.target.value;
+    crmRenderTasksBoard(body); // lọc client-side, đã có đủ dữ liệu, không cần gọi lại server
+  });
+
+  body.querySelector('#crmApproveGroupBtn')?.addEventListener('click', async (e) => {
+    const gid = e.currentTarget.dataset.groupId;
+    const count = e.currentTarget.dataset.count;
+    const gname = groupName(gid);
+    const ok = await openModal({
+      title: t('Duyệt tất cả việc chờ xác nhận?', 'Approve all pending tasks?'),
+      desc: t(`Sẽ duyệt ${count} việc đang chờ xác nhận của nhóm "${gname}". Không hoàn tác được từng việc một.`,
+        `This will approve ${count} pending tasks in "${gname}". Cannot be undone one by one.`),
+      confirmText: t('Duyệt tất cả', 'Approve all'),
+    });
+    if (!ok) return;
+    try {
+      await crmAction('crm-tasks-approve-group', { groupId: gid });
+      renderCrmTasks();
+    } catch (err) { showToast(err.message, 'error'); }
+  });
+
+  body.querySelectorAll('[data-task-approve]').forEach(el => el.addEventListener('click', async () => {
+    try {
+      await crmAction('crm-task-approve', { id: el.dataset.taskApprove });
+      renderCrmTasks();
+    } catch (err) { showToast(err.message, 'error'); }
+  }));
+  body.querySelectorAll('[data-task-reject]').forEach(el => el.addEventListener('click', async () => {
+    const ok = await openModal({
+      title: t('Từ chối việc AI đề xuất?', 'Reject AI-proposed task?'),
+      desc: t('Việc này sẽ bị xoá vĩnh viễn, không vào luồng làm việc.', 'This will be permanently removed, never entering the workflow.'),
+      confirmText: t('Từ chối', 'Reject'), danger: true, tone: 'danger',
+    });
+    if (!ok) return;
+    try {
+      await crmAction('crm-task-reject', { id: el.dataset.taskReject });
+      renderCrmTasks();
+    } catch (err) { showToast(err.message, 'error'); }
+  }));
+
+  // Kéo-thả (P12): MỌI card kéo được, kể cả "Chờ xác nhận". Thả vào "Chờ xác nhận" bị chặn (không
+  // đăng ký dragover/drop cho cột đó) — đã duyệt thì không quay lại chờ được. Thả từ "Chờ xác nhận"
+  // sang cột khác = duyệt + đổi status trong MỘT lượt gọi (`crm-task-approve-move`); thả từ cột đã
+  // duyệt sang cột khác = chỉ đổi status như trước (`crm-task-status`).
+  body.querySelectorAll('.kanban-card[draggable="true"]').forEach(card => {
+    card.addEventListener('dragstart', (e) => {
+      e.dataTransfer.setData('text/plain', card.dataset.taskId);
+      e.dataTransfer.setData('application/x-task-pending', card.dataset.taskPending);
+      e.dataTransfer.effectAllowed = 'move';
+      card.classList.add('dragging');
+    });
+    card.addEventListener('dragend', () => card.classList.remove('dragging'));
+  });
+  body.querySelectorAll('.kanban-col').forEach(col => {
+    if (col.dataset.status === 'pending_review') return; // không phải đích thả hợp lệ
+    col.addEventListener('dragover', (e) => { e.preventDefault(); col.classList.add('dragover'); });
+    col.addEventListener('dragleave', () => col.classList.remove('dragover'));
+    col.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      col.classList.remove('dragover');
+      const taskId = e.dataTransfer.getData('text/plain');
+      const wasPending = e.dataTransfer.getData('application/x-task-pending') === '1';
+      const toStatus = col.dataset.status;
+      if (!taskId) return;
+
+      const card = body.querySelector(`.kanban-card[data-task-id="${cssEscapeAttr(taskId)}"]`);
+      const destBody = col.querySelector('.kanban-col-body');
+      if (!card || !destBody || card.parentElement === destBody) return;
+
+      // Di chuyển NGAY trong DOM rồi mới gọi API (optimistic). Trước đây gọi `renderCrmTasks()` sau
+      // khi API xong = dựng lại cả trang: card biến mất, giao diện chớp một nhịp, rồi mới hiện ở cột
+      // mới. Với kéo-thả thì độ trễ đó phá cảm giác "thẻ đi theo tay". Lỗi thì trả card về chỗ cũ.
+      const prevParent = card.parentElement;
+      const prevNext = card.nextElementSibling;
+      const approveBtns = wasPending ? card.querySelector('[data-task-approve]')?.closest('.kanban-card-meta') : null;
+
+      destBody.appendChild(card);
+      if (wasPending) {
+        card.dataset.taskPending = '0';
+        approveBtns?.remove(); // đã duyệt thì không còn nút Duyệt/Từ chối
+      }
+      syncKanbanCol(prevParent);
+      syncKanbanCol(destBody);
+
+      try {
+        if (wasPending) {
+          await crmAction('crm-task-approve-move', { id: taskId, status: toStatus });
+        } else {
+          await crmAction('crm-task-status', { id: taskId, status: toStatus });
+        }
+      } catch (err) {
+        // Trả về đúng chỗ cũ, kể cả nút vừa bỏ — không để UI nói một đằng, DB một nẻo.
+        if (prevNext) prevParent.insertBefore(card, prevNext); else prevParent.appendChild(card);
+        if (wasPending) {
+          card.dataset.taskPending = '1';
+          if (approveBtns) card.appendChild(approveBtns);
+        }
+        syncKanbanCol(prevParent);
+        syncKanbanCol(destBody);
+        showToast(err.message, 'error');
+      }
+    });
+  });
+}
+
+/**
+ * Đồng bộ lại phần "vỏ" của một cột kanban sau khi thêm/bớt card bằng DOM: số đếm ở header và ô
+ * "Trống". Dùng cho kéo-thả optimistic — rẻ hơn dựng lại cả bảng, và không gây chớp giao diện.
+ */
+function syncKanbanCol(colBody) {
+  if (!colBody) return;
+  const col = colBody.closest('.kanban-col');
+  const cards = colBody.querySelectorAll('.kanban-card');
+  const countEl = col?.querySelector('.kanban-col-count');
+  if (countEl) countEl.textContent = String(cards.length);
+
+  const emptyEl = colBody.querySelector('[data-kanban-empty]');
+  if (cards.length === 0 && !emptyEl) {
+    const d = document.createElement('div');
+    d.setAttribute('data-kanban-empty', '1');
+    d.style.cssText = 'padding:16px;text-align:center;color:var(--muted);font-size:12px';
+    d.textContent = t('Trống', 'Empty');
+    colBody.appendChild(d);
+  } else if (cards.length > 0 && emptyEl) {
+    emptyEl.remove();
+  }
+
+  // Nút "Duyệt tất cả" đếm theo cột chờ xác nhận, nên phải theo kịp: hết việc chờ thì ẩn đi.
+  if (col?.dataset.status === 'pending_review') {
+    const btn = document.getElementById('crmApproveGroupBtn');
+    if (btn) {
+      const left = [...cards].filter(c => c.dataset.taskPending === '1').length;
+      if (left === 0) btn.remove();
+      else {
+        btn.dataset.count = String(left);
+        btn.textContent = `✓ ${t(`Duyệt tất cả (${left})`, `Approve all (${left})`)}`;
+      }
+    }
+  }
+}
+
+/** Escape cho selector thuộc tính — id việc do server sinh, nhưng đừng tin dữ liệu vào selector. */
+function cssEscapeAttr(v) {
+  return String(v).replace(/["\\]/g, '\\$&');
 }
 
 function crmRenderTasksList(body) {
@@ -5765,6 +6072,50 @@ function isoDaysAgo(n) {
   return vnNow.toISOString().slice(0, 10);
 }
 
+/**
+ * Nhãn ngắn cho `reportFor` — dùng ở chip thẻ lịch + gợi ý trong trình sửa.
+ * Không có 'custom' vì chỗ gọi luôn tự ghép ngày cụ thể cho trường hợp đó.
+ */
+const REPORT_FOR_LABELS = {
+  today: () => uiText('hôm nay', 'today'),
+  yesterday: () => uiText('hôm qua', 'yesterday'),
+  last7: () => uiText('7 ngày qua', 'last 7 days'),
+  last30: () => uiText('30 ngày qua', 'last 30 days'),
+  thisMonth: () => uiText('tháng này', 'this month'),
+};
+
+/**
+ * Khoảng ngày ƯỚC TÍNH ở client theo `reportFor` của job — CHỈ để hiển thị trước khi gọi server
+ * (xác nhận gửi, chip thẻ lịch). Server (`reportRangeFor` trong index.js) là nguồn sự thật khi
+ * thật sự chạy; hai bên có thể lệch 1 ngày nếu bấm đúng lúc nửa đêm, không sao vì đây chỉ là hiển thị.
+ */
+function reportForRangeDates(job) {
+  const reportFor = job.reportFor || 'today';
+  if (reportFor === 'today') return { from: isoDaysAgo(0), to: isoDaysAgo(0) };
+  if (reportFor === 'yesterday') return { from: isoDaysAgo(1), to: isoDaysAgo(1) };
+  if (reportFor === 'last7') return { from: isoDaysAgo(7), to: isoDaysAgo(1) };
+  if (reportFor === 'last30') return { from: isoDaysAgo(30), to: isoDaysAgo(1) };
+  if (reportFor === 'thisMonth') {
+    const y = isoDaysAgo(1);
+    const from = y.slice(0, 7) + '-01';
+    return { from: from > y ? y : from, to: y };
+  }
+  // custom
+  return { from: job.rangeFrom || isoDaysAgo(0), to: job.rangeTo || isoDaysAgo(0) };
+}
+
+/** "12/08" cho ngắn gọn trên chip/thẻ; giữ YYYY-MM-DD ở mọi nơi cần chính xác (modal, log). */
+function ddmm(iso) {
+  const m = /^\d{4}-(\d{2})-(\d{2})$/.exec(iso || '');
+  return m ? `${m[2]}/${m[1]}` : (iso || '');
+}
+
+function reportForRangeLabel(job, { short = false } = {}) {
+  const { from, to } = reportForRangeDates(job);
+  if (short) return from === to ? ddmm(from) : `${ddmm(from)}–${ddmm(to)}`;
+  return from === to ? from : `${from} – ${to}`;
+}
+
 // ── Lịch sử báo cáo ───────────────────────────────────────────────────────────────────────────
 // Owner hỏi "sáng nay bot gửi gì" và không có chỗ nào xem: gateway chat không hiện tin do plugin
 // gửi, còn digest thì tính lúc chạy rồi thả đi. Trang này đọc bản ĐÃ LƯU lúc gửi — khác với bấm
@@ -5900,6 +6251,12 @@ function reportLogRenderList() {
   }
 }
 
+/** `from`/`to` chỉ có từ khi ghi thêm field range (P1) — bản ghi cũ chỉ có `date`, vẫn phải hiện được. */
+function entryRangeLabel(e) {
+  if (e.from && e.to) return e.from === e.to ? e.from : `${e.from} – ${e.to}`;
+  return e.date || '';
+}
+
 function reportLogCard(e) {
   const isDigest = e.kind === 'digest';
   const full = (e.texts || []).join('\n\n');
@@ -5915,7 +6272,8 @@ function reportLogCard(e) {
           ${e.trigger === 'manual' ? `<span class="chip" style="background:rgba(251,191,36,.18)">${uiText('Gửi tay', 'Manual')}</span>` : ''}
         </div>
         <div class="item-sub" style="margin-top:6px;line-height:1.65">
-          ${uiText('Gửi', 'Sent')} <b>${esc(when)}</b> · ${uiText('nội dung ngày', 'covers')} <b>${esc(e.date || '')}</b>
+          ${uiText('Gửi', 'Sent')} <b>${esc(when)}</b> · ${uiText('nội dung', 'covers')} <b>${esc(entryRangeLabel(e))}</b>
+          ${e.missingDates?.length ? ` · ⚠️ ${e.missingDates.length} ${uiText('ngày thiếu', 'day(s) missing')}` : ''}
           ${/* "phạm vi" chứ không phải "nhóm" trần: con số này là số nhóm lịch QUÉT, khác với số nhóm
                 CÓ TIN in trong thân báo cáo. Hai số nằm cạnh nhau mà cùng gọi là "nhóm" thì owner
                 đọc vào tưởng số liệu đá nhau — đã hỏi thật. */''}
@@ -5939,7 +6297,7 @@ function reportLogOpen(id) {
     <pre style="white-space:pre-wrap;word-break:break-word;margin:0;font-family:inherit;font-size:13px;line-height:1.65;
       background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:12px">${esc(t)}</pre>`).join('');
   openModal({
-    title: `${e.jobName || e.jobId} — ${e.date}`,
+    title: `${e.jobName || e.jobId} — ${entryRangeLabel(e)}`,
     body: `<div class="item-sub" style="margin-bottom:10px">${uiText('Gửi lúc', 'Sent at')} ${esc(fmtTs(e.sentAt))}
       · ${uiText('tới', 'to')} ${(e.targets || []).map(t => esc(t.name)).join(', ') || '—'}</div>${body}`,
     confirmText: uiText('Đóng', 'Close'),
@@ -6002,7 +6360,8 @@ const REPORT_ICONS = {
  */
 function reportMorningWarning(job) {
   const hour = Number(String(job.time || '').slice(0, 2));
-  if (!Number.isFinite(hour) || hour >= 12 || job.reportFor === 'yesterday') return '';
+  // Chỉ 'today' đúng dạng dính bẫy này — mọi giá trị khác (yesterday/last7/…) đều loại hôm nay rồi.
+  if (!Number.isFinite(hour) || hour >= 12 || job.reportFor !== 'today') return '';
   return `<br><span style="color:var(--warn,#f59e0b)">⚠️ ${uiText(
     `Gửi lúc ${job.time} nhưng nội dung lấy "hôm nay" — sẽ gần như trống. Sửa thành "Hôm qua".`,
     `Runs at ${job.time} but covers "today" — will be nearly empty. Change it to "Yesterday".`)}</span>`;
@@ -6026,8 +6385,8 @@ function reportJobCardHtml(job) {
           <span class="chip" style="background:${isDigest ? 'rgba(96,165,250,.16)' : 'rgba(148,163,184,.16)'}">
             ${isDigest ? '📊 ' + uiText('Tổng hợp', 'Digest') : '📋 ' + uiText('Từng nhóm', 'Per group')}
           </span>
-          ${job.reportFor === 'yesterday'
-            ? `<span class="chip" style="background:rgba(52,211,153,.16)">🌅 ${uiText('Nội dung: hôm qua', 'Covers: yesterday')}</span>`
+          ${job.reportFor !== 'today'
+            ? `<span class="chip" style="background:rgba(52,211,153,.16)">🌅 ${uiText('Nội dung', 'Covers')}: ${esc(reportForRangeLabel(job, { short: true }))}</span>`
             : ''}
         </div>
         <div class="item-sub" style="margin-top:8px;line-height:1.7">
@@ -6053,6 +6412,22 @@ function reportJobCardHtml(job) {
       <button class="btn danger" data-report-delete="${job.id}">${REPORT_ICONS.del}<span>${uiText('Xoá', 'Delete')}</span></button>
     </div>
   </div>`;
+}
+
+/** Gợi ý dưới select `reportFor` trong trình sửa — mỗi loại một câu, cùng logic với server. */
+function reportForHint(j) {
+  const rf = j.reportFor || 'today';
+  if (rf === 'yesterday') return uiText('Đúng cho lịch sáng: 08:00 hôm nay sẽ báo cáo trọn ngày hôm qua.',
+    'Right for a morning run: 08:00 today reports all of yesterday.');
+  if (rf === 'last7' || rf === 'last30') return uiText(
+    `Gộp ${rf === 'last7' ? '7' : '30'} ngày trước HÔM NAY (không tính hôm nay, vì còn dở dang). Ngày nào chưa có bản tổng hợp sẽ được ghi rõ trong tin, không bịa lại bằng AI.`,
+    `Combines the ${rf === 'last7' ? '7' : '30'} days before today (today is excluded — still in progress). Days without a saved summary are called out in the message, never re-guessed by AI.`);
+  if (rf === 'thisMonth') return uiText('Từ ngày 1 tháng này tới hôm qua. Ngày nào chưa có bản tổng hợp sẽ được ghi rõ trong tin.',
+    "From the 1st of this month up to yesterday. Days without a saved summary are called out in the message.");
+  if (rf === 'custom') return uiText('Tối đa 92 ngày — vượt quá sẽ tự rút ngắn về 92 ngày gần "Đến ngày" nhất và báo trong tin.',
+    'Up to 92 days — longer ranges are automatically clamped to the 92 days closest to "To" and flagged in the message.');
+  return uiText('⚠️ Nếu giờ gửi vào buổi sáng, chọn "Hôm qua" — không thì báo cáo chỉ có mấy tiếng đầu ngày, gần như trống.',
+    '⚠️ For a morning time, pick "Yesterday" — otherwise the report only covers the first hours of the day.');
 }
 
 // ── Trình sửa lịch ────────────────────────────────────────────────────────────────────────────
@@ -6088,18 +6463,22 @@ function reportEditorHtml() {
     ${field(uiText('Giờ gửi mỗi ngày', 'Daily time'), `<input type="time" value="${j.time}" data-report-draft-time
       style="padding:9px 11px;border-radius:9px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font-size:13.5px"/>`)}
 
-    ${field(uiText('Báo cáo cho ngày nào', 'Report covers'), `
+    ${field(uiText('Báo cáo cho khoảng nào', 'Report covers'), `
       <select data-report-for style="width:100%;padding:9px 11px;border-radius:9px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font-size:13.5px">
-        <option value="today" ${j.reportFor !== 'yesterday' ? 'selected' : ''}>${uiText('Hôm nay — dùng cho lịch cuối ngày', 'Today — for end-of-day schedules')}</option>
+        <option value="today" ${j.reportFor === 'today' || !j.reportFor ? 'selected' : ''}>${uiText('Hôm nay — dùng cho lịch cuối ngày', 'Today — for end-of-day schedules')}</option>
         <option value="yesterday" ${j.reportFor === 'yesterday' ? 'selected' : ''}>${uiText('Hôm qua — dùng cho lịch buổi sáng', 'Yesterday — for morning schedules')}</option>
+        <option value="last7" ${j.reportFor === 'last7' ? 'selected' : ''}>${uiText('7 ngày qua (không tính hôm nay)', 'Last 7 days (not counting today)')}</option>
+        <option value="last30" ${j.reportFor === 'last30' ? 'selected' : ''}>${uiText('30 ngày qua (không tính hôm nay)', 'Last 30 days (not counting today)')}</option>
+        <option value="thisMonth" ${j.reportFor === 'thisMonth' ? 'selected' : ''}>${uiText('Tháng này (tới hôm qua)', 'This month (up to yesterday)')}</option>
+        <option value="custom" ${j.reportFor === 'custom' ? 'selected' : ''}>${uiText('Tuỳ chọn khoảng ngày…', 'Custom date range…')}</option>
       </select>
-      <div class="item-sub" style="margin-top:5px;font-size:11.5px">${
-        j.reportFor === 'yesterday'
-          ? uiText('Đúng cho lịch sáng: 08:00 hôm nay sẽ báo cáo trọn ngày hôm qua.',
-            'Right for a morning run: 08:00 today reports all of yesterday.')
-          : uiText('⚠️ Nếu giờ gửi vào buổi sáng, chọn "Hôm qua" — không thì báo cáo chỉ có mấy tiếng đầu ngày, gần như trống.',
-            '⚠️ For a morning time, pick "Yesterday" — otherwise the report only covers the first hours of the day.')
-      }</div>`)}
+      ${j.reportFor === 'custom' ? `<div style="display:flex;gap:8px;margin-top:8px">
+        <input type="date" value="${esc(j.rangeFrom || '')}" data-report-range-from
+          style="flex:1;padding:8px 10px;border-radius:9px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font-size:13px"/>
+        <input type="date" value="${esc(j.rangeTo || '')}" data-report-range-to
+          style="flex:1;padding:8px 10px;border-radius:9px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font-size:13px"/>
+      </div>` : ''}
+      <div class="item-sub" style="margin-top:5px;font-size:11.5px">${reportForHint(j)}</div>`)}
 
     ${field(`${uiText('Nhóm áp dụng', 'Groups')} — ${all ? uiText('tất cả', 'all') : `${picked.size}/${reportsState.groups.length}`}`, `
       <label class="report-check report-check--center" style="padding:9px 11px;border-radius:9px;background:var(--surface-2);margin-bottom:8px">
@@ -6163,6 +6542,7 @@ function newReportJob() {
     // Mặc định 22:30 là lịch cuối ngày, nên nội dung 'today' mới đúng. Owner đổi sang giờ sáng thì
     // thẻ lịch hiện cảnh báo (reportMorningWarning) nhắc đổi sang 'yesterday'.
     name: '', enabled: true, kind: 'digest', groups: '*', time: '22:30', reportFor: 'today',
+    rangeFrom: '', rangeTo: '',
     deliver: { ownerDm: true, eachGroup: false, groups: [] },
   };
 }
@@ -6223,7 +6603,7 @@ document.addEventListener('click', async (ev) => {
       desc: uiText('Đây là gửi THẬT, không phải chạy thử.', 'This sends for real — not a dry run.'),
       body: `<div class="item-sub" style="line-height:1.8">
         <div>${uiText('Lịch', 'Schedule')}: <b>${esc(job.name)}</b></div>
-        <div>${uiText('Nội dung ngày', 'Covers')}: <b>${job.reportFor === 'yesterday' ? isoDaysAgo(1) : isoDaysAgo(0)}</b></div>
+        <div>${uiText('Nội dung', 'Covers')}: <b>${esc(reportForRangeLabel(job))}</b></div>
         <div>${uiText('Sẽ gửi tới', 'Sends to')}: <b>${esc(dests.join(', ') || '—')}</b></div>
         <div>${uiText('Số tin', 'Messages')}: <b>${msgCount}</b></div>
       </div>`,
@@ -6249,16 +6629,23 @@ document.addEventListener('click', async (ev) => {
     const job = reportsState.jobs.find(j => j.id === prevId);
     if (!job) return;
     try {
-      // Xem trước phải theo ĐÚNG NGÀY lịch sẽ báo cáo. Trước đây luôn lấy hôm nay, nên xem trước
-      // một lịch buổi sáng (reportFor: yesterday) ra tin rỗng của ngày vừa bắt đầu — owner tưởng
-      // tính năng hỏng, đúng lúc đang nghi ngờ nó.
+      // Xem trước phải theo ĐÚNG RANGE của lịch. Trước đây luôn lấy hôm nay (hoặc hôm qua với
+      // reportFor:'yesterday'), nên xem trước một lịch buổi sáng ra tin rỗng của ngày vừa bắt đầu —
+      // owner tưởng tính năng hỏng, đúng lúc đang nghi ngờ nó (2026-07-31). Server tự tính range
+      // thật từ 3 field này, không đoán ở client.
       const r = await reportsApi('report-digest-preview', {
         groups: job.groups,
-        date: job.reportFor === 'yesterday' ? isoDaysAgo(1) : undefined,
+        reportFor: job.reportFor,
+        rangeFrom: job.rangeFrom,
+        rangeTo: job.rangeTo,
       });
+      const rangeLabel = r.from === r.to ? r.from : `${r.from} – ${r.to}`;
+      const missingNote = r.missingDates?.length
+        ? uiText(` · ⚠️ ${r.missingDates.length} ngày thiếu bản tổng hợp`, ` · ⚠️ ${r.missingDates.length} day(s) missing a summary`)
+        : '';
       await openModal({
         title: uiText('Xem trước báo cáo tổng hợp', 'Digest preview'),
-        desc: uiText(`${r.date} · ${r.chars} ký tự · ${r.parts} tin`, `${r.date} · ${r.chars} chars · ${r.parts} message(s)`),
+        desc: uiText(`${rangeLabel} · ${r.chars} ký tự · ${r.parts} tin${missingNote}`, `${rangeLabel} · ${r.chars} chars · ${r.parts} message(s)${missingNote}`),
         body: r.texts.map((tx, i) => `<div style="margin-bottom:12px">
           ${r.texts.length > 1 ? `<div style="font-size:11.5px;opacity:.7;margin-bottom:4px">${uiText('Tin', 'Message')} ${i + 1}/${r.texts.length}</div>` : ''}
           <pre style="white-space:pre-wrap;word-break:break-word;font-size:12.5px;line-height:1.65;background:var(--surface-2);padding:12px;border-radius:9px;margin:0;font-family:inherit">${esc(tx)}</pre></div>`).join(''),
@@ -6326,6 +6713,8 @@ document.addEventListener('change', async (ev) => {
   if (t.hasAttribute?.('data-report-name')) { d.name = t.value; return; }
   if (t.hasAttribute?.('data-report-draft-time')) { d.time = t.value || d.time; return; }
   if (t.hasAttribute?.('data-report-for')) { d.reportFor = t.value; reportsRerenderEditor(); return; }
+  if (t.hasAttribute?.('data-report-range-from')) { d.rangeFrom = t.value; return; }
+  if (t.hasAttribute?.('data-report-range-to')) { d.rangeTo = t.value; return; }
   if (t.hasAttribute?.('data-report-all')) {
     d.groups = t.checked ? '*' : [];
     reportsRerenderEditor();

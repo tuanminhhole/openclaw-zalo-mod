@@ -28,6 +28,7 @@ export const ZALO_MOD_TOOL_NAMES = Object.freeze([
     'zalo_mod_settings',
     'zalo_mod_history',
     'zalo_mod_reports',
+    'zalo_mod_tasks',
     'zalo_mod_action',
 ]);
 
@@ -61,6 +62,11 @@ export const AGENT_SAFE_ACTIONS = Object.freeze([
     'zalo-api',
     'toggle-custom-mode', 'upsert-custom-mode', 'delete-custom-mode',
     'set-name-triggers', 'save-templates',
+    // P15 (Kent chốt mở — đảo lại luật P4 "bot không có đường nào tới crm-task-*"): việc tồn đọng
+    // đọc/duyệt/từ chối/đổi cột được qua chat, đi ĐÚNG action mà dashboard dùng. TUYỆT ĐỐI KHÔNG mở
+    // `crm-task-delete` — xoá dữ liệu khách không bao giờ đi qua đường chat, kể cả với allowDestructive.
+    'crm-tasks-list', 'crm-tasks-board', 'crm-task-status', 'crm-task-approve',
+    'crm-task-approve-move', 'crm-task-reject',
 ]);
 
 /**
@@ -133,6 +139,12 @@ function toolText(payload, isError = false) {
 
 function ok(payload) { return toolText(payload); }
 function fail(message, extra = {}) { return toolText({ ok: false, error: message, ...extra }, true); }
+
+/** `due_at`/`updated_at` lưu epoch ms — đổi sang YYYY-MM-DD cho LLM đọc, null nếu không có. */
+function isoDate(ms) {
+    if (!ms) return null;
+    try { return new Date(ms).toISOString().slice(0, 10); } catch { return null; }
+}
 
 /** Owner hợp lệ = ownerId gốc + ownerId của từng bot profile. */
 export function collectOwnerIds(pluginCfg) {
@@ -233,8 +245,10 @@ const SETTINGS_SCHEMA = {
         },
         key: {
             type: 'string',
-            enum: ['muted', 'silent', 'welcome', 'tracking', 'follow', 'pendingAuto', 'autoSummary'],
-            description: 'Toggle cần đổi. muted = bot im lặng hoàn toàn; silent = chỉ reply khi @tag/gọi tên; follow = ghi lịch sử chat + memory.',
+            enum: ['muted', 'silent', 'welcome', 'tracking', 'follow', 'pendingAuto', 'autoSummary', 'backlogInclude'],
+            description: 'Toggle cần đổi. muted = bot im lặng hoàn toàn; silent = chỉ reply khi @tag/gọi tên; follow = ghi lịch sử chat + memory; '
+                + 'backlogInclude = nhóm này có vào tin "việc còn treo" (lịch backlog) hay không — tắt cho nhóm rèn luyện/nội bộ, '
+                + 'không phải task team có deadline thật.',
         },
         value: { type: 'boolean', description: 'true = bật, false = tắt.' },
         profile: { type: 'string', description: 'Chỉ áp cho một bot (accountId). Bỏ trống = áp cho mọi bot đang ở nhóm đó (khuyến nghị).' },
@@ -336,6 +350,53 @@ const REPORTS_SCHEMA = {
         },
         toEachGroup: { type: 'boolean', description: 'true = mỗi nhóm tự nhận báo cáo của nó. Chỉ dùng với kind="group".' },
         enabled: { type: 'boolean', description: 'false = tạm tắt lịch mà không xoá.' },
+    },
+    required: ['operation'],
+    additionalProperties: false,
+};
+
+/**
+ * P15: việc tồn đọng (kanban "Công việc") điều khiển bằng lời. Schema PHẲNG như `zalo_mod_settings`/
+ * `zalo_mod_reports` — owner nói tên việc, không nói id, nên `title` phải khớp gần đúng thay vì đòi
+ * chính xác. Đảo lại luật P4 ("bot không có đường nào tới crm-task-*") theo quyết định của Kent —
+ * xem CHANGELOG mục P15 để biết đây là đổi có chủ ý, không phải lỗ hổng.
+ */
+const TASKS_SCHEMA = {
+    type: 'object',
+    properties: {
+        operation: {
+            type: 'string',
+            enum: ['list', 'status', 'approve', 'reject'],
+            description: 'list = xem việc còn treo, lọc được theo nhóm + trạng thái. status = đổi cột '
+                + '(todo/doing/blocked/done) của một việc ĐÃ duyệt — không nhận "pending_review", muốn duyệt '
+                + 'dùng operation="approve". approve = duyệt việc AI đề xuất (bỏ trạng thái chờ xác nhận), có '
+                + 'thể kèm `status` để duyệt và chuyển cột trong một lượt. reject = từ chối việc AI đề xuất — '
+                + 'KHÔNG xoá dữ liệu, chỉ ẩn khỏi kanban/báo cáo, có thể tự quay lại "Chờ xác nhận" sau 30 ngày.',
+        },
+        groups: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Tên nhóm (có dấu cũng được) hoặc groupId, hoặc ["all"]. operation="list": lọc phạm '
+                + 'vi xem. Các operation khác: dùng để thu hẹp khi `title` khớp trùng nhiều nhóm. Bỏ trống = mọi nhóm.',
+        },
+        status: {
+            type: 'string',
+            enum: ['pending_review', 'todo', 'doing', 'blocked', 'done'],
+            description: 'operation="list": lọc theo cột kanban, bỏ trống = mọi việc CHƯA xong (không gồm '
+                + '"done"). operation="status": cột đích, chỉ nhận todo|doing|blocked|done. operation="approve": '
+                + 'tuỳ chọn, có thì duyệt và chuyển luôn sang cột này.',
+        },
+        title: {
+            type: 'string',
+            description: 'Tên việc cần tìm, khớp GẦN ĐÚNG (không cần đúng từng chữ) — bắt buộc cho operation='
+                + '"status"/"approve"/"reject" khi chưa có `id`. Khớp ra nhiều hơn một việc thì tool trả về '
+                + '`suggestions` thay vì tự chọn — phải hỏi lại owner rõ hơn (thêm `groups` để thu hẹp) rồi gọi lại.',
+        },
+        id: {
+            type: 'string',
+            description: 'id việc đã biết chắc (từ operation="list" hoặc từ `suggestions` của lần gọi trước) — '
+                + 'có thì dùng luôn, bỏ qua bước khớp theo `title`.',
+        },
     },
     required: ['operation'],
     additionalProperties: false,
@@ -701,6 +762,139 @@ export function createZaloModAgentTools(host) {
                     } catch (err) {
                         await logRun('zalo_mod_reports', params, { ok: false, error: err.message });
                         return fail(err.message);
+                    }
+                },
+            },
+            {
+                name: 'zalo_mod_tasks',
+                label: 'Zalo Mod — việc tồn đọng (kanban)',
+                description: [
+                    'Xem / duyệt / từ chối / đổi cột việc tồn đọng — TƯƠNG ĐƯƠNG trang "Công việc" (kanban) trên dashboard.',
+                    'Dùng khi owner hỏi "nhóm X còn việc gì chưa xong", hoặc nói một việc cụ thể đã xong/đã duyệt/sai/nhiễu.',
+                    // P15 (Kent chốt mở, đảo lại luật P4 "bot không có đường nào tới crm-task-*"): trước đây
+                    // cố tình không cho bot chạm việc AI đề xuất, để tránh bot tự duyệt lén qua chat. Giờ owner
+                    // muốn nói bằng lời cũng duyệt được — an toàn vẫn giữ vì owner PHẢI tự nói tên việc + nói rõ
+                    // ý muốn (duyệt/từ chối/đổi cột), không phải bot tự quyết.
+                    'Owner nói TÊN việc, không nói id — luôn dùng `title` để tool tự khớp gần đúng, ĐỪNG tự bịa ra',
+                    'một id. Khớp ra NHIỀU HƠN MỘT việc thì tool trả `suggestions` — hỏi lại owner rõ hơn (kèm tên',
+                    'nhóm vào `groups`) rồi gọi lại, TUYỆT ĐỐI không tự chọn đại một cái. Khớp ra 0 việc thì nói thật',
+                    'là không tìm thấy, đừng suy ra là "đã xong" hay "đã có".',
+                    'operation="status" chỉ đổi cột của việc ĐÃ duyệt (todo/doing/blocked/done) — việc còn ở',
+                    '"Chờ xác nhận" (🤖 AI đề xuất) phải dùng operation="approve" (kèm `status` nếu muốn duyệt và',
+                    'chuyển cột luôn trong một lượt).',
+                    '"Từ chối" (reject) KHÔNG xoá dữ liệu, chỉ ẩn khỏi kanban/báo cáo — việc có thể tự quay lại',
+                    '"Chờ xác nhận" sau 30 ngày nếu AI vẫn thấy owner nhắc lại, đó không phải lỗi.',
+                    'TUYỆT ĐỐI không có thao tác xoá việc qua tool này — xoá dữ liệu khách chỉ làm được trên dashboard.',
+                ].join(' '),
+                parameters: TASKS_SCHEMA,
+                execute: async (_toolCallId, params = {}) => {
+                    const blocked = guard(requesterSenderId, hostSaysOwner);
+                    if (blocked) return blocked;
+                    const op = String(params.operation || '').trim();
+                    // P15: audit phải ghi RÕ ai đứng sau một lượt qua chat, không chỉ 'ai' chung chung —
+                    // sau này còn lần được vết "ai đã bảo bot đóng việc này".
+                    const actor = `agent:${requesterSenderId || 'unknown'}`;
+                    try {
+                        const all = await groupsSnapshot();
+                        const groupNameOf = (gid) => all.find((g) => g.groupId === gid)?.name || gid;
+
+                        let scopedGroupIds = null;
+                        if (params.groups !== undefined) {
+                            const { matched, unresolved, ambiguous } = resolveGroupTargets(params.groups, all);
+                            if (ambiguous.length) return fail('Tên nhóm chưa rõ — hỏi lại owner chọn nhóm nào.', { ambiguous, unresolved });
+                            if (!matched.length) return fail('Không tìm thấy nhóm nào khớp. Gọi zalo_mod_groups để xem tên nhóm đúng.', { unresolved });
+                            scopedGroupIds = new Set(matched);
+                        }
+
+                        // Nguồn dữ liệu DUY NHẤT: đúng action dashboard dùng cho kanban, không tự query CRM
+                        // riêng — không thể lệch với những gì owner đang thấy trên màn hình.
+                        const board = await runAction('crm-tasks-board', {}, actor);
+                        const flat = [];
+                        for (const [col, arr] of Object.entries(board?.columns || {})) {
+                            for (const task of (arr || [])) flat.push({ ...task, _col: col });
+                        }
+                        const inScope = scopedGroupIds ? flat.filter((t) => scopedGroupIds.has(t.group_id)) : flat;
+                        const toView = (t) => ({
+                            id: t.id, title: t.title, status: t._col, groupId: t.group_id,
+                            groupName: groupNameOf(t.group_id), assignee: t.assignee || null,
+                            note: t.note || null, dueAt: isoDate(t.due_at), source: t.source,
+                        });
+
+                        if (op === 'list') {
+                            const wantStatus = params.status;
+                            const rows = inScope.filter((t) => (wantStatus ? t._col === wantStatus : t._col !== 'done'));
+                            const result = ok({
+                                ok: true, total: rows.length, tasks: rows.map(toView),
+                                note: '`status` là CỘT kanban thật (pending_review/todo/doing/blocked/done) — báo đúng giá trị này, đừng suy diễn.',
+                            });
+                            await logRun('zalo_mod_tasks', params, result);
+                            return result;
+                        }
+                        if (!['status', 'approve', 'reject'].includes(op)) {
+                            return fail(`operation "${op}" không hợp lệ. Dùng: list | status | approve | reject.`);
+                        }
+
+                        // Xác định đúng MỘT việc: theo id nếu owner/model đã biết chắc, không thì khớp title.
+                        let target = null;
+                        if (params.id) {
+                            target = flat.find((t) => t.id === params.id);
+                            if (!target) return fail(`Không có việc nào id "${params.id}". Gọi operation="list" để xem lại.`);
+                        } else {
+                            const title = String(params.title || '').trim();
+                            if (!title) return fail('Thiếu `title` (hoặc `id`) — cần biết ĐÚNG việc nào trước khi đổi.');
+                            const folded = foldGroupName(title);
+                            const exact = inScope.filter((t) => foldGroupName(t.title) === folded);
+                            // Dùng lại đúng bộ khớp theo TỪNG TỪ của P3b (`tokenMatchGroupName`) — hàm chỉ so
+                            // chuỗi thuần, không riêng cho tên nhóm, nên áp được luôn cho tên việc.
+                            const pool = exact.length ? exact : inScope.filter((t) => tokenMatchGroupName(t.title, title));
+                            if (!pool.length) {
+                                return fail(`Không tìm thấy việc nào khớp "${title}". Gọi operation="list" để xem tên đúng — đừng suy ra là đã xong.`, {
+                                    known: inScope.slice(0, 20).map((t) => t.title),
+                                });
+                            }
+                            if (pool.length > 1) {
+                                return fail(`Khớp "${title}" ra ${pool.length} việc — chưa rõ là việc nào.`, {
+                                    suggestions: pool.map(toView),
+                                    note: 'Hỏi lại owner chọn đúng việc nào (có thể kèm tên nhóm vào `groups` để thu hẹp), hoặc gọi lại kèm `id` lấy từ đây. KHÔNG được tự chọn.',
+                                });
+                            }
+                            [target] = pool;
+                        }
+
+                        if (op === 'status') {
+                            const status = String(params.status || '').trim();
+                            if (!['todo', 'doing', 'blocked', 'done'].includes(status)) {
+                                return fail('operation="status" cần `status` là todo|doing|blocked|done. Muốn duyệt từ "Chờ xác nhận" thì dùng operation="approve".');
+                            }
+                            const raw = await runAction('crm-task-status', { id: target.id, status }, actor);
+                            const result = ok({ ok: true, task: raw });
+                            await logRun('zalo_mod_tasks', params, result);
+                            return result;
+                        }
+                        if (op === 'approve') {
+                            const status = params.status !== undefined ? String(params.status).trim() : undefined;
+                            if (status !== undefined && !['todo', 'doing', 'blocked', 'done'].includes(status)) {
+                                return fail('`status` kèm operation="approve" chỉ nhận todo|doing|blocked|done.');
+                            }
+                            const raw = status
+                                ? await runAction('crm-task-approve-move', { id: target.id, status }, actor)
+                                : await runAction('crm-task-approve', { id: target.id }, actor);
+                            const result = ok({ ok: true, task: raw });
+                            await logRun('zalo_mod_tasks', params, result);
+                            return result;
+                        }
+                        // reject
+                        const raw = await runAction('crm-task-reject', { id: target.id }, actor);
+                        const result = ok({
+                            ok: true, task: raw,
+                            note: 'Đã ẩn khỏi kanban/báo cáo, KHÔNG xoá dữ liệu — có thể tự quay lại "Chờ xác nhận" sau 30 ngày nếu AI thấy lại việc này.',
+                        });
+                        await logRun('zalo_mod_tasks', params, result);
+                        return result;
+                    } catch (err) {
+                        const result = fail(err.message);
+                        await logRun('zalo_mod_tasks', params, result);
+                        return result;
                     }
                 },
             },

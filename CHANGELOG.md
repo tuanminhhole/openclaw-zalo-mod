@@ -1,119 +1,54 @@
-## [2.32.0] - 2026-08-18
+## [2.29.0] - 2026-08-19
+
+Bản gộp toàn bộ mạch "báo cáo việc còn treo + kanban" (các mốc nội bộ 2.29–2.33 dồn về một bản phát hành).
 
 ### Added
 
-- **Kanban việc tồn đọng trên trang Công việc** — mảnh cuối của mạch báo cáo, đủ để owner **duyệt**
-  việc AI đề xuất chứ không chỉ đếm số trong tin `backlog` (2.31.0). Vẫn trang Công việc cũ (không
-  dựng trang mới), có nút chuyển giữa **Kanban** (mặc định) và **Danh sách** (giao diện cũ, còn đủ
-  bộ lọc quá hạn/đã xong).
-  4 cột: **Chờ xác nhận** (`review_state='pending'`) · **Cần làm** · **Đang làm** · **Xong**. Việc
-  `source='ai'` luôn có nhãn 🤖 để không lẫn với việc người tự gõ — rõ nhất ở cột "Chờ xác nhận", nơi
-  mỗi thẻ có nút **Duyệt** (bỏ `review_state`, không đổi gì khác) và **Từ chối** (xoá hẳn, có xác
-  nhận vì không hoàn tác được). Việc đã duyệt kéo-thả được giữa 3 cột còn lại — thả gọi
-  `crm-task-status`, không đi qua review lại.
-  **Cột "Chờ xác nhận" không phải đích thả** (kéo-thả một việc AI đề xuất vào "Cần làm" coi như
-  duyệt lén, sai luật review) và card ở đó **không kéo được** — phải bấm Duyệt/Từ chối tường minh.
-  Mỗi thẻ hiện nhóm, `evidence` (giờ tin nhắn làm bằng chứng), và ngày treo/hạn.
-  Dùng lại nguyên `.kanban`/`.kanban-col`/`.kanban-card` đã có cho Leads — không thêm CSS mới.
+- **Lịch báo cáo "việc còn treo"** (`kind: 'backlog'`) — mỗi ngày một tin liệt kê việc chưa xong của
+  các nhóm, chia sẵn **⏰ QUÁ HẠN** · **⏳ TREO LÂU** (không có hạn nhưng im lặng ≥3 ngày) · rồi theo
+  từng nhóm. Mỗi dòng ghi rõ trạng thái kèm icon khớp đúng cột kanban (`⚪ Cần làm` · `🔵 Đang làm` ·
+  `🚧 Đang vướng` · `🤖` việc AI đề xuất chờ duyệt) và hạn nếu có — hạn dạng chữ giữ **nguyên văn**
+  ("Ngày mai", "Trong tuần này"), không tự suy thành ngày cụ thể. Giới hạn 5 việc mỗi khối, phần còn
+  lại rút gọn "… và N việc khác" để một tin đủ đọc trên điện thoại. **Truy vấn dữ liệu đã đối soát,
+  không nhờ AI soạn lại** nên không có chuyện bịa việc.
+- **Cờ chọn nhóm vào báo cáo** (`backlogInclude`) — nhóm nội bộ/rèn luyện không làm nhiễu báo cáo
+  kinh doanh. Mặc định bật cho nhóm có "ASA" trong tên, owner đổi được qua dashboard hoặc bằng lời.
+- **Lịch báo cáo chọn được khoảng thời gian**: thêm `last7` · `last30` · `thisMonth` · `custom`
+  (tối đa 92 ngày) bên cạnh `today`/`yesterday`. Khoảng nhiều ngày đọc bản tổng hợp có sẵn thay vì
+  gọi lại AI; ngày nào chưa có thì nói rõ trong tin. Nút "Xem trước" ra đúng khoảng của lịch.
+- **Kanban việc tồn đọng trên trang Công việc** — 4 cột **Chờ xác nhận** · **Cần làm** · **Đang làm**
+  · **Xong**. Việc AI đề xuất có nhãn 🤖, **kéo từ "Chờ xác nhận" sang cột khác là duyệt luôn** (một
+  lượt, không phải bấm hai lần); còn nút Duyệt/Từ chối tường minh cho ai thích bấm. Có **bộ lọc theo
+  nhóm** (kèm lựa chọn "Chỉ nhóm trong báo cáo") và **"Duyệt tất cả"** cho một nhóm khi việc dồn
+  nhiều. Bảng tự làm mới khi trang đang mở.
+- **Bot làm việc bằng lời** — tool `zalo_mod_tasks`: hỏi việc còn treo của một nhóm, duyệt, đổi cột,
+  từ chối, gọi việc bằng **tên** chứ không cần id; khớp ra nhiều kết quả thì hỏi lại chứ không tự
+  đoán. Xoá việc vẫn **không** đi qua đường chat. Lịch `backlog` cũng tạo/sửa được bằng lời.
+- **Việc nói trong nhóm tự vào kanban** — bản tổng hợp ngày rút thêm việc còn treo (không thêm lượt
+  gọi AI), đối soát mỗi ngày với việc đã có: việc mới vào "Chờ xác nhận", gặp lại thì cập nhật ngày
+  thấy gần nhất, AI báo xong thì đóng. **AI không bao giờ được sửa hay xoá việc do người tự gõ.**
+  Kèm migration `v9` cho `context.db`.
+
+### Changed
+
+- **"Từ chối" việc AI đề xuất không xoá dữ liệu nữa** — giữ lại như bia mộ 30 ngày nên hôm sau nhóm
+  nhắc lại thì AI **không tạo lại việc đã bị từ chối**; quá 30 ngày mới hỏi lại một lần.
+- **Đổi tên "Pipeline" thành "Cơ hội bán hàng"** cho dễ hiểu (dữ liệu không đổi).
+
+### Fixed
+
+- Bot tra nhóm theo **từng từ, không cần đúng thứ tự** — "39 Cùng rèn" giờ khớp "[39] RÈN CÙNG NHAU";
+  không tìm ra thì gợi ý nhóm gần giống thay vì kết luận sai "nhóm chưa được quản lý".
+- Không còn cảnh báo "chưa có bản tổng hợp" vào ngày thật sự không ai nhắn (chủ nhật, ngày lễ).
+- **Vá lỗi mất bản quyền khi khởi động lại** — máy đã mua Pro/Lifetime không còn bị ghi đè thành bản
+  dùng thử. Bản quyền đã mua giờ được bảo vệ ở nhiều lớp, kèm log nêu rõ lý do mỗi khi cấp/chặn.
 
 ### Verified
 
-- **Migration v9 (2.30.0) diễn tập trên bản copy `context.db` THẬT của khách** (không phải DB mô
-  phỏng) — chạy 2 lần không lỗi, `schema_migrations` lên 9, đủ 7 cột mới, **4013 tin nhắn + 182 liên
-  hệ + 1817 audit log giữ nguyên 100%**, `integrity_check`=`ok`. Điều kiện cuối còn thiếu của P2 coi
-  như đã xong; bản copy đã xoá ngay sau khi đối soát.
-
-## [2.31.0] - 2026-08-18
-
-### Added
-
-- **Lịch báo cáo "việc còn treo"** (`kind: 'backlog'`) — đúng thứ chủ Asa yêu cầu ở R0: một tin mỗi
-  ngày liệt kê việc chưa xong của các nhóm. **TRUY VẤN kanban đã đối soát sẵn ở 2.30.0, KHÔNG gọi
-  AI** — sắp quá hạn trước rồi treo lâu nhất, cắt trang theo nhóm như digest. Tin **tách rõ 2 phần**:
-  việc đã xác nhận liệt theo nhóm, việc AI đề xuất còn "Chờ xác nhận" chỉ đếm gộp ở dòng cuối kèm
-  hướng dẫn ra dashboard duyệt — không trộn chung để tránh chủ Asa đọc số AI đoán tưởng là đã chốt.
-  Tạo được qua chat: `zalo_mod_reports` mở thêm `kind: 'backlog'`.
-- **`zalo_mod_groups` khớp tên theo TỪNG TỪ, không cần đúng thứ tự** — vá sự cố thật 09/08: "39 Cùng
-  rèn" không khớp chuỗi-con của "[39] RÈN CÙNG NHAU" (thứ tự chữ khác nhau) nên bot từng kết luận sai
-  "nhóm chưa được quản lý" dù nhóm đã bật follow/silent thật. Không khớp tuyệt đối vẫn thử lại bằng
-  token (quá nửa số từ trong câu hỏi phải khớp, làm tròn lên); vẫn 0 kết quả thì trả `suggestions`
-  (5 nhóm gần giống) + `note` cấm bot tự kết luận "chưa được quản lý" — luật nằm ngay trong **mô tả
-  tool** (không chỉ SKILL.md) vì đó là nơi luôn nằm trong prompt.
-
-### Chưa xong trong bản này
-
-- Dashboard chưa có lựa chọn "Việc còn treo" trong bộ chọn loại lịch (`kindBtn` ở trang Lịch báo
-  cáo) — lịch `backlog` hiện chỉ tạo/sửa được qua chat hoặc chỉnh thẳng `report-jobs.json`. Cố tình
-  không thêm nửa vời (nút bấm ra nhưng nút "Xem trước" vẫn hiện digest sai) — gộp cùng đợt kanban UI
-  sau (xem mục "Chưa xong" ở `[2.30.0]`).
-
-## [2.30.0] - 2026-08-18
-
-### Added
-
-- **Bản tổng hợp ngày rút thêm `openItems`** (việc còn treo được người nói RÕ trong ngày) — dùng
-  chung schema JSON đã có của `generateDailySummary`, **0 lượt gọi AI tăng thêm**. Tối đa 8
-  việc/ngày/nhóm, `what` ≤ 120 ký tự, `who` để trống nếu không rõ ai chịu trách nhiệm (không đoán
-  tên) — AI tuân thủ prompt nhưng code vẫn tự phòng vệ (`normalizeOpenItems`) vì model không đảm
-  bảo giới hạn.
-- **Kanban việc tồn đọng** — migration **v9** trên `context.db` thêm `source`/`status`/
-  `review_state`/`dedupe_key`/`evidence`/`first_seen_date`/`last_seen_date` vào bảng `tasks` sẵn có
-  (việc gõ tay cũ tự suy `status` từ `done_at`, không mất dữ liệu). `src/crm/task-reconcile.js`
-  (hàm thuần, không I/O) đối soát `openItems` mỗi ngày với việc đã có: việc mới → thêm với
-  `source='ai'` + `review_state='pending'` ("Chờ xác nhận"); gặp lại → chỉ cập nhật ngày thấy gần
-  nhất; AI báo "done" → đóng việc; **trùng với việc gõ tay thì bỏ qua, AI không bao giờ được xoá
-  hay tự đóng việc `source='manual'`** (luật cứng Kent chốt 18/08).
-  `CrmStore` có thêm `reconcileGroupOpenItems`/`listOpenItemsBoard`/`approveTask`/`rejectTask`/
-  `setTaskStatus`, và 4 action mới (`crm-tasks-board`, `crm-task-approve`, `crm-task-reject`,
-  `crm-task-status`) cho dashboard gọi.
-
-### Fixed
-
-- `createTask` (việc gõ tay) giờ cũng ghi `dedupe_key` — thiếu bước này thì luật "AI không được
-  chạm việc gõ tay" không có cách nào phát hiện được va chạm (đối soát khớp theo `dedupe_key`, không
-  phải theo tiêu đề thô). Hai việc gõ tay trùng tên trong cùng nhóm **vẫn tạo được bình thường**
-  (đó là quyền của người) — chỉ bản ghi trùng thứ hai không giữ `dedupe_key`, coi như đứng ngoài
-  đối soát tự động thay vì làm hỏng thao tác tạo việc.
-
-### Chưa xong trong bản này (còn treo cho phase sau)
-
-- **Giao diện kanban 4 cột trên dashboard** (trang Công việc) — backend (`listOpenItemsBoard` +
-  4 action) đã sẵn, còn thiếu phần hiển thị/kéo-thả trên `dashboard.js`.
-- **Bot đọc kanban qua tin nhắn** (`zalo_mod_action`/tool riêng, chỉ đọc) — owner chưa hỏi được
-  "nhóm này còn việc gì chưa làm" bằng lời, phải vào dashboard.
-
-## [2.29.0] - 2026-08-18
-
-### Added
-
-- **Lịch báo cáo chọn được khoảng thời gian, không chỉ "hôm nay/hôm qua".** `reportFor` thêm 4 giá
-  trị: `last7` · `last30` · `thisMonth` · `custom` (tự chọn ngày bắt đầu/kết thúc, tối đa 92 ngày —
-  vượt quá tự rút ngắn về 92 ngày gần "Đến ngày" nhất và báo rõ trong tin). Mặc định vẫn `today` nên
-  3 lịch báo cáo thật đang chạy (`today`/`yesterday`) **không đổi hành vi**.
-
-  Khoảng nhiều ngày **chỉ đọc** bản tổng hợp đã có sẵn (`summaries/`), **không gọi lại AI** dù thiếu
-  cache — 30 nhóm × 7 ngày sinh lại là 210 lượt gọi model cho một tin nhắn. Ngày nào chưa có bản
-  tổng hợp thì báo rõ trong tin (`⚠️ N/M ngày chưa có bản tổng hợp: ...`), không âm thầm bỏ qua và
-  không đoán lại bằng AI.
-
-  Nút "Xem trước" trên dashboard giờ ra đúng khoảng của lịch (kể cả dòng cảnh báo ngày thiếu), thay
-  vì luôn xem theo hôm nay/hôm qua như trước.
-
-  **Bot cũng đổi được khoảng thời gian bằng lời, không chỉ qua dashboard.** Tool `zalo_mod_reports`
-  mở đủ 6 giá trị `reportFor` (trước chỉ `today`/`yesterday`) và nhận thêm `rangeFrom`/`rangeTo` cho
-  `custom` — owner nhắn "đổi báo cáo thành tổng hợp 7 ngày" giờ có hiệu lực thật, không bị schema
-  chặn. Op `preview` cũng nhận được các field này, nên "xem thử báo cáo 7 ngày" không còn luôn ra
-  đúng hôm nay.
-
-### Fixed
-
-- Cảnh báo "giờ gửi buổi sáng mà nội dung để hôm nay" (`reportMorningWarning`) trước đây so sai điều
-  kiện — sau khi mở rộng `reportFor` thì lẽ ra chỉ áp dụng cho giá trị `today`, không phải mọi giá
-  trị khác `yesterday`.
-- **Dòng cảnh báo "chưa có bản tổng hợp" không còn bắn sai vào ngày không ai nhắn** (chủ nhật, ngày
-  lễ). Trước đây `missingDates` chỉ xét "không nhóm nào có summary", nên `last7`/`last30` luôn dính
-  ít nhất một ngày không hoạt động và bị gắn cờ thiếu oan — nay ngày ứng viên "thiếu" được kiểm thêm
-  nhật ký thô (không gọi AI): mọi nhóm raw = 0 thì coi là ngày không hoạt động, không phải thiếu.
+- Migration `v9` diễn tập trên bản copy `context.db` **thật của khách**, chạy 2 lần không lỗi, dữ
+  liệu giữ nguyên 100%, `integrity_check` = `ok`.
+- Bản quyền Lifetime kích hoạt lại rồi khởi động lại vẫn nguyên — đã kiểm trên máy thật, không phải
+  môi trường giả lập.
 
 ## [2.28.1] - 2026-08-03
 

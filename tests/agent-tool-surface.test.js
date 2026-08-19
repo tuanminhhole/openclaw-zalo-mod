@@ -308,15 +308,28 @@ test('classifyAction: chặn cứng tiền/license/permission, chặn mềm nhó
     assert.equal(classifyAction('').allowed, false);
 });
 
-// P4: kanban việc tồn đọng — luật cứng là "AI không được xoá/tự đóng việc source='manual'". Cách
-// thực thi chắc nhất là bot KHÔNG CÓ ĐƯỜNG nào tới action đó, kể cả với allowDestructive=true —
-// crm-task-* chỉ đi qua HTTP dashboard (`runDashboardAction` → `handleCrmAction`), không qua
-// `zalo_mod_action`/`classifyAction` (bot không có tool nào gọi tới nhánh CRM này).
-test('classifyAction: crm-task-* KHÔNG có đường nào cho bot chạm — không nằm trong SAFE lẫn DESTRUCTIVE', () => {
-    for (const action of ['crm-task-done', 'crm-task-delete', 'crm-task-status', 'crm-task-approve', 'crm-task-reject']) {
+// P4 (18/08): kanban việc tồn đọng — bot KHÔNG CÓ ĐƯỜNG nào tới crm-task-*, kể cả với
+// allowDestructive=true, để "AI không được xoá/tự đóng việc source='manual'" chắc chắn không bị lách.
+//
+// P15 (19/08, Kent chốt mở): ĐẢO LẠI một phần luật trên — owner muốn duyệt/đổi trạng thái việc bằng
+// lời, không chỉ bằng dashboard. Mở đúng 5 action ĐỌC/DUYỆT/ĐỔI CỘT (`crm-tasks-list`,
+// `crm-task-status`, `crm-task-approve`, `crm-task-approve-move`, `crm-task-reject`) vào SAFE —
+// KHÔNG cần allowDestructive vì đây không phải hành động phá hoại (reject giờ là bia mộ, xem P14).
+// `crm-task-delete`/`crm-task-done` VẪN bị chặn tuyệt đối: xoá dữ liệu khách không bao giờ đi qua
+// đường chat, và `crm-task-done` là API của trang "Việc" kiểu cũ (không phải kanban), không mở cho bot.
+test('classifyAction: crm-task-delete/crm-task-done vẫn KHÔNG có đường nào cho bot chạm (kể cả allowDestructive)', () => {
+    for (const action of ['crm-task-done', 'crm-task-delete']) {
         assert.equal(classifyAction(action).allowed, false, `${action} không được có trong allowlist mặc định`);
         assert.equal(classifyAction(action, { allowDestructive: true }).allowed, false,
             `${action} vẫn phải chặn dù bật allowDestructive — không phải cờ này quyết định`);
+    }
+});
+
+test('classifyAction (P15): crm-tasks-list/board + crm-task-status/approve/approve-move/reject giờ SAFE, không cần allowDestructive', () => {
+    for (const action of ['crm-tasks-list', 'crm-tasks-board', 'crm-task-status', 'crm-task-approve', 'crm-task-approve-move', 'crm-task-reject']) {
+        const v = classifyAction(action);
+        assert.equal(v.allowed, true, `${action} phải được phép mặc định (SAFE)`);
+        assert.equal(v.kind, 'safe');
     }
 });
 
@@ -601,4 +614,172 @@ test('từ chối cấp tool phải LOG — im lặng là thứ đã tốn nhi�
     assert.match(warns[0], /requesterSenderId/, 'log phải nêu id nhận được');
     assert.match(warns[0], /senderIsOwner/, 'và bit owner host cấp');
     assert.match(warns[0], new RegExp(OWNER), 'và ownerId đang cấu hình, để so được ngay');
+});
+
+// ── P15: zalo_mod_tasks — đọc/duyệt/từ chối/đổi cột việc tồn đọng bằng lời ───────────────────────
+
+const TASKS_FIXTURE = [
+    { id: 't1', title: 'Gọi điện xác nhận đơn hàng', group_id: 'g-kd-a', status: 'todo', review_state: null, source: 'ai', assignee: null, note: null, due_at: null },
+    { id: 't2', title: 'Gửi báo giá lô hàng mới', group_id: 'g-kd-a', status: 'todo', review_state: 'pending', source: 'ai', assignee: null, note: null, due_at: null },
+    { id: 't3', title: 'Gọi điện xác nhận lịch họp', group_id: 'g-kt', status: 'todo', review_state: null, source: 'ai', assignee: null, note: null, due_at: null },
+    { id: 't4', title: 'Việc gõ tay của owner', group_id: 'g-kd-a', status: 'doing', review_state: null, source: 'manual', assignee: null, note: null, due_at: null },
+    { id: 't5', title: 'Đã hoàn thành từ lâu', group_id: 'g-kd-a', status: 'done', review_state: null, source: 'ai', assignee: null, note: null, due_at: null },
+];
+
+function makeTasksHost(fixture = TASKS_FIXTURE) {
+    const calls = [];
+    const tasks = fixture.map((t) => ({ ...t }));
+    const { host } = makeHost({
+        runAction: async (action, payload, actor) => {
+            calls.push({ action, payload, actor });
+            if (action === 'crm-tasks-board') {
+                const columns = { pending_review: [], todo: [], doing: [], done: [] };
+                for (const t of tasks) {
+                    const col = t.review_state === 'pending' ? 'pending_review' : t.status;
+                    (columns[col] || columns.todo).push({ ...t });
+                }
+                return { columns };
+            }
+            const t = tasks.find((x) => x.id === payload.id);
+            if (action === 'crm-task-status') {
+                if (!t) throw new Error('task không tồn tại');
+                t.status = payload.status;
+                return { ...t };
+            }
+            if (action === 'crm-task-approve') {
+                if (!t) throw new Error('task không tồn tại');
+                t.review_state = null;
+                return { ...t };
+            }
+            if (action === 'crm-task-approve-move') {
+                if (!t) throw new Error('task không tồn tại');
+                t.review_state = null;
+                t.status = payload.status;
+                return { ...t };
+            }
+            if (action === 'crm-task-reject') {
+                if (!t) throw new Error('task không tồn tại');
+                if (t.review_state !== 'pending') throw new Error('chỉ từ chối được việc đang chờ xác nhận');
+                t.review_state = 'rejected';
+                return { ...t };
+            }
+            return { echoed: payload };
+        },
+    });
+    return { host, calls, tasks };
+}
+
+function getTasksTool(host) {
+    return createZaloModAgentTools(host)({ requesterSenderId: OWNER }).find((t) => t.name === 'zalo_mod_tasks');
+}
+
+test('zalo_mod_tasks list: mặc định loại "done", trả đủ việc còn lại của mọi nhóm', async () => {
+    const { host } = makeTasksHost();
+    const r = parse(await getTasksTool(host).execute('c1', { operation: 'list' }));
+    assert.equal(r.total, 4);
+    assert.ok(!r.tasks.some((t) => t.title === 'Đã hoàn thành từ lâu'), 'mặc định không gồm việc đã done');
+    const pending = r.tasks.find((t) => t.id === 't2');
+    assert.equal(pending.status, 'pending_review', 'status trả về đúng CỘT kanban thật');
+});
+
+test('zalo_mod_tasks list: lọc theo status="done" thấy đúng việc đã xong', async () => {
+    const { host } = makeTasksHost();
+    const r = parse(await getTasksTool(host).execute('c1', { operation: 'list', status: 'done' }));
+    assert.deepEqual(r.tasks.map((t) => t.id), ['t5']);
+});
+
+test('zalo_mod_tasks list: lọc theo groups chỉ trả việc của đúng nhóm đó (khớp tên không dấu)', async () => {
+    const { host } = makeTasksHost();
+    const r = parse(await getTasksTool(host).execute('c1', { operation: 'list', groups: ['ky thuat'] }));
+    assert.deepEqual(r.tasks.map((t) => t.id), ['t3']);
+});
+
+test('zalo_mod_tasks: title khớp NHIỀU hơn một việc → suggestions, KHÔNG tự chọn, không gọi action ghi nào', async () => {
+    const { host, calls } = makeTasksHost();
+    const r = await getTasksTool(host).execute('c1', { operation: 'status', title: 'gọi điện', status: 'done' });
+    assert.ok(r.content[0].isError);
+    const body = parse(r);
+    assert.equal(body.suggestions.length, 2, 'phải khớp cả t1 và t3');
+    assert.ok(!calls.some((c) => c.action === 'crm-task-status'), 'nhập nhằng thì KHÔNG được tự đổi bất cứ gì');
+});
+
+test('zalo_mod_tasks: title khớp 0 việc → báo thật, kèm danh sách tên đang có để owner đối chiếu', async () => {
+    const { host, calls } = makeTasksHost();
+    const r = await getTasksTool(host).execute('c1', { operation: 'approve', title: 'việc không tồn tại trên đời' });
+    assert.ok(r.content[0].isError);
+    assert.ok(parse(r).known.length > 0);
+    assert.ok(!calls.some((c) => c.action.startsWith('crm-task-')), 'không tìm thấy thì không được gọi action ghi nào');
+});
+
+test('zalo_mod_tasks status: đổi cột việc ĐÃ duyệt qua title khớp DUY NHẤT, audit actor đúng dạng agent:<userId>', async () => {
+    const { host, calls } = makeTasksHost();
+    const r = parse(await getTasksTool(host).execute('c1', { operation: 'status', title: 'Gọi điện xác nhận đơn hàng', status: 'done' }));
+    assert.equal(r.task.id, 't1');
+    assert.equal(r.task.status, 'done');
+    const call = calls.find((c) => c.action === 'crm-task-status');
+    assert.equal(call.actor, `agent:${OWNER}`, 'audit phải ghi ai đứng sau qua chat, không phải "ai" chung chung');
+});
+
+test('zalo_mod_tasks status: KHÔNG nhận status="pending_review" — phải hướng dẫn dùng operation="approve"', async () => {
+    const { host, calls } = makeTasksHost();
+    const r = await getTasksTool(host).execute('c1', { operation: 'status', id: 't1', status: 'pending_review' });
+    assert.ok(r.content[0].isError);
+    assert.match(parse(r).error, /operation="approve"/);
+    assert.ok(!calls.some((c) => c.action === 'crm-task-status'));
+});
+
+test('zalo_mod_tasks approve: duyệt việc AI đề xuất, KHÔNG kèm status thì chỉ bỏ review_state', async () => {
+    const { host, calls } = makeTasksHost();
+    const r = parse(await getTasksTool(host).execute('c1', { operation: 'approve', title: 'báo giá' }));
+    assert.equal(r.task.id, 't2');
+    assert.equal(r.task.review_state, null);
+    assert.equal(r.task.status, 'todo', 'không đụng status khi không kèm');
+    assert.ok(calls.some((c) => c.action === 'crm-task-approve'));
+    assert.ok(!calls.some((c) => c.action === 'crm-task-approve-move'));
+});
+
+test('zalo_mod_tasks approve: kèm status thì duyệt + chuyển cột trong MỘT lượt gọi (crm-task-approve-move)', async () => {
+    const { host, calls } = makeTasksHost();
+    const r = parse(await getTasksTool(host).execute('c1', { operation: 'approve', title: 'báo giá', status: 'doing' }));
+    assert.equal(r.task.review_state, null);
+    assert.equal(r.task.status, 'doing');
+    const call = calls.find((c) => c.action === 'crm-task-approve-move');
+    assert.ok(call, 'phải đi qua action gộp, không phải 2 lượt riêng');
+    assert.equal(call.payload.status, 'doing');
+});
+
+test('zalo_mod_tasks reject: từ chối việc chờ xác nhận, ghi rõ trong kết quả là KHÔNG xoá dữ liệu', async () => {
+    const { host, calls } = makeTasksHost();
+    const r = parse(await getTasksTool(host).execute('c1', { operation: 'reject', title: 'báo giá' }));
+    assert.equal(r.task.review_state, 'rejected');
+    assert.match(r.note, /KHÔNG xoá dữ liệu/);
+    assert.ok(calls.some((c) => c.action === 'crm-task-reject'));
+});
+
+test('zalo_mod_tasks: có `id` thì dùng luôn, bỏ qua khớp title VÀ bỏ qua giới hạn của `groups`', async () => {
+    const { host, calls } = makeTasksHost();
+    // t2 thuộc "Kinh Doanh" (g-kd-a) nhưng lọc groups lại chỉ "Kỹ Thuật" — id vẫn phải thắng.
+    const r = parse(await getTasksTool(host).execute('c1', { operation: 'approve', id: 't2', groups: ['ky thuat'] }));
+    assert.equal(r.task.id, 't2');
+    assert.ok(calls.some((c) => c.action === 'crm-task-approve' && c.payload.id === 't2'));
+});
+
+test('zalo_mod_tasks: id không tồn tại thì báo lỗi rõ, không đoán bừa sang việc khác', async () => {
+    const { host } = makeTasksHost();
+    const r = await getTasksTool(host).execute('c1', { operation: 'status', id: 'khong-co', status: 'done' });
+    assert.ok(r.content[0].isError);
+});
+
+test('zalo_mod_tasks: operation ngoài list|status|approve|reject bị từ chối — KHÔNG có đường "delete" qua tool này', async () => {
+    const { host, calls } = makeTasksHost();
+    const r = await getTasksTool(host).execute('c1', { operation: 'delete', id: 't1' });
+    assert.ok(r.content[0].isError);
+    assert.ok(!calls.some((c) => c.action.includes('delete')), 'tool này không có action nào nhắc tới delete');
+});
+
+test('zalo_mod_tasks: lọc theo tên nhóm không khớp nhóm nào → báo lỗi rõ, không âm thầm trả về mọi nhóm', async () => {
+    const { host } = makeTasksHost();
+    const r = parse(await getTasksTool(host).execute('c1', { operation: 'list', groups: ['nhom khong ton tai'] }));
+    assert.equal(r.ok, false);
+    assert.ok(r.unresolved.includes('nhom khong ton tai'));
 });

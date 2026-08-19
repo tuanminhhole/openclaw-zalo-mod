@@ -236,7 +236,7 @@ function nowIso() {
 }
 
 // ── Store ────────────────────────────────────────────────────
-function createStore(dataDir) {
+function createStore(dataDir, logger) {
     const violationsPath = path.join(dataDir, 'violations.json');
     const warnedPath = path.join(dataDir, 'warned.json');
     const settingsPath = path.join(dataDir, 'settings.json');
@@ -299,6 +299,19 @@ function createStore(dataDir) {
         },
         setSetting(groupId, key, value) {
             if (String(groupId) === 'global' && key === 'license') {
+                // P18 layer 3 (chốt chặn cuối cùng): dù caller nào quên kiểm đúng, license ĐÃ MUA
+                // (không phải trial, có `key` hoặc `orderId`) không bao giờ bị một bản TRIAL mới ghi
+                // đè ở ĐÚNG MỘT chỗ ghi này. Không dựa vào hình dạng của `value` để đoán "đây có phải
+                // trial không" ngoài field `isTrial` — field đó là cờ tường minh caller phải set đúng,
+                // còn `key`/`orderId` trên bản MỚI có gì không quan trọng, chỉ cần bản CŨ đã trả tiền.
+                const hadPaidLicense = !!(license && license.isTrial !== true && (license.key || license.orderId));
+                if (hadPaidLicense && value && value.isTrial === true) {
+                    logger?.warn?.(
+                        '[openclaw-zalo-mod] BLOCKED: từ chối ghi trial mới đè lên license ĐÃ MUA '
+                        + '(có key/orderId) — giữ nguyên license hiện có, không ghi gì.',
+                    );
+                    return;
+                }
                 license = value;
                 return;
             }
@@ -1149,7 +1162,7 @@ const plugin = definePluginEntry({
             return pluginCfg.memoryGroupSlug || _slugify(getGroupName(plain) || 'nhom-' + plain.slice(-6));
         }
 
-        const store = createStore(dataDir);
+        const store = createStore(dataDir, logger);
         const spamTracker = createSpamTracker(spamRepeatN, spamWindowMs);
 
 
@@ -2629,6 +2642,28 @@ Quy tắc:
             return d.toISOString().slice(0, 10);
         }
 
+        /** Số ngày từ `fromStr` đến `toStr` (cả hai `YYYY-MM-DD`) — UTC nửa đêm, không lệch giờ máy. */
+        function daysBetween(fromStr, toStr) {
+            return Math.round((new Date(`${toStr}T00:00:00Z`) - new Date(`${fromStr}T00:00:00Z`)) / 86400000);
+        }
+
+        /**
+         * P10 (3): mặc định cờ `backlogInclude` khi owner CHƯA từng đặt tay — dựa theo QUY ƯỚC ĐẶT
+         * TÊN nhóm khách của chủ Asa (chứa "ASA"), KHÔNG hardcode tên một nhóm cụ thể nào (nhóm
+         * rèn luyện `[39] RÈN CÙNG NHAU` chiếm 31/137 việc toàn cam kết cá nhân, không phải task team
+         * có deadline). Chỉ là giá trị khởi điểm hợp lý — owner luôn đổi tay được qua
+         * `zalo_mod_settings`/dashboard, và giá trị đã đặt tay luôn thắng default này.
+         *
+         * P11: đo trên 37 nhóm thật — tiền tố `^asa` khớp 23 nhóm, nhưng 30 nhóm có "asa" ở ĐÂU ĐÓ
+         * trong tên (không riêng đầu chuỗi). 7 nhóm khách bị TẮT OAN vì đòi đúng tiền tố: `KG ASA
+         * 7844 - Đan Nhi` · `237. Vnlogs - Asa` · `237.KẾ TOÁN ASA-VNLOGS` · `HNI073-DLUQASA` ·
+         * `HNI 073 ASA - Vipo` (có 6 việc thật, biến mất khỏi tin thử lần 2 vì bị lọc oan) · `Nhà xe
+         * Hà Sơn Hải Vân - ASA` · `CO Yuzhan - ASA`. Đổi sang khớp "asa" ở BẤT KỲ ĐÂU trong tên.
+         */
+        function defaultBacklogInclude(name) {
+            return /asa/i.test(String(name || ''));
+        }
+
         /** Danh sách YYYY-MM-DD liên tục từ `from` đến `to`, bao gồm cả hai đầu. */
         function dateRangeList(from, to) {
             const out = [];
@@ -2645,16 +2680,18 @@ Quy tắc:
             const reportFor = job?.reportFor || 'today';
             if (reportFor === 'today') return { from: runDate, to: runDate };
             if (reportFor === 'yesterday') { const y = addDaysStr(runDate, -1); return { from: y, to: y }; }
-            const yesterday = addDaysStr(runDate, -1);
-            if (reportFor === 'last7') return { from: addDaysStr(yesterday, -6), to: yesterday };
-            if (reportFor === 'last30') return { from: addDaysStr(yesterday, -29), to: yesterday };
+            // P7 (Kent chốt 18/08): last7/last30/thisMonth GỘP CẢ HÔM NAY — "7 ngày qua" theo cách
+            // hiểu thường ngày CÓ hôm nay; định nghĩa cũ (loại hôm nay) buộc owner phải tạo thêm một
+            // lịch `today` riêng mới thấy đủ. `to` luôn là `runDate` nên buildDigestParts biết ngày
+            // nào là "chưa qua hẳn" (cần so cache với nhật ký thô) — xem comment ở đó.
+            if (reportFor === 'last7') return { from: addDaysStr(runDate, -6), to: runDate };
+            if (reportFor === 'last30') return { from: addDaysStr(runDate, -29), to: runDate };
             if (reportFor === 'thisMonth') {
-                // Tháng của RUNDATE (hôm nay đang chạy), không phải tháng của `yesterday` — nếu không
-                // thì chạy đúng ngày 1 đầu tháng sẽ lấy nhầm mốc "ngày 1" của THÁNG TRƯỚC.
+                // `to` = runDate luôn cùng tháng với chính nó, nên `from` (ngày 1 của tháng runDate)
+                // không bao giờ vượt quá `to` — kể cả chạy đúng ngày 1 đầu tháng (from === to === runDate,
+                // range 1 ngày, không cần coi ca đặc biệt như định nghĩa cũ).
                 const from = `${runDate.slice(0, 7)}-01`;
-                // Chạy đúng ngày 1 đầu tháng: "hôm qua" thuộc tháng trước → tháng này chưa có ngày
-                // nào. Coi khoảng là một ngày (hôm qua) thay vì để from > to làm hỏng phép lặp ngày.
-                return from > yesterday ? { from: yesterday, to: yesterday } : { from, to: yesterday };
+                return { from, to: runDate };
             }
             // 'custom' — dạng chuỗi đã được `normalizeReportForFields` kiểm; ở đây chỉ còn lo thứ tự
             // (thiếu/lệch thì coi như một ngày `runDate`, không crash) và giới hạn độ dài.
@@ -2767,7 +2804,30 @@ Quy tắc:
         }
 
         /**
-         * Dựng báo cáo tổng hợp — KHÔNG gọi model thêm lần nào.
+         * Đồng bộ bản tổng hợp NGÀY của một nhóm với nhật ký thô thật — sinh lại CHỈ khi thiếu/thiếu
+         * cập nhật, không vô điều kiện. Một logic, dùng ở BA nơi (tránh lệch dần theo thời gian):
+         * nhánh 1-ngày của `buildDigestParts`, ngày cuối của nhánh nhiều-ngày (P7), và làm tươi ngày
+         * hôm nay trước khi đọc kanban cho lịch `backlog` (P9).
+         *
+         * Cache summary có thể đã được sinh GIỮA ngày, lúc nhóm chưa có tin nào — khi đó nó ghi
+         * `messageCount: 0` và không bao giờ tự làm mới. Dùng lại nguyên si thì báo cáo sáng hôm sau
+         * rỗng trong khi nhật ký thô đầy tin. Đã xảy ra thật: 2026-08-01 digest gửi "0 nhóm · 0 tin"
+         * cho 24 nhóm, vì cache bị sinh lúc 01:56 ngày hôm trước. So với SỐ DÒNG NHẬT KÝ THẬT của
+         * đúng ngày đó — rẻ, chính xác, và chỉ tốn token sinh lại đúng những nhóm có thêm tin.
+         */
+        async function ensureFreshSummary(gid, date, { persist = true } = {}) {
+            let s = await getSummary(gid, date);
+            const rawCount = (await readChatHistory(gid, date).catch(() => []))?.length || 0;
+            if (!s || rawCount > (s.messageCount || 0)) {
+                // `persist: false` (xem trước) vẫn phải SINH để hiện nội dung thật, chỉ không ghi đĩa.
+                s = await generateDailySummary(gid, date, { by: 'auto', save: persist }).catch(() => s);
+            }
+            return s;
+        }
+
+        /**
+         * Dựng báo cáo tổng hợp — KHÔNG gọi model thêm lần nào (trừ đúng những nhóm/ngày cần làm tươi
+         * qua `ensureFreshSummary`, xem hàm đó).
          *
          * Bản tóm tắt từng nhóm đã được model viết và lưu ở summaries/<gid>/<date>.json, nên digest chỉ
          * chọn lọc lại: mỗi nhóm lấy tối đa 3 điểm (ưu tiên highlights của model), việc có hẹn/chưa xong
@@ -2775,9 +2835,11 @@ Quy tắc:
          *
          * `range` là `{from, to}` (YYYY-MM-DD, from<=to). `from === to` (1 ngày) giữ NGUYÊN nhánh cũ —
          * kể cả việc so cache với nhật ký thô rồi sinh lại — vì đó là bản vá sự cố "0 nhóm · 0 tin"
-         * 01/08, không được động vào. `from < to` (nhiều ngày) là nhánh MỚI: CHỈ đọc cache đã có, cấm
-         * gọi `generateDailySummary` dù thiếu — 30 nhóm × 7 ngày sinh lại là 210 lượt gọi model cho
-         * một tin nhắn. Ngày không có cache thì tính là "thiếu", trả ra để bên gọi ghi rõ trong tin.
+         * 01/08, không được động vào. `from < to` (nhiều ngày) CHỈ đọc cache đã có cho mọi ngày ĐÃ QUA
+         * — 30 nhóm × N ngày cũ sinh lại là hàng trăm lượt gọi model cho một tin nhắn. Riêng ngày
+         * CUỐI (`to` = runDate, kể từ P7 khi `last7`/`last30`/`thisMonth` gộp cả hôm nay) chưa qua
+         * hẳn, nên xử lý y như nhánh 1 ngày: so cache với nhật ký thô, sinh lại nếu thiếu. Ngày (đã
+         * qua) không có cache thì tính là "thiếu", trả ra để bên gọi ghi rõ trong tin.
          */
         async function buildDigestParts(groupIds, range, { persist = true } = {}) {
             const { from, to } = range;
@@ -2786,20 +2848,7 @@ Quy tắc:
                 const blocks = [];
                 let totalMsgs = 0, totalLinks = 0, totalAppts = 0;
                 for (const gid of groupIds) {
-                    let s = await getSummary(gid, date);
-                    // Cache summary có thể đã được sinh GIỮA ngày, lúc nhóm chưa có tin nào — khi đó nó
-                    // ghi `messageCount: 0` và không bao giờ tự làm mới. Dùng lại nguyên si thì báo cáo
-                    // sáng hôm sau rỗng trong khi nhật ký thô đầy tin. Đã xảy ra thật: 2026-08-01 digest
-                    // gửi "0 nhóm · 0 tin" cho 24 nhóm, vì cache bị sinh lúc 01:56 ngày hôm trước.
-                    //
-                    // So với SỐ DÒNG NHẬT KÝ THẬT của đúng ngày đó — rẻ, chính xác, và chỉ tốn token sinh
-                    // lại đúng những nhóm có thêm tin so với lúc cache.
-                    const rawCount = (await readChatHistory(gid, date).catch(() => []))?.length || 0;
-                    if (!s || rawCount > (s.messageCount || 0)) {
-                        // Xem trước cũng phải SINH — không thì ngày nào chưa có cache đều hiện rỗng và
-                        // nút "Xem trước" thành vô dụng. Khác biệt duy nhất là không ghi xuống đĩa.
-                        s = await generateDailySummary(gid, date, { by: 'auto', save: persist }).catch(() => s);
-                    }
+                    const s = await ensureFreshSummary(gid, date, { persist });
                     if (!s || !s.messageCount) continue;
                     const x = s.sections || {};
                     totalMsgs += s.messageCount;
@@ -2826,7 +2875,10 @@ Quy tắc:
             // Mới nhất trước, để bullet của mỗi nhóm ưu tiên tin gần nhất trong kỳ.
             for (const date of [...dates].reverse()) {
                 for (const gid of groupIds) {
-                    const s = await getSummary(gid, date);
+                    // P7: `last7`/`last30`/`thisMonth` giờ GỘP CẢ HÔM NAY (`to` = runDate). Ngày cuối
+                    // này chưa "qua hẳn" như các ngày trước trong kỳ nên làm tươi qua `ensureFreshSummary`
+                    // (y hệt nhánh 1-ngày). Các ngày TRƯỚC đó đã qua hẳn, CHỈ đọc cache — sinh lại là phí.
+                    const s = (date === to) ? await ensureFreshSummary(gid, date, { persist }) : await getSummary(gid, date);
                     if (!s) continue;
                     dateHasAnySummary.set(date, true);
                     const g = perGroup.get(gid);
@@ -2905,34 +2957,138 @@ Quy tắc:
          * trúc đã chốt cho cả 3 phase). `rows` lấy từ `CrmStore.listBacklog` — đã sắp quá hạn trước
          * rồi treo lâu nhất.
          *
-         * Tách RÕ 2 phần (bổ sung của Leader sau khi P2 có `review_state`): việc `review_state=
-         * 'pending'` là AI ĐỀ XUẤT, CHƯA ai duyệt — liệt ngang hàng việc đã xác nhận là chủ Asa đọc
-         * số AI đoán tưởng việc đã chốt thật. Nên chỉ đếm gộp ở dòng cuối, trỏ ra dashboard để duyệt.
+         * P9 (Kent chốt, phương án a): việc `review_state='pending'` giờ HIỆN NGANG HÀNG với việc đã
+         * duyệt (kèm nhãn 🤖 đầu dòng để phân biệt bằng mắt) — bản trước ẨN hẳn việc pending khỏi
+         * danh sách, mà 121 việc backfill đều pending nên tin gửi ra thành "0 nhóm · 0 việc" + một
+         * dòng chờ xác nhận: đúng kiểu "0 nhóm · 0 tin" đã hai lần làm mất niềm tin của chủ Asa. Tiêu
+         * đề đếm CẢ HAI loại; nhóm ⏰ QUÁ HẠN cũng gồm cả việc pending quá hạn — mục đích là thấy sót
+         * deadline, che vì AI chưa được duyệt là phản tác dụng. Dòng cuối tin vẫn giữ, chỉ đổi chữ.
+         *
+         * P6 — hai lỗ đã vá:
+         * (1) `listBacklog` KHÔNG lọc theo ngày (đúng, đây là "toàn bộ việc còn treo", không phải "việc
+         *     phát sinh trong khoảng"), nhưng nhãn cũ in `12/08–18/08` như thể nội dung bị lọc theo
+         *     range đó — sai, nội dung có thể gồm cả việc từ tháng trước. Nhãn giờ chỉ ghi mốc chạy
+         *     (`tính đến <to>`), không bịa một khoảng lọc không tồn tại.
+         * (2) Việc **quá hạn** (`overdue`, đã có cờ sẵn từ `listBacklog`) được TÁCH lên đầu tin thành
+         *     một nhóm riêng ⏰ QUÁ HẠN — chủ Asa quan tâm sót deadline hơn là việc còn treo thường,
+         *     trộn lẫn trong khối theo nhóm Zalo (như cũ) thì dễ bị lướt qua. Việc còn lại (không quá
+         *     hạn) vẫn gộp theo nhóm Zalo như trước — không đổi hành vi phần này.
+         *
+         * P10 — chạy thật trên 137 việc/17 nhóm lộ 2 lỗ:
+         * (1) `due` AI rút được gần như luôn RỖNG (hội thoại thật ít khi nói ngày cụ thể) → `due_at`
+         *     hầu như luôn null → nhóm ⏰ QUÁ HẠN gần như luôn RỖNG, không trả lời được đúng câu chủ
+         *     Asa hỏi ("có sót deadline hoặc task nào chưa hoàn thành"). ĐỪNG bắt AI đoán deadline —
+         *     bịa ngày là sai nghiêm trọng hơn không có. Thay bằng tín hiệu ĐO ĐƯỢC: việc không có
+         *     `due` mà `last_seen_date` cách ngày chạy (`to`) ĐỦ XA (`STALE_DAYS`) — không ai nhắc lại
+         *     — thì vào nhóm riêng ⏳ TREO LÂU. Việc CÓ `due` thật vẫn vào ⏰ QUÁ HẠN như cũ, không đổi.
+         * (2) Tin ra 4 phần, 9.766 ký tự cho 137 việc — chủ Asa sẽ không đọc hết, báo cáo dài coi như
+         *     bị bỏ qua. Mỗi KHỐI (quá hạn / treo lâu / từng nhóm Zalo) giờ hiện tối đa
+         *     `MAX_ITEMS_PER_BLOCK` việc, còn lại rút gọn một dòng `… và N việc khác` — owner vẫn biết
+         *     còn bao nhiêu mà không phải đọc hết.
          */
+        const STALE_DAYS = 3;
+        const MAX_ITEMS_PER_BLOCK = 5;
         function buildBacklogText(rows, groupNameOf, range) {
-            const { from, to } = range;
-            const label = from === to ? from : `${from}–${to}`;
-            const confirmed = rows.filter(r => r.review_state !== 'pending');
-            const pendingCount = rows.length - confirmed.length;
+            const { to } = range;
+            const pendingCount = rows.filter(r => r.review_state === 'pending').length;
             const pendingLine = pendingCount
-                ? `\n\n⚠️ ${pendingCount} việc do AI đề xuất đang chờ xác nhận → xem dashboard`
+                ? `\n\n🤖 ${pendingCount} việc do AI đề xuất đang chờ xác nhận → duyệt ở dashboard`
                 : '';
 
+            const distinctGroups = new Set(rows.map(r => r.group_id));
+            const head = `📌 VIỆC CÒN TREO tính đến ${to} · ${distinctGroups.size} nhóm · ${rows.length} việc`;
+            if (!rows.length) {
+                return { texts: [`${head}${pendingLine}\n\n(Không có việc nào còn treo.)`], pendingCount };
+            }
+
+            // Việc gõ tay (`createTask`) không có `first_seen_date`/`last_seen_date` (chỉ AI-tạo mới có,
+            // xem `reconcileGroupOpenItems`) — không có fallback thì việc gõ tay treo bao lâu cũng
+            // không bao giờ vào ⏳ TREO LÂU. Dùng `created_at` (luôn có, mọi task) làm mốc cuối cùng.
+            const referenceDateOf = (r) => r.last_seen_date || r.first_seen_date
+                || (r.created_at != null ? vnDateStr(new Date(Number(r.created_at) + 7 * 3600 * 1000)) : to);
+            const staleDaysOf = (r) => daysBetween(referenceDateOf(r), to);
+            /**
+             * P17 (1): AI rút hạn dạng CHỮ (`Hạn: Ngày mai`, `Hạn: 05:00, 13/08/2026`…) vào `note` —
+             * đây là 46/138 việc thật có hạn nhưng tin cũ không hề hiện. GIỮ NGUYÊN nguyên văn, không
+             * chuẩn hoá thành ngày cụ thể: "Ngày mai" → "20/8" là SUY DIỄN, sai một lần là mất niềm tin.
+             */
+            const noteDueTextOf = (r) => {
+                const m = /^Hạn:\s*(.+)$/.exec(String(r.note || '').trim());
+                return m ? m[1].trim() : null;
+            };
+            /**
+             * P16 (Kent chốt: "đừng ghi chung chung là còn treo"): MỖI dòng phải tự nói trạng thái
+             * hiện tại, không chỉ nằm đúng khối (QUÁ HẠN/TREO LÂU/theo nhóm) mới ngầm hiểu được. Icon +
+             * nhãn PHẢI khớp đúng ngôn ngữ kanban (Chờ xác nhận/Cần làm/Đang làm/Đang vướng) — không
+             * phát minh nhãn thứ hai cho cùng một trạng thái. Quá hạn là tín hiệu MẠNH hơn cột kanban
+             * (owner cần biết trễ bao lâu hơn là nó đang ở cột nào) nên thắng mọi nhãn khác.
+             * P17 (2): `🤖` một mình đã đủ hiểu "chờ xác nhận" — chữ đi kèm TRÙNG NGHĨA và lặp trên 86
+             * dòng (đo thật), phồng tin mà không thêm thông tin. Các nhãn khác vẫn giữ chữ vì icon một
+             * mình không nói hết ("🔵" không tự nói là "đang làm").
+             */
+            const statusLabelOf = (r) => {
+                if (r.overdue) {
+                    const dueDateStr = vnDateStr(new Date(Number(r.due_at) + 7 * 3600 * 1000));
+                    const lateDays = Math.max(0, daysBetween(dueDateStr, to));
+                    return `⏰ Quá hạn ${lateDays} ngày`;
+                }
+                if (r.review_state === 'pending') return '🤖';
+                if (r.status === 'doing') return '🔵 Đang làm';
+                if (r.status === 'blocked') return '🚧 Đang vướng';
+                return '⚪ Cần làm';
+            };
+            const bulletOf = (r) => {
+                // Nhãn chỉ-icon (`🤖`) thì KHÔNG chèn ` · ` — "🤖 · Thanh toán…" đọc như thiếu chữ. Nhãn
+                // có chữ ("🔵 Đang làm") mới cần dấu tách khỏi tiêu đề việc.
+                const label = statusLabelOf(r);
+                const head = /\s/.test(label) ? `${label} · ` : `${label} `;
+                const noteDue = noteDueTextOf(r);
+                if (r.overdue) return `  • ${head}${r.title}`;
+                if (r.due_at != null) return `  • ${head}${r.title} — hạn ${vnDateStr(new Date(Number(r.due_at) + 7 * 3600 * 1000))}`;
+                if (noteDue) return `  • ${head}${r.title} — hạn ${noteDue}`;
+                if (staleDaysOf(r) >= STALE_DAYS) return `  • ${head}${r.title} — chưa ai nhắc lại ${staleDaysOf(r)} ngày`;
+                return `  • ${head}${r.title} — treo từ ${r.first_seen_date || '?'}`;
+            };
+            // Mỗi khối tối đa `MAX_ITEMS_PER_BLOCK` việc — owner vẫn biết còn thiếu bao nhiêu qua dòng
+            // rút gọn, không phải đọc hết cả trăm dòng.
+            const blockOf = (title, items) => {
+                const shown = items.slice(0, MAX_ITEMS_PER_BLOCK);
+                const lines = shown.map(bulletOf);
+                const extra = items.length - shown.length;
+                if (extra > 0) lines.push(`  … và ${extra} việc khác`);
+                return `${title} (${items.length})\n${lines.join('\n')}`;
+            };
+
+            const overdue = rows.filter(r => r.overdue);
+            const stale = rows.filter(r => !r.overdue && staleDaysOf(r) >= STALE_DAYS);
+            const rest = rows.filter(r => !r.overdue && staleDaysOf(r) < STALE_DAYS);
+            // Treo lâu nhất (im lặng nhiều ngày nhất) đứng đầu — đúng thứ tự ưu tiên "sót lâu nhất".
+            stale.sort((a, b) => (a.last_seen_date || '').localeCompare(b.last_seen_date || ''));
+
             const byGroup = new Map();
-            for (const r of confirmed) {
+            for (const r of rest) {
                 if (!byGroup.has(r.group_id)) byGroup.set(r.group_id, []);
                 byGroup.get(r.group_id).push(r);
             }
-            const head = `📌 VIỆC CÒN TREO ${label} · ${byGroup.size} nhóm · ${confirmed.length} việc`;
-            if (!confirmed.length) {
-                return { texts: [`${head}${pendingLine}\n\n(Không có việc nào còn treo trong khoảng này.)`], pendingCount };
+            // P17 (3): trong mỗi nhóm Zalo, việc CÓ hạn (due_at thật hoặc "Hạn: …" trong note) xếp
+            // TRƯỚC việc không hạn — hạn là thứ dễ trượt nhất. Trong cùng nhóm có/không hạn thì vẫn ưu
+            // tiên MỚI NHẤT trước như cũ.
+            const hasDeadline = (r) => r.due_at != null || !!noteDueTextOf(r);
+            for (const items of byGroup.values()) {
+                items.sort((a, b) => {
+                    const da = hasDeadline(a) ? 1 : 0;
+                    const db = hasDeadline(b) ? 1 : 0;
+                    if (da !== db) return db - da;
+                    return (b.last_seen_date || '').localeCompare(a.last_seen_date || '');
+                });
             }
 
-            const bulletOf = (r) => (r.due_at != null)
-                ? `  • ${r.title} — đến hạn ${vnDateStr(new Date(Number(r.due_at) + 7 * 3600 * 1000))}`
-                : `  • ${r.title} — treo từ ${r.first_seen_date || '?'}`;
-            const blocks = [...byGroup.entries()].map(([gid, items]) =>
-                `📋 ${groupNameOf(gid)} (${items.length})\n${items.map(bulletOf).join('\n')}`);
+            const blocks = [];
+            if (overdue.length) blocks.push(blockOf('⏰ QUÁ HẠN', overdue));
+            if (stale.length) blocks.push(blockOf('⏳ TREO LÂU', stale));
+            for (const [gid, items] of byGroup) {
+                blocks.push(blockOf(`📋 ${groupNameOf(gid)}`, items));
+            }
 
             // Cắt trang GIỐNG digest — cắt giữa các nhóm, không giữa dòng.
             const pages = [];
@@ -3044,20 +3200,34 @@ Quy tắc:
                 return { sent: texts.length, groups: gids.length };
             }
             if (job.kind === 'backlog') {
+                // P10 (3): nhóm rèn luyện/nội bộ làm nhiễu báo cáo việc tồn đọng (đo thật: 1 nhóm rèn
+                // luyện chiếm 31/137 việc, toàn cam kết cá nhân không phải task team). Owner tự bật/tắt
+                // theo nhóm qua `backlogInclude` (lưu ở settings.json, KHÔNG hardcode tên nhóm) —
+                // chưa đặt tay thì dùng mặc định theo quy ước đặt tên (`defaultBacklogInclude`).
+                const backlogGids = gids.filter(gid =>
+                    store.getSetting(gid, 'backlogInclude', defaultBacklogInclude(groupNames[gid]?.name)) !== false);
+                // P9: làm TƯƠI ngày hôm nay (`to`) TRƯỚC khi đọc kanban — không thì việc phát sinh
+                // trong ngày chưa kịp vào kanban (chỉ `generateDailySummary` mới ghi `openItems` qua
+                // `reconcileGroupOpenItems`), buộc owner phải có thêm một lịch digest chạy trước =
+                // nhận 2 tin cho một lần muốn biết "còn việc gì". `ensureFreshSummary` tự giới hạn:
+                // CHỈ nhóm có nhật ký thô mới hơn cache mới tốn 1 lượt AI, không sinh vô điều kiện.
+                for (const gid of backlogGids) {
+                    await ensureFreshSummary(gid, to);
+                }
                 // `zEngine.crm` là null khi storage rơi về in-memory (Node <22.5) — không có kanban để
                 // đọc thì gửi tin trống thay vì ném lỗi làm chết cả lượt chạy lịch.
-                const rows = zEngine?.crm ? zEngine.crm.listBacklog(gids) : [];
+                const rows = zEngine?.crm ? zEngine.crm.listBacklog(backlogGids) : [];
                 const { texts, pendingCount } = buildBacklogText(rows, (gid) => groupNames[gid]?.name || gid, range);
                 await deliverReportTexts(job, texts);
                 await recordReportSent({
                     jobId: job.id, jobName: job.name, kind: job.kind, reportFor: job.reportFor,
                     date: to, from, to, time: job.time, trigger,
-                    scope: gids.map(g => ({ groupId: g, name: groupNames[g]?.name || g })), texts,
+                    scope: backlogGids.map(g => ({ groupId: g, name: groupNames[g]?.name || g })), texts,
                     targets: reportDeliveryTargets(job),
                     chars: texts.reduce((n, t) => n + t.length, 0),
                     pendingCount,
                 });
-                return { sent: texts.length, groups: gids.length };
+                return { sent: texts.length, groups: backlogGids.length };
             }
             let sent = 0;
             for (const gid of gids) {
@@ -4543,9 +4713,23 @@ Quy tắc:
 
         let trialRequest = null;
         async function ensureTrialIfFirstInstall() {
+            // P18 layer 1 — BUG GỐC: hàm này có 3 caller (dashboard, chat, khởi động plugin). Trước
+            // đây caller lúc khởi động (dòng gọi ở cuối register()) KHÔNG `await ensureStore()` trước
+            // khi gọi hàm này → `store.getSetting('global','license')` trả `{}` dù `license.json` trên
+            // đĩa đã có `key`/`orderId` (Pro/Lifetime đã mua) → điều kiện chặn dưới đây KHÔNG ăn → xin
+            // trial mới → GHI ĐÈ license đã mua. Vá đúng ở ĐẦU HÀM (không phải ở từng caller) vì thêm
+            // caller mới sau này mà quên `await ensureStore()` thì vẫn an toàn.
+            await ensureStore();
             const existing = store.getSetting('global', 'license') || {};
             if (existing.entitlement || existing.key || existing.orderId || existing.trialUnavailable) return false;
             if (trialRequest) return trialRequest;
+            // P18 layer 4: log lúc CẤP trial phải nói vì sao coi đây là máy mới — license rỗng hoàn
+            // toàn (`{}`, khả năng cao là máy mới thật) khác với license có dữ liệu nhưng thiếu đúng
+            // field cần (ít khả năng hơn, đáng ngờ hơn) — thiếu chi tiết này thì mỗi lần điều tra lại
+            // phải đọc code để đoán tại sao máy nào đó nhận nhầm trial.
+            const trialReason = Object.keys(existing).length === 0
+                ? 'license rỗng — chưa từng có bản ghi nào'
+                : 'license có dữ liệu nhưng thiếu entitlement/key/orderId/trialUnavailable';
             trialRequest = (async () => {
                 try {
                     const deviceId = getDeviceId();
@@ -4556,6 +4740,17 @@ Quy tắc:
                     const verified = verifySignedEntitlement(result.entitlement, MKT_PUBLIC_KEY, deviceId);
                     if (!verified.valid) throw new Error('license server returned an invalid trial proof');
                     const payload = verified.payload;
+                    // P18 layer 2: kiểm LẠI ngay trước khi ghi — `licenseServerFetch` ở trên là một
+                    // `await` mạng (vài giây). Trong lúc đó một tiến trình khác (owner activate license
+                    // thật qua dashboard, hoặc refresh) có thể đã ghi license thật vào đúng lúc này.
+                    // Không kiểm lại là mất y hệt bug gốc, chỉ đổi tên đường đi tới cùng một hậu quả.
+                    const justBeforeWrite = store.getSetting('global', 'license') || {};
+                    if (justBeforeWrite.entitlement || justBeforeWrite.key || justBeforeWrite.orderId || justBeforeWrite.trialUnavailable) {
+                        logger.warn(`[openclaw-zalo-mod] huỷ ghi trial cho Device ID ${deviceId}: license đã có `
+                            + 'key/orderId/entitlement NGAY TRƯỚC khi ghi (race điều kiện trong lúc chờ server) '
+                            + '— giữ nguyên license hiện có, không đè.');
+                        return false;
+                    }
                     store.setSetting('global', 'license', {
                         valid: true,
                         plan: payload.plan || 'personal',
@@ -4568,7 +4763,7 @@ Quy tắc:
                         isTrial: true,
                     });
                     await store.saveSettings();
-                    logger.info(`[openclaw-zalo-mod] activated 30-day Pro trial for Device ID ${deviceId}`);
+                    logger.info(`[openclaw-zalo-mod] activated 30-day Pro trial for Device ID ${deviceId} (lý do: ${trialReason})`);
                     return true;
                 } catch (error) {
                     // Network failures are intentionally not persisted, so a later
@@ -4925,7 +5120,7 @@ Quy tắc:
             });
         }
 
-        async function runDashboardAction(action, payload = {}) {
+        async function runDashboardAction(action, payload = {}, actor = 'dashboard') {
             await ensureStore();
             await ensureTrialIfFirstInstall();
             await refreshEntitlementIfNeeded(false);
@@ -5916,8 +6111,10 @@ Quy tắc:
             }
 
             // ── CRM actions (crm-*) → src/crm/crm-api.js ──
+            // `actor` mặc định 'dashboard' (nút bấm trên dashboard); P15: agent tool truyền
+            // `agent:<userId Zalo>` để audit log biết ai đứng sau một lượt duyệt/đổi trạng thái qua chat.
             if (action.startsWith('crm-')) {
-                const res = handleCrmAction(zEngine?.crm ?? null, action, payload, 'dashboard');
+                const res = handleCrmAction(zEngine?.crm ?? null, action, payload, actor);
                 if (!res.body.ok) throw new Error(res.body.error);
                 return res.body.data;
             }
@@ -7163,7 +7360,7 @@ Device ID: ${result.deviceId}`);
         const zaloModToolFactory = createZaloModAgentTools({
             listGroups: async () => { await ensureStore(); return watchGroupIds.map(agentGroupState); },
             getGroupState: agentGroupState,
-            runAction: (action, payload) => runDashboardAction(action, payload),
+            runAction: (action, payload, actor) => runDashboardAction(action, payload, actor),
             readHistory: (gid, date) => readChatHistory(gid, date),
             listHistoryDates: (gid) => listChatHistoryDates(gid),
             getNotes: (gid) => getNotes(gid),

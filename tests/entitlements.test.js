@@ -19,6 +19,13 @@ test('single actions stay free while batches and all require Pro', () => {
   assert.equal(requiredTierForAction('send-messages', { targets: [{}, {}] }), 'pro');
 });
 
+// P13: `crm-tasks-approve-group` gửi MỘT `groupId` (không phải mảng `groupIds`), tên action không
+// bắt đầu bằng `bulk-` — cố ý, để hết TRIAL (27/08/2026) rớt về free vẫn dùng được (xem TASKS.md P13).
+test('crm-tasks-approve-group: payload một groupId (không phải mảng) → free, không rơi vào PRO_REQUIRED', () => {
+  assert.equal(requiredTierForAction('crm-tasks-approve-group', { groupId: 'g1' }), 'free');
+  assert.doesNotThrow(() => assertActionAllowed('crm-tasks-approve-group', { groupId: 'g1' }, { tier: 'free' }));
+});
+
 test('syncing multiple bots requires Team', () => {
   assert.equal(requiredTierForAction('sync-groups', {}, { botCount: 2 }), 'team');
   assert.equal(requiredTierForAction('sync-groups', { profile: 'default' }, { botCount: 2 }), 'free');

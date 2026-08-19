@@ -71,6 +71,11 @@ const ACTIONS = {
     'crm-task-approve': (crm, p, actor) => crm.approveTask(required(p, 'id'), actor),
     'crm-task-reject': (crm, p, actor) => crm.rejectTask(required(p, 'id'), actor),
     'crm-task-status': (crm, p, actor) => crm.setTaskStatus(required(p, 'id'), required(p, 'status'), actor),
+    // P12: kéo card "Chờ xác nhận" sang cột khác = duyệt + đổi status trong một lượt gọi.
+    'crm-task-approve-move': (crm, p, actor) => crm.approveAndMoveTask(required(p, 'id'), required(p, 'status'), actor),
+    // P13: duyệt nhanh theo nhóm. Payload chỉ MỘT `groupId` (không phải mảng, không `bulk-` trong
+    // tên action) — cố ý, để không rơi vào luật PRO/TEAM của assertActionAllowed (xem entitlements.js).
+    'crm-tasks-approve-group': (crm, p, actor) => crm.approvePendingByGroup(required(p, 'groupId'), actor),
 
     // Meta
     'crm-stats': (crm) => crm.stats(),

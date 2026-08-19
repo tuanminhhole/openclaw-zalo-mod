@@ -10,7 +10,7 @@ const modalBody = document.getElementById('modalBody');
 const modalCancel = document.getElementById('modalCancel');
 const modalConfirm = document.getElementById('modalConfirm');
 const token = window.ZALO_DASHBOARD_TOKEN || '';
-const pluginVersion = '2.28.3';
+const pluginVersion = '2.29.0';
 let state = null;
 let activeGroupId = '';
 let lang = localStorage.getItem('zaloDashboardLang') || 'vi';
@@ -305,7 +305,10 @@ const NAV_LABELS = {
   permissions: ['Phân quyền', 'Permissions'],
   chat: ['Khung chat', 'Chat'],
   contacts: ['Liên hệ', 'Contacts'],
-  leads: ['Pipeline', 'Pipeline'],
+  // P8: đổi nhãn hiển thị cho dễ hiểu + phân biệt rõ với trang "Công việc" (kanban việc tồn đọng) —
+  // hai trang giờ trông giống nhau vì dùng chung style kanban (P4). CHỈ đổi nhãn, không đổi action
+  // API (`crm-pipeline`), không đổi key state (`crmState.pipeline`), không đổi bảng DB (`leads`).
+  leads: ['Cơ hội bán hàng', 'Sales Pipeline'],
   tasks: ['Công việc', 'Tasks'],
   upgrade: ['Nâng cấp', 'Upgrade'],
   settings: ['Cài đặt', 'Settings'],
@@ -4440,6 +4443,8 @@ const crmState = {
   // Kanban việc tồn đọng (P4) — mặc định 'board' vì đây là chỗ DUYỆT việc AI đề xuất, không có UI
   // thì lịch backlog (P3) mãi chỉ đếm "N việc chờ xác nhận" mà không ai xử được.
   taskView: 'board', tasksBoard: null,
+  // P13: bộ lọc nhóm trên kanban — 'all' | '__report' (chỉ nhóm có backlogInclude hiệu lực) | groupId.
+  taskGroupFilter: 'all',
 };
 const CRM_TASK_COLUMNS = [
   ['pending_review', 'Chờ xác nhận', 'Pending review'],
@@ -5409,7 +5414,7 @@ async function crmSyncFromZalo(profile = '') {
 async function renderCrmLeads() {
   const head = document.querySelector('#leads .page-head');
   if (head) {
-    head.querySelector('h2').textContent = t('Pipeline', 'Pipeline');
+    head.querySelector('h2').textContent = t('Cơ hội bán hàng', 'Sales Pipeline');
     head.querySelector('p').textContent = t('Kéo thả lead qua các giai đoạn: Mới → Đã liên hệ → Tiềm năng → Đã báo giá → Thắng/Thua.',
       'Drag leads across stages: New → Contacted → Qualified → Quoted → Won/Lost.');
   }
@@ -5589,7 +5594,7 @@ document.addEventListener('click', async (e) => {
     if (!leadId) return;
     const ok = await openModal({
       title: t('Xoá lead?', 'Delete lead?'),
-      desc: t(`"${leadTitle}" sẽ bị xoá vĩnh viễn khỏi pipeline.`, `"${leadTitle}" will be permanently removed.`),
+      desc: t(`"${leadTitle}" sẽ bị xoá vĩnh viễn khỏi Cơ hội bán hàng.`, `"${leadTitle}" will be permanently removed.`),
       confirmText: t('Xoá', 'Delete'), danger: true, tone: 'danger',
     });
     if (!ok) return;
@@ -5608,8 +5613,8 @@ async function renderCrmTasks() {
   if (head) {
     head.querySelector('h2').textContent = t('Công việc', 'Tasks');
     head.querySelector('p').textContent = crmState.taskView === 'board'
-      ? t('Việc còn treo của các nhóm — duyệt việc AI đề xuất, kéo-thả để đổi cột.',
-        'Open items across groups — review AI-proposed tasks, drag to change column.')
+      ? t('Việc còn treo của các nhóm — kéo thẻ "Chờ xác nhận" sang cột khác để duyệt luôn; muốn từ chối thì bấm nút.',
+        'Open items across groups — drag a "Pending review" card to another column to approve it; use the Reject button to decline.')
       : t('Việc cần làm, hạn chót, nhắc quá hạn — gắn với khách hàng hoặc lead.',
         'To-dos with due dates and overdue alerts — linked to contacts or leads.');
   }
@@ -5635,20 +5640,94 @@ async function renderCrmTasks() {
       crmState.tasks = res.tasks;
       crmRenderTasksList(body);
     }
+    crmTasksStartAutoRefresh();
   } catch (err) {
     crmErrorCard(body, err, renderCrmTasks);
   }
 }
 
+let crmTasksAutoRefreshTimer = null;
+
+function crmTasksStopAutoRefresh() {
+  if (crmTasksAutoRefreshTimer) {
+    clearInterval(crmTasksAutoRefreshTimer);
+    crmTasksAutoRefreshTimer = null;
+  }
+}
+
 /**
- * Kanban việc tồn đọng (P4) — cùng khuôn `.kanban`/`.kanban-col`/`.kanban-card` đã có cho Leads,
- * KHÔNG dựng CSS mới. Khác Leads ở hai điểm: cột "Chờ xác nhận" không kéo-thả được (phải bấm Duyệt/
- * Từ chối — kéo nhầm một việc AI đề xuất vào "Cần làm" coi như đã duyệt lén, sai luật review), và
- * mọi việc `source==='ai'` có nhãn 🤖 để KHÔNG BAO GIỜ lẫn với việc người tự gõ.
+ * P15: bot ghi task cùng DB qua `zalo_mod_tasks` (owner nhắn "việc X xong rồi" qua Zalo) — dữ liệu
+ * đã đúng ngay, nhưng trang "Công việc" đang mở trên dashboard vẫn hiện số cũ tới khi ai đó thao tác
+ * lại thủ công. Tự làm mới mỗi ~20s, CHỈ khi trang đang mở VÀ tab đang hiển thị (`document.hidden`) —
+ * dùng lại đúng khuôn `chatStartPolling`/`chatStopPolling` đã có cho khung chat, không dựng websocket.
+ * Bỏ qua một nhịp nếu đang có card kéo dở — refresh giữa chừng sẽ dựng lại DOM và mất luôn thao tác.
+ */
+function crmTasksStartAutoRefresh() {
+  crmTasksStopAutoRefresh();
+  crmTasksAutoRefreshTimer = setInterval(() => {
+    if (!document.getElementById('tasks')?.classList.contains('active')) { crmTasksStopAutoRefresh(); return; }
+    if (document.hidden) return;
+    if (document.querySelector('.kanban-card.dragging')) return;
+    renderCrmTasks();
+  }, 20000);
+}
+
+/** P13: mặc định `backlogInclude` khi owner chưa từng đặt tay — PHẢI khớp `defaultBacklogInclude`
+ * trong index.js (regex `/asa/i`, sửa lại P11 sau khi loại nhầm 7 nhóm khách thật). Đổi một bên mà
+ * quên bên kia là kanban với báo cáo lệch nhau ngay. */
+function crmEffectiveBacklogInclude(group) {
+  const explicit = botSettings(group || {}).backlogInclude;
+  if (explicit !== undefined) return explicit !== false;
+  return /asa/i.test(group?.name || '');
+}
+
+/**
+ * Kanban việc tồn đọng (P4, sửa lại P12/P13) — cùng khuôn `.kanban`/`.kanban-col`/`.kanban-card` đã
+ * có cho Leads, KHÔNG dựng CSS mới. Card ở cột "Chờ xác nhận" GIỜ kéo được (P12): kéo sang cột khác
+ * = một thao tác duyệt tường minh của người (bỏ review_state + đổi status trong một lượt gọi API,
+ * `crm-task-approve-move`) — không phải kéo lén, vì kéo-thả CHÍNH LÀ hành động xác nhận. Cột "Chờ
+ * xác nhận" chỉ là NGUỒN kéo, không nhận thả — đã duyệt thì không quay lại chờ được. Nút Duyệt/Từ
+ * chối vẫn giữ cho ai thích bấm, và Từ chối không có tương đương bên kéo-thả. Mọi việc `source==='ai'`
+ * có nhãn 🤖. Bộ lọc nhóm (P13) lọc HOÀN TOÀN ở client trên dữ liệu đã tải (không gọi lại server mỗi
+ * lần đổi lựa chọn) — `crmState.tasksBoard` luôn là dữ liệu MỌI nhóm.
  */
 function crmRenderTasksBoard(body) {
-  const cols = crmState.tasksBoard || {};
-  const groupName = (gid) => (state.groups || []).find(g => g.groupId === gid)?.name || gid || '—';
+  const all = crmState.tasksBoard || {};
+  const allKeys = ['pending_review', 'todo', 'doing', 'done'];
+  const groupOf = (gid) => (state.groups || []).find(g => g.groupId === gid);
+  const groupName = (gid) => groupOf(gid)?.name || gid || '—';
+
+  // ── P13(1): đếm theo nhóm + nhóm "trong báo cáo" để dựng dropdown ────────────────────────────
+  const byGroup = new Map();
+  for (const k of allKeys) for (const task of (all[k] || [])) {
+    const gid = task.group_id || '';
+    byGroup.set(gid, (byGroup.get(gid) || 0) + 1);
+  }
+  const totalCount = [...byGroup.values()].reduce((a, b) => a + b, 0);
+  const reportGids = new Set([...byGroup.keys()].filter(gid => crmEffectiveBacklogInclude(groupOf(gid))));
+  let reportCount = 0;
+  for (const k of allKeys) for (const task of (all[k] || [])) if (reportGids.has(task.group_id || '')) reportCount++;
+  const groupOptions = [...byGroup.entries()]
+    .map(([gid, n]) => ({ gid, n, name: groupName(gid) }))
+    .sort((a, b) => a.name.localeCompare(b.name, 'vi'));
+
+  const filterVal = crmState.taskGroupFilter || 'all';
+  const matchFilter = (task) => {
+    if (filterVal === 'all') return true;
+    if (filterVal === '__report') return reportGids.has(task.group_id || '');
+    return (task.group_id || '') === filterVal;
+  };
+  const cols = {};
+  for (const k of allKeys) cols[k] = (all[k] || []).filter(matchFilter);
+
+  const filterBarHtml = `<div class="kanban-filterbar" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px">
+    <select id="crmTaskGroupFilter" class="input" style="max-width:320px">
+      <option value="all" ${filterVal === 'all' ? 'selected' : ''}>${t('Tất cả nhóm', 'All groups')} (${totalCount})</option>
+      <option value="__report" ${filterVal === '__report' ? 'selected' : ''}>${t('Chỉ nhóm trong báo cáo', 'Report groups only')} (${reportCount})</option>
+      ${groupOptions.map(o => `<option value="${crmEsc(o.gid)}" ${filterVal === o.gid ? 'selected' : ''}>${crmEsc(o.name)} (${o.n})</option>`).join('')}
+    </select>
+  </div>`;
+
   const metaLine = (task) => {
     const bits = [];
     if (task.group_id) bits.push(`👥 ${crmEsc(groupName(task.group_id))}`);
@@ -5663,14 +5742,13 @@ function crmRenderTasksBoard(body) {
 
   const colsHtml = CRM_TASK_COLUMNS.map(([key, viLabel, enLabel]) => {
     const tasks = cols[key] || [];
-    const isPending = key === 'pending_review';
     const cards = tasks.map(task => `
-      <div class="kanban-card" ${isPending ? '' : `draggable="true"`} data-task-id="${crmEsc(task.id)}">
+      <div class="kanban-card" draggable="true" data-task-id="${crmEsc(task.id)}" data-task-pending="${task.review_state === 'pending' ? '1' : '0'}">
         <div class="kanban-card-title">${crmEsc(task.title)}</div>
         ${aiBadge(task)}
         ${metaLine(task)}
         ${task.note ? `<div class="kanban-card-next">${crmEsc(task.note)}</div>` : ''}
-        ${isPending ? `<div class="kanban-card-meta" style="margin-top:8px">
+        ${key === 'pending_review' ? `<div class="kanban-card-meta" style="margin-top:8px">
           <button class="btn primary" data-task-approve="${crmEsc(task.id)}" style="padding:4px 10px;font-size:12px">✓ ${t('Duyệt', 'Approve')}</button>
           <button class="btn danger" data-task-reject="${crmEsc(task.id)}" style="padding:4px 10px;font-size:12px">✕ ${t('Từ chối', 'Reject')}</button>
         </div>` : ''}
@@ -5682,10 +5760,43 @@ function crmRenderTasksBoard(body) {
           <span class="kanban-col-count">${tasks.length}</span>
         </div>
         <div class="kanban-col-body" data-status-body="${key}">${cards
-      || `<div style="padding:16px;text-align:center;color:var(--muted);font-size:12px">${t('Trống', 'Empty')}</div>`}</div>
+      || `<div data-kanban-empty="1" style="padding:16px;text-align:center;color:var(--muted);font-size:12px">${t('Trống', 'Empty')}</div>`}</div>
       </div>`;
   }).join('');
-  body.innerHTML = `<div class="kanban">${colsHtml}</div>`;
+
+  // ── P13(2): nút "Duyệt tất cả" — chỉ khi đang lọc theo ĐÚNG MỘT nhóm cụ thể (không phải "Tất cả"
+  // / "Chỉ nhóm trong báo cáo", vì luật là duyệt theo nhóm đang chọn, không phải nhiều nhóm cùng lúc).
+  const isSingleGroup = filterVal !== 'all' && filterVal !== '__report';
+  const pendingInFilteredGroup = isSingleGroup
+    ? (all.pending_review || []).filter(task => (task.group_id || '') === filterVal).length : 0;
+  const approveGroupBtnHtml = (isSingleGroup && pendingInFilteredGroup > 0)
+    ? `<button class="btn primary" id="crmApproveGroupBtn" data-group-id="${crmEsc(filterVal)}" data-count="${pendingInFilteredGroup}">
+        ✓ ${t(`Duyệt tất cả (${pendingInFilteredGroup})`, `Approve all (${pendingInFilteredGroup})`)}</button>`
+    : '';
+
+  body.innerHTML = `${filterBarHtml.replace('</div>', `${approveGroupBtnHtml}</div>`)}<div class="kanban">${colsHtml}</div>`;
+
+  body.querySelector('#crmTaskGroupFilter')?.addEventListener('change', (e) => {
+    crmState.taskGroupFilter = e.target.value;
+    crmRenderTasksBoard(body); // lọc client-side, đã có đủ dữ liệu, không cần gọi lại server
+  });
+
+  body.querySelector('#crmApproveGroupBtn')?.addEventListener('click', async (e) => {
+    const gid = e.currentTarget.dataset.groupId;
+    const count = e.currentTarget.dataset.count;
+    const gname = groupName(gid);
+    const ok = await openModal({
+      title: t('Duyệt tất cả việc chờ xác nhận?', 'Approve all pending tasks?'),
+      desc: t(`Sẽ duyệt ${count} việc đang chờ xác nhận của nhóm "${gname}". Không hoàn tác được từng việc một.`,
+        `This will approve ${count} pending tasks in "${gname}". Cannot be undone one by one.`),
+      confirmText: t('Duyệt tất cả', 'Approve all'),
+    });
+    if (!ok) return;
+    try {
+      await crmAction('crm-tasks-approve-group', { groupId: gid });
+      renderCrmTasks();
+    } catch (err) { showToast(err.message, 'error'); }
+  });
 
   body.querySelectorAll('[data-task-approve]').forEach(el => el.addEventListener('click', async () => {
     try {
@@ -5706,11 +5817,14 @@ function crmRenderTasksBoard(body) {
     } catch (err) { showToast(err.message, 'error'); }
   }));
 
-  // Kéo-thả chỉ đổi STATUS (todo/doing/done) — "Chờ xác nhận" không phải đích thả, và không phải
-  // nguồn kéo (card ở đó không có draggable="true").
+  // Kéo-thả (P12): MỌI card kéo được, kể cả "Chờ xác nhận". Thả vào "Chờ xác nhận" bị chặn (không
+  // đăng ký dragover/drop cho cột đó) — đã duyệt thì không quay lại chờ được. Thả từ "Chờ xác nhận"
+  // sang cột khác = duyệt + đổi status trong MỘT lượt gọi (`crm-task-approve-move`); thả từ cột đã
+  // duyệt sang cột khác = chỉ đổi status như trước (`crm-task-status`).
   body.querySelectorAll('.kanban-card[draggable="true"]').forEach(card => {
     card.addEventListener('dragstart', (e) => {
       e.dataTransfer.setData('text/plain', card.dataset.taskId);
+      e.dataTransfer.setData('application/x-task-pending', card.dataset.taskPending);
       e.dataTransfer.effectAllowed = 'move';
       card.classList.add('dragging');
     });
@@ -5724,14 +5838,89 @@ function crmRenderTasksBoard(body) {
       e.preventDefault();
       col.classList.remove('dragover');
       const taskId = e.dataTransfer.getData('text/plain');
+      const wasPending = e.dataTransfer.getData('application/x-task-pending') === '1';
       const toStatus = col.dataset.status;
       if (!taskId) return;
+
+      const card = body.querySelector(`.kanban-card[data-task-id="${cssEscapeAttr(taskId)}"]`);
+      const destBody = col.querySelector('.kanban-col-body');
+      if (!card || !destBody || card.parentElement === destBody) return;
+
+      // Di chuyển NGAY trong DOM rồi mới gọi API (optimistic). Trước đây gọi `renderCrmTasks()` sau
+      // khi API xong = dựng lại cả trang: card biến mất, giao diện chớp một nhịp, rồi mới hiện ở cột
+      // mới. Với kéo-thả thì độ trễ đó phá cảm giác "thẻ đi theo tay". Lỗi thì trả card về chỗ cũ.
+      const prevParent = card.parentElement;
+      const prevNext = card.nextElementSibling;
+      const approveBtns = wasPending ? card.querySelector('[data-task-approve]')?.closest('.kanban-card-meta') : null;
+
+      destBody.appendChild(card);
+      if (wasPending) {
+        card.dataset.taskPending = '0';
+        approveBtns?.remove(); // đã duyệt thì không còn nút Duyệt/Từ chối
+      }
+      syncKanbanCol(prevParent);
+      syncKanbanCol(destBody);
+
       try {
-        await crmAction('crm-task-status', { id: taskId, status: toStatus });
-        renderCrmTasks();
-      } catch (err) { showToast(err.message, 'error'); }
+        if (wasPending) {
+          await crmAction('crm-task-approve-move', { id: taskId, status: toStatus });
+        } else {
+          await crmAction('crm-task-status', { id: taskId, status: toStatus });
+        }
+      } catch (err) {
+        // Trả về đúng chỗ cũ, kể cả nút vừa bỏ — không để UI nói một đằng, DB một nẻo.
+        if (prevNext) prevParent.insertBefore(card, prevNext); else prevParent.appendChild(card);
+        if (wasPending) {
+          card.dataset.taskPending = '1';
+          if (approveBtns) card.appendChild(approveBtns);
+        }
+        syncKanbanCol(prevParent);
+        syncKanbanCol(destBody);
+        showToast(err.message, 'error');
+      }
     });
   });
+}
+
+/**
+ * Đồng bộ lại phần "vỏ" của một cột kanban sau khi thêm/bớt card bằng DOM: số đếm ở header và ô
+ * "Trống". Dùng cho kéo-thả optimistic — rẻ hơn dựng lại cả bảng, và không gây chớp giao diện.
+ */
+function syncKanbanCol(colBody) {
+  if (!colBody) return;
+  const col = colBody.closest('.kanban-col');
+  const cards = colBody.querySelectorAll('.kanban-card');
+  const countEl = col?.querySelector('.kanban-col-count');
+  if (countEl) countEl.textContent = String(cards.length);
+
+  const emptyEl = colBody.querySelector('[data-kanban-empty]');
+  if (cards.length === 0 && !emptyEl) {
+    const d = document.createElement('div');
+    d.setAttribute('data-kanban-empty', '1');
+    d.style.cssText = 'padding:16px;text-align:center;color:var(--muted);font-size:12px';
+    d.textContent = t('Trống', 'Empty');
+    colBody.appendChild(d);
+  } else if (cards.length > 0 && emptyEl) {
+    emptyEl.remove();
+  }
+
+  // Nút "Duyệt tất cả" đếm theo cột chờ xác nhận, nên phải theo kịp: hết việc chờ thì ẩn đi.
+  if (col?.dataset.status === 'pending_review') {
+    const btn = document.getElementById('crmApproveGroupBtn');
+    if (btn) {
+      const left = [...cards].filter(c => c.dataset.taskPending === '1').length;
+      if (left === 0) btn.remove();
+      else {
+        btn.dataset.count = String(left);
+        btn.textContent = `✓ ${t(`Duyệt tất cả (${left})`, `Approve all (${left})`)}`;
+      }
+    }
+  }
+}
+
+/** Escape cho selector thuộc tính — id việc do server sinh, nhưng đừng tin dữ liệu vào selector. */
+function cssEscapeAttr(v) {
+  return String(v).replace(/["\\]/g, '\\$&');
 }
 
 function crmRenderTasksList(body) {

@@ -110,7 +110,7 @@ export const RULES_PANEL_SECTIONS = [
 
 /** Toggle per-group mà cả dashboard, slash và agent tool đều dùng chung. */
 export const TOGGLE_KEYS = Object.freeze([
-    'muted', 'silent', 'welcome', 'tracking', 'follow', 'pendingAuto', 'autoSummary',
+    'muted', 'silent', 'welcome', 'tracking', 'follow', 'pendingAuto', 'autoSummary', 'backlogInclude',
 ]);
 
 /** Nhãn tiếng Việt cho từng toggle — dùng khi bot báo lại cho owner. */
@@ -122,6 +122,9 @@ export const TOGGLE_LABELS = Object.freeze({
     follow: 'Follow (ghi lịch sử chat + memory)',
     pendingAuto: 'Tự động duyệt yêu cầu vào nhóm',
     autoSummary: 'Tự động tổng hợp cuối ngày',
+    // P10: nhóm rèn luyện/nội bộ làm nhiễu báo cáo việc tồn đọng (đo thật: 1 nhóm chiếm 31/137 việc,
+    // toàn cam kết cá nhân không phải task team) — owner tự bật/tắt theo nhóm.
+    backlogInclude: 'Đưa vào báo cáo việc tồn đọng (lịch backlog)',
 });
 
 /** Từ khoá tiếng Việt/Anh → toggle key. Dùng để map ý định ngôn ngữ tự nhiên. */
@@ -133,6 +136,7 @@ export const TOGGLE_ALIASES = Object.freeze({
     follow: 'follow', 'theo doi': 'follow',
     pendingauto: 'pendingAuto', 'duyet vao nhom': 'pendingAuto',
     autosummary: 'autoSummary', 'tong hop': 'autoSummary', 'tong hop cuoi ngay': 'autoSummary',
+    backloginclude: 'backlogInclude', 'viec ton dong': 'backlogInclude', 'bao cao ton dong': 'backlogInclude',
 });
 
 /** Ghép prefix cho một entry. `bare` → luôn `/cmd`. */

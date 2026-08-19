@@ -28,6 +28,7 @@ export const ZALO_MOD_TOOL_NAMES = Object.freeze([
     'zalo_mod_settings',
     'zalo_mod_history',
     'zalo_mod_reports',
+    'zalo_mod_tasks',
     'zalo_mod_action',
 ]);
 
@@ -61,6 +62,11 @@ export const AGENT_SAFE_ACTIONS = Object.freeze([
     'zalo-api',
     'toggle-custom-mode', 'upsert-custom-mode', 'delete-custom-mode',
     'set-name-triggers', 'save-templates',
+    // P15 (Kent chốt mở — đảo lại luật P4 "bot không có đường nào tới crm-task-*"): việc tồn đọng
+    // đọc/duyệt/từ chối/đổi cột được qua chat, đi ĐÚNG action mà dashboard dùng. TUYỆT ĐỐI KHÔNG mở
+    // `crm-task-delete` — xoá dữ liệu khách không bao giờ đi qua đường chat, kể cả với allowDestructive.
+    'crm-tasks-list', 'crm-tasks-board', 'crm-task-status', 'crm-task-approve',
+    'crm-task-approve-move', 'crm-task-reject',
 ]);
 
 /**
@@ -96,6 +102,36 @@ export function foldGroupName(value) {
         .trim();
 }
 
+/**
+ * Khớp tên nhóm theo TỪNG TỪ, không cần đúng thứ tự -- bỏ dấu qua `foldGroupName` trước (P3b).
+ *
+ * Sự cố thật 09/08: owner nhờ bật silent cho "39 Cùng rèn", so khớp CHUỖI CON không ra `[39] RÈN
+ * CÙNG NHAU` vì thứ tự chữ khác nhau ("cung ren" không phải chuỗi con của "ren cung nhau") -> bot kết
+ * luận sai "nhóm chưa được quản lý" dù nhóm đã bật follow/silent thật.
+ *
+ * Đòi khớp ĐỦ mọi từ vẫn quá cứng: người nhớ tên hay lẫn một từ (owner có thể gõ "39 - tự rèn" thay
+ * vì "cùng rèn"). Ngược lại khớp lỏng quá (chỉ cần 1 từ) thì một chữ số như "39" trùng ngẫu nhiên
+ * hàng chục nhóm. Chọn mốc giữa: **quá NỬA số từ phải khớp** (làm tròn lên) -- với truy vấn 1 từ thì
+ * vẫn đòi khớp tuyệt đối, không có chỗ cho sai.
+ */
+export function tokenMatchGroupName(name, query) {
+    const tokens = foldGroupName(query).split(' ').filter(Boolean);
+    if (!tokens.length) return false;
+    const foldedName = foldGroupName(name);
+    const matched = tokens.filter((t) => foldedName.includes(t)).length;
+    return matched >= Math.ceil(tokens.length / 2);
+}
+
+/** 5 nhóm "gần giống" nhất theo số từ trùng -- dùng khi khớp tên ra 0 kết quả, để owner còn cái chọn. */
+export function suggestGroupNames(query, groups, limit = 5) {
+    const tokens = foldGroupName(query).split(' ').filter(Boolean);
+    return groups
+        .map((g) => ({ name: g.name, score: tokens.filter((t) => foldGroupName(g.name).includes(t)).length }))
+        .sort((a, b) => b.score - a.score)
+        .slice(0, limit)
+        .map((s) => s.name);
+}
+
 function toolText(payload, isError = false) {
     const text = typeof payload === 'string' ? payload : JSON.stringify(payload, null, 2);
     return { content: [{ type: 'text', text, ...(isError ? { isError: true } : {}) }], details: payload };
@@ -103,6 +139,12 @@ function toolText(payload, isError = false) {
 
 function ok(payload) { return toolText(payload); }
 function fail(message, extra = {}) { return toolText({ ok: false, error: message, ...extra }, true); }
+
+/** `due_at`/`updated_at` lưu epoch ms — đổi sang YYYY-MM-DD cho LLM đọc, null nếu không có. */
+function isoDate(ms) {
+    if (!ms) return null;
+    try { return new Date(ms).toISOString().slice(0, 10); } catch { return null; }
+}
 
 /** Owner hợp lệ = ownerId gốc + ownerId của từng bot profile. */
 export function collectOwnerIds(pluginCfg) {
@@ -203,8 +245,10 @@ const SETTINGS_SCHEMA = {
         },
         key: {
             type: 'string',
-            enum: ['muted', 'silent', 'welcome', 'tracking', 'follow', 'pendingAuto', 'autoSummary'],
-            description: 'Toggle cần đổi. muted = bot im lặng hoàn toàn; silent = chỉ reply khi @tag/gọi tên; follow = ghi lịch sử chat + memory.',
+            enum: ['muted', 'silent', 'welcome', 'tracking', 'follow', 'pendingAuto', 'autoSummary', 'backlogInclude'],
+            description: 'Toggle cần đổi. muted = bot im lặng hoàn toàn; silent = chỉ reply khi @tag/gọi tên; follow = ghi lịch sử chat + memory; '
+                + 'backlogInclude = nhóm này có vào tin "việc còn treo" (lịch backlog) hay không — tắt cho nhóm rèn luyện/nội bộ, '
+                + 'không phải task team có deadline thật.',
         },
         value: { type: 'boolean', description: 'true = bật, false = tắt.' },
         profile: { type: 'string', description: 'Chỉ áp cho một bot (accountId). Bỏ trống = áp cho mọi bot đang ở nhóm đó (khuyến nghị).' },
@@ -268,15 +312,30 @@ const REPORTS_SCHEMA = {
         time: { type: 'string', description: 'Giờ gửi mỗi ngày, dạng HH:MM giờ VN. Ví dụ "09:00".' },
         reportFor: {
             type: 'string',
-            enum: ['today', 'yesterday'],
-            description: 'Báo cáo nói về ngày nào. Lịch BUỔI SÁNG phải dùng "yesterday" — nếu để "today" thì '
-                + 'lúc 08:00 nó chỉ tóm tắt mấy tiếng đầu ngày (gần như trống) và cả ngày hôm trước không '
-                + 'bao giờ được báo. Lịch cuối ngày (sau ~20:00) thì dùng "today". Mặc định "today".',
+            enum: ['today', 'yesterday', 'last7', 'last30', 'thisMonth', 'custom'],
+            description: 'Báo cáo nói về khoảng thời gian nào. Lịch BUỔI SÁNG phải dùng "yesterday" — nếu để '
+                + '"today" thì lúc 08:00 nó chỉ tóm tắt mấy tiếng đầu ngày (gần như trống) và cả ngày hôm trước '
+                + 'không bao giờ được báo. Lịch cuối ngày (sau ~20:00) thì dùng "today". "last7"/"last30" = 7/30 '
+                + 'ngày kết thúc HÔM QUA, "thisMonth" = từ đầu tháng tới hôm qua — owner nói "tổng hợp 7 ngày", '
+                + '"báo cáo tháng này" thì dùng các giá trị này. "custom" cần thêm rangeFrom/rangeTo. '
+                + '⚠️ "last7"/"last30"/"thisMonth"/"custom" CHỈ ĐỌC bản tổng hợp NGÀY đã có sẵn (summaries/), '
+                + 'TUYỆT ĐỐI không sinh lại bằng AI — ngày nào chưa có bản tổng hợp thì báo cáo tự ghi rõ '
+                + 'ngày đó thiếu, không phải lỗi, không phải bịa. Mặc định "today".',
+        },
+        rangeFrom: {
+            type: 'string',
+            description: 'Chỉ dùng khi reportFor="custom". Ngày bắt đầu, dạng YYYY-MM-DD.',
+        },
+        rangeTo: {
+            type: 'string',
+            description: 'Chỉ dùng khi reportFor="custom". Ngày kết thúc, dạng YYYY-MM-DD.',
         },
         kind: {
             type: 'string',
-            enum: ['digest', 'group'],
-            description: 'digest = gộp tất cả nhóm vào MỘT tin ngắn. group = mỗi nhóm một tin đầy đủ.',
+            enum: ['digest', 'group', 'backlog'],
+            description: 'digest = gộp tất cả nhóm vào MỘT tin ngắn. group = mỗi nhóm một tin đầy đủ. '
+                + 'backlog = "việc còn treo" của các nhóm — TRUY VẤN kanban đã có, KHÔNG dùng AI để sinh lại. '
+                + 'Dùng "backlog" khi owner nói kiểu "báo cáo còn việc gì chưa làm", "việc tồn đọng", "nhắc việc chưa xong".',
         },
         groups: {
             type: 'array',
@@ -291,6 +350,53 @@ const REPORTS_SCHEMA = {
         },
         toEachGroup: { type: 'boolean', description: 'true = mỗi nhóm tự nhận báo cáo của nó. Chỉ dùng với kind="group".' },
         enabled: { type: 'boolean', description: 'false = tạm tắt lịch mà không xoá.' },
+    },
+    required: ['operation'],
+    additionalProperties: false,
+};
+
+/**
+ * P15: việc tồn đọng (kanban "Công việc") điều khiển bằng lời. Schema PHẲNG như `zalo_mod_settings`/
+ * `zalo_mod_reports` — owner nói tên việc, không nói id, nên `title` phải khớp gần đúng thay vì đòi
+ * chính xác. Đảo lại luật P4 ("bot không có đường nào tới crm-task-*") theo quyết định của Kent —
+ * xem CHANGELOG mục P15 để biết đây là đổi có chủ ý, không phải lỗ hổng.
+ */
+const TASKS_SCHEMA = {
+    type: 'object',
+    properties: {
+        operation: {
+            type: 'string',
+            enum: ['list', 'status', 'approve', 'reject'],
+            description: 'list = xem việc còn treo, lọc được theo nhóm + trạng thái. status = đổi cột '
+                + '(todo/doing/blocked/done) của một việc ĐÃ duyệt — không nhận "pending_review", muốn duyệt '
+                + 'dùng operation="approve". approve = duyệt việc AI đề xuất (bỏ trạng thái chờ xác nhận), có '
+                + 'thể kèm `status` để duyệt và chuyển cột trong một lượt. reject = từ chối việc AI đề xuất — '
+                + 'KHÔNG xoá dữ liệu, chỉ ẩn khỏi kanban/báo cáo, có thể tự quay lại "Chờ xác nhận" sau 30 ngày.',
+        },
+        groups: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Tên nhóm (có dấu cũng được) hoặc groupId, hoặc ["all"]. operation="list": lọc phạm '
+                + 'vi xem. Các operation khác: dùng để thu hẹp khi `title` khớp trùng nhiều nhóm. Bỏ trống = mọi nhóm.',
+        },
+        status: {
+            type: 'string',
+            enum: ['pending_review', 'todo', 'doing', 'blocked', 'done'],
+            description: 'operation="list": lọc theo cột kanban, bỏ trống = mọi việc CHƯA xong (không gồm '
+                + '"done"). operation="status": cột đích, chỉ nhận todo|doing|blocked|done. operation="approve": '
+                + 'tuỳ chọn, có thì duyệt và chuyển luôn sang cột này.',
+        },
+        title: {
+            type: 'string',
+            description: 'Tên việc cần tìm, khớp GẦN ĐÚNG (không cần đúng từng chữ) — bắt buộc cho operation='
+                + '"status"/"approve"/"reject" khi chưa có `id`. Khớp ra nhiều hơn một việc thì tool trả về '
+                + '`suggestions` thay vì tự chọn — phải hỏi lại owner rõ hơn (thêm `groups` để thu hẹp) rồi gọi lại.',
+        },
+        id: {
+            type: 'string',
+            description: 'id việc đã biết chắc (từ operation="list" hoặc từ `suggestions` của lần gọi trước) — '
+                + 'có thì dùng luôn, bỏ qua bước khớp theo `title`.',
+        },
     },
     required: ['operation'],
     additionalProperties: false,
@@ -343,12 +449,19 @@ export function createZaloModAgentTools(host) {
                     'Liệt kê mọi nhóm Zalo mà bot đang quản lý kèm TRẠNG THÁI THẬT của từng toggle',
                     '(muted/silent/welcome/follow/autoSummary) — đúng những badge hiển thị trên dashboard Zalo Mod.',
                     'Gọi tool này TRƯỚC khi trả lời bất kỳ câu hỏi về cấu hình nhóm, và SAU mỗi lần đổi cấu hình để xác nhận.',
+                    'query khớp THEO TỪNG TỪ, không dấu, không cần đúng thứ tự — "39 cùng rèn" vẫn ra đúng nhóm dù',
+                    'tên thật là "[39] RÈN CÙNG NHAU". Nếu trả về "total: 0" kèm "suggestions": tin có nhóm gần giống,',
+                    // Bài học 09/08: khớp chuỗi-con thất bại vì thứ tự chữ khác nhau → bot tự kết luận "nhóm chưa
+                    // được quản lý" dù nhóm ĐÃ follow/silent thật, nghe y như bịa. Luật phải nằm ở mô tả tool (nơi
+                    // LUÔN nằm trong prompt) để thắng được hướng dẫn "phải đi tìm" của SKILL.md.
+                    '⛔ TUYỆT ĐỐI đừng tự kết luận "nhóm chưa được Zalo Mod quản lý" chỉ vì không khớp đúng tên owner',
+                    'gõ — hỏi lại owner tên chính xác hơn, hoặc gợi ý một trong các suggestions.',
                     'Chỉ owner dùng được.',
                 ].join(' '),
                 parameters: {
                     type: 'object',
                     properties: {
-                        query: { type: 'string', description: 'Lọc theo tên nhóm (không dấu cũng được). Bỏ trống = tất cả.' },
+                        query: { type: 'string', description: 'Lọc theo tên nhóm (không dấu cũng được, không cần đúng thứ tự từ). Bỏ trống = tất cả.' },
                         includeCommands: { type: 'boolean', description: 'true = kèm danh sách slash command đầy đủ của từng bot.' },
                     },
                     additionalProperties: false,
@@ -358,13 +471,24 @@ export function createZaloModAgentTools(host) {
                     if (blocked) return blocked;
                     const all = await groupsSnapshot();
                     const folded = foldGroupName(params.query);
-                    const groups = folded ? all.filter((g) => foldGroupName(g.name).includes(folded)) : all;
+                    let groups = folded ? all.filter((g) => foldGroupName(g.name).includes(folded)) : all;
+                    // Khớp chuỗi-con thất bại (thứ tự từ khác nhau, sự cố "39 Cùng rèn" 09/08) → thử lại
+                    // bằng TOKEN trước khi kết luận "không có nhóm nào khớp".
+                    if (folded && !groups.length) {
+                        groups = all.filter((g) => tokenMatchGroupName(g.name, params.query));
+                    }
+                    const zeroResult = !!folded && !groups.length;
                     const result = ok({
                         ok: true,
                         total: all.length,
                         groups,
                         ...(params.includeCommands ? { commands: listCommands() } : {}),
-                        note: 'Đây là state thật đọc từ store của plugin. Báo lại đúng các giá trị này, không suy diễn.',
+                        ...(zeroResult
+                            ? {
+                                suggestions: suggestGroupNames(params.query, all),
+                                note: 'KHÔNG tìm thấy nhóm theo tên này. ĐỪNG kết luận nhóm chưa được quản lý — hỏi lại owner hoặc chọn trong suggestions.',
+                            }
+                            : { note: 'Đây là state thật đọc từ store của plugin. Báo lại đúng các giá trị này, không suy diễn.' }),
                     });
                     await logRun('zalo_mod_groups', params, result);
                     return result;
@@ -572,7 +696,11 @@ export function createZaloModAgentTools(host) {
                         }
                         if (op === 'preview') {
                             const groups = normalizeReportGroups(params.groups);
-                            const result = await runAction('report-digest-preview', { groups: groups ?? '*' });
+                            const previewPayload = { groups: groups ?? '*' };
+                            if (params.reportFor !== undefined) previewPayload.reportFor = params.reportFor;
+                            if (params.rangeFrom !== undefined) previewPayload.rangeFrom = params.rangeFrom;
+                            if (params.rangeTo !== undefined) previewPayload.rangeTo = params.rangeTo;
+                            const result = await runAction('report-digest-preview', previewPayload);
                             await logRun('zalo_mod_reports', params, result);
                             return ok({ ok: true, ...result });
                         }
@@ -613,6 +741,8 @@ export function createZaloModAgentTools(host) {
                         if (params.name !== undefined) job.name = params.name;
                         if (params.time !== undefined) job.time = params.time;
                         if (params.reportFor !== undefined) job.reportFor = params.reportFor;
+                        if (params.rangeFrom !== undefined) job.rangeFrom = params.rangeFrom;
+                        if (params.rangeTo !== undefined) job.rangeTo = params.rangeTo;
                         if (params.kind !== undefined) job.kind = params.kind;
                         if (params.enabled !== undefined) job.enabled = params.enabled;
                         const groups = normalizeReportGroups(params.groups);
@@ -632,6 +762,139 @@ export function createZaloModAgentTools(host) {
                     } catch (err) {
                         await logRun('zalo_mod_reports', params, { ok: false, error: err.message });
                         return fail(err.message);
+                    }
+                },
+            },
+            {
+                name: 'zalo_mod_tasks',
+                label: 'Zalo Mod — việc tồn đọng (kanban)',
+                description: [
+                    'Xem / duyệt / từ chối / đổi cột việc tồn đọng — TƯƠNG ĐƯƠNG trang "Công việc" (kanban) trên dashboard.',
+                    'Dùng khi owner hỏi "nhóm X còn việc gì chưa xong", hoặc nói một việc cụ thể đã xong/đã duyệt/sai/nhiễu.',
+                    // P15 (Kent chốt mở, đảo lại luật P4 "bot không có đường nào tới crm-task-*"): trước đây
+                    // cố tình không cho bot chạm việc AI đề xuất, để tránh bot tự duyệt lén qua chat. Giờ owner
+                    // muốn nói bằng lời cũng duyệt được — an toàn vẫn giữ vì owner PHẢI tự nói tên việc + nói rõ
+                    // ý muốn (duyệt/từ chối/đổi cột), không phải bot tự quyết.
+                    'Owner nói TÊN việc, không nói id — luôn dùng `title` để tool tự khớp gần đúng, ĐỪNG tự bịa ra',
+                    'một id. Khớp ra NHIỀU HƠN MỘT việc thì tool trả `suggestions` — hỏi lại owner rõ hơn (kèm tên',
+                    'nhóm vào `groups`) rồi gọi lại, TUYỆT ĐỐI không tự chọn đại một cái. Khớp ra 0 việc thì nói thật',
+                    'là không tìm thấy, đừng suy ra là "đã xong" hay "đã có".',
+                    'operation="status" chỉ đổi cột của việc ĐÃ duyệt (todo/doing/blocked/done) — việc còn ở',
+                    '"Chờ xác nhận" (🤖 AI đề xuất) phải dùng operation="approve" (kèm `status` nếu muốn duyệt và',
+                    'chuyển cột luôn trong một lượt).',
+                    '"Từ chối" (reject) KHÔNG xoá dữ liệu, chỉ ẩn khỏi kanban/báo cáo — việc có thể tự quay lại',
+                    '"Chờ xác nhận" sau 30 ngày nếu AI vẫn thấy owner nhắc lại, đó không phải lỗi.',
+                    'TUYỆT ĐỐI không có thao tác xoá việc qua tool này — xoá dữ liệu khách chỉ làm được trên dashboard.',
+                ].join(' '),
+                parameters: TASKS_SCHEMA,
+                execute: async (_toolCallId, params = {}) => {
+                    const blocked = guard(requesterSenderId, hostSaysOwner);
+                    if (blocked) return blocked;
+                    const op = String(params.operation || '').trim();
+                    // P15: audit phải ghi RÕ ai đứng sau một lượt qua chat, không chỉ 'ai' chung chung —
+                    // sau này còn lần được vết "ai đã bảo bot đóng việc này".
+                    const actor = `agent:${requesterSenderId || 'unknown'}`;
+                    try {
+                        const all = await groupsSnapshot();
+                        const groupNameOf = (gid) => all.find((g) => g.groupId === gid)?.name || gid;
+
+                        let scopedGroupIds = null;
+                        if (params.groups !== undefined) {
+                            const { matched, unresolved, ambiguous } = resolveGroupTargets(params.groups, all);
+                            if (ambiguous.length) return fail('Tên nhóm chưa rõ — hỏi lại owner chọn nhóm nào.', { ambiguous, unresolved });
+                            if (!matched.length) return fail('Không tìm thấy nhóm nào khớp. Gọi zalo_mod_groups để xem tên nhóm đúng.', { unresolved });
+                            scopedGroupIds = new Set(matched);
+                        }
+
+                        // Nguồn dữ liệu DUY NHẤT: đúng action dashboard dùng cho kanban, không tự query CRM
+                        // riêng — không thể lệch với những gì owner đang thấy trên màn hình.
+                        const board = await runAction('crm-tasks-board', {}, actor);
+                        const flat = [];
+                        for (const [col, arr] of Object.entries(board?.columns || {})) {
+                            for (const task of (arr || [])) flat.push({ ...task, _col: col });
+                        }
+                        const inScope = scopedGroupIds ? flat.filter((t) => scopedGroupIds.has(t.group_id)) : flat;
+                        const toView = (t) => ({
+                            id: t.id, title: t.title, status: t._col, groupId: t.group_id,
+                            groupName: groupNameOf(t.group_id), assignee: t.assignee || null,
+                            note: t.note || null, dueAt: isoDate(t.due_at), source: t.source,
+                        });
+
+                        if (op === 'list') {
+                            const wantStatus = params.status;
+                            const rows = inScope.filter((t) => (wantStatus ? t._col === wantStatus : t._col !== 'done'));
+                            const result = ok({
+                                ok: true, total: rows.length, tasks: rows.map(toView),
+                                note: '`status` là CỘT kanban thật (pending_review/todo/doing/blocked/done) — báo đúng giá trị này, đừng suy diễn.',
+                            });
+                            await logRun('zalo_mod_tasks', params, result);
+                            return result;
+                        }
+                        if (!['status', 'approve', 'reject'].includes(op)) {
+                            return fail(`operation "${op}" không hợp lệ. Dùng: list | status | approve | reject.`);
+                        }
+
+                        // Xác định đúng MỘT việc: theo id nếu owner/model đã biết chắc, không thì khớp title.
+                        let target = null;
+                        if (params.id) {
+                            target = flat.find((t) => t.id === params.id);
+                            if (!target) return fail(`Không có việc nào id "${params.id}". Gọi operation="list" để xem lại.`);
+                        } else {
+                            const title = String(params.title || '').trim();
+                            if (!title) return fail('Thiếu `title` (hoặc `id`) — cần biết ĐÚNG việc nào trước khi đổi.');
+                            const folded = foldGroupName(title);
+                            const exact = inScope.filter((t) => foldGroupName(t.title) === folded);
+                            // Dùng lại đúng bộ khớp theo TỪNG TỪ của P3b (`tokenMatchGroupName`) — hàm chỉ so
+                            // chuỗi thuần, không riêng cho tên nhóm, nên áp được luôn cho tên việc.
+                            const pool = exact.length ? exact : inScope.filter((t) => tokenMatchGroupName(t.title, title));
+                            if (!pool.length) {
+                                return fail(`Không tìm thấy việc nào khớp "${title}". Gọi operation="list" để xem tên đúng — đừng suy ra là đã xong.`, {
+                                    known: inScope.slice(0, 20).map((t) => t.title),
+                                });
+                            }
+                            if (pool.length > 1) {
+                                return fail(`Khớp "${title}" ra ${pool.length} việc — chưa rõ là việc nào.`, {
+                                    suggestions: pool.map(toView),
+                                    note: 'Hỏi lại owner chọn đúng việc nào (có thể kèm tên nhóm vào `groups` để thu hẹp), hoặc gọi lại kèm `id` lấy từ đây. KHÔNG được tự chọn.',
+                                });
+                            }
+                            [target] = pool;
+                        }
+
+                        if (op === 'status') {
+                            const status = String(params.status || '').trim();
+                            if (!['todo', 'doing', 'blocked', 'done'].includes(status)) {
+                                return fail('operation="status" cần `status` là todo|doing|blocked|done. Muốn duyệt từ "Chờ xác nhận" thì dùng operation="approve".');
+                            }
+                            const raw = await runAction('crm-task-status', { id: target.id, status }, actor);
+                            const result = ok({ ok: true, task: raw });
+                            await logRun('zalo_mod_tasks', params, result);
+                            return result;
+                        }
+                        if (op === 'approve') {
+                            const status = params.status !== undefined ? String(params.status).trim() : undefined;
+                            if (status !== undefined && !['todo', 'doing', 'blocked', 'done'].includes(status)) {
+                                return fail('`status` kèm operation="approve" chỉ nhận todo|doing|blocked|done.');
+                            }
+                            const raw = status
+                                ? await runAction('crm-task-approve-move', { id: target.id, status }, actor)
+                                : await runAction('crm-task-approve', { id: target.id }, actor);
+                            const result = ok({ ok: true, task: raw });
+                            await logRun('zalo_mod_tasks', params, result);
+                            return result;
+                        }
+                        // reject
+                        const raw = await runAction('crm-task-reject', { id: target.id }, actor);
+                        const result = ok({
+                            ok: true, task: raw,
+                            note: 'Đã ẩn khỏi kanban/báo cáo, KHÔNG xoá dữ liệu — có thể tự quay lại "Chờ xác nhận" sau 30 ngày nếu AI thấy lại việc này.',
+                        });
+                        await logRun('zalo_mod_tasks', params, result);
+                        return result;
+                    } catch (err) {
+                        const result = fail(err.message);
+                        await logRun('zalo_mod_tasks', params, result);
+                        return result;
                     }
                 },
             },

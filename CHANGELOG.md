@@ -1,3 +1,55 @@
+## [2.29.0] - 2026-08-19
+
+Bản gộp toàn bộ mạch "báo cáo việc còn treo + kanban" (các mốc nội bộ 2.29–2.33 dồn về một bản phát hành).
+
+### Added
+
+- **Lịch báo cáo "việc còn treo"** (`kind: 'backlog'`) — mỗi ngày một tin liệt kê việc chưa xong của
+  các nhóm, chia sẵn **⏰ QUÁ HẠN** · **⏳ TREO LÂU** (không có hạn nhưng im lặng ≥3 ngày) · rồi theo
+  từng nhóm. Mỗi dòng ghi rõ trạng thái kèm icon khớp đúng cột kanban (`⚪ Cần làm` · `🔵 Đang làm` ·
+  `🚧 Đang vướng` · `🤖` việc AI đề xuất chờ duyệt) và hạn nếu có — hạn dạng chữ giữ **nguyên văn**
+  ("Ngày mai", "Trong tuần này"), không tự suy thành ngày cụ thể. Giới hạn 5 việc mỗi khối, phần còn
+  lại rút gọn "… và N việc khác" để một tin đủ đọc trên điện thoại. **Truy vấn dữ liệu đã đối soát,
+  không nhờ AI soạn lại** nên không có chuyện bịa việc.
+- **Cờ chọn nhóm vào báo cáo** (`backlogInclude`) — nhóm nội bộ/rèn luyện không làm nhiễu báo cáo
+  kinh doanh. Mặc định bật cho nhóm có "ASA" trong tên, owner đổi được qua dashboard hoặc bằng lời.
+- **Lịch báo cáo chọn được khoảng thời gian**: thêm `last7` · `last30` · `thisMonth` · `custom`
+  (tối đa 92 ngày) bên cạnh `today`/`yesterday`. Khoảng nhiều ngày đọc bản tổng hợp có sẵn thay vì
+  gọi lại AI; ngày nào chưa có thì nói rõ trong tin. Nút "Xem trước" ra đúng khoảng của lịch.
+- **Kanban việc tồn đọng trên trang Công việc** — 4 cột **Chờ xác nhận** · **Cần làm** · **Đang làm**
+  · **Xong**. Việc AI đề xuất có nhãn 🤖, **kéo từ "Chờ xác nhận" sang cột khác là duyệt luôn** (một
+  lượt, không phải bấm hai lần); còn nút Duyệt/Từ chối tường minh cho ai thích bấm. Có **bộ lọc theo
+  nhóm** (kèm lựa chọn "Chỉ nhóm trong báo cáo") và **"Duyệt tất cả"** cho một nhóm khi việc dồn
+  nhiều. Bảng tự làm mới khi trang đang mở.
+- **Bot làm việc bằng lời** — tool `zalo_mod_tasks`: hỏi việc còn treo của một nhóm, duyệt, đổi cột,
+  từ chối, gọi việc bằng **tên** chứ không cần id; khớp ra nhiều kết quả thì hỏi lại chứ không tự
+  đoán. Xoá việc vẫn **không** đi qua đường chat. Lịch `backlog` cũng tạo/sửa được bằng lời.
+- **Việc nói trong nhóm tự vào kanban** — bản tổng hợp ngày rút thêm việc còn treo (không thêm lượt
+  gọi AI), đối soát mỗi ngày với việc đã có: việc mới vào "Chờ xác nhận", gặp lại thì cập nhật ngày
+  thấy gần nhất, AI báo xong thì đóng. **AI không bao giờ được sửa hay xoá việc do người tự gõ.**
+  Kèm migration `v9` cho `context.db`.
+
+### Changed
+
+- **"Từ chối" việc AI đề xuất không xoá dữ liệu nữa** — giữ lại như bia mộ 30 ngày nên hôm sau nhóm
+  nhắc lại thì AI **không tạo lại việc đã bị từ chối**; quá 30 ngày mới hỏi lại một lần.
+- **Đổi tên "Pipeline" thành "Cơ hội bán hàng"** cho dễ hiểu (dữ liệu không đổi).
+
+### Fixed
+
+- Bot tra nhóm theo **từng từ, không cần đúng thứ tự** — "39 Cùng rèn" giờ khớp "[39] RÈN CÙNG NHAU";
+  không tìm ra thì gợi ý nhóm gần giống thay vì kết luận sai "nhóm chưa được quản lý".
+- Không còn cảnh báo "chưa có bản tổng hợp" vào ngày thật sự không ai nhắn (chủ nhật, ngày lễ).
+- **Vá lỗi mất bản quyền khi khởi động lại** — máy đã mua Pro/Lifetime không còn bị ghi đè thành bản
+  dùng thử. Bản quyền đã mua giờ được bảo vệ ở nhiều lớp, kèm log nêu rõ lý do mỗi khi cấp/chặn.
+
+### Verified
+
+- Migration `v9` diễn tập trên bản copy `context.db` **thật của khách**, chạy 2 lần không lỗi, dữ
+  liệu giữ nguyên 100%, `integrity_check` = `ok`.
+- Bản quyền Lifetime kích hoạt lại rồi khởi động lại vẫn nguyên — đã kiểm trên máy thật, không phải
+  môi trường giả lập.
+
 ## [2.28.1] - 2026-08-03
 
 ### Fixed

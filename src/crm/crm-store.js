@@ -9,6 +9,7 @@
 
 import crypto from 'node:crypto';
 import { birthdayDayMonth, daysUntilBirthday, foldName, normalizeGender, normalizePhone } from './zalo-people.js';
+import { reconcileOpenItems, slug } from './task-reconcile.js';
 
 export const LEAD_STAGES = Object.freeze(['new', 'contacted', 'qualified', 'quoted', 'won', 'lost']);
 
@@ -754,11 +755,25 @@ export class CrmStore {
         if (fields.leadId && !this.getLead(fields.leadId)) throw new Error('lead không tồn tại');
         const now = this._now();
         const id = crypto.randomUUID();
-        this.db.prepare(`INSERT INTO tasks (id, title, note, due_at, done_at, contact_id, lead_id, group_id, assignee, created_at, updated_at)
-            VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?)`)
-            .run(id, title, s(fields.note, 2000) || '', num(fields.dueAt),
-                fields.contactId || null, fields.leadId || null, s(fields.groupId) || null,
-                s(fields.assignee), now, now);
+        const groupId = s(fields.groupId) || null;
+        // dedupe_key (P2): để `reconcileGroupOpenItems` phát hiện được khi AI đề xuất ĐÚNG việc
+        // người đã gõ tay rồi — không có bước này thì luật "AI không được chạm việc gõ tay" không
+        // có cách nào thực thi được (nó match theo dedupe_key, không phải theo title thô). KHÔNG
+        // dùng UNIQUE để chặn người tự gõ hai việc trùng tên thật — đó là quyền của người, không
+        // phải lỗi — nên đụng UNIQUE thì bỏ trống dedupe_key, coi bản ghi đó "đứng ngoài" đối soát
+        // tự động thay vì làm hỏng thao tác tạo việc bình thường.
+        const insert = (dedupeKey) => this.db.prepare(
+            `INSERT INTO tasks (id, title, note, due_at, done_at, contact_id, lead_id, group_id, assignee, source, dedupe_key, created_at, updated_at)
+             VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?, 'manual', ?, ?, ?)`,
+        ).run(id, title, s(fields.note, 2000) || '', num(fields.dueAt),
+            fields.contactId || null, fields.leadId || null, groupId,
+            s(fields.assignee), dedupeKey, now, now);
+        try {
+            insert(groupId ? slug(title) : null);
+        } catch (e) {
+            if (!/UNIQUE/i.test(e.message)) throw e;
+            insert(null);
+        }
         this._audit(actor, 'task.create', id, title);
         return this.getTask(id);
     }
@@ -810,6 +825,185 @@ export class CrmStore {
             r.overdue = !r.done_at && r.due_at != null && r.due_at < now;
         }
         return rows;
+    }
+
+    // ── openItems / kanban (P2) ─────────────────────────────────────────────
+    //
+    // Đối soát THẬT (I/O) — gọi hàm thuần `reconcileOpenItems` để QUYẾT ĐỊNH ghi gì, rồi tự ghi
+    // trong MỘT transaction. Tách hàm quyết định khỏi hàm ghi để test được logic mà không cần DB
+    // (xem `tests/task-reconcile.test.js`) — đây chỉ còn là lớp I/O mỏng.
+
+    /**
+     * @param {string} groupId
+     * @param {string} date `YYYY-MM-DD` — ngày của bản tổng hợp vừa sinh ra `items`.
+     * @param {Array<{what,who,due,state,evidence}>} items `openItems` đã qua `normalizeOpenItems`.
+     * @returns {{inserted:number, updated:number, closed:number, skipped:Array, revived:number}}
+     */
+    reconcileGroupOpenItems(groupId, date, items, actor = 'ai') {
+        const gid = s(groupId);
+        if (!gid) throw new Error('groupId là bắt buộc');
+        if (!Array.isArray(items) || !items.length) return { inserted: 0, updated: 0, closed: 0, skipped: [], revived: 0 };
+        // `title` thêm vào SELECT cho P10 (4): so khớp NGỮ NGHĨA (`fuzzyKey`) cần đọc lại tiêu đề gốc
+        // của việc đã có — tính lại mỗi lần gọi, KHÔNG lưu thêm cột, KHÔNG cần migration.
+        // `review_state`/`updated_at` thêm cho P14: nhận diện bia mộ + tính hiệu lực 30 ngày.
+        const existing = this.db.prepare(
+            'SELECT id, title, dedupe_key, source, status, review_state, updated_at FROM tasks WHERE group_id = ? AND dedupe_key IS NOT NULL',
+        ).all(gid);
+        const { insert, update, close, skipped, revive } = reconcileOpenItems({ existing, items, groupId: gid, date: s(date) });
+        const now = this._now();
+        for (const it of insert) {
+            const id = crypto.randomUUID();
+            this.db.prepare(`INSERT INTO tasks
+                (id, title, note, group_id, assignee, source, status, review_state, dedupe_key, evidence,
+                 first_seen_date, last_seen_date, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, 'ai', 'todo', 'pending', ?, ?, ?, ?, ?, ?)`)
+                .run(id, s(it.title), s(it.note, 2000) || '', it.groupId, s(it.assignee) || null,
+                    it.dedupeKey, s(it.evidence), it.firstSeenDate, it.lastSeenDate, now, now);
+            this._audit(actor, 'task.ai-insert', id, it.title);
+        }
+        for (const it of update) {
+            this.db.prepare('UPDATE tasks SET last_seen_date = ?, updated_at = ? WHERE id = ?')
+                .run(it.lastSeenDate, now, it.id);
+        }
+        for (const it of close) {
+            this.db.prepare("UPDATE tasks SET status = 'done', done_at = ?, updated_at = ? WHERE id = ?")
+                .run(now, now, it.id);
+            this._audit(actor, 'task.ai-close', it.id, it.dedupeKey);
+        }
+        // P14: bia mộ hết hạn (>30 ngày) — cho quay lại "Chờ xác nhận" từ đầu, KHÔNG tự duyệt.
+        for (const it of revive) {
+            this.db.prepare("UPDATE tasks SET review_state = 'pending', last_seen_date = ?, updated_at = ? WHERE id = ?")
+                .run(it.lastSeenDate, now, it.id);
+            this._audit(actor, 'task.ai-revive', it.id, it.dedupeKey);
+        }
+        return { inserted: insert.length, updated: update.length, closed: close.length, skipped, revived: revive.length };
+    }
+
+    /**
+     * P3: nguồn dữ liệu cho lịch `kind:'backlog'` — TRUY VẤN, không LLM. Sắp **quá hạn trước** (có
+     * `due_at` và gần nhất trước), **rồi treo lâu nhất** (`first_seen_date` cũ nhất trước) cho phần
+     * còn lại. `review_state='pending'` (AI đề xuất chưa duyệt) vẫn nằm trong kết quả — tách 2 phần
+     * là việc của `buildBacklogText` phía trên (index.js), không phải của tầng đọc DB.
+     */
+    listBacklog(groupIds) {
+        const now = this._now();
+        const gids = Array.isArray(groupIds) ? groupIds.filter(Boolean) : [];
+        if (!gids.length) return [];
+        const placeholders = gids.map(() => '?').join(',');
+        // P14: bia mộ (`review_state='rejected'`) không phải "việc còn treo" — loại khỏi báo cáo như
+        // loại khỏi kanban, dù dòng vẫn còn trong DB để reconcile nhận ra mà bỏ qua.
+        const rows = this.db.prepare(
+            `SELECT * FROM tasks WHERE status != 'done' AND group_id IN (${placeholders})
+             AND (review_state IS NULL OR review_state != 'rejected')
+             ORDER BY (due_at IS NULL), due_at ASC, first_seen_date ASC, created_at ASC`,
+        ).all(...gids);
+        for (const r of rows) r.overdue = !r.done_at && r.due_at != null && r.due_at < now;
+        return rows;
+    }
+
+    /** Kanban: 4 cột theo `review_state`/`status`. Chỉ nhóm được truyền, hoặc mọi nhóm nếu bỏ trống.
+     * P14: bia mộ (`review_state='rejected'`) không thuộc cột nào — đã bị từ chối thì không hiện lại
+     * trên kanban, dù dòng vẫn còn trong DB. */
+    listOpenItemsBoard(groupId) {
+        const where = ["(review_state IS NULL OR review_state != 'rejected')"];
+        const params = [];
+        if (groupId) { where.push('group_id = ?'); params.push(s(groupId)); }
+        const cond = `WHERE ${where.join(' AND ')}`;
+        const rows = this.db.prepare(
+            `SELECT * FROM tasks ${cond} ORDER BY (due_at IS NULL), due_at ASC, last_seen_date DESC, created_at DESC LIMIT 500`,
+        ).all(...params);
+        // 4 cột đúng như UI (P4): Chờ xác nhận · Cần làm · Đang làm · Xong. `status='blocked'` (đã
+        // duyệt nhưng vướng) gộp chung với `doing` — vẫn là "đang làm", chỉ là dở dang; DB vẫn giữ
+        // nguyên giá trị `blocked` cho `setTaskStatus`, đây chỉ là gộp ở tầng HIỂN THỊ.
+        const columns = { pending_review: [], todo: [], doing: [], done: [] };
+        for (const r of rows) {
+            const col = r.review_state === 'pending' ? 'pending_review'
+                : r.status === 'done' ? 'done'
+                    : (r.status === 'doing' || r.status === 'blocked') ? 'doing'
+                        : 'todo';
+            columns[col].push(r);
+        }
+        return columns;
+    }
+
+    /** Owner/nhân viên duyệt việc AI đề xuất — chỉ bỏ `review_state`, không đổi gì khác. */
+    approveTask(id, actor = 'dashboard') {
+        const task = this.getTask(id);
+        if (!task) throw new Error('task không tồn tại');
+        this.db.prepare("UPDATE tasks SET review_state = NULL, updated_at = ? WHERE id = ?").run(this._now(), id);
+        this._audit(actor, 'task.approve', id, task.title);
+        return this.getTask(id);
+    }
+
+    /**
+     * P14: từ chối là BIA MỘ, không `DELETE`. Trước đây xoá thẳng → mất `dedupe_key` → hôm sau nhóm
+     * còn nhắc lại là AI tự tạo lại y hệt việc vừa bị từ chối. Giờ chỉ đổi `review_state='rejected'`,
+     * giữ nguyên dòng + `dedupe_key`; `reconcileOpenItems` (task-reconcile.js) đọc field này để biết
+     * bỏ qua, và `listOpenItemsBoard`/`listBacklog` lọc nó khỏi mọi nơi đang hiện việc. Hết hiệu lực
+     * sau `REJECT_TOMBSTONE_DAYS` (30 ngày, tính từ `updated_at` — mốc đúng lúc từ chối vì hàm này
+     * không đụng field nào khác).
+     */
+    rejectTask(id, actor = 'dashboard') {
+        const task = this.getTask(id);
+        if (!task) throw new Error('task không tồn tại');
+        if (task.review_state !== 'pending') throw new Error('chỉ từ chối được việc đang chờ xác nhận');
+        this.db.prepare("UPDATE tasks SET review_state = 'rejected', updated_at = ? WHERE id = ?").run(this._now(), id);
+        this._audit(actor, 'task.reject', id, task.title);
+        return this.getTask(id);
+    }
+
+    /** Đổi cột kanban bằng tay (todo/doing/blocked/done) — không đụng review_state. */
+    setTaskStatus(id, status, actor = 'dashboard') {
+        if (!['todo', 'doing', 'blocked', 'done'].includes(status)) throw new Error(`status không hợp lệ: ${status}`);
+        const task = this.getTask(id);
+        if (!task) throw new Error('task không tồn tại');
+        const now = this._now();
+        this.db.prepare('UPDATE tasks SET status = ?, done_at = ?, updated_at = ? WHERE id = ?')
+            .run(status, status === 'done' ? now : null, now, id);
+        this._audit(actor, 'task.status', id, status);
+        return this.getTask(id);
+    }
+
+    /**
+     * P12: kéo card từ "Chờ xác nhận" sang cột khác trên kanban — duyệt (bỏ review_state) VÀ đổi
+     * status cùng lúc, một UPDATE, để không rơi vào nửa đường (duyệt xong mà đặt status lỗi khiến
+     * DB và UI lệch nhau). KHÔNG đụng `source` — an toàn kể cả nếu lỡ gọi trên việc không pending.
+     */
+    approveAndMoveTask(id, status, actor = 'dashboard') {
+        if (!['todo', 'doing', 'blocked', 'done'].includes(status)) throw new Error(`status không hợp lệ: ${status}`);
+        const task = this.getTask(id);
+        if (!task) throw new Error('task không tồn tại');
+        const now = this._now();
+        this.db.prepare('UPDATE tasks SET review_state = NULL, status = ?, done_at = ?, updated_at = ? WHERE id = ?')
+            .run(status, status === 'done' ? now : null, now, id);
+        this._audit(actor, 'task.approve-move', id, `${task.title} → ${status}`);
+        return this.getTask(id);
+    }
+
+    /**
+     * P13: duyệt hàng loạt CHỈ việc `review_state='pending'` của MỘT nhóm đang lọc trên kanban —
+     * không đổi `status` (rơi vào "Cần làm" giống hệt duyệt từng cái bằng tay). Việc `source='manual'`
+     * không bao giờ có `review_state='pending'` (xem task-reconcile.js) nên tự nhiên không bị chạm,
+     * nhưng câu SQL vẫn lọc rõ điều kiện — không dựa vào bất biến ở tầng khác để an toàn.
+     */
+    approvePendingByGroup(groupId, actor = 'dashboard') {
+        if (!groupId) throw new Error('thiếu groupId');
+        const rows = this.db.prepare(
+            "SELECT id, title FROM tasks WHERE group_id = ? AND review_state = 'pending'",
+        ).all(s(groupId));
+        if (!rows.length) return { approved: 0 };
+        const now = this._now();
+        this.db.exec('BEGIN');
+        try {
+            const upd = this.db.prepare("UPDATE tasks SET review_state = NULL, updated_at = ? WHERE id = ?");
+            for (const r of rows) upd.run(now, r.id);
+            this.db.exec('COMMIT');
+        } catch (e) {
+            this.db.exec('ROLLBACK');
+            throw e;
+        }
+        this._audit(actor, 'task.approve-group', groupId, `${rows.length} việc`);
+        return { approved: rows.length };
     }
 
     /** Số liệu cho Overview: lead theo stage, task quá hạn... */

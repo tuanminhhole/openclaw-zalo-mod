@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import {
     AGENT_DESTRUCTIVE_ACTIONS,
+    AGENT_SAFE_ACTIONS,
     AGENT_FORBIDDEN_ACTIONS,
     ZALO_MOD_TOOL_NAMES,
     classifyAction,
@@ -782,4 +783,30 @@ test('zalo_mod_tasks: lọc theo tên nhóm không khớp nhóm nào → báo l�
     const r = parse(await getTasksTool(host).execute('c1', { operation: 'list', groups: ['nhom khong ton tai'] }));
     assert.equal(r.ok, false);
     assert.ok(r.unresolved.includes('nhom khong ton tai'));
+});
+
+// P16 — sự cố 27/08/2026 trên bot "Thu Chung Thịnh Vượng": owner nhờ gửi lại skill cho một khách đã
+// nhắn tin riêng, bot trả lời "không tìm được" rồi tự suy diễn lý do. Khách đó nằm sẵn trong
+// `contacts` + `messages` của context.db, nhưng agent không có đường nào đọc: `zalo_mod_history` chỉ
+// đọc NHÓM, còn `get-friends` không chứa người chưa kết bạn. Test này giữ 4 cửa đọc đó luôn mở.
+test('P16: agent đọc được danh bạ + hội thoại DM (chỉ đọc, không cần allowDestructive)', () => {
+    const LOOKUPS = ['crm-contacts-list', 'crm-contact-get', 'chat-conversations', 'chat-messages'];
+
+    for (const action of LOOKUPS) {
+        assert.equal(AGENT_SAFE_ACTIONS.includes(action), true, `${action} phải nằm trong allow-list an toàn`);
+
+        // Mở được KHÔNG cần bật cờ phá hoại — đây là điều kiện để owner dùng ngay, không phải
+        // đánh đổi bằng việc mở cả chùm remove-user/block-member.
+        const verdict = classifyAction(action, { allowDestructive: false });
+        assert.equal(verdict.allowed, true, `${action} phải chạy được khi allowDestructive=false`);
+        assert.equal(verdict.kind, 'safe', `${action} phải được xếp loại safe`);
+
+        // Và tuyệt đối không được lọt sang nhóm phá hoại/cấm.
+        assert.equal(AGENT_DESTRUCTIVE_ACTIONS.includes(action), false, `${action} không phải action phá hoại`);
+        assert.equal(AGENT_FORBIDDEN_ACTIONS.includes(action), false, `${action} không được nằm trong danh sách cấm`);
+    }
+
+    // Ranh giới cũ vẫn giữ: xoá dữ liệu khách KHÔNG bao giờ đi qua đường chat, kể cả khi đã mở đọc.
+    assert.equal(AGENT_SAFE_ACTIONS.includes('crm-contact-delete'), false);
+    assert.equal(AGENT_SAFE_ACTIONS.includes('crm-contacts-delete'), false);
 });

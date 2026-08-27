@@ -1,3 +1,31 @@
+## [2.30.0] - 2026-08-27
+
+### Added
+
+- **Bot tìm được người theo TÊN và đọc được tin nhắn riêng.** Mở bốn action **chỉ đọc** cho agent:
+  `crm-contacts-list` · `crm-contact-get` · `chat-conversations` · `chat-messages`. Đường dùng:
+  hỏi tên → `crm-contacts-list { search: "Thu Phương" }` → lấy `zalo_uid` →
+  `chat-messages { conversationId: "<accountId>|<zalo_uid>" }`.
+  Mô tả của `zalo_mod_action` nay ghi thẳng cách gọi, kèm câu chặn thói quen cũ:
+  *không kết luận "không tìm thấy" khi chưa gọi `crm-contacts-list`*.
+
+### Fixed
+
+- **Bot báo "không tìm được" với người đã nhắn tin riêng** (sự cố thật 27/08/2026 trên bot
+  "Thu Chung Thịnh Vượng"). Owner nhờ gửi lại tài liệu cho một khách vừa nhắn tin; bot trả lời không
+  tìm được rồi tự suy diễn lý do ("plugin chỉ quản lý nhóm", "tài khoản mặc định chưa đăng nhập").
+  Đối soát `context.db`: khách đó **nằm sẵn** trong `contacts` và có nguyên đoạn DM trong `messages`.
+  Bot **không bịa — nó mù**: `zalo_mod_history` chỉ đọc lịch sử NHÓM đang follow, còn `get-friends`
+  (đường duy nhất tới một con người) **không chứa người chưa kết bạn** (`is_friend = 0`).
+  Bốn action đọc ở trên đã tồn tại và dashboard vẫn dùng hằng ngày — chỉ thiếu ở allow-list của agent.
+
+### Ghi chú kỹ thuật
+
+- Bốn action mới đều là `SELECT` trên `context.db`: **không gọi mạng, không đụng hạn mức Zalo, không
+  phụ thuộc trạng thái kết bạn**. Xếp loại `safe` nên **không cần** `agentTools.allowDestructive`.
+- Ranh giới cũ giữ nguyên: `crm-contact-delete` / `crm-contacts-delete` **vẫn không** mở cho agent —
+  xoá dữ liệu khách không đi qua đường chat. Có test khoá lại điều này.
+
 ## [2.29.0] - 2026-08-19
 
 Bản gộp toàn bộ mạch "báo cáo việc còn treo + kanban" (các mốc nội bộ 2.29–2.33 dồn về một bản phát hành).

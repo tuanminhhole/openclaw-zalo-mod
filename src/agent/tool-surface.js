@@ -67,6 +67,18 @@ export const AGENT_SAFE_ACTIONS = Object.freeze([
     // `crm-task-delete` — xoá dữ liệu khách không bao giờ đi qua đường chat, kể cả với allowDestructive.
     'crm-tasks-list', 'crm-tasks-board', 'crm-task-status', 'crm-task-approve',
     'crm-task-approve-move', 'crm-task-reject',
+    // P16 (27/08/2026 — sự cố thật trên bot "Thu Chung Thịnh Vượng"): owner nhờ "gửi lại skill cho
+    // Trần Thu Phương", bot trả lời "không tìm được", rồi tự suy diễn ra lý do ("zalo-mod chỉ quản lý
+    // nhóm", "tài khoản mặc định chưa đăng nhập"). Đối soát `context.db`: chị ấy NẰM SẴN trong
+    // `contacts` + có nguyên đoạn DM trong `messages`. Bot không bịa — nó MÙ:
+    //   · `zalo_mod_history` chỉ đọc lịch sử NHÓM đang follow, không có DM;
+    //   · `get-friends` là đường duy nhất tới người, mà khách này `is_friend = 0` nên không có trong đó;
+    //   · `crm-contacts-list` / `chat-*` đã tồn tại và dashboard vẫn dùng, chỉ là agent không được gọi.
+    // Bốn action dưới đây ĐỀU CHỈ ĐỌC (SELECT trên context.db, không gọi mạng, không đụng Zalo),
+    // nên mở cho agent không thêm rủi ro nào mà bịt đúng chỗ mù. Đường dùng:
+    // `crm-contacts-list {search:"Phương"}` → lấy `zalo_uid` → `chat-messages {conversationId}`.
+    'crm-contacts-list', 'crm-contact-get',
+    'chat-conversations', 'chat-messages',
 ]);
 
 /**
@@ -912,6 +924,16 @@ export function createZaloModAgentTools(host) {
                     '',
                     'ĐỌC: report-jobs (danh sách lịch báo cáo + danh sách nhóm), journal-data, get-templates,',
                     'get-group-info, get-permissions, generate-summary.',
+                    '',
+                    'TÌM NGƯỜI + ĐỌC TIN NHẮN RIÊNG (DM) — dùng khi owner nhắc tới một người bằng TÊN:',
+                    '• crm-contacts-list, payload { search: "Tên hoặc số" } → trả danh bạ đã lưu, có zalo_uid.',
+                    '  Đây là đường ĐÚNG để tìm người; get-friends CHỈ có người đã kết bạn nên thường thiếu.',
+                    '• chat-conversations, payload { accountId } → danh sách hội thoại (DM + nhóm) đã đồng bộ.',
+                    '• chat-messages, payload { conversationId: "<accountId>|<zalo_uid>", limit } → nội dung DM.',
+                    '  VD: tìm "Trần Thu Phương" → crm-contacts-list {search:"Thu Phương"} → lấy zalo_uid',
+                    '  → chat-messages {conversationId:"<accountId>|<zalo_uid>"} để xem đã trao đổi những gì.',
+                    'KHÔNG kết luận "không tìm thấy" khi chưa gọi crm-contacts-list — bốn action trên đọc',
+                    'thẳng dữ liệu đã lưu, không tốn lượt gọi Zalo và không phụ thuộc việc đã kết bạn hay chưa.',
                     '',
                     'GHI — dùng ĐÚNG action này, đừng truyền field cấu hình vào action đọc (sẽ bị từ chối):',
                     '• Lịch báo cáo: report-job-save, payload { job: { id, time, kind, groups, deliver } } —',

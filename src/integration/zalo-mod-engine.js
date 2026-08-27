@@ -185,7 +185,7 @@ export function createZaloModEngine({ dataDir, logger, runtime, getConfig, confi
          * Ghi passive một tin group/DM được phép — gọi TRƯỚC mention gating.
          * Zero-token: chỉ RAM + SQLite. Không bao giờ throw (best-effort).
          */
-        captureInbound({ accountId, conversationId, groupId, messageId, senderId, senderName, text, timestamp, rawType, quote }) {
+        captureInbound({ accountId, conversationId, groupId, messageId, senderId, senderName, text, timestamp, rawType, quote, attachments }) {
             try {
                 const acc = accountId || 'default';
                 const ms = toMs(timestamp);
@@ -207,6 +207,10 @@ export function createZaloModEngine({ dataDir, logger, runtime, getConfig, confi
                     timestamp: ms,
                     rawType: rawType || 'message',
                     quote,
+                    // Thieu dong nay la anh/tep gui truc tiep bi mat link: khung chat chi con
+                    // chu "[Media attachment]" tron tro (tin keo ve bang Sync thi van co anh,
+                    // nen loi trong rat kho doan). Xem test media-capture.test.js.
+                    attachments,
                 });
             } catch (e) {
                 log.warn?.(`[zalo-mod] captureInbound bỏ qua: ${e.message}`);

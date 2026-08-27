@@ -48,8 +48,11 @@ export class ConversationBuffer {
                 senderId: event.quote.senderId != null ? String(event.quote.senderId) : undefined,
                 text: event.quote.text,
             }) : undefined,
+            // `url` PHAI giu: no la thu duy nhat cho phep khung chat hien anh that thay vi
+            // mot dong chu "[Media attachment]". Ban dau chi giu kind/filename/mime/size nen
+            // link bi cat ngay tai day, truoc khi kip ghi xuong SQLite.
             attachments: Object.freeze((event.attachments || []).map(a => ({
-                kind: a.kind, filename: a.filename, mime: a.mime, size: a.size,
+                kind: a.kind, filename: a.filename, mime: a.mime, size: a.size, url: a.url,
             }))),
             reactions: event.reactions ? Object.freeze([...event.reactions]) : undefined,
         });
@@ -86,6 +89,7 @@ export class ConversationBuffer {
                 rawType: rec.rawType,
                 sentAt: rec.timestamp,
                 quoteId: rec.quote?.messageId ?? null,
+                mediaUrls: (rec.attachments || []).map(a => a.url).filter(Boolean),
             });
         } catch {
             // Persistence là best-effort; buffer trong RAM vẫn là nguồn cho context.

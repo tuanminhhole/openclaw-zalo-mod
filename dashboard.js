@@ -10,7 +10,7 @@ const modalBody = document.getElementById('modalBody');
 const modalCancel = document.getElementById('modalCancel');
 const modalConfirm = document.getElementById('modalConfirm');
 const token = window.ZALO_DASHBOARD_TOKEN || '';
-const pluginVersion = '2.30.0';
+const pluginVersion = '2.31.0';
 let state = null;
 let activeGroupId = '';
 let lang = localStorage.getItem('zaloDashboardLang') || 'vi';
@@ -7047,7 +7047,9 @@ function chatMsgHtml(m, { isGroup, lastDay, isNew = false }) {
   const html = `${sep}<div class="chat-msg${m.fromSelf ? ' me' : ''}${isNew ? ' chat-msg-new' : ''}" data-msg-id="${crmEsc(m.id)}">
     ${/* Tên người gửi chỉ có nghĩa trong nhóm — DM thì hai bên đã rõ, in thêm chỉ tổ rối. */''}
     ${isGroup && !m.fromSelf ? `<div class="chat-msg-who">${crmEsc(m.senderName || m.senderId)}</div>` : ''}
-    <div class="chat-bubble">${media}${crmEsc(m.text || '')}</div>
+    ${/* Co anh roi thi khong in kem chu "[Media attachment]" — day la chu do host sinh ra khi
+         tin khong co phan chu, giu lai chi lam bong bong roi. */''}
+    <div class="chat-bubble">${media}${crmEsc(media && /^\[(media|file|image|sticker)[^\]]*\]$/i.test((m.text || '').trim()) ? '' : (m.text || ''))}</div>
     <div class="chat-msg-time">${chatTime(m.sentAt)}</div>
   </div>`;
   return { html, day };

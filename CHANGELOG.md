@@ -1,3 +1,37 @@
+## [2.31.0] - 2026-08-27
+
+### Fixed
+
+- **Khung chat hiện `[Media attachment]` thay vì ảnh.** Link ảnh của tin nhắn nhận **trực tiếp** bị
+  đánh rơi qua **ba chặng** nối tiếp — vá một chặng là vô ích:
+  `captureInbound()` destructure thiếu `attachments` → `ConversationBuffer.record()` giữ attachment
+  nhưng **cắt trường `url`** → `_persist()` không truyền `mediaUrls` xuống SQLite.
+  Hai đầu vốn đã đúng sẵn (bridge có dựng `attachments` kèm `url`; dashboard có sẵn code vẽ `<img>`),
+  chỉ khúc giữa làm rơi. Rất khó đoán vì tin **kéo về bằng Sync** đi đường khác nên **vẫn có ảnh** —
+  nhìn dashboard thấy lúc có lúc không.
+- Bong bóng chat không in kèm chữ `[Media attachment]` nữa khi đã có ảnh.
+
+### Added
+
+- **Phục vụ ảnh đã tải về**: `GET /media/{inbound,outbound}/<tên tệp>` trên dashboard. OpenClaw vốn
+  đã tải sẵn ảnh về `<home>/.openclaw/media/`, nhưng `<img src>` không mở được đường dẫn trên đĩa.
+  Không đòi token — cố ý, giống logo/QR: `<img>` **không gửi được** header `Authorization`, mà
+  dashboard chỉ bind `127.0.0.1`. Chặn đường vòng: chỉ nhận đúng một tên tệp, đối soát lại bằng
+  `path.resolve`, allowlist đuôi tệp.
+- **Ghép lại ảnh cũ đã mất link**: action `chat-backfill-media`, khớp theo mốc thời gian trong tên
+  tệp. **Chỉ nhận ghép 1-1** — nhập nhằng thì bỏ qua, không đoán, vì gán nhầm ảnh của người này sang
+  tin của người khác trong khung chat CRM hỏng nặng hơn thiếu một tấm ảnh. Tin của bot lấy ở
+  `outbound`, tin khách ở `inbound`. Có `dryRun` để xem trước; chạy lại nhiều lần an toàn vì chỉ ghi
+  khi `media_json` còn trống.
+
+### Ghi chú vận hành
+
+- Đo thật trên một máy khách: tin có ảnh **6 → 176**, placeholder **270 → 119**. Số còn lại không cứu
+  được (tệp đã bị dọn, hoặc lệch quá cửa sổ ±5s) — nới `toleranceMs` thì ghép thêm được nhưng tăng
+  rủi ro gán nhầm.
+- ⚠️ Tin **mới** vẫn lưu URL `zdn.vn` remote, chưa lưu đường dẫn local; URL Zalo có thể hết hạn.
+  Chạy lại `chat-backfill-media` **không** sửa được các tin đó (`media_json` đã khác NULL).
+
 ## [2.30.0] - 2026-08-27
 
 ### Added

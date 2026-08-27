@@ -100,6 +100,21 @@ export class SqliteStore {
         return this._selRecent.all(conversationId, limit).reverse();
     }
 
+    /** Tin CHUA co media (media_json NULL) — dau vao cho viec ghep lai anh da tai ve. */
+    messagesWithoutMedia(limit = 5000) {
+        return this.db.prepare(`SELECT id, sent_at, from_self FROM messages
+            WHERE media_json IS NULL ORDER BY sent_at DESC LIMIT ?`).all(Math.min(Number(limit) || 5000, 20000));
+    }
+
+    /** Ga link media cho MOT tin da co. Tra ve true neu that su co dong bi sua. */
+    setMessageMedia(id, urls) {
+        const list = (Array.isArray(urls) ? urls : []).filter(Boolean);
+        if (!list.length) return false;
+        const r = this.db.prepare('UPDATE messages SET media_json = ? WHERE id = ? AND media_json IS NULL')
+            .run(JSON.stringify(list), String(id));
+        return Number(r.changes) > 0;
+    }
+
     /** Danh sách hội thoại, mới nhất trước — cột trái của khung chat. */
     listConversations({ accountId, limit = 100 } = {}) {
         const where = accountId ? 'WHERE account_id = ?' : '';

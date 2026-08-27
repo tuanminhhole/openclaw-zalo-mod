@@ -25,6 +25,7 @@ import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { definePluginEntry } from 'openclaw/plugin-sdk/plugin-entry';
+import { ghepLaiMedia } from './src/storage/media-backfill.js';
 import { createZaloModEngine } from './src/integration/zalo-mod-engine.js';
 import { handleCrmAction } from './src/crm/crm-api.js';
 import { buildZaloPeople } from './src/crm/zalo-people.js';
@@ -5828,6 +5829,23 @@ Quy tắc:
             // sử kéo về), nên mở khung chat không tốn một lượt gọi mạng nào và không đụng hạn mức
             // của Zalo. Đổi lại: chỉ thấy được những gì đã đồng bộ — nên phần mô tả trang nói thẳng
             // là lịch sử về khi bấm Sync account.
+            // Ghep lai anh cu voi tin da mat link (P17). Chay duoc nhieu lan: `setMessageMedia`
+            // chi ghi khi media_json con NULL nen khong bao gio de len du lieu dung.
+            // `dryRun: true` de xem truoc se ghep bao nhieu ma khong sua gi.
+            if (action === 'chat-backfill-media') {
+                const store = zEngine?.storage;
+                if (!store?.messagesWithoutMedia) throw new Error('Ghep lai anh can SQLite (Node >= 22.5).');
+                const kq = ghepLaiMedia(store, _openclawHome, {
+                    toleranceMs: Math.min(Number(payload.toleranceMs) || 5000, 60000),
+                    limit: Math.min(Number(payload.limit) || 5000, 20000),
+                    dryRun: payload.dryRun === true,
+                });
+                logger.info(`[openclaw-zalo-mod] ghep lai anh: quet ${kq.quet} tin, ghep ${kq.ghep}`
+                    + `, bo qua nhap nhang ${kq.boQuaNhapNhang}, khong co tep ${kq.khongCo}`
+                    + (payload.dryRun === true ? ' (xem truoc, chua ghi)' : ''));
+                return kq;
+            }
+
             if (action === 'chat-conversations' || action === 'chat-messages' || action === 'chat-version') {
                 const store = zEngine?.storage;
                 if (!store?.listConversations) throw new Error('Khung chat cần SQLite (Node >= 22.5).');
@@ -6309,6 +6327,49 @@ Quy tắc:
                             'cache-control': 'public, max-age=3600',
                         });
                         res.end(readFileSync(donateQrFile));
+                        return;
+                    }
+
+                    // ── Anh/tep dinh kem da tai ve (P17) ──
+                    //
+                    // OpenClaw tai san media ve `<home>/.openclaw/media/{inbound,outbound}`. Khung chat
+                    // can mot URL de dat vao <img src>, ma duong dan tren dia thi trinh duyet khong mo
+                    // duoc — nen phuc vu qua chinh dashboard. Khong doi token, GIONG logo/QR: dashboard
+                    // chi bind 127.0.0.1 va vao qua duong ham SSH; hon nua <img src> KHONG gui duoc
+                    // header Authorization nen bat token o day la tu khoa cua mo anh.
+                    //
+                    // Chan duong vong: chi nhan DUNG mot ten tep (khong thu muc con), loai bo moi thu
+                    // co '/', '\\' hay '..', roi doi soat lai bang path.resolve — vao duoc ngoai thu muc
+                    // media la tu choi. Chi phuc vu duoi tep da biet.
+                    if (req.method === 'GET' && url.pathname.startsWith('/media/')) {
+                        const parts = url.pathname.split('/').filter(Boolean);   // ['media', kind, name]
+                        const kind = parts[1];
+                        const name = decodeURIComponent(parts[2] || '');
+                        const MIME = {
+                            '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png',
+                            '.gif': 'image/gif', '.webp': 'image/webp', '.mp4': 'video/mp4',
+                            '.pdf': 'application/pdf',
+                        };
+                        const ext = path.extname(name).toLowerCase();
+                        const hopLe = parts.length === 3
+                            && (kind === 'inbound' || kind === 'outbound')
+                            && name && !name.includes('/') && !name.includes('\\') && !name.includes('..')
+                            && Object.prototype.hasOwnProperty.call(MIME, ext);
+                        if (!hopLe) {
+                            sendDashboardJson(res, 400, { ok: false, error: 'Media path khong hop le' });
+                            return;
+                        }
+                        const goc = path.resolve(_openclawHome, '.openclaw', 'media', kind);
+                        const tep = path.resolve(goc, name);
+                        if (!tep.startsWith(goc + path.sep) || !existsSync(tep)) {
+                            sendDashboardJson(res, 404, { ok: false, error: 'Media not found' });
+                            return;
+                        }
+                        res.writeHead(200, {
+                            'content-type': MIME[ext],
+                            'cache-control': 'private, max-age=86400',
+                        });
+                        res.end(readFileSync(tep));
                         return;
                     }
 

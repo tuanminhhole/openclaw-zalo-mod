@@ -10,7 +10,7 @@ const modalBody = document.getElementById('modalBody');
 const modalCancel = document.getElementById('modalCancel');
 const modalConfirm = document.getElementById('modalConfirm');
 const token = window.ZALO_DASHBOARD_TOKEN || '';
-const pluginVersion = '2.31.0';
+const pluginVersion = '2.31.1';
 let state = null;
 let activeGroupId = '';
 let lang = localStorage.getItem('zaloDashboardLang') || 'vi';
@@ -169,6 +169,24 @@ function setSection(id) {
   if (id === 'contacts') renderCrmContacts();
   if (id === 'leads') renderCrmLeads();
   if (id === 'tasks') renderCrmTasks();
+  // Trang đọc từ `state` cache trong trình duyệt — nhưng dữ liệu phía server có thể đã đổi mà
+  // KHÔNG đi qua tab này: owner nhắn "đồng bộ nhóm" là agent chạy sync-groups qua zalo_mod_action
+  // (cùng handler với nút UI). Đo thật 30/08/2026 trên bot "Em Mơ": server/API trả 15 nhóm mà tab
+  // mở sẵn vẫn vẽ 9 nhóm cũ — nhìn y như "đồng bộ không ăn". Refetch NỀN khi mở các trang
+  // state-driven; loadState() tự kết thúc bằng renderState() nên gọi là đủ. Chỉ các trang này —
+  // trang on-demand (chat, journal…) không refetch kẻo re-render nuốt nội dung đang gõ.
+  if (id === 'groups' || id === 'overview' || id === 'members') refreshStateQuiet();
+}
+
+// Refetch state ở nền khi chuyển trang. Cờ in-flight để bấm qua lại nhanh không dồn request;
+// lỗi mạng nuốt im — chuyển trang không được nổ toast vì một lần refetch nền hỏng.
+let _stateRefreshQuietInFlight = false;
+function refreshStateQuiet() {
+  if (_stateRefreshQuietInFlight) return;
+  _stateRefreshQuietInFlight = true;
+  loadState()
+    .catch(() => {})
+    .finally(() => { _stateRefreshQuietInFlight = false; });
 }
 // Re-render whichever on-demand section is currently active (these render on
 // tab-open via setSection, not inside renderState). Called when the selected bot

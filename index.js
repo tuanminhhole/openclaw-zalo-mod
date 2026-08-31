@@ -206,6 +206,15 @@ function foldText(value) {
         .trim();
 }
 
+function isAddressedByBareName(foldedContent, foldedName) {
+    // Khop TEN TRAN (khong co '@') co RANH GIOI TU, tren chuoi da bo dau + thuong hoa.
+    // Cung ngu nghia voi textMentionsAnyName cua zalo-connect, de hai tang khong lech nhau.
+    // Ten < 2 ky tu bi bo: qua ngan thi khop nham nhieu hon la trung.
+    if (!foldedName || foldedName.length < 2) return false;
+    const escaped = foldedName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp(`(^|[^\\p{L}\\p{N}])${escaped}([^\\p{L}\\p{N}]|$)`, 'u').test(foldedContent);
+}
+
 async function safeReadJson(filePath) {
     try {
         const raw = await fs.readFile(filePath, 'utf8');
@@ -476,6 +485,17 @@ async function getTemplateContent(filePath, defaultContent) {
     return defaultContent;
 }
 
+// Tên bot HIỂN THỊ phải theo tên Zalo THẬT đang đăng nhập (bridge trả displayName khi replay/set
+// name-trigger, được ghi vào globalThis.__zaloModLiveBotNames). pluginCfg.botName là cấu hình tĩnh:
+// tài khoản đổi tên Zalo thì template ({botName}, @{botName} trong welcome) vẫn in tên cũ và dạy
+// thành viên tag một cái tên không còn tag được. Đo 31/08/2026: welcome in "@Em Mơ" trong khi tên
+// thật đã là "Em Mơ Trợ Lí".
+function liveBotName(profile, fallback) {
+    const map = globalThis.__zaloModLiveBotNames || {};
+    const key = String(profile || 'default').split(',')[0].trim() || 'default';
+    return String(map[key] || '').trim() || fallback;
+}
+
 function renderTemplate(templateStr, vars) {
     let result = String(templateStr || '');
     for (const [key, value] of Object.entries(vars)) {
@@ -572,14 +592,40 @@ function isMessageMentioningBot(event, botNames, profileName) {
                 searchNames = [liveName, ...liveZaloNames].filter(Boolean);
             }
         }
+
+        // ── Ten goi do DASHBOARD luu nam o STORE KHAC ────────────────────────────────────
+        // Hop thoai "Che do Im lang — ten goi bot" luu qua persistNameTriggers(), ma ham do ghi
+        // vao settings.json (`global.nameTriggersByAccount`) — KHONG phai config.json ma doan tren
+        // vua doc. Thieu doan nay thi moi ten them tu hop thoai deu VO HINH voi tang nay:
+        // zalo-connect nhan duoc (bridge replay doc settings.json) nen cho qua cong cua no, roi
+        // den day bi chan — nhin tu ngoai la "da luu ma bot van khong tra loi".
+        // Do that 30/08/2026: settings.json co ["Mơ ơi","Em Mơ","trợ lý mơ","trợ lí mơ"] trong khi
+        // config.json van la danh sach cu ⇒ goi "trợ lý mơ" bot im.
+        for (const dp of dataPaths) {
+            const settingsPath = path.join(path.dirname(dp), 'settings.json');
+            if (!existsSync(settingsPath)) continue;
+            const settings = JSON.parse(readFileSync(settingsPath, 'utf8'));
+            const byAccount = settings?.global?.nameTriggersByAccount || {};
+            const saved = byAccount[profileName || 'default'] || byAccount.default || [];
+            if (Array.isArray(saved) && saved.length) {
+                searchNames = [...searchNames, ...saved.map(String)].filter(Boolean);
+            }
+            break;
+        }
     } catch (e) { }
 
     // Check all known bot names/aliases
+    const foldedContent = foldText(content);
     for (const raw of searchNames) {
         const name = String(raw || '').toLowerCase().trim();
         if (!name) continue;
         const folded = foldText(name);
         if (content.includes(`@${name}`) || content.includes(`@${folded}`)) return true;
+        // Goi TEN TRAN (khong co '@') — dung tinh nang "Im lang: bot tra loi khi goi dung ten bot"
+        // ma dashboard hua. zalo-connect DA cho qua cong cua no (do that 30/08/2026:
+        // wasNamed=true, skip=false) nhung o day van doi '@' nen tin rot lai va KHONG de lai
+        // log nao — nhin tu ngoai chi thay bot tha tim roi im.
+        if (isAddressedByBareName(foldedContent, folded)) return true;
     }
     // OpenClaw native mention flag
     if (event.wasMentioned === true) return true;
@@ -2546,7 +2592,7 @@ Quy tắc:
                 try {
                     const botCfg = getBotConfig(groupId);
                     const welcomeTpl = await loadTemplateContent(dataDir, 'welcome');
-                    const welcomeText = renderTemplate(welcomeTpl, { memberName, groupName: getGroupName(groupId), botName: botCfg.botName, cmdPrefix: botCfg.cmdPrefix });
+                    const welcomeText = renderTemplate(welcomeTpl, { memberName, groupName: getGroupName(groupId), botName: liveBotName(botCfg.profile, botCfg.botName), cmdPrefix: botCfg.cmdPrefix });
                     await sendGroupMsg({ accountId: botCfg.profile }, groupId, welcomeText);
                     await appendToMemoryFile(groupId, 'chat-highlights.md', `| ${nowShort()} | SYSTEM | Welcome: ${memberName} joined (detected by watcher) |`);
                     logger.info(`[openclaw-zalo-mod] [WATCHER] welcome sent for ${memberName} in group ${groupId}`);
@@ -4247,7 +4293,13 @@ Quy tắc:
             const map = readTriggerMap();
             let applied = 0;
             for (const [accountId, list] of Object.entries(map)) {
-                try { await bridge.setNameTriggers(accountId, Array.isArray(list) ? list : []); applied++; }
+                try {
+                    const runtime = await bridge.setNameTriggers(accountId, Array.isArray(list) ? list : []);
+                    applied++;
+                    // Bridge trả kèm tên Zalo THẬT — nguồn duy nhất luôn đúng sau khi đổi tên.
+                    const dn = String(runtime?.displayName || '').trim();
+                    if (dn) (globalThis.__zaloModLiveBotNames ||= {})[accountId] = dn;
+                }
                 catch (e) { logger.warn(`[openclaw-zalo-mod] name-trigger replay ${accountId}: ${e.message}`); }
             }
             return { applied, total: Object.keys(map).length };
@@ -5569,7 +5621,11 @@ Quy tắc:
                 const bridge = globalThis.__zaloModEngine?.bridge;
                 let runtime = null;
                 if (bridge?.setNameTriggers) {
-                    try { runtime = await bridge.setNameTriggers(accountId, input); }
+                    try {
+                        runtime = await bridge.setNameTriggers(accountId, input);
+                        const dn = String(runtime?.displayName || '').trim();
+                        if (dn) (globalThis.__zaloModLiveBotNames ||= {})[accountId] = dn;
+                    }
                     catch (e) { logger.warn(`[openclaw-zalo-mod] set-name-triggers ${accountId}: ${e.message}`); }
                 }
                 // Persist the runtime-cleaned list when available so store and runtime match.
@@ -6718,7 +6774,22 @@ Quy tắc:
             } catch (_) { /* not JSON, normal text — continue */ }
 
             const rawConvId = String(ctx.conversationId || event.conversationId || '');
-            const isGroupMsg = rawConvId.startsWith('group:');
+            // ── Nhan biet NHOM vs DM — do that, khong suy tu hop dong ──────────────────────
+            // Tren hook `before_dispatch`, tin NHOM den duoi dang:
+            //     conversationId = "'zalo-connect':<GROUP_ID>"   (KHONG co tien to `group:`)
+            //     event.isGroup  = false                          (openclaw bao SAI)
+            // Do that tren bot "Em Mo" 30/08/2026, cung dang voi DM (`'zalo-connect':<USER_ID>`),
+            // nen KHONG co cach nao phan biet bang hinh dang chuoi. Hau qua neu doan sai: moi tin
+            // nhom roi vao nhanh DM ben duoi ⇒ `permissions.dm.mode="owner"` khoa luon ca nhom,
+            // ngoai owner ra khong ai noi duoc voi bot o BAT KY dau, du nhom da tick trong Quyen
+            // Group. Tin bi `handled:true` nuot mat, khong de lai dau vet trong log zalo-connect.
+            // Nguon tin cay duy nhat: SO NHOM cua chinh plugin (`groupNames`, tra qua
+            // plainGroupId). Duoi id lay sau dau ':' cuoi vi tien to la ten kenh co nhay don.
+            const convTailId = rawConvId.replace(/^.*:/, '').trim();
+            const knownGroupId = plainGroupId(rawConvId, convTailId);
+            const isGroupMsg = event?.isGroup === true
+                || rawConvId.startsWith('group:')
+                || !!knownGroupId;
             const senderId = String(ctx.senderId || event.senderId || '');
             // Group event thường KHÔNG kèm tên hiển thị → thử các field rẻ trước, resolve qua API sau (bên dưới).
             let senderName = String(event.senderName || event.sender?.name || event.dName || event.data?.dName || '').trim() || senderId;
@@ -6727,7 +6798,10 @@ Quy tắc:
             // profile ghi nhận của group. Nhờ vậy mỗi bot trong group nhiều bot sẽ
             // dùng đúng tên/prefix/owner của chính nó (check @mention, slash, owner...).
             const botCfg = getBotConfig(ctx?.accountId || (isGroupMsg ? rawConvId : 'default'));
-            const { profile, botName, botNames, cmdPrefix, ownerId: activeOwnerId } = botCfg;
+            const { profile, botName: cfgBotName, botNames, cmdPrefix, ownerId: activeOwnerId } = botCfg;
+            // Moi cho hien thi ten bot trong handler nay (template, menu owner, DM…) dung ten
+            // Zalo THAT; cau hinh tinh chi con la fallback khi bridge chua tra displayName.
+            const botName = liveBotName(profile, cfgBotName);
             const currentOwnerId = activeOwnerId || (profile === 'default' ? ownerId : '');
 
             // Tên hiển thị: nếu event không kèm tên (senderName == id) → resolve qua API bot nhận tin (có cache).
@@ -6874,10 +6948,25 @@ Quy tắc:
                 return { handled: true };
             }
 
-            const groupId = rawConvId.replace(/^group:/, '');
+            // rawConvId co the la "'zalo-connect':<id>" nen khong the chi cat tien to `group:`
+            // — cat vay se ra chuoi rac va `isGroupAllowed()` ben duoi luon truot.
+            const groupId = knownGroupId || rawConvId.replace(/^group:/, '');
 
             // ── GROUP ACCESS GATE — bot chỉ hoạt động ở group được phép (owner luôn lọt) ──
-            if (!isGroupAllowed(groupId) && senderId !== currentOwnerId) return { handled: true };
+            if (!isGroupAllowed(groupId) && senderId !== currentOwnerId) {
+                // Ngoại lệ NHỎ: lệnh TEMPLATE tĩnh vẫn trả lời được. Welcome/follow là toggle theo
+                // nhóm, ĐỘC LẬP với allowList Quyền Group — nên chính bot vẫn gửi welcome dạy
+                // "/bot-noi-quy", "/bot-menu" vào nhóm chưa tick, thành viên bấm theo mà bot im thì
+                // như bot hỏng (đo 31/08/2026, nhóm "Kinh Doanh Một Người Với AI"). Chỉ mở template:
+                // text tĩnh, zero-token, không LLM, không đổi cấu hình; mọi thứ khác chặn như cũ.
+                const _m = String(content || '').match(/(?:^|\s)(\/[a-z][a-z0-9-]*)/i);
+                const _raw = _m ? _m[1].toLowerCase() : '';
+                const _pfx = String(cmdPrefix || '').toLowerCase();
+                const _cmd = _raw && _pfx && _raw.startsWith(_pfx) ? '/' + _raw.slice(_pfx.length) : '';
+                const _isStaticTpl = ['/noi-quy', '/menu', '/huong-dan'].includes(_cmd)
+                    || (!!_cmd && !!resolveTemplateKeyByCommand(_cmd, pluginCfg));
+                if (!_isStaticTpl) return { handled: true };
+            }
 
             // ── MUTE CHECK — first gate, before everything else ───
             const isMuted = store.getSetting(groupId, 'muted', false);
@@ -6897,9 +6986,21 @@ Quy tắc:
             // ── Z2: Passive capture (zero-token) — TRƯỚC mention gating ──
             // Mọi tin group được phép vào ConversationBuffer + SQLite; khi bot
             // được tag sẽ inject bounded context. Tuyệt đối không gọi LLM ở đây.
-            zEngine.captureInbound({
+            // Duong bridge `onInbound` DA ghi MOI tin vao (msgId THAT + text THO). Den day
+            // `before_dispatch` khong con msgId nen engine phai bia `derived:<sender>:<ts>`, va
+            // `content` luc nay la ban DA BOC ("[userId: …, name: …]: …" + khoi "Recent group
+            // chat") ⇒ moi tin bi ghi HAI lan, Khung chat hien hai dong, dong thu hai lo ca prompt
+            // noi bo. Do that 30/08/2026: moi tin that deu co mot ban sinh doi id `derived:…`.
+            // Vi vay chi ghi khi KHONG co bridge (ban cai cu), con lai de bridge lam.
+            if (!globalThis.__zaloConnectBridgeService) zEngine.captureInbound({
                 accountId: ctx?.accountId,
-                conversationId: rawConvId,
+                // PHAI chuan hoa ve dang `group:<id>` — dung dang ma duong sync dung
+                // (zalo-mod-engine.js đã ghi chú đúng lỗi này cho đường của nó). Hook
+                // `before_dispatch` giao rawConvId dạng "'zalo-connect':<id>"; ghi thẳng chuỗi đó
+                // là CÙNG một nhóm nằm ở hai hàng hội thoại khác nhau, Khung chat hiện thành hai
+                // dòng với hai số đếm rời rạc — trên bot "Em Mơ" 30/08/2026 ra tận BA khoá:
+                // `group:1388…` 53 tin, `'zalo-connect':1388…` 7 tin, `1388…` 4 tin.
+                conversationId: groupId ? `group:${groupId}` : rawConvId,
                 groupId,
                 messageId: event?.msgId ?? event?.messageId ?? event?.cliMsgId,
                 senderId,

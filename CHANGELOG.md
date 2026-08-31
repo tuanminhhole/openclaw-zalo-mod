@@ -1,3 +1,37 @@
+## [2.31.1] - 2026-08-31
+
+### Fixed
+
+- **Nhóm bật Im lặng: bot chỉ thả tim, không trả lời thành viên** — chuỗi 4 lỗi chồng nhau, vá cả 4
+  (chẩn trên bot production 30/08, phải gắn log đo từng chặng mới tách được):
+  - Tin **nhóm** rơi vào nhánh **DM**: hook `before_dispatch` giao `conversationId` dạng
+    `'zalo-connect':<id>` (không tiền tố `group:`) và `event.isGroup=false` — trùng y hệt dạng DM.
+    Với `permissions.dm.mode="owner"` thì ngoài owner ra không ai nói được với bot ở BẤT KỲ đâu,
+    tin bị nuốt không để lại log. Giờ nhận biết nhóm bằng **sổ nhóm của chính plugin** (`plainGroupId`).
+  - Cùng gốc: `groupId` cắt từ chuỗi đó ra rác nên GROUP ACCESS GATE luôn trượt.
+  - **Gọi tên trần không được tính**: `isMessageMentioningBot` chỉ tìm `@`+tên, trong khi
+    zalo-connect đã cho tin "gọi đúng tên bot" đi qua — hai tầng hứa cùng một tính năng mà ngữ nghĩa
+    khác nhau. Thêm khớp tên trần: không dấu, có ranh giới từ, cùng luật với zalo-connect.
+  - **Tên gọi lưu từ hộp thoại Im lặng nằm ở kho khác**: nút Lưu ghi `settings.json`
+    (`nameTriggersByAccount`) còn cổng lại đọc `config.json` — tên vừa lưu vô hình với chính cổng
+    kiểm. Giờ đọc cả hai, và có test khoá bên ghi/bên đọc phải chung một khoá setting.
+- **Khung chat hiện mỗi tin hai lần, dòng thứ hai lộ prompt nội bộ** (`[userId: …]`,
+  `[Recent group chat …]`): bridge `onInbound` đã ghi tin thật rồi mà `handleZaloDispatch` ghi thêm
+  bản bọc prompt với id bịa `derived:`. Có bridge thì thôi không ghi lần hai.
+- **Hội thoại ma trong Khung chat** ("Nhóm 695956"): `captureInbound` ghi khoá thô
+  `'zalo-connect':<id>` nên cùng một nhóm nằm ở nhiều hàng với số đếm rời rạc. Chuẩn hoá về
+  `group:<id>` như đường sync.
+- **`{botName}` không theo tên Zalo mới**: đổi tên tài khoản xong welcome vẫn in tên cũ, dạy thành
+  viên tag một cái tên không còn tag được. Template giờ dùng tên Zalo THẬT do bridge trả về
+  (cập nhật mỗi lần boot và mỗi lần Lưu tên gọi); `{BOTNAME}` theo cùng.
+- **`/bot-menu` im trong nhóm chưa tick Quyền Group dù chính bot vừa gửi welcome dạy lệnh đó**
+  (welcome/follow là toggle theo nhóm, độc lập allowList): GROUP ACCESS GATE mở ngoại lệ **chỉ cho
+  lệnh template tĩnh** (`noi-quy`/`menu`/`huong-dan` + lệnh gắn template) — zero-token, không LLM;
+  mọi thứ khác vẫn chặn như cũ.
+- **Đồng bộ nhóm qua chat xong dashboard vẫn hiện danh sách cũ**: server đã có đủ (sync qua agent
+  đi đúng đường nút UI) nhưng SPA không bao giờ refetch `state`. Chuyển sang trang
+  Nhóm/Tổng quan/Thành viên giờ tự refetch ở nền.
+
 ## [2.31.0] - 2026-08-27
 
 ### Fixed

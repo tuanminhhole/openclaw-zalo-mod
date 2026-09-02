@@ -1,3 +1,21 @@
+## [2.31.2] - 2026-09-02
+
+### 🚑 Theo kịp OpenClaw 2026.8 + hết cảnh bot "chối" không chịu đồng bộ
+
+OpenClaw 2026.8 đổi cách lưu danh sách bot trong cấu hình — plugin đời cũ đọc theo kiểu cũ nên
+trên máy đã nâng cấp nó tưởng project "không có bot nào": thư mục làm việc nhận sai, kênh Zalo
+không tự gắn vào bot. Bản này đọc được cả hai kiểu, máy cũ máy mới đều chạy.
+
+Hai phiền toái người dùng thấy tận mắt cũng được xử trong bản này:
+
+- **Số nhóm trên màn hình khớp với lời bot.** Trước đây hai nhóm trùng tên (vd "Tài Liệu" và
+  "tài liệu") bị màn hình gộp làm một — bot báo "đồng bộ 30 nhóm" mà giao diện chỉ đếm 29, chủ
+  bot tưởng đồng bộ hỏng. Giờ nhóm nào ra nhóm nấy.
+- **Bảo bot "đồng bộ nhóm đi" là nó làm luôn.** Một số model AI yếu hay chối "em không có công
+  cụ" rồi bắt chủ bot tự bấm nút, dù công cụ luôn có sẵn. Plugin giờ tự ghi một bản hướng dẫn
+  vào sổ tay của bot để model nào cũng biết đường gọi đúng công cụ — nhắn "đồng bộ lại đi" là
+  nhóm được cập nhật ngay trong chat.
+
 ## [2.31.1] - 2026-08-31
 
 ### Fixed

@@ -90,6 +90,22 @@ async function _readBotNameFromIdentity(workspaceDir) {
     } catch { return null; }
 }
 
+/**
+ * openclaw 2026.8.x chuyển agents.list (mảng) thành agents.entries (object theo id) và schema
+ * mới CẤM `list` nằm trong file. Đọc được CẢ HAI dạng — thiếu nhánh entries thì trên 2026.8
+ * plugin tưởng project không có agent nào: workspace resolve về mặc định sai chỗ, binding
+ * zalo-connect không tự gắn, skill cài lạc thư mục (đo 02/09/2026 trên vps_c-thu).
+ */
+function agentListFromConfig(config) {
+    const ag = config?.agents || {};
+    if (Array.isArray(ag.list) && ag.list.length) return ag.list;
+    const entries = ag.entries;
+    if (entries && typeof entries === 'object' && !Array.isArray(entries)) {
+        return Object.entries(entries).map(([id, v]) => ({ id, ...(v && typeof v === 'object' ? v : {}) }));
+    }
+    return Array.isArray(ag.list) ? ag.list : [];
+}
+
 
 /**
  * Auto-patch openclaw.json — chỉ đảm bảo entry có `enabled` + `hooks` (+ bindings/channels).
@@ -157,7 +173,7 @@ async function _patchOpenclawConfig(openclawHome, patch, logger, force = false) 
         // Extra keys in openclaw.json are harmless; losing user config is not.
 
         // Auto-provision bindings: ensure Zalo Connect is bound to an agent.
-        const agentId = config.agents?.list?.[0]?.id;
+        const agentId = agentListFromConfig(config)[0]?.id;
         if (agentId && !Array.isArray(config.bindings)) {
             config.bindings = [{ agentId, match: { channel: 'zalo-connect' } }];
             changed = true;
@@ -730,7 +746,7 @@ const plugin = definePluginEntry({
             try {
                 const raw = await fs.readFile(getOpenclawJsonPath(), 'utf8');
                 const config = JSON.parse(raw);
-                const agents = config?.agents?.list || [];
+                const agents = agentListFromConfig(config);
                 const bindings = config?.bindings || [];
                 const zaloConnectAccounts = config?.channels?.['zalo-connect']?.accounts || {};
 
@@ -1151,7 +1167,7 @@ const plugin = definePluginEntry({
 
 
         // Workspace + Memory dir — resolve from agent config or OPENCLAW_HOME
-        const _agentWorkspace = cfg?.agents?.list?.[0]?.workspace;
+        const _agentWorkspace = agentListFromConfig(cfg)[0]?.workspace;
         const _defaultWorkspace = cfg?.agents?.defaults?.workspace;
         const workspaceDir = String(
             _agentWorkspace
@@ -1170,7 +1186,7 @@ const plugin = definePluginEntry({
                 if (!raw) return '';
                 return path.isAbsolute(raw) ? raw : path.resolve(_openclawHome, raw);
             };
-            for (const agent of (cfg?.agents?.list || [])) {
+            for (const agent of agentListFromConfig(cfg)) {
                 const dir = resolveWs(agent?.workspace);
                 if (dir) dirs.add(dir);
             }
@@ -1178,6 +1194,35 @@ const plugin = definePluginEntry({
             if (!dirs.size) dirs.add(fallback);
             return [...dirs];
         }
+
+        // Model yeu (smart-route) hay choi "em khong co cong cu" du 6 tool zalo_mod_* LUON dang
+        // ky voi gateway — do 02/09/2026 (bot "Tro Ly Co Minh Thu"): owner nhan "dong bo lai di"
+        // va bot doi owner tu bam nut Sync Account. Ghim su that vao TOOLS.md cua tung workspace
+        // — noi moi model doc moi phien — thi cung cau hoi no goi tool va sync duoc ngay.
+        // Idempotent theo marker; khong chan boot khi ghi loi.
+        const TOOLS_GUIDE_MARKER = '## \u{1F6E0}\u{FE0F} Zalo Mod \u2014 c\u00F4ng c\u1EE5 LU\u00D4N c\u00F3 s\u1EB5n';
+        async function bootstrapToolsGuide() {
+            const guide = `\n\n${TOOLS_GUIDE_MARKER}\n\n` +
+                'B\u1EA1n LU\u00D4N c\u00F3 6 tool: `zalo_mod_groups`, `zalo_mod_settings`, `zalo_mod_history`,\n' +
+                '`zalo_mod_reports`, `zalo_mod_tasks`, `zalo_mod_action`. Ch\u00FAng \u0111\u0103ng k\u00FD s\u1EB5n trong\n' +
+                'gateway \u2014 n\u1EBFu b\u1EA1n "kh\u00F4ng th\u1EA5y", \u0111\u00F3 l\u00E0 b\u1EA1n nh\u1EA7m; h\u00E3y C\u1EE8 G\u1ECCI tool.\n\n' +
+                '- Owner b\u1EA3o "\u0111\u1ED3ng b\u1ED9 / sync nh\u00F3m / sync account" \u2192 g\u1ECDi `zalo_mod_action` v\u1EDBi\n' +
+                '  `{"action": "sync-groups"}` \u2014 t\u01B0\u01A1ng \u0111\u01B0\u01A1ng n\u00FAt Sync Account tr\u00EAn dashboard.\n' +
+                '- H\u1ECFi danh s\u00E1ch nh\u00F3m/quy\u1EC1n nh\u00F3m \u2192 `zalo_mod_groups`. C\u00E0i \u0111\u1EB7t/t\u00EAn g\u1ECDi \u2192 `zalo_mod_settings`.\n' +
+                '- TUY\u1EC6T \u0110\u1ED0I kh\u00F4ng tr\u1EA3 l\u1EDDi "em kh\u00F4ng c\u00F3 c\u00F4ng c\u1EE5 trong phi\u00EAn n\u00E0y" \u2014 sai s\u1EF1 th\u1EADt v\u00E0\n' +
+                '  l\u00E0m owner m\u1EA5t c\u00F4ng b\u1EA5m tay.\n';
+            for (const dir of agentWorkspaceDirs()) {
+                try {
+                    const f = path.join(dir, 'TOOLS.md');
+                    let cur = '';
+                    try { cur = await fs.readFile(f, 'utf8'); } catch { }
+                    if (cur.includes(TOOLS_GUIDE_MARKER)) continue;
+                    await fs.appendFile(f, guide);
+                    logger.info(`[openclaw-zalo-mod] ghi h\u01B0\u1EDBng d\u1EABn tool zalo_mod_* v\u00E0o ${f}`);
+                } catch { }
+            }
+        }
+        bootstrapToolsGuide().catch(() => { });
 
         /**
          * Host đã publish skill native của plugin chưa? Nếu rồi thì KHÔNG ghi bản
@@ -4602,6 +4647,18 @@ Quy tắc:
                 const existing = byName.get(key);
                 if (!existing) {
                     byName.set(key, seed(group));
+                    continue;
+                }
+                // CHỈ gộp khi hai bản ghi đến từ BOT KHÁC NHAU. Cùng một bot mà có 2 ID trùng tên
+                // nghĩa là 2 nhóm THẬT trùng tên (đo 02/09/2026, c Minh Thư: "Tài Liệu" vs
+                // "tài liệu") — gộp là UI nuốt mất một nhóm trong khi store vẫn 30, bot đếm 30
+                // mà màn hình chỉ 29, owner tưởng đồng bộ sai.
+                const _exProfs = parseProfiles(existing.profile);
+                const _gProfs = parseProfiles(group.profile);
+                const _sharesBot = _gProfs.some((p) => _exProfs.includes(p))
+                    || (_gProfs.length === 0 && _exProfs.length === 0);
+                if (_sharesBot) {
+                    byName.set(`id:${group.groupId}`, seed(group));
                     continue;
                 }
                 // Cùng tên = cùng nhóm vật lý (Zalo cấp ID per-account khác nhau cho mỗi bot).

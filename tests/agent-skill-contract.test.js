@@ -70,7 +70,7 @@ test('skill workspace fallback có version stamp để bootstrap biết khi nào
 
 test('bootstrap ghi skill cho MỌI agent workspace, không chỉ agent đầu tiên', () => {
     assert.match(source, /function agentWorkspaceDirs\(\)/);
-    assert.match(source, /for \(const agent of \(cfg\?\.agents\?\.list \|\| \[\]\)\)/);
+    assert.match(source, /for \(const agent of agentListFromConfig\(cfg\)\)/);
     assert.match(source, /for \(const wsDir of agentWorkspaceDirs\(\)\)/);
 });
 

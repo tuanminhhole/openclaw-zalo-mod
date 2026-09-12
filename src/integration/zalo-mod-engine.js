@@ -22,6 +22,7 @@ import { openStore } from '../storage/database.js';
 import { CrmStore } from '../crm/crm-store.js';
 import { createZaloConnectBridge } from './zalo-connect-bridge.js';
 import { createOpenclawAdapter } from './openclaw-adapter.js';
+import { SelfOriginTracker } from '../messaging/self-origin-tracker.js';
 
 const SWEEP_INTERVAL_MS = 60 * 1000;
 
@@ -49,13 +50,16 @@ export function createZaloModEngine({ dataDir, logger, runtime, getConfig, confi
     }
 
     const storage = openStore(path.join(dataDir, 'context.db'), { logger: log });
+    // Sổ chờ vân tay của payload bot vừa gửi, để tin quay về biết đường nhận nhãn 'bot'.
+    // Sống trong engine vì engine được cache theo dataDir: đăng ký lại plugin không mất sổ.
+    const selfOrigin = new SelfOriginTracker();
     const buffer = new ConversationBuffer({ storage, maxPerConversation: config.bufferSize ?? 200 });
     const turnStore = new TurnContextStore();
     const queue = new ConversationQueue({
         defaultTimeoutMs: config.turnTimeoutMs ?? 120_000,
         onError: (err, meta) => log.warn?.(`[zalo-mod] turn queue error (${meta.label || meta.key}): ${err.message}`),
     });
-    const adapter = createOpenclawAdapter({ logger: log, runtime, getConfig });
+    const adapter = createOpenclawAdapter({ logger: log, runtime, getConfig, onSelfSend: (text) => selfOrigin.remember(text) });
     const bridge = createZaloConnectBridge(adapter, { logger: log });
 
     // CRM core (Z4): cần SQLite thật; in-memory fallback thì CRM tắt (API trả 503).
@@ -110,6 +114,7 @@ export function createZaloModEngine({ dataDir, logger, runtime, getConfig, confi
         turnStore,
         queue,
         crm,
+        selfOrigin,
 
         /**
          * Ghi một LÔ tin CŨ kéo từ Zalo về (bridge contract v5).
@@ -148,6 +153,10 @@ export function createZaloModEngine({ dataDir, logger, runtime, getConfig, confi
                         sentAt: ts,
                         fromSelf: !!e.fromSelf,
                         mediaUrls: e.mediaUrls,
+                        // Tin đi ra từ chính tài khoản này: bot viết hay người gõ tay? Sổ chờ giữ
+                        // vân tay của payload mà OpenClaw vừa gửi; khớp thì là bot. Không có
+                        // tracker (host cũ) thì để NULL - thà không có nhãn còn hơn nhãn sai.
+                        origin: e.fromSelf ? (selfOrigin?.claim?.(e.text || '') ?? null) : null,
                     });
                     // Mốc hội thoại lấy tin MỚI NHẤT trong lô — kéo lịch sử toàn tin cũ, ghi nhầm
                     // mốc cũ vào sẽ đẩy hội thoại đang sôi nổi xuống đáy danh sách chat.

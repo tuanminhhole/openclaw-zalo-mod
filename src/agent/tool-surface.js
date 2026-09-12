@@ -189,7 +189,29 @@ export function isOwnerRequester(requesterSenderId, ownerIds) {
  */
 export function isTrustedOwnerContext(toolContext, ownerIds) {
     if (toolContext?.senderIsOwner === true) return true;
-    return isOwnerRequester(toolContext?.requesterSenderId, ownerIds);
+    if (isOwnerRequester(toolContext?.requesterSenderId, ownerIds)) return true;
+    return isOwnerScheduledRun(toolContext);
+}
+
+/**
+ * Lượt do CRON của chính owner chạy - không có người gửi, và đó là bình thường.
+ *
+ * Đo trên máy khách 15/09/2026: lịch báo cáo doanh số 22:00 chạy bằng cron, `requesterSenderId`
+ * rỗng và `senderIsOwner` không được cấp, nên gate ở trên trả false và plugin đưa ra 0 tool. Bot
+ * mất `zalo_mod_action`, không còn đường nào đọc lịch sử chat, rồi **bịa ra một mã lỗi nghe hợp lý**
+ * ("API lấy lịch sử chat trả HTTP 404 ở cả 4 nhóm") và gửi thẳng câu đó cho khách. Chạy lại bao
+ * nhiêu lần cũng vậy: lịch tự động KHÔNG BAO GIỜ lập nổi báo cáo. Đúng lớp lỗi mà comment của
+ * `isTrustedOwnerContext` đã cảnh báo, chỉ khác lối vào.
+ *
+ * Vì sao tin được lượt cron: job nằm trong state của chính owner, do owner đặt, và chạy trong tiến
+ * trình gateway của owner - không có đường nào cho người ngoài chen một lượt cron vào.
+ *
+ * Hai điều kiện phải ĐỦ CẢ HAI, và `!requesterSenderId` là phần cố ý: nếu một lượt cron có kèm
+ * người gửi mà người đó không phải owner thì vẫn chặn, không mở cửa theo tên session.
+ */
+export function isOwnerScheduledRun(toolContext) {
+    if (String(toolContext?.requesterSenderId || '').trim()) return false;
+    return /(^|:)cron:/.test(String(toolContext?.sessionKey || ''));
 }
 
 /**
@@ -1007,6 +1029,12 @@ export function createZaloModAgentTools(host) {
                 + ` sessionKey=${toolContext?.sessionKey || '-'}`);
             return [];
         }
-        return buildTools(requesterSenderId, toolContext?.senderIsOwner === true);
+        // Truyền `ownerScheduled` như một dạng "host khai là owner": `guard` bên trong mỗi tool gọi
+        // lại `isTrustedOwnerContext` nhưng KHÔNG có `sessionKey` trong tay, nên tự nó không bao giờ
+        // nhận ra lượt cron. Đo trên máy khách 15/09/2026: chỉ mở gate ở factory là chưa đủ - tool
+        // được cấp nhưng mọi lời gọi vẫn chết ở guard với "requester=unknown không phải owner", và
+        // bot lại bịa tiếp mã lỗi 404 y như cũ.
+        const ownerScheduled = isOwnerScheduledRun(toolContext);
+        return buildTools(requesterSenderId, toolContext?.senderIsOwner === true || ownerScheduled);
     };
 }

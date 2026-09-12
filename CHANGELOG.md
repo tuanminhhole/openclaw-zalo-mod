@@ -1,3 +1,42 @@
+## [2.32.0] - 2026-09-13
+
+### 🔴 Lịch tự động không bao giờ chạy nổi, và bot bịa mã lỗi để giải thích
+
+Lịch báo cáo đặt bằng cron chạy đúng giờ nhưng **không bao giờ lập được báo cáo**. Bot nhắn cho chủ
+nhóm những câu như *"API lấy lịch sử chat trả HTTP 404 ở cả 4 nhóm"* - trong khi dữ liệu vẫn đủ,
+API vẫn sống, và gọi tay thì chạy ngay.
+
+Nguyên nhân: plugin chỉ cấp bộ công cụ cho lượt nào **có người gửi là chủ bot**. Lượt cron thì không
+có người gửi nào cả, vì không ai nhắn gì - nên nó bị xếp cùng nhóm với người lạ và nhận về **không
+một công cụ nào**. Mất công cụ đọc lịch sử, model không nói "tôi không có quyền" mà tự nghĩ ra một
+mã lỗi nghe hợp lý rồi gửi thẳng cho khách.
+
+- **Lượt cron của chủ bot nay được cấp công cụ đầy đủ.** Lịch đặt trong máy của chủ, chạy trong tiến
+  trình của chủ, nên nó là chủ.
+- **Người lạ vẫn bị chặn y như cũ**, kể cả khi lượt đó nằm trong một phiên cron: chỉ lượt **không có
+  người gửi** mới được coi là lịch tự động.
+
+### 🏷️ Khung chat nói rõ câu nào bot viết, câu nào người tự gõ
+
+Bot Zalo cá nhân nhắn bằng CHÍNH tài khoản của khách, nên trong khung chat tin bot soạn và tin chủ
+máy gõ tay trên điện thoại trông giống hệt nhau: cùng tên, cùng bong bóng bên phải. Khi owner hỏi
+"câu này ai viết?" thì cách duy nhất để trả lời chắc chắn là mở máy chủ, đối chiếu lịch sử chat với
+log gọi model của gateway - việc chỉ người có SSH làm được, và log thì xoay vòng nên vài ngày sau là
+mất dấu.
+
+- **Mỗi tin đi ra nay mang nhãn `Bot` hoặc `Tự gõ`** ngay cạnh giờ gửi, kèm chú thích khi rê chuột.
+- **Cách xác định**: OpenClaw phát nguyên văn nội dung ngay trước khi gửi; plugin giữ vân tay câu đó
+  trong 10 phút, tin quay về khớp vân tay thì là bot. Tin plugin tự gửi (báo cáo định kỳ, trả lời từ
+  khung chat) cũng được đánh dấu theo cùng đường.
+- **Gửi cùng một câu hai lần thì phải có hai dấu**: mỗi dấu bị tiêu sau khi dùng, nên người gõ lại
+  y hệt câu bot vừa nhắn vẫn hiện đúng là "Tự gõ".
+- **Không đoán ngược cho tin cũ.** Tin ghi trước bản này không có nhãn, và khung chat để trống chỗ
+  đó thay vì suy diễn - một nhãn sai còn tệ hơn không có nhãn.
+- **Khớp được cả khi Zalo tự gắn mention.** Bản trả lời trong nhóm đi ra là `Dạ anh Kent, …` nhưng
+  quay về đã thành `@Kent Dạ anh Kent, …`: zalo-connect gắn mention native lúc gửi. So nguyên văn
+  thì trượt, và mọi câu trả lời trong nhóm bị gán nhầm "Tự gõ". Nay ghi dấu cả bản trước và sau khi
+  gắn mention, cùng trỏ về một dấu, và khớp theo nhiều cách cắt mention vì tên có thể dài mấy chữ.
+
 ## [2.31.2] - 2026-09-02
 
 ### 🚑 Theo kịp OpenClaw 2026.8 + hết cảnh bot "chối" không chịu đồng bộ

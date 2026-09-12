@@ -46,8 +46,8 @@ export class SqliteStore {
         this.db = db;
         this.kind = 'sqlite';
         this._insMsg = db.prepare(`INSERT OR REPLACE INTO messages
-            (id, conversation_id, sender_id, sender_name, text, raw_type, sent_at, quote_id, from_self, media_json)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+            (id, conversation_id, sender_id, sender_name, text, raw_type, sent_at, quote_id, from_self, media_json, origin)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
         this._insTurn = db.prepare(`INSERT OR REPLACE INTO turn_contexts
             (id, message_id, sender_id, snapshot_json, status, created_at, expires_at)
             VALUES (?, ?, ?, ?, ?, ?, ?)`);
@@ -66,10 +66,12 @@ export class SqliteStore {
         this._upsertConv.run(id, accountId, groupId ?? null, type, title ?? null, lastMessageAt ?? Date.now());
     }
 
-    insertMessage({ id, conversationId, senderId, senderName, text, rawType, sentAt, quoteId, fromSelf, mediaUrls }) {
+    insertMessage({ id, conversationId, senderId, senderName, text, rawType, sentAt, quoteId, fromSelf, mediaUrls, origin }) {
         this._insMsg.run(id, conversationId, senderId, senderName ?? '', text ?? '',
             rawType ?? 'message', sentAt ?? Date.now(), quoteId ?? null,
-            fromSelf ? 1 : 0, mediaUrls?.length ? JSON.stringify(mediaUrls) : null);
+            fromSelf ? 1 : 0, mediaUrls?.length ? JSON.stringify(mediaUrls) : null,
+            // Chỉ tin ĐI RA mới có nghĩa 'bot'/'human'; tin của người khác để NULL, đừng bịa nhãn.
+            fromSelf && (origin === 'bot' || origin === 'human') ? origin : null);
     }
 
     /**

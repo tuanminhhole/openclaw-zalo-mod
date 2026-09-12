@@ -69,6 +69,10 @@ export function createOpenclawAdapter(deps = {}) {
     const logger = deps.logger || console;
     const runtime = deps.runtime || null;
     const getConfig = deps.getConfig || (() => ({}));
+    // Tin do CHÍNH zalo-mod gửi (báo cáo định kỳ, action send-message, trả lời từ khung chat) cũng
+    // quay về qua bridge y như tin bot, nên phải ghi dấu ở đây; nếu không nó hiện nhãn "Tự gõ" và
+    // owner lại tưởng có người cầm máy nhắn.
+    const onSelfSend = typeof deps.onSelfSend === 'function' ? deps.onSelfSend : null;
     const getService = deps.getZaloConnectService
         || (() => globalThis.__zaloConnectBridgeService || null);
     let warnedDegradedMention = false;
@@ -145,6 +149,10 @@ export function createOpenclawAdapter(deps = {}) {
         },
 
         async executeAction(accountId, action) {
+            // Ghi dấu trước khi gửi: tin có thể quay về trước cả khi lời gọi này trả về.
+            if (onSelfSend && OUTBOUND_TIER_ACTIONS.has(action.action)) {
+                try { onSelfSend(String(action.message ?? '')); } catch { }
+            }
             const svc = getService();
             if (svc?.executeAction) {
                 logBackendOnce('zalo-connect-bridge-service');

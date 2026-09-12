@@ -48,7 +48,12 @@ test('v9: cột mới có mặt, task gõ tay CŨ đã done_at được suy ra s
                  VALUES ('t-open', 'Việc cũ chưa xong', '', NULL, NULL, 900, 900)`);
 
         const applied = runMigrations(db);
-        assert.equal(applied, 1, 'chỉ v9 mới, v1-8 đã đánh dấu applied từ trước');
+        // Đếm "đúng 1" sẽ vỡ mỗi lần thêm migration mới (v10 làm nó đỏ ngay). Cái cần khẳng định là
+        // v1-v8 KHÔNG chạy lại và v9 có chạy - kiểm thẳng vào bảng đánh dấu.
+        assert.ok(applied >= 1, 'ít nhất v9 phải chạy');
+        const marks = db.prepare('SELECT version FROM schema_migrations ORDER BY version').all().map(r => Number(r.version));
+        assert.ok(marks.includes(9), 'v9 đã được đánh dấu applied');
+        assert.deepEqual(marks.slice(0, 8), [1, 2, 3, 4, 5, 6, 7, 8], 'v1-v8 vẫn nguyên, không chạy lại');
 
         const done = db.prepare('SELECT source, status FROM tasks WHERE id = ?').get('t-done');
         assert.equal(done.source, 'manual');

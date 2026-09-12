@@ -281,6 +281,23 @@ export const MIGRATIONS = [
             UPDATE tasks SET status = 'done' WHERE done_at IS NOT NULL AND status = 'todo';
         `,
     },
+    {
+        version: 10,
+        name: 'message-origin',
+        // Bot Zalo cá nhân gửi bằng CHÍNH tài khoản của khách, nên trong khung chat tin bot viết và
+        // tin chủ máy gõ tay nằm lẫn nhau: cùng sender_id, cùng sender_name, cùng from_self=1.
+        // Nhìn giao diện không tài nào phân biệt được - phải mở log gateway ra soi xem quanh mốc đó
+        // có cặp `[model-fetch] start/response` hay không (đã phải làm thật cho một khách ngày
+        // 12/09/2026 để trả lời đúng một câu hỏi: "câu này bot nhắn hay tôi nhắn?").
+        //
+        // `origin` ghi thẳng câu trả lời đó vào lúc ghi tin, nơi duy nhất còn biết chắc:
+        //   'bot'   - nội dung khớp payload mà OpenClaw vừa gửi đi (reply_payload_sending)
+        //   'human' - tin từ tài khoản này nhưng không khớp payload nào => người gõ tay
+        //   NULL    - tin của người khác, hoặc tin cũ ghi trước bản này (không suy đoán ngược)
+        sql: `
+            ALTER TABLE messages ADD COLUMN origin TEXT;
+        `,
+    },
 ];
 
 /**

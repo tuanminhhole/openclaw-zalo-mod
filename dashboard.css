@@ -5823,6 +5823,12 @@ textarea:focus {
 }
 .chat-msg.me .chat-bubble { background: var(--primary-soft); border-color: color-mix(in srgb, var(--primary) 30%, transparent); }
 .chat-msg-time { font-size: 10.5px; color: var(--muted); margin-top: 2px; padding: 0 4px; }
+/* Nhãn nguồn tin đi ra: bot soạn hay người tự gõ. Cố ý nhỏ và nhạt hơn cả giờ gửi - đây là thông
+   tin tra cứu khi cần, không phải thứ phải đọc ở mỗi dòng. */
+.chat-origin { display: inline-block; margin-right: 5px; padding: 0 5px; border-radius: 999px;
+  font-size: 9.5px; line-height: 15px; font-weight: 600; letter-spacing: .02em; vertical-align: 1px; }
+.chat-origin.is-bot { background: rgba(37, 99, 235, .12); color: #2563eb; }
+.chat-origin.is-human { background: rgba(100, 116, 139, .14); color: #64748b; }
 .chat-media { max-width: 220px; max-height: 220px; border-radius: 8px; display: block; margin-bottom: 6px; }
 
 .chat-composer { flex: none; display: flex; gap: 8px; padding: 10px; border-top: 1px solid var(--line); align-items: flex-end; }

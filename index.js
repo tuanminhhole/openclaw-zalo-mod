@@ -6101,6 +6101,9 @@ Quy tắc:
                         text: m.text,
                         sentAt: Number(m.sent_at) || 0,
                         fromSelf: !!m.from_self,
+                        // 'bot' | 'human' cho tin đi ra; undefined cho tin của người khác và cho
+                        // tin ghi trước bản 2.32 (không có dữ liệu thì không gắn nhãn, đừng đoán).
+                        origin: m.origin === 'bot' || m.origin === 'human' ? m.origin : undefined,
                         media: m.media_json ? JSON.parse(m.media_json) : undefined,
                     })),
                 };
@@ -6784,7 +6787,16 @@ Quy tắc:
 
         api.on('reply_payload_sending', (event, ctx) => {
             if ((ctx?.channelId || event?.channel) !== 'zalo-connect') return;
+            // Ghi vân tay TRƯỚC khi trang trí mention: tin quay về qua bridge đã bị zalo-connect
+            // viết lại phần mention, nên bản so khớp phải là bản chưa trang trí (fingerprint()
+            // cũng tự cắt mention đầu câu, hai lớp phòng cho chắc). Nhờ dấu này mà khung chat
+            // phân biệt được câu nào bot viết, câu nào chủ máy gõ tay từ cùng tài khoản đó.
             const result = replyMentions.decorate(event, ctx);
+            // Ghi dấu CẢ hai bản: bản OpenClaw đưa xuống và bản đã gắn mention thực sự gửi đi.
+            // Tin quay về từ Zalo mang mention native (`@Kent ` một khoảng trắng), không khớp bản
+            // gốc - đo trên máy khách 13/09/2026, mọi câu trả lời trong nhóm đều bị gán nhầm
+            // "Tự gõ" vì chỉ ghi bản gốc. Hai bản trỏ về một dấu nên không sinh dấu thừa.
+            try { zEngine.selfOrigin?.remember?.(event?.payload?.text || '', result?.text || ''); } catch { }
             if (!result) return;
             if (result.changed) {
                 logger.info(`[openclaw-zalo-mod] native reply mention: @${result.record.senderName} run=${result.record.runId || 'session-fifo'}`);

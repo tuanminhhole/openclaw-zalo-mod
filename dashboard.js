@@ -10,7 +10,7 @@ const modalBody = document.getElementById('modalBody');
 const modalCancel = document.getElementById('modalCancel');
 const modalConfirm = document.getElementById('modalConfirm');
 const token = window.ZALO_DASHBOARD_TOKEN || '';
-const pluginVersion = '2.31.2';
+const pluginVersion = '2.32.0';
 let state = null;
 let activeGroupId = '';
 let lang = localStorage.getItem('zaloDashboardLang') || 'vi';
@@ -7056,6 +7056,26 @@ function chatConvRowHtml(c) {
   </button>`;
 }
 
+/**
+ * Nhãn "ai viết câu này" cho tin ĐI RA.
+ *
+ * Bot Zalo cá nhân gửi bằng chính tài khoản của khách, nên bong bóng bên phải có thể là bot viết
+ * HOẶC chủ máy tự gõ trên điện thoại - nhìn không thể phân biệt. Trước đây muốn biết phải SSH vào
+ * máy chủ soi log xem có lượt gọi model quanh mốc đó không.
+ *
+ * Không có nhãn (tin cũ ghi trước bản 2.32, hoặc host chưa phát reply_payload_sending) thì KHÔNG
+ * vẽ gì - im lặng đúng hơn là đoán bừa rồi nói sai với khách.
+ */
+function chatOriginBadge(m) {
+  if (!m.fromSelf || (m.origin !== 'bot' && m.origin !== 'human')) return '';
+  const bot = m.origin === 'bot';
+  const label = bot ? 'Bot' : 'Tự gõ';
+  const title = bot
+    ? 'Do bot soạn và gửi'
+    : 'Người dùng tự gõ từ tài khoản này (không phải bot)';
+  return `<span class="chat-origin ${bot ? 'is-bot' : 'is-human'}" title="${crmEsc(title)}">${crmEsc(label)}</span>`;
+}
+
 /** HTML một tin — dùng chung cho vẽ lại toàn bộ và cho việc CHÈN THÊM tin mới. */
 function chatMsgHtml(m, { isGroup, lastDay, isNew = false }) {
   const day = new Date(Number(m.sentAt)).toLocaleDateString('vi-VN');
@@ -7068,7 +7088,7 @@ function chatMsgHtml(m, { isGroup, lastDay, isNew = false }) {
     ${/* Co anh roi thi khong in kem chu "[Media attachment]" — day la chu do host sinh ra khi
          tin khong co phan chu, giu lai chi lam bong bong roi. */''}
     <div class="chat-bubble">${media}${crmEsc(media && /^\[(media|file|image|sticker)[^\]]*\]$/i.test((m.text || '').trim()) ? '' : (m.text || ''))}</div>
-    <div class="chat-msg-time">${chatTime(m.sentAt)}</div>
+    <div class="chat-msg-time">${chatOriginBadge(m)}${chatTime(m.sentAt)}</div>
   </div>`;
   return { html, day };
 }

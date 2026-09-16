@@ -1,3 +1,40 @@
+## [2.32.1] - 2026-09-16
+
+### Bot từ chối gửi lời mời kết bạn dù owner ra lệnh
+
+Owner nhờ bot *"gửi lời kết bạn với các thành viên trong nhóm chưa kết bạn"*, bot trả lời *"quyền gửi
+lời mời kết bạn trên hệ thống đang bị tắt"* và chỉ đường vào dashboard bật một công tắc không tồn tại.
+Bot không bịa: nó gọi `list-actions`, thấy `send-friend-request` nằm trong nhóm `destructive` cùng
+`destructiveEnabled: false` nên dừng - đúng như plugin bảo nó.
+
+Chỗ sai nằm ở plugin: cùng một thao tác được xếp **hai hạng khác nhau** ở hai bảng. Đường `zalo-api`
+(`connect-actions.js`) coi gửi lời mời kết bạn là WRITE (hoàn tác được bằng `undo-friend-request`),
+còn action bọc sẵn `send-friend-request` (`tool-surface.js`) lại xếp vào nhóm phá hoại cần
+`agentTools.allowDestructive`. Owner muốn bot kết bạn từng người thì phải mở luôn cả kick, block, rời
+nhóm - đổi phanh nhỏ lấy rủi ro lớn.
+
+- **`send-friend-request` (từng người) chuyển sang SAFE** - bot gửi được ngay khi owner ra lệnh, không
+  cần bật `allowDestructive`. Action này chỉ nhận một `userId`; muốn nhiều người bot phải gọi từng
+  lượt, và luật gói vẫn đếm đích như cũ.
+- **`bulk-friend-request` vẫn là DESTRUCTIVE.** Kết bạn ồ ạt là thứ làm Zalo khoá tài khoản bot, nên
+  bản hàng loạt tiếp tục cần owner mở cờ (và gói PRO/TEAM như trước).
+- Mô tả cờ `allowDestructive` trong `openclaw.plugin.json` sửa cho khớp code: "kết bạn HÀNG LOẠT",
+  không còn gợi cho model rằng kết bạn từng người cũng cần cờ.
+- Test mới khoá cả hai bảng phải đồng ý với nhau về `send-friend-request`; đổi một bên là test đỏ.
+
+### Đổi bot mặc định trong openclaw rồi mà zalo-mod vẫn gọi vào tài khoản cũ
+
+Cùng ca trên, sau khi quyền đã mở: bot gọi `get-friends` và nhận *"tài khoản Zalo Connect báo đăng
+nhập thất bại"* - trong khi tài khoản `bstuana` đang kết nối và đã được đặt làm
+`channels.zalo-connect.defaultAccount`. Lý do: mọi action không kèm `profile` và không thuộc nhóm nào
+đều rơi về chuỗi cứng `'default'` trong plugin. Tài khoản `default` mất phiên Zalo thì toàn bộ thao
+tác lẻ (danh sách bạn bè, kết bạn, profile) chết theo, dù chủ bot đã chuyển sang tài khoản khác.
+
+- **Bot mặc định của zalo-mod nay đọc từ `channels.zalo-connect.defaultAccount` của openclaw**
+  (`resolveDefaultProfile()`), rơi về `'default'` chỉ khi openclaw không khai. Áp cho
+  `runDashboardZcaAction`, `primaryProfile` (nhóm chưa ghi profile) và đường `zalo-api`.
+- Không đụng dữ liệu đã ghi: nhóm nào đã có `profile` trong sổ nhóm vẫn dùng đúng profile đó.
+
 ## [2.32.0] - 2026-09-13
 
 ### 🔴 Lịch tự động không bao giờ chạy nổi, và bot bịa mã lỗi để giải thích

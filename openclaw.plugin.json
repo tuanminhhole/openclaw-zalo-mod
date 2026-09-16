@@ -3,7 +3,7 @@
   "name": "OpenClaw Zalo Mod",
   "description": "Zero-token Zalo group moderation — slash commands, anti-spam, warn system, memory integration. Blocks LLM for non-mention messages.",
   "icon": "https://cdn.simpleicons.org/zalo",
-  "version": "2.32.0",
+  "version": "2.32.1",
   "enabledByDefault": false,
   "activation": {
     "onStartup": true,
@@ -70,7 +70,7 @@
           "allowDestructive": {
             "type": "boolean",
             "default": false,
-            "description": "Cho bot chạy action không hoàn tác được (kick, block, rời nhóm, gửi lời mời kết bạn) khi owner ra lệnh. Mặc định tắt."
+            "description": "Cho bot chạy action không hoàn tác được (kick, block, rời nhóm, kết bạn HÀNG LOẠT) khi owner ra lệnh. Mặc định tắt. Gửi lời mời kết bạn từng người không cần cờ này."
           }
         },
         "additionalProperties": false

@@ -41,6 +41,13 @@ export const AGENT_SAFE_ACTIONS = Object.freeze([
     'get-permissions', 'get-name-triggers', 'group-detail', 'journal-data',
     'scan-members', 'sync-groups', 'generate-summary', 'send-message',
     'toggle-setting', 'bulk-toggle-setting',
+    // Gửi lời mời kết bạn TỪNG NGƯỜI (16/09/2026 - ca thật trên bot "Bs Tuấn A"): owner nhờ kết bạn với
+    // thành viên nhóm, bot đọc `destructiveEnabled: false` rồi trả lời "hệ thống chặn". Thao tác này
+    // hoàn tác được (`undo-friend-request`) và đường `zalo-api` trong connect-actions.js đã xếp nó là
+    // WRITE - hai bảng phải nói cùng một luật. Chỉ bản HÀNG LOẠT (`bulk-friend-request`) mới cần
+    // allowDestructive, vì kết bạn ồ ạt là thứ làm Zalo khoá tài khoản bot. Action này nhận MỘT
+    // `userId` (index.js), muốn nhiều người bot phải gọi từng lượt và luật gói vẫn đếm đích như cũ.
+    'send-friend-request',
     // Lịch báo cáo — bot ĐỌC + TẠO + SỬA được, để owner sai bằng lời thay vì tự vào dashboard.
     // `report-digest-preview` chỉ dựng chuỗi (không gửi) nên an toàn. `report-job-run` GỬI thật nhưng
     // chỉ tới các đích đã cấu hình sẵn trong lịch, không nhận đích tuỳ ý từ agent.
@@ -87,7 +94,8 @@ export const AGENT_SAFE_ACTIONS = Object.freeze([
  */
 export const AGENT_DESTRUCTIVE_ACTIONS = Object.freeze([
     'remove-user', 'block-member', 'unblock-member', 'leave-group',
-    'send-friend-request', 'accept-friend', 'reject-friend', 'review-pending',
+    'accept-friend', 'reject-friend', 'review-pending',
+    // `send-friend-request` (từng người) đã chuyển sang SAFE - xem ghi chú ở đó. Bản hàng loạt vẫn ở đây.
     'send-messages', 'bulk-friend-request',
 ]);
 

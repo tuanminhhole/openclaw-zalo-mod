@@ -78,6 +78,30 @@ function getOpenclawJsonPath() {
 }
 
 /**
+ * Bot "mặc định" của zalo-mod = tài khoản zalo-connect mà openclaw coi là mặc định
+ * (`channels.zalo-connect.defaultAccount`), KHÔNG phải chuỗi cứng 'default'.
+ *
+ * Ca thật 16/09/2026 (mac_dr-tuan): tài khoản `default` mất phiên Zalo, chủ bot chuyển sang `bstuana`
+ * và openclaw đã ghi `defaultAccount: "bstuana"`, nhưng bot gọi `get-friends` vẫn nhận "đăng nhập thất
+ * bại" vì mọi action không kèm `profile` và không thuộc nhóm nào đều rơi về 'default'. Đọc thẳng từ
+ * openclaw.json để hai bên cùng một câu trả lời; đệm 5 giây vì hàm này nằm trên đường nóng của từng
+ * action. Thiếu file / JSON hỏng / không khai → 'default' đúng như hành vi cũ.
+ */
+let _defaultProfileCache = { at: 0, value: 'default' };
+function resolveDefaultProfile() {
+    const now = Date.now();
+    if (now - _defaultProfileCache.at < 5000) return _defaultProfileCache.value;
+    let value = 'default';
+    try {
+        const cfg = JSON.parse(readFileSync(getOpenclawJsonPath(), 'utf8'));
+        const acc = cfg?.channels?.['zalo-connect']?.defaultAccount;
+        if (typeof acc === 'string' && acc.trim()) value = acc.trim();
+    } catch (_) { /* giữ 'default' */ }
+    _defaultProfileCache = { at: now, value };
+    return value;
+}
+
+/**
  * Read bot name from IDENTITY.md in workspace dir.
  * Parses `**Tên:** BotName` pattern.
  */
@@ -1088,7 +1112,10 @@ const plugin = definePluginEntry({
             return String(profileStr ?? 'default').split(',').map(s => s.trim()).filter(Boolean);
         }
         function primaryProfile(profileStr) {
-            return parseProfiles(profileStr)[0] || 'default';
+            // Rỗng/undefined → bot mặc định THẬT của openclaw, không để parseProfiles đổi thành 'default'.
+            const raw = profileStr == null ? '' : String(profileStr).trim();
+            if (!raw) return resolveDefaultProfile();
+            return parseProfiles(raw)[0] || resolveDefaultProfile();
         }
         function mergeProfileStr(existing, prof) {
             // KHÔNG dùng parseProfiles(existing) vì nó fallback undefined→'default',
@@ -4966,7 +4993,7 @@ Quy tắc:
 
             // Determine the profile — group nhiều bot lưu CSV "default,mkt", phải lấy
             // primary (bot đầu) làm profile hợp lệ để gọi withZaloApi, không dùng nguyên chuỗi.
-            let targetProfile = 'default';
+            let targetProfile = resolveDefaultProfile();
             if (payload.profile) {
                 targetProfile = payload.profile;
             } else if (groupId && groupNames[groupId]?.profile) {

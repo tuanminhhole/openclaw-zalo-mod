@@ -334,6 +334,28 @@ test('classifyAction (P15): crm-tasks-list/board + crm-task-status/approve/appro
     }
 });
 
+// 16/09/2026 - ca thật trên bot "Bs Tuấn A" (mac_dr-tuan): owner nhờ "gửi lời kết bạn với thành viên nhóm
+// BĐS Vin", bot gọi list-actions thấy `send-friend-request` nằm trong `destructive` +
+// `destructiveEnabled: false` rồi trả lời "quyền gửi lời mời kết bạn bị hệ thống chặn". Trong khi đó
+// đường `zalo-api` (connect-actions.js) xếp CÙNG thao tác là WRITE - hai bảng nói hai luật cho một việc.
+// Chốt: kết bạn TỪNG NGƯỜI là SAFE (hoàn tác được bằng undo-friend-request); chỉ bản HÀNG LOẠT mới
+// cần allowDestructive. Test này khoá cả hai bảng phải đồng ý với nhau.
+test('classifyAction: send-friend-request (từng người) SAFE, bulk-friend-request vẫn DESTRUCTIVE, và khớp với đường zalo-api', async () => {
+    const single = classifyAction('send-friend-request');
+    assert.equal(single.allowed, true, 'kết bạn từng người phải được phép mặc định');
+    assert.equal(single.kind, 'safe');
+    assert.equal(AGENT_DESTRUCTIVE_ACTIONS.includes('send-friend-request'), false);
+
+    const bulk = classifyAction('bulk-friend-request');
+    assert.equal(bulk.allowed, false, 'kết bạn hàng loạt vẫn phải bị chặn khi chưa bật allowDestructive');
+    assert.equal(classifyAction('bulk-friend-request', { allowDestructive: true }).allowed, true);
+
+    // Đường zalo-api phải cùng câu trả lời: gửi lời mời (từng người) không cần allowDestructive.
+    const { classifyConnectAction } = await import('../src/agent/connect-actions.js');
+    assert.equal(classifyConnectAction('send-friend-request').allowed, true,
+        'connect-actions.js xếp send-friend-request là WRITE - tool-surface không được nói ngược lại');
+});
+
 test('zalo_mod_action: list-actions phản ánh đúng cờ allowDestructive', async () => {
     const { host } = makeHost({ isDestructiveAllowed: () => true });
     const tools = createZaloModAgentTools(host)({ requesterSenderId: OWNER });

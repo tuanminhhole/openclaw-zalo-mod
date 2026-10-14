@@ -79,6 +79,37 @@ export function createOpenclawAdapter(deps = {}) {
     let loggedBackend = '';
     let outboundAdapterPromise = null;
 
+    /**
+     * Đăng ký vào bridge và BÁM THEO nó. zalo-connect có thể bị cài lại/thay nóng khi gateway vẫn chạy
+     * ("Plugin replacement applied"): bản mới gán một service MỚI lên globalThis, còn listener của mình
+     * nằm trên service cũ không ai phát nữa - khung chat ngừng ghi tin trong khi bot vẫn trả lời
+     * (vps_asa, 14/10/2026). Mỗi `followMs` kiểm lại: service đổi thì huỷ đăng ký cũ, đăng ký lại vào
+     * service mới. Cũng tự bắt được bridge khi zalo-mod nạp trước zalo-connect.
+     */
+    const followMs = Number.isFinite(deps.bridgeFollowMs) ? deps.bridgeFollowMs : 15000;
+    function followSubscription(method, cb) {
+        let current = null;
+        let off = null;
+        const attach = () => {
+            const svc = getService();
+            if (svc === current) return;
+            if (off) { try { off(); } catch { } off = null; }
+            current = svc;
+            if (svc && typeof svc[method] === 'function') {
+                off = svc[method](cb) || null;
+                if (loggedBackend) logger.info?.(`[zalo-mod] bridge ${method}: đã đăng ký vào bridge service hiện tại`);
+            }
+        };
+        attach();
+        const timer = followMs > 0 ? setInterval(attach, followMs) : null;
+        timer?.unref?.();
+        return () => {
+            if (timer) clearInterval(timer);
+            if (off) { try { off(); } catch { } off = null; }
+            current = null;
+        };
+    }
+
     function logBackendOnce(name) {
         if (loggedBackend === name) return;
         loggedBackend = name;
@@ -200,10 +231,7 @@ export function createOpenclawAdapter(deps = {}) {
         },
 
         subscribeInbound(cb) {
-            const svc = getService();
-            if (svc?.subscribeInbound) return svc.subscribeInbound(cb);
-            // Inbound đã đi qua hook before_dispatch của OpenClaw — không cần stream riêng.
-            return () => {};
+            return followSubscription('subscribeInbound', cb);
         },
 
         subscribeGroupEvents(cb) {
@@ -226,7 +254,7 @@ export function createOpenclawAdapter(deps = {}) {
         subscribeHistory(cb) {
             const svc = getService();
             if (typeof svc?.subscribeHistory !== 'function') return null;
-            return svc.subscribeHistory(cb);
+            return followSubscription('subscribeHistory', cb);
         },
 
         supportsHistory() {
@@ -237,7 +265,7 @@ export function createOpenclawAdapter(deps = {}) {
         subscribeTyping(cb) {
             const svc = getService();
             if (typeof svc?.subscribeTyping !== 'function') return null;
-            return svc.subscribeTyping(cb);
+            return followSubscription('subscribeTyping', cb);
         },
     };
 }

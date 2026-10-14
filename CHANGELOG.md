@@ -1,3 +1,16 @@
+## [2.32.2] - 2026-10-14
+
+### Khung chat ngừng ghi tin sau khi plugin Zalo được cập nhật
+
+Ghi nhận trên máy của khách ngày 14/10/2026: plugin OpenClaw Zalo Connect được cập nhật lúc bot vẫn chạy.
+Từ đó bot vẫn trả lời trong nhóm, nhưng khung chat của zalo-mod không ghi thêm tin nào, kể cả câu trả lời
+của bot, cho tới khi khởi động lại.
+
+zalo-mod nhận tin qua một cầu nối do plugin Zalo dựng lên và chỉ đăng ký một lần lúc khởi động. Cập nhật
+plugin Zalo tạo cầu nối mới, còn zalo-mod vẫn nghe ở cầu nối cũ. Nay zalo-mod tự kiểm tra định kỳ và đăng
+ký lại khi cầu nối đổi, không cần khởi động lại bot. Nhờ vậy zalo-mod cũng tự bắt được cầu nối khi nó
+được nạp trước plugin Zalo.
+
 ## [2.32.1] - 2026-09-16
 
 ### Bot từ chối gửi lời mời kết bạn dù owner ra lệnh

@@ -1,3 +1,17 @@
+## [Unreleased]
+
+### Rời nhóm báo lỗi dù bot đã rời được
+
+Ghi nhận trên máy của khách ngày 16/10/2026: owner bấm Rời nhóm trên dashboard, màn hình báo
+"ZaloConnect action failed: Không đủ quyền." nhưng bot đã rời nhóm thật. Nhóm vẫn nằm trong danh sách
+tới lần đồng bộ sau, nên owner không biết thao tác được hay chưa. Lỗi đó do máy chủ Zalo trả về, plugin
+chỉ gửi đúng một yêu cầu.
+
+- Zalo báo lỗi khi rời nhóm thì plugin hỏi lại xem bot còn trong nhóm không. Không còn thì báo đã rời.
+  Còn trong nhóm, hoặc không hỏi được Zalo, thì vẫn báo lỗi như cũ.
+- Rời được thì nhóm biến khỏi dashboard ngay. Nhóm có nhiều bot thì chỉ gỡ bot vừa rời, các bot khác
+  và thông tin nhóm (link mời...) giữ nguyên.
+
 ## [2.32.2] - 2026-10-14
 
 ### Khung chat ngừng ghi tin sau khi plugin Zalo được cập nhật

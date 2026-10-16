@@ -30,6 +30,7 @@ import { createZaloModEngine } from './src/integration/zalo-mod-engine.js';
 import { handleCrmAction } from './src/crm/crm-api.js';
 import { buildZaloPeople } from './src/crm/zalo-people.js';
 import { createZcaFacade } from './src/integration/zca-facade.js';
+import { leaveGroupVerified, dropProfileFromGroup } from './src/integration/leave-group.js';
 import { ReplyMentionCorrelator } from './src/messaging/reply-mention-correlator.js';
 import { matchesOwnerClaimDeviceId } from './src/integration/owner-claim.js';
 import { createZaloModAgentTools, collectOwnerIds, resolveGroupTargets, ZALO_MOD_TOOL_NAMES } from './src/agent/tool-surface.js';
@@ -5195,13 +5196,29 @@ Quy tắc:
             }
 
             return await withZaloApi(targetProfile, async (zaloApi) => {
-                if (!groupId && ['get-group-info', 'get-pending', 'get-blocked', 'review-pending', 'remove-user', 'block-member', 'unblock-member'].includes(action)) {
+                if (!groupId && ['get-group-info', 'get-pending', 'get-blocked', 'review-pending', 'remove-user', 'block-member', 'unblock-member', 'leave-group'].includes(action)) {
                     throw new Error('groupId is required');
                 }
 
                 if (action === 'get-group-info') return await zaloApi.getGroupInfo(groupId);
                 if (action === 'scan-members') return await scanGroupMembers(groupId, zaloApi);
-                if (action === 'leave-group') return await zaloApi.leaveGroup(groupId, !!payload.silent);
+                if (action === 'leave-group') {
+                    // Zalo có lúc báo lỗi dù đã cho rời (vd "Không đủ quyền.") - xem src/integration/leave-group.js.
+                    const res = await leaveGroupVerified(zaloApi, groupId, !!payload.silent);
+                    if (res?.alreadyLeft) logger.warn(`[openclaw-zalo-mod] leave-group ${groupId}: Zalo báo "${res.zaloError}" nhưng bot đã không còn trong nhóm, coi là đã rời`);
+                    // Gỡ nhóm ngay để dashboard không còn hiện nhóm đã rời tới lần sync sau.
+                    // Ghi trên bản đọc từ đĩa (giữ inviteLink... mà groupNames trong RAM không mang theo).
+                    if (dropProfileFromGroup(groupNames, groupId, targetProfile, parseProfiles) === 'deleted') {
+                        const idx = watchGroupIds.indexOf(groupId);
+                        if (idx >= 0) watchGroupIds.splice(idx, 1);
+                        await reloadMemberDirIfChanged();
+                        if (_memberDir[groupId]) { delete _memberDir[groupId]; await saveMemberDir(); }
+                    }
+                    let onDisk = {};
+                    try { onDisk = JSON.parse(await fs.readFile(groupNamesFile, 'utf8')) || {}; } catch { onDisk = { ..._rawGroupNames }; }
+                    if (dropProfileFromGroup(onDisk, groupId, targetProfile, parseProfiles) !== 'absent') await saveGroupNames(onDisk);
+                    return res;
+                }
                 if (action === 'get-pending') return await zaloApi.getPendingGroupMembers(groupId);
                 if (action === 'get-blocked') return await zaloApi.getGroupBlockedMember(groupId);
                 if (action === 'review-pending') {
@@ -6674,6 +6691,9 @@ Quy tắc:
                     timestamp: event.timestamp,
                     rawType: event.rawType,
                     quote: event.quote,
+                    // Ảnh/tệp của tin (zalo-connect >= 3.1.8 gửi kèm). Thiếu dòng này thì khung chat chỉ
+                    // còn "[Media attachment]" dù engine đã biết lưu link ảnh (vps_thuy-le 16/10/2026).
+                    attachments: event.attachments,
                 });
                 return;
             }
@@ -6688,6 +6708,7 @@ Quy tắc:
                 timestamp: event.timestamp,
                 rawType: event.rawType,
                 quote: event.quote,
+                attachments: event.attachments,
             });
             // Ghi lịch sử chat (.jsonl mà báo cáo cuối ngày đọc) NGAY tại onInbound.
             // Trên OpenClaw v2026.5.x, runtime plugin KHÔNG nhận before_dispatch nên

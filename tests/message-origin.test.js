@@ -151,3 +151,20 @@ test('không gán nhãn bot cho câu chỉ TRÙNG PHẦN ĐẦU', () => {
     t.remember('Dạ em đã đồng bộ xong rồi ạ');
     assert.equal(t.claim('Dạ em đã đồng bộ'), 'human');
 });
+
+// vps_thuy-le 16/10/2026: payload OpenClaw còn `**đậm**`, tin quay về từ Zalo đã bị zalo-connect bỏ
+// dấu (markdownToZaloStyles) nên mọi câu có in đậm đều bị gán "Tự gõ".
+test('câu bot có markdown vẫn khớp khi Zalo trả về bản đã bỏ dấu', async () => {
+    const { SelfOriginTracker } = await import('../src/messaging/self-origin-tracker.js');
+    const t = new SelfOriginTracker();
+    t.remember('Đây là trang giới thiệu **MonkeyAgent** của MonkeyTech.\n\nMức **từ 290.000đ/tháng** là `tham khảo`, ~~cũ~~ *mới* __gạch__.');
+    assert.equal(t.claim('Đây là trang giới thiệu MonkeyAgent của MonkeyTech.\n\nMức từ 290.000đ/tháng là tham khảo, cũ mới gạch.'), 'bot');
+});
+
+test('bỏ dấu markdown không làm câu người gõ khác hẳn bị nhận nhầm là bot', async () => {
+    const { SelfOriginTracker } = await import('../src/messaging/self-origin-tracker.js');
+    const t = new SelfOriginTracker();
+    t.remember('Chị xem **bản 18:00** nhé');
+    assert.equal(t.claim('Chị xem bản 19:30 nhé'), 'human');
+    assert.equal(t.claim('Chị xem bản 18:00 nhé'), 'bot');
+});

@@ -61,3 +61,33 @@ test('attachment thiếu url (tệp chưa có link) thì bị loại, không đ�
     });
     assert.deepEqual(ghi[0].mediaUrls, [ANH]);
 });
+
+// Sự cố 16/10/2026 (vps_thuy-le, bot Em Mơ): zalo-connect đã gửi kèm `attachments` trong sự kiện
+// inbound, engine cũng biết lưu link ảnh, nhưng ảnh vẫn mất vì index.js gọi captureInbound mà không
+// chuyển `attachments` xuống. Chặng thứ tư, nằm giữa bridge và engine.
+test('sự kiện inbound của zalo-connect (kind/url/mime) tới handler của bridge còn nguyên link ảnh', async () => {
+    const { createZaloConnectBridge } = await import('../src/integration/zalo-connect-bridge.js');
+    let push;
+    const bridge = createZaloConnectBridge({ subscribeInbound: (cb) => { push = cb; return () => {}; } });
+    const seen = [];
+    bridge.onInbound((ev) => { seen.push(ev); });
+    await push({
+        accountId: 'default', conversationId: '7124953354207994418', isGroup: false,
+        messageId: 'm-1', senderId: '7124953354207994418', senderName: 'Kent',
+        text: '[Media attachment]', timestamp: 1792148123000,
+        attachments: [{ kind: 'image', url: ANH, mime: 'image/jpeg' }],
+    });
+    assert.equal(seen.length, 1);
+    assert.equal(seen[0].attachments?.[0]?.url, ANH);
+});
+
+test('index.js chuyển attachments của bridge xuống captureInbound ở cả đường DM lẫn nhóm', async () => {
+    const { readFileSync } = await import('node:fs');
+    const source = readFileSync(new URL('../index.js', import.meta.url), 'utf8');
+    const start = source.indexOf('zEngine.bridge.onInbound(async (event) => {');
+    assert.ok(start > 0, 'không tìm thấy onInbound');
+    const block = source.slice(start, start + 4000);
+    const calls = block.match(/zEngine\.captureInbound\(\{[\s\S]*?\}\);/g) || [];
+    assert.equal(calls.length, 2, 'onInbound có đúng 2 lời gọi captureInbound (DM + nhóm)');
+    for (const c of calls) assert.match(c, /attachments: event\.attachments/);
+});

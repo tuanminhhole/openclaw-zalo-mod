@@ -1,3 +1,29 @@
+## [2.32.3] - 2026-10-16
+
+### Rời nhóm báo lỗi dù bot đã rời được
+
+Ghi nhận trên máy của khách ngày 16/10/2026: owner bấm Rời nhóm trên dashboard, màn hình báo
+"ZaloConnect action failed: Không đủ quyền." nhưng bot đã rời nhóm thật. Nhóm vẫn nằm trong danh sách
+tới lần đồng bộ sau, nên owner không biết thao tác được hay chưa. Lỗi đó do máy chủ Zalo trả về, plugin
+chỉ gửi đúng một yêu cầu.
+
+- Zalo báo lỗi khi rời nhóm thì plugin hỏi lại xem bot còn trong nhóm không. Không còn thì báo đã rời.
+  Còn trong nhóm, hoặc không hỏi được Zalo, thì vẫn báo lỗi như cũ.
+- Rời được thì nhóm biến khỏi dashboard ngay. Nhóm có nhiều bot thì chỉ gỡ bot vừa rời, các bot khác
+  và thông tin nhóm (link mời...) giữ nguyên.
+
+### Khung chat hiện ảnh khách gửi trực tiếp
+
+Ảnh khách gửi thẳng cho bot chỉ hiện dòng "[Media attachment]". Plugin Zalo đã gửi kèm đường link ảnh
+(cần OpenClaw Zalo Connect 3.1.8 trở lên), nhưng zalo-mod không chuyển link đó xuống chỗ lưu tin. Nay
+ảnh và tệp của tin mới được lưu và hiện trong khung chat.
+
+### Nhãn "Bot" và "Tự gõ" đúng hơn
+
+Câu trả lời của bot có chữ in đậm hay nghiêng thường bị gắn nhãn "Tự gõ". Lý do: khi gửi lên Zalo, các
+dấu định dạng như `**` được đổi thành chữ đậm thật, nên nội dung quay về khác bản bot đã viết. Nay
+zalo-mod bỏ qua các dấu định dạng khi so hai bản.
+
 ## [2.32.2] - 2026-10-14
 
 ### Khung chat ngừng ghi tin sau khi plugin Zalo được cập nhật

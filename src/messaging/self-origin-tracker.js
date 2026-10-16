@@ -32,8 +32,16 @@ function stripLeadingMentionWords(text, words) {
     return text.replace(re, '');
 }
 
+// zalo-connect đổi markdown sang định dạng Zalo trước khi gửi (markdownToZaloStyles): `**đậm**`,
+// `***`, `~~`, `__`, `` ` `` và `*nghiêng*` mất dấu, chỉ còn chữ. Payload OpenClaw thì còn nguyên dấu.
+// Đo trên vps_thuy-le 16/10/2026: mọi câu trả lời có in đậm đều bị gán "Tự gõ", câu không có
+// markdown (câu hỏi ask_user) thì đúng "Bot". Bỏ các dấu này ở CẢ HAI bên khi lấy vân tay, nên dấu
+// thừa lẻ loi bên nào cũng không làm lệch.
+const MARKDOWN_MARKS = /\*+|~~|__|`/g;
+
 function normalize(text) {
     return String(text ?? '')
+        .replace(MARKDOWN_MARKS, '')
         .replace(/\r\n/g, '\n')
         .replace(/\s+/g, ' ')
         .trim()

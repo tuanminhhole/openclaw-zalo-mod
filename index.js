@@ -6691,6 +6691,9 @@ Quy tắc:
                     timestamp: event.timestamp,
                     rawType: event.rawType,
                     quote: event.quote,
+                    // Ảnh/tệp của tin (zalo-connect >= 3.1.8 gửi kèm). Thiếu dòng này thì khung chat chỉ
+                    // còn "[Media attachment]" dù engine đã biết lưu link ảnh (vps_thuy-le 16/10/2026).
+                    attachments: event.attachments,
                 });
                 return;
             }
@@ -6705,6 +6708,7 @@ Quy tắc:
                 timestamp: event.timestamp,
                 rawType: event.rawType,
                 quote: event.quote,
+                attachments: event.attachments,
             });
             // Ghi lịch sử chat (.jsonl mà báo cáo cuối ngày đọc) NGAY tại onInbound.
             // Trên OpenClaw v2026.5.x, runtime plugin KHÔNG nhận before_dispatch nên

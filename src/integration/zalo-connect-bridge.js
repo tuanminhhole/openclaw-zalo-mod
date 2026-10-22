@@ -195,6 +195,18 @@ export function createZaloConnectBridge(adapter, opts = {}) {
             return adapter.setGroupPolicy(accountId, String(groupId), mode);
         },
 
+        /**
+         * Thả cảm xúc tự động theo nhóm (bridge zalo-connect v7 trở lên). true = luôn thả ở nhóm này,
+         * false = không bao giờ thả, null = theo cài đặt chung. Chỉ nằm trong RAM bên zalo-connect, nên
+         * zalo-mod lưu ở settings.json và phát lại sau mỗi lần gateway khởi động.
+         */
+        async setGroupAckReaction(accountId, groupId, enabled) {
+            if (typeof adapter.setGroupAckReaction !== 'function') {
+                throw new Error('zalo-connect bridge chưa hỗ trợ thả cảm xúc theo nhóm (cần zalo-connect có bridge v7 trở lên)');
+            }
+            return adapter.setGroupAckReaction(accountId, String(groupId), enabled);
+        },
+
         async getGroupPolicy(accountId, groupId) {
             if (typeof adapter.getGroupPolicy !== 'function') return undefined;
             return adapter.getGroupPolicy(accountId, String(groupId));

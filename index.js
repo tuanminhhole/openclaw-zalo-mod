@@ -33,6 +33,7 @@ import { createZcaFacade } from './src/integration/zca-facade.js';
 import { leaveGroupVerified, dropProfileFromGroup } from './src/integration/leave-group.js';
 import { ReplyMentionCorrelator } from './src/messaging/reply-mention-correlator.js';
 import { matchesOwnerClaimDeviceId } from './src/integration/owner-claim.js';
+import { decideEarlyDmBlock } from './src/integration/dm-gate.js';
 import { createZaloModAgentTools, collectOwnerIds, resolveGroupTargets, ZALO_MOD_TOOL_NAMES } from './src/agent/tool-surface.js';
 import { listAllCommands, renderCommandPanel, renderRulesPanel, TOGGLE_KEYS } from './src/agent/commands.js';
 import { buildWorkspaceSkillMarkdown, WORKSPACE_SKILL_VERSION } from './src/agent/skill-content.js';
@@ -88,6 +89,21 @@ function getOpenclawJsonPath() {
  * openclaw.json để hai bên cùng một câu trả lời; đệm 5 giây vì hàm này nằm trên đường nóng của từng
  * action. Thiếu file / JSON hỏng / không khai → 'default' đúng như hành vi cũ.
  */
+/**
+ * Cài đặt chung của OpenClaw có đang thả cảm xúc trong NHÓM không: có `messages.ackReaction` và
+ * `messages.ackReactionScope` phủ nhóm (mặc định của OpenClaw là "group-mentions"). Dashboard dùng nó
+ * làm giá trị hiển thị cho nhóm chưa từng được bật/tắt riêng. Đọc file trên đĩa: đổi ackReaction phải
+ * restart gateway mới ăn (vps_asa 22/10/2026), nên lúc đó file và gateway có thể lệch nhau.
+ */
+function isGlobalGroupAckReactionOn() {
+    try {
+        const cfg = JSON.parse(readFileSync(getOpenclawJsonPath(), 'utf8'));
+        const emoji = String(cfg?.messages?.ackReaction || '').trim();
+        const scope = String(cfg?.messages?.ackReactionScope || 'group-mentions');
+        return !!emoji && ['all', 'group-all', 'group-mentions'].includes(scope);
+    } catch (_) { return false; }
+}
+
 let _defaultProfileCache = { at: 0, value: 'default' };
 function resolveDefaultProfile() {
     const now = Date.now();
@@ -2567,7 +2583,7 @@ Quy tắc:
                 else store.setSetting(id, cleanKey, val);
             }
             await store.saveSettings();
-            const runtimePolicy = (cleanKey === 'muted' || cleanKey === 'silent')
+            const runtimePolicy = (cleanKey === 'muted' || cleanKey === 'silent' || cleanKey === 'reaction')
                 ? await syncZaloConnectRuntimePolicies([...targets])
                 : undefined;
             return { key: cleanKey, value: val, count: targets.size, groupIds: [...targets], runtimePolicy };
@@ -3904,6 +3920,36 @@ Quy tắc:
             }
 
 
+            // ── reaction-list / reaction all on|off / reaction <groupId> on|off
+            // Thả cảm xúc tự động theo nhóm; nhóm chưa đặt riêng thì theo cài đặt chung của OpenClaw.
+            if (sub === 'reaction-list') {
+                const globalOn = isGlobalGroupAckReactionOn();
+                const lines = ['❤️ THẢ CẢM XÚC THEO NHÓM\n━━━━━━━━━━━━━━━━━━', `Cài đặt chung: ${globalOn ? 'BẬT' : 'TẮT'}`];
+                for (const gId of watchGroupIds) {
+                    const own = store.getSetting(gId, 'reaction', undefined);
+                    const on = typeof own === 'boolean' ? own : globalOn;
+                    lines.push(`${on ? '✅' : '❌'} ${getGroupName(gId)}\n   ID: ${gId} | ${on ? 'BẬT' : 'TẮT'}${typeof own === 'boolean' ? '' : ' (theo cài đặt chung)'}`);
+                }
+                if (watchGroupIds.length === 0) lines.push('⚠️ Chưa có group nào.');
+                await sendDmMsg(ctx, senderId, lines.join('\n'));
+                return { handled: true };
+            }
+            if (sub === 'reaction' && args[1]) {
+                const all = args[1].toLowerCase() === 'all';
+                const toggle = args[2]?.toLowerCase();
+                if (toggle !== 'on' && toggle !== 'off') {
+                    await sendDmMsg(ctx, senderId, `⚠️ Cú pháp: ${cmdPrefix}rules reaction <groupId|all> on/off`);
+                    return { handled: true };
+                }
+                const val = toggle === 'on';
+                const ids = all ? watchGroupIds : [args[1].replace(/^<|>$/g, '')];
+                const result = await applyToggleSetting({ groupIds: ids, key: 'reaction', value: val });
+                const where = all ? `TẤT CẢ ${watchGroupIds.length} groups` : `${getGroupName(ids[0])} (${ids[0]})`;
+                const warn = result.runtimePolicy?.unavailable ? '\n⚠️ zalo-connect chưa nhận lệnh (bridge chưa sẵn sàng) - sẽ áp lại khi gateway khởi động.' : '';
+                await sendDmMsg(ctx, senderId, `${val ? '❤️' : '🚫'} Thả cảm xúc ${val ? 'BẬT' : 'TẮT'} cho ${where}${warn}`);
+                return { handled: true };
+            }
+
             // ── tracking-list
             if (sub === 'tracking-list') {
                 const lines = ['📋 TRACKING PER-GROUP\n━━━━━━━━━━━━━━━━━━'];
@@ -4317,6 +4363,15 @@ Quy tắc:
                 } catch (e) {
                     errors.push({ groupId, accountId, error: e.message });
                 }
+                // Thả cảm xúc theo nhóm: chỉ đẩy khi owner đã từng bật/tắt riêng nhóm này, còn lại để
+                // zalo-connect theo cài đặt chung. zalo-connect cũ chưa có hàm này thì bỏ qua êm.
+                if (typeof bridge.setGroupAckReaction === 'function') {
+                    const reaction = store.getSetting(groupId, 'reaction', undefined);
+                    if (typeof reaction === 'boolean') {
+                        await bridge.setGroupAckReaction(accountId, groupId, reaction)
+                            .catch((e) => errors.push({ groupId, accountId, error: e.message }));
+                    }
+                }
             }
             if (errors.length && !quiet) {
                 logger.warn(`[openclaw-zalo-mod] live group policy: ${applied}/${ids.length} applied; first error: ${errors[0].error}`);
@@ -4642,6 +4697,8 @@ Quy tắc:
                         follow: (settings.follow === true || settings.tracking === true),
                         pendingAuto: !!settings.pendingAuto,
                         autoSummary: settings.autoSummary === true,
+                        // Chỉ trả khi owner đã đặt riêng; vắng mặt = dashboard hiện theo cài đặt chung.
+                        ...(typeof settings.reaction === 'boolean' ? { reaction: settings.reaction } : {}),
                         reportTime: settings.reportTime || '23:55',
                         reportDeliverThisGroup: settings.reportDeliverThisGroup !== false,
                         reportDeliverOwnerDm: settings.reportDeliverOwnerDm === true,
@@ -4790,6 +4847,7 @@ Quy tắc:
                 ok: true,
                 pluginVersion: currentVersion,
                 license: getLicenseStatus(),
+                ackReactionGlobal: isGlobalGroupAckReactionOn(),
                 bots,
                 templateMeta,
                 templateCommands,
@@ -5839,6 +5897,8 @@ Quy tắc:
                         follow: (settings.follow === true || settings.tracking === true),
                         pendingAuto: !!settings.pendingAuto,
                         autoSummary: settings.autoSummary === true,
+                        // Chỉ trả khi owner đã đặt riêng; vắng mặt = dashboard hiện theo cài đặt chung.
+                        ...(typeof settings.reaction === 'boolean' ? { reaction: settings.reaction } : {}),
                         reportTime: settings.reportTime || '23:55',
                         reportDeliverThisGroup: settings.reportDeliverThisGroup !== false,
                         reportDeliverOwnerDm: settings.reportDeliverOwnerDm === true,
@@ -6695,6 +6755,28 @@ Quy tắc:
                     // còn "[Media attachment]" dù engine đã biết lưu link ảnh (vps_thuy-le 16/10/2026).
                     attachments: event.attachments,
                 });
+                // Người không có quyền DM: nhận tin ở đây luôn để zalo-connect không thả reaction tự
+                // động rồi mới bị before_dispatch chặn. Tin vẫn được ghi vào khung chat ở trên.
+                try {
+                    const { profile, cmdPrefix, ownerId: activeOwnerId } = getBotConfig(event.accountId || 'default');
+                    const gate = await decideEarlyDmBlock({
+                        senderId: event.senderId,
+                        senderName: event.senderName === event.senderId ? '' : event.senderName,
+                        text: event.text,
+                        ownerId: activeOwnerId || (profile === 'default' ? ownerId : ''),
+                        cmdPrefix,
+                        mode: (livePermissions().dm || {}).mode,
+                        isDmAllowed,
+                        resolveName: (id) => resolveUserName(profile, id),
+                    });
+                    if (gate.block) {
+                        logger.info(`[openclaw-zalo-mod] DM blocked from ${gate.name || event.senderId} (${event.senderId}) - chặn sớm theo phân quyền DM, không thả reaction`);
+                        return { handled: true };
+                    }
+                } catch (e) {
+                    // Lỗi ở cổng sớm thì để tin đi tiếp: before_dispatch vẫn chặn được, chỉ mất phần reaction.
+                    logger.warn('[openclaw-zalo-mod] early DM gate failed: ' + e.message);
+                }
                 return;
             }
             zEngine.captureInbound({
@@ -7632,6 +7714,8 @@ Device ID: ${result.deviceId}`);
                 follow,
                 pendingAuto: store.getSetting(plain, 'pendingAuto', false) === true,
                 autoSummary: store.getSetting(plain, 'autoSummary', false) === true,
+                // Giá trị hiệu lực để bot trả lời đúng "nhóm này có đang thả tim không".
+                reaction: (() => { const r = store.getSetting(plain, 'reaction', undefined); return typeof r === 'boolean' ? r : isGlobalGroupAckReactionOn(); })(),
                 runtimeMode: getZaloConnectRuntimeMode(plain),
             };
         }

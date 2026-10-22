@@ -106,11 +106,12 @@ export const RULES_PANEL_SECTIONS = [
     { icon: '🎉', label: 'Welcome (chào mem mới)', key: 'welcome' },
     { icon: '📋', label: 'Tracking (ghi lịch sử chat)', key: 'tracking' },
     { icon: '👁️', label: 'Follow (theo dõi chat + memory)', key: 'follow' },
+    { icon: '❤️', label: 'Thả tim (tự thả cảm xúc khi nhận tin)', key: 'reaction' },
 ];
 
 /** Toggle per-group mà cả dashboard, slash và agent tool đều dùng chung. */
 export const TOGGLE_KEYS = Object.freeze([
-    'muted', 'silent', 'welcome', 'tracking', 'follow', 'pendingAuto', 'autoSummary', 'backlogInclude',
+    'muted', 'silent', 'welcome', 'tracking', 'follow', 'pendingAuto', 'autoSummary', 'backlogInclude', 'reaction',
 ]);
 
 /** Nhãn tiếng Việt cho từng toggle — dùng khi bot báo lại cho owner. */
@@ -125,6 +126,8 @@ export const TOGGLE_LABELS = Object.freeze({
     // P10: nhóm rèn luyện/nội bộ làm nhiễu báo cáo việc tồn đọng (đo thật: 1 nhóm chiếm 31/137 việc,
     // toàn cam kết cá nhân không phải task team) — owner tự bật/tắt theo nhóm.
     backlogInclude: 'Đưa vào báo cáo việc tồn đọng (lịch backlog)',
+    // Chưa từng đặt = theo cài đặt chung messages.ackReaction của OpenClaw; đặt rồi thì nhóm này thắng.
+    reaction: 'Thả tim (tự thả cảm xúc khi nhận tin)',
 });
 
 /** Từ khoá tiếng Việt/Anh → toggle key. Dùng để map ý định ngôn ngữ tự nhiên. */
@@ -137,6 +140,7 @@ export const TOGGLE_ALIASES = Object.freeze({
     pendingauto: 'pendingAuto', 'duyet vao nhom': 'pendingAuto',
     autosummary: 'autoSummary', 'tong hop': 'autoSummary', 'tong hop cuoi ngay': 'autoSummary',
     backloginclude: 'backlogInclude', 'viec ton dong': 'backlogInclude', 'bao cao ton dong': 'backlogInclude',
+    reaction: 'reaction', 'tha tim': 'reaction', 'tha cam xuc': 'reaction', 'tha reaction': 'reaction', 'tha tym': 'reaction',
 });
 
 /** Ghép prefix cho một entry. `bare` → luôn `/cmd`. */

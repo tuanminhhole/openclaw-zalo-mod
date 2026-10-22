@@ -10,7 +10,7 @@ const modalBody = document.getElementById('modalBody');
 const modalCancel = document.getElementById('modalCancel');
 const modalConfirm = document.getElementById('modalConfirm');
 const token = window.ZALO_DASHBOARD_TOKEN || '';
-const pluginVersion = '2.32.3';
+const pluginVersion = '2.33.0';
 let state = null;
 let activeGroupId = '';
 let lang = localStorage.getItem('zaloDashboardLang') || 'vi';
@@ -1657,8 +1657,14 @@ function botGroupId(group) {
   const p = selBotProfile();
   return (p && group.groupIdByProfile && group.groupIdByProfile[p]) || group.groupId;
 }
+/** Giá trị hiển thị của một toggle. `reaction` chưa đặt riêng thì theo cài đặt chung của OpenClaw. */
+function toggleOn(settings, key) {
+  const v = (settings || {})[key];
+  if (key === 'reaction' && v === undefined) return !!(state && state.ackReactionGlobal);
+  return !!v;
+}
 function featureToggle(group, key, label) {
-  const on = !!botSettings(group)[key];
+  const on = toggleOn(botSettings(group), key);
   const gid = botGroupId(group);
   return `<button class="feature-toggle ${on ? 'on' : 'off'}" type="button" data-toggle="${esc(gid)}:${key}:${!on}" data-toggle-profile="${esc(selBotProfile())}">${label}</button>`;
 }
@@ -1740,6 +1746,7 @@ function renderGroups() {
               ${featureToggle(group, 'welcome', 'Welcome')}
               ${featureToggle(group, 'follow', 'Follow')}
               ${featureToggle(group, 'pendingAuto', uiText('Tự duyệt', 'Auto approve'))}
+              ${featureToggle(group, 'reaction', uiText('Thả tim', 'Reaction'))}
             </div>
           </td>
           <td class="col-actions" data-label="${esc(uiText('Thao tác', 'Actions'))}">
@@ -1781,11 +1788,12 @@ function updateBulkBar() {
     ['welcome', 'Welcome'],
     ['follow', 'Follow'],
     ['pendingAuto', 'Auto approve'],
+    ['reaction', uiText('Thả tim', 'Reaction')],
   ];
   actions.innerHTML = `
         <button class="btn ${allVisibleSelected ? 'primary' : ''}" type="button" data-select-all-groups>${allVisibleSelected ? uiText('Bỏ chọn tất cả', 'Clear all') : uiText('Chọn tất cả', 'Select all')}</button>
         ${defs.map(([key, label]) => {
-    const allOn = selectedVisible.length > 0 && selectedVisible.every(group => !!botSettings(group)[key]);
+    const allOn = selectedVisible.length > 0 && selectedVisible.every(group => toggleOn(botSettings(group), key));
     return `<button class="feature-toggle ${allOn ? 'on' : 'off'}" type="button" data-bulk-feature="${key}:${!allOn}">${label}</button>`;
   }).join('')}
       `;
@@ -3473,7 +3481,8 @@ function groupDetailBody(detail) {
       ['welcome', 'Welcome'],
       ['follow', 'Follow'],
       ['pendingAuto', uiText('Tự duyệt', 'Auto approve')],
-    ].map(([key, label]) => `<button class="feature-toggle ${detail.settings?.[key] ? 'on' : 'off'}" type="button" data-toggle="${esc(detail.botGroupId || detail.groupId)}:${key}:${!detail.settings?.[key]}" data-toggle-profile="${esc(selBotProfile())}">${label}</button>`).join('')}
+      ['reaction', uiText('Thả tim', 'Reaction')],
+    ].map(([key, label]) => `<button class="feature-toggle ${toggleOn(detail.settings, key) ? 'on' : 'off'}" type="button" data-toggle="${esc(detail.botGroupId || detail.groupId)}:${key}:${!toggleOn(detail.settings, key)}" data-toggle-profile="${esc(selBotProfile())}">${label}</button>`).join('')}
           </div></div></div>
           <div class="item"><div style="width:100%">
             ${/* Hai nút CÙNG MỘT DÒNG với tiêu đề: chính (Lịch báo cáo — nơi cài đặt thật) + phụ

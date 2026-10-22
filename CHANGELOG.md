@@ -1,3 +1,36 @@
+## [2.33.0] - 2026-10-22
+
+### Bật, tắt thả tim theo từng nhóm
+
+Ghi nhận trên máy khách ngày 22/10/2026: chủ bot muốn bot tự thả tim ở nhóm này nhưng im ở nhóm khác.
+Trước đây chỉ có một cài đặt chung trong OpenClaw cho mọi nơi, và đổi cài đặt đó phải khởi động lại bot.
+
+- Thêm mục "Thả tim" cho từng nhóm: nút trên dashboard (danh sách nhóm, chi tiết nhóm, bật tắt hàng
+  loạt), lệnh `/rules reaction <groupId|all> on|off` và `/rules reaction-list`, và bot tự làm khi
+  owner nhắn "tắt thả tim nhóm này". Đổi là có hiệu lực ngay, không cần khởi động lại.
+- Nhóm chưa đặt riêng thì theo cài đặt chung, và dashboard hiện đúng trạng thái đó.
+- Lựa chọn được lưu lại và tự áp lại mỗi lần bot khởi động. Cần OpenClaw Zalo Connect 3.1.10 trở lên;
+  bản cũ hơn thì báo rõ là chưa hỗ trợ, không âm thầm bỏ qua.
+
+### Người bị chặn nhắn riêng không còn được thả tim
+
+Ghi nhận ngày 21/10/2026: Phân quyền chỉ cho vài người nhắn riêng với bot, nhưng người ngoài danh sách
+nhắn vào vẫn được bot thả tim, trông như bot đã nhận việc.
+
+- Tin nhắn riêng bị chặn theo Phân quyền nay dừng trước bước thả tim. Tin vẫn được lưu vào khung chat
+  như trước.
+- Owner của bot vẫn nhắn được, và lệnh nhận chủ bot vẫn đi qua để không ai bị khoá ngoài.
+
+### Khung chat ngừng ghi tin sau khi nâng cấp zalo-mod lúc bot đang chạy
+
+Ghi nhận trên máy của khách ngày 16/10/2026: khung chat chỉ có tin tới 14/10, trong khi plugin Zalo
+vẫn nhận hơn 200 tin mỗi ngày và bot vẫn trả lời bình thường.
+
+- OpenClaw có thể thay zalo-mod bằng bản mới mà không khởi động lại bot. Bản mới lại dùng tiếp bộ
+  xử lý của bản cũ đang nằm trong bộ nhớ, nên mọi bản sửa không có hiệu lực, kể cả phần tự nối lại
+  với plugin Zalo. Nay khi bản mã thay đổi, zalo-mod dựng bộ xử lý mới và cho bộ cũ nghỉ.
+- Cài lại nhiều lần trong cùng một bản vẫn dùng lại bộ xử lý cũ như trước, không mở thêm cơ sở dữ liệu.
+
 ## [2.32.3] - 2026-10-16
 
 ### Rời nhóm báo lỗi dù bot đã rời được

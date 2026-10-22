@@ -287,10 +287,11 @@ const SETTINGS_SCHEMA = {
         },
         key: {
             type: 'string',
-            enum: ['muted', 'silent', 'welcome', 'tracking', 'follow', 'pendingAuto', 'autoSummary', 'backlogInclude'],
+            enum: ['muted', 'silent', 'welcome', 'tracking', 'follow', 'pendingAuto', 'autoSummary', 'backlogInclude', 'reaction'],
             description: 'Toggle cần đổi. muted = bot im lặng hoàn toàn; silent = chỉ reply khi @tag/gọi tên; follow = ghi lịch sử chat + memory; '
                 + 'backlogInclude = nhóm này có vào tin "việc còn treo" (lịch backlog) hay không — tắt cho nhóm rèn luyện/nội bộ, '
-                + 'không phải task team có deadline thật.',
+                + 'không phải task team có deadline thật; '
+                + 'reaction = bot tự thả cảm xúc (tim) khi nhận tin trong nhóm này hay không - owner nói "tắt thả tim nhóm X" thì value=false.',
         },
         value: { type: 'boolean', description: 'true = bật, false = tắt.' },
         profile: { type: 'string', description: 'Chỉ áp cho một bot (accountId). Bỏ trống = áp cho mọi bot đang ở nhóm đó (khuyến nghị).' },

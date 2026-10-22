@@ -127,6 +127,6 @@ test('renderer sinh ra lệnh có prefix thật, và mọi lệnh đều có mô
 
 test('TOGGLE_KEYS khớp danh sách key mà dashboard/action vẫn dùng', () => {
     assert.deepEqual([...TOGGLE_KEYS],
-        ['muted', 'silent', 'welcome', 'tracking', 'follow', 'pendingAuto', 'autoSummary', 'backlogInclude']);
+        ['muted', 'silent', 'welcome', 'tracking', 'follow', 'pendingAuto', 'autoSummary', 'backlogInclude', 'reaction']);
     assert.ok(COMMAND_SECTIONS.length >= 4);
 });

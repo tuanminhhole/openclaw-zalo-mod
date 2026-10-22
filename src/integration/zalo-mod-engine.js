@@ -38,10 +38,30 @@ const SWEEP_INTERVAL_MS = 60 * 1000;
  */
 const ENGINE_CACHE_KEY = '__openclawZaloModEngines';
 
+/**
+ * Dấu của BẢN MÃ đang chạy. Mỗi lần OpenClaw thay nóng plugin ("Plugin replacement applied") là một
+ * module mới, nên Symbol này khác; còn đăng ký lại trong cùng module thì giữ nguyên.
+ *
+ * Vì sao cần: engine cache trên globalThis sống qua cả lần thay nóng. Đo trên vps_asa 16/10/2026:
+ * nâng zalo-mod 2.29.0 lên 2.32.3 bằng thay nóng, log báo "dùng lại engine sẵn có" - bản mới chạy
+ * nguyên engine của bản cũ, gồm adapter chưa biết bám theo bridge. Thay zalo-connect ngay sau đó
+ * thì engine cũ vẫn nghe ở bridge cũ, khung chat câm từ 14/10 dù zalo-connect nhận hơn 200 tin/ngày.
+ */
+const ENGINE_CODE = Symbol('zalo-mod-engine-code');
+
 export function createZaloModEngine({ dataDir, logger, runtime, getConfig, config = {} }) {
     const log = logger || console;
     const cache = globalThis[ENGINE_CACHE_KEY] || (globalThis[ENGINE_CACHE_KEY] = new Map());
-    const cached = cache.get(dataDir);
+    let cached = cache.get(dataDir);
+    if (cached && cached.codeId !== ENGINE_CODE) {
+        // Engine của bản mã cũ: dừng phần nền của nó rồi dựng engine mới. KHÔNG đóng DB của nó - các
+        // closure của bản cũ có thể còn chạm vào và sẽ nổ "database is not open"; một handle SQLite
+        // thừa sau mỗi lần nâng cấp là cái giá nhỏ.
+        log.info?.('[zalo-mod] mã plugin đã đổi (thay nóng) - dựng engine mới thay vì dùng lại engine của bản cũ.');
+        try { cached.retire?.(); } catch { }
+        cache.delete(dataDir);
+        cached = null;
+    }
     if (cached) {
         // Adapter ôm `runtime`/`getConfig` của lần đăng ký ĐẦU TIÊN; lần sau chúng vẫn trỏ đúng
         // cùng một gateway trong cùng tiến trình, nên dùng lại an toàn.
@@ -372,6 +392,13 @@ export function createZaloModEngine({ dataDir, logger, runtime, getConfig, confi
                 openTurns: turnStore.size,
                 queues: queue.stats(),
             };
+        },
+
+        codeId: ENGINE_CODE,
+
+        /** Bản mã mới thế chỗ: dừng việc nền, giữ DB mở cho closure cũ. */
+        retire() {
+            clearInterval(sweepTimer);
         },
 
         shutdown() {

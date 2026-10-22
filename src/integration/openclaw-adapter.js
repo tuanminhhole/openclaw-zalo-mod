@@ -206,6 +206,14 @@ export function createOpenclawAdapter(deps = {}) {
             return svc.setGroupPolicy(accountId, String(groupId), mode);
         },
 
+        async setGroupAckReaction(accountId, groupId, enabled) {
+            const svc = getService();
+            if (typeof svc?.setGroupAckReaction !== 'function') {
+                throw new Error('zalo-connect bridge chưa hỗ trợ thả cảm xúc theo nhóm');
+            }
+            return svc.setGroupAckReaction(accountId, String(groupId), enabled);
+        },
+
         async getGroupPolicy(accountId, groupId) {
             const svc = getService();
             if (typeof svc?.getGroupPolicy !== 'function') return undefined;

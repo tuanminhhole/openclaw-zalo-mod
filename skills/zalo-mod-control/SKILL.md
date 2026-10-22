@@ -29,7 +29,7 @@ Sáu tool này **chỉ owner của bot dùng được** — host tự chặn, b�
 | Tool | Dùng khi nào |
 |------|--------------|
 | `zalo_mod_groups` | Xem danh sách nhóm + trạng thái thật của mọi toggle. Gọi TRƯỚC khi trả lời câu hỏi về cấu hình, và SAU khi đổi để xác nhận. |
-| `zalo_mod_settings` | Bật/tắt `muted`, `silent`, `welcome`, `follow`, `tracking`, `pendingAuto`, `autoSummary`, `backlogInclude` cho một hoặc nhiều nhóm. Tương đương bấm badge trên dashboard. |
+| `zalo_mod_settings` | Bật/tắt `muted`, `silent`, `welcome`, `follow`, `tracking`, `pendingAuto`, `autoSummary`, `backlogInclude`, `reaction` cho một hoặc nhiều nhóm. Tương đương bấm badge trên dashboard. |
 | `zalo_mod_history` | Đọc lịch sử chat đã ghi của các nhóm đang bật follow, kèm ghi chú admin + memory. Dùng để tự tổng hợp. |
 | `zalo_mod_reports` | Xem/tạo/sửa **lịch báo cáo** lịch sử chat. Dùng khi owner nói "đổi lịch báo cáo thành 9h", "gửi báo cáo vào nhóm X", "tạo lịch tổng hợp", "gửi thử báo cáo". Tham số PHẲNG, nhận tên nhóm. |
 | `zalo_mod_tasks` | Xem/duyệt/từ chối/đổi cột **việc tồn đọng** (kanban "Công việc"). Dùng khi owner hỏi "nhóm X còn việc gì", hoặc nói một việc đã xong/đã duyệt/không đúng. |
@@ -159,6 +159,7 @@ zalo_mod_action { action: "zalo-api", payload: { action: "rename-group",
 | `pendingAuto` | Tự duyệt yêu cầu vào nhóm |
 | `autoSummary` | Tự tổng hợp cuối ngày |
 | `backlogInclude` | Nhóm này có vào tin "việc còn treo" (lịch backlog) hay không — tắt cho nhóm rèn luyện/nội bộ |
+| `reaction` | Bot tự thả cảm xúc (tim) khi nhận tin trong nhóm này hay không. Nhóm chưa đặt riêng thì theo cài đặt chung. Owner nói "tắt thả tim nhóm X" = `reaction` false |
 
 ## 📖 Cách xử lý các yêu cầu thường gặp
 

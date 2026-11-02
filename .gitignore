@@ -17,3 +17,8 @@ upgrade/history.json
 
 # Local dev tooling (not shipped)
 docs_dev/
+
+# Bí mật (chuẩn MonkeyTech, BI-MAT.md)
+secrets/
+*.pem
+*.key

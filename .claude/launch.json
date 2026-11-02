@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "crm-ui-dev",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["tests/helpers/ui-dev-server.mjs", "19791"],
+      "port": 19791
+    }
+  ]
+}

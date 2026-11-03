@@ -68,7 +68,7 @@ test('tầng 2: lượt cron phải qua được cả guard lúc THỰC THI, kh�
     assert.match(factory, /isOwnerScheduledRun\(toolContext\)/, 'factory phải tính cờ lượt-cron');
     assert.match(
         factory,
-        /buildTools\(requesterSenderId,\s*toolContext\?\.senderIsOwner === true \|\| ownerScheduled\)/,
+        /buildTools\(requesterSenderId,\s*toolContext\?\.senderIsOwner === true \|\| ownerScheduled[,)]/,
         'cờ đó phải đi xuống buildTools, nếu không guard sẽ chặn lại đúng thứ vừa mở',
     );
 });

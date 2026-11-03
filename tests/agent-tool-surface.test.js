@@ -258,7 +258,7 @@ test('zalo_mod_settings: lỗi license nổi lên nguyên văn kèm gợi ý —
             throw e;
         },
     });
-    const tools = createZaloModAgentTools(host)({ requesterSenderId: OWNER });
+    const tools = createZaloModAgentTools(host)({ requesterSenderId: OWNER, agentAccountId: 'default' });
     const result = await tools.find((t) => t.name === 'zalo_mod_settings').execute('c1', { groups: ['all'], key: 'muted', value: true });
     assert.equal(result.content[0].isError, true);
     const res = parse(result);

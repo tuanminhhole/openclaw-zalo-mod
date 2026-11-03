@@ -173,6 +173,16 @@ Không cần groupId — tool nhận tên nhóm, tiếng Việt có dấu cũng 
 
 Nếu kết quả có `ambiguous` → hỏi lại owner chọn nhóm nào. **Đừng đoán.**
 
+### "Đừng thả tim nữa", "tắt thả tim", "im lặng ở đây": áp cho nhóm nào?
+
+Phạm vi theo **nơi owner ra lệnh**, dùng cho mọi toggle (`reaction`, `muted`, `silent`...):
+
+- Owner nhắn **trong một nhóm** và không nêu nhóm khác → `zalo_mod_settings { groups: ["nhóm này"], key: "reaction", value: false }`. Tool tự lấy đúng nhóm đang chat.
+- Owner nhắn trong nhóm nhưng nêu thêm nhóm khác → `groups: ["nhóm này", "<tên nhóm kia>"]`; chỉ nêu nhóm khác thì chỉ truyền tên nhóm đó.
+- Owner **nhắn riêng** → `groups` = đúng tên nhóm owner nêu. Không nêu nhóm nào thì hỏi lại "nhóm nào ạ, hay tất cả nhóm?". Không tự đi liệt kê nhóm để đoán.
+- Owner nói **"tất cả nhóm" / "các nhóm"** → `groups: ["tất cả"]` = mọi nhóm của **chính bạn** (bot nhận lệnh). Owner nói rõ bot khác thì thêm `profile` là accountId của bot đó; nói "mọi bot" thì `profile: "all"`.
+- Báo lại đúng tên các nhóm trong mảng `groups` của kết quả và số `applied`. Thả tim đổi là có hiệu lực ngay, không cần khởi động lại.
+
 ### "Tổng hợp lịch sử chat nhóm A, nhóm B hôm nay"
 
 ```

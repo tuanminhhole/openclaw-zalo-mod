@@ -1,3 +1,18 @@
+## [2.33.2] - 2026-11-03
+
+### Ra lệnh bật, tắt theo đúng nơi chủ bot nhắn
+
+Ghi nhận trên máy của khách ngày 03/11/2026: chủ bot nhắc bot "không được thả tim trong các nhóm nữa".
+Bot phải tự liệt kê tên từng nhóm rồi đổi lần lượt, và lệnh nói trong một nhóm không có cách nào trỏ về
+đúng nhóm đó.
+
+- Chủ bot nhắn trong một nhóm mà không nêu nhóm khác: bot áp cho đúng nhóm đang chat.
+- Chủ bot nhắn riêng: bot áp cho các nhóm được nêu tên. Không nêu nhóm nào thì bot hỏi lại, không đoán.
+- Chủ bot nói "tất cả nhóm": bot áp cho mọi nhóm của chính nó. Muốn áp cho bot khác thì nói rõ tên bot đó,
+  hoặc "mọi bot".
+- Áp dụng cho mọi lựa chọn theo nhóm: thả tim, im lặng, chỉ trả lời khi được gọi, chào thành viên mới...
+- Thả tim theo nhóm chỉ có hiệu lực thật khi dùng cùng OpenClaw Zalo Connect 3.1.11 trở lên.
+
 ## [2.33.1] - 2026-11-03
 
 ### Bot không đọc được lịch sử nhóm sau khi nâng OpenClaw 2026.9.8

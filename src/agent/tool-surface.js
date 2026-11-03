@@ -283,7 +283,9 @@ const SETTINGS_SCHEMA = {
         groups: {
             type: 'array',
             items: { type: 'string' },
-            description: 'Tên nhóm (tiếng Việt có dấu cũng được), groupId, hoặc "all" cho mọi nhóm. Ví dụ: ["Kinh Doanh","Kỹ Thuật"].',
+            description: 'Nhóm cần đổi. Owner nhắn TRONG một nhóm và không nêu nhóm khác: ["nhóm này"] (hoặc bỏ trống) = đúng nhóm đang chat. '
+                + 'Owner nhắn riêng: tên nhóm owner nêu (tiếng Việt có dấu cũng được) hoặc groupId; không nêu thì hỏi lại, không đoán. '
+                + '"all" / "tất cả" = mọi nhóm của chính bot đang nhận lệnh. Ví dụ: ["Kinh Doanh","Kỹ Thuật"].',
         },
         key: {
             type: 'string',
@@ -294,11 +296,79 @@ const SETTINGS_SCHEMA = {
                 + 'reaction = bot tự thả cảm xúc (tim) khi nhận tin trong nhóm này hay không - owner nói "tắt thả tim nhóm X" thì value=false.',
         },
         value: { type: 'boolean', description: 'true = bật, false = tắt.' },
-        profile: { type: 'string', description: 'Chỉ áp cho một bot (accountId). Bỏ trống = áp cho mọi bot đang ở nhóm đó (khuyến nghị).' },
+        profile: {
+            type: 'string',
+            description: 'Chỉ áp cho một bot (accountId). Bỏ trống = áp cho mọi bot đang ở nhóm được nêu (khuyến nghị); '
+                + 'riêng "all" mà bỏ trống thì chỉ áp cho bot đang nhận lệnh. Owner nói rõ bot khác thì truyền accountId của bot đó, '
+                + 'nói "mọi bot" thì truyền "all".',
+        },
     },
-    required: ['groups', 'key', 'value'],
+    required: ['key', 'value'],
     additionalProperties: false,
 };
+
+const CURRENT_GROUP_WORDS = new Set(['nhom nay', 'nhom hien tai', 'o day', 'day', 'this', 'this group', 'here', 'current']);
+const ALL_GROUP_WORDS = new Set(['all', 'tat ca', 'tat ca nhom', 'tat ca cac nhom', 'moi nhom', 'cac nhom']);
+
+/** groupId của nhóm đang chat, đọc từ sessionKey của lượt (`...:zalo-connect:group:<id>`). Rỗng khi là tin riêng. */
+export function currentGroupFromSession(sessionKey) {
+    const m = /:group:([^:]+)$/.exec(String(sessionKey || ''));
+    return m ? m[1] : '';
+}
+
+function groupProfiles(group) {
+    return String(group?.profile || 'default').split(',').map((p) => p.trim()).filter(Boolean);
+}
+
+/**
+ * Chọn nhóm cho zalo_mod_settings theo đúng nơi owner ra lệnh.
+ *
+ * Ghi nhận trên máy khách ngày 03/11/2026: owner bảo bot "đừng thả tim trong các nhóm nữa". Bot phải tự
+ * đi liệt kê tên từng nhóm của mình rồi truyền lại, và lệnh nói trong một nhóm không có cách nào trỏ về
+ * đúng nhóm đó. Luật:
+ *   - nhắn trong nhóm, không nêu nhóm khác ("nhóm này" hoặc bỏ trống): đúng nhóm đang chat
+ *   - nhắn riêng: nhóm owner nêu tên; không nêu thì báo lỗi để bot hỏi lại
+ *   - "tất cả": mọi nhóm của bot đang nhận lệnh; profile cụ thể = bot đó; profile "all" = mọi bot
+ * Kết quả `profile` là cách ghi: chuỗi = chỉ id của bot đó; undefined = mọi bot trong nhóm được nêu.
+ */
+export function pickSettingTargets({ groups, profile, turn = {}, all = [] } = {}) {
+    const list = (Array.isArray(groups) ? groups : (groups === undefined ? [] : [groups]))
+        .map((v) => String(v ?? '').trim()).filter(Boolean);
+    const wantProfile = String(profile || '').trim();
+    const isAllWord = (v) => v === '*' || ALL_GROUP_WORDS.has(foldGroupName(v));
+    const isCurrentWord = (v) => CURRENT_GROUP_WORDS.has(foldGroupName(v));
+
+    if (list.some(isAllWord)) {
+        if (wantProfile === 'all') return { matched: all.map((g) => g.groupId), unresolved: [], ambiguous: [], profile: undefined, scope: 'all-bots' };
+        let account = wantProfile || String(turn.accountId || '').trim();
+        if (!account) {
+            const profiles = [...new Set(all.flatMap(groupProfiles))];
+            if (profiles.length === 1) account = profiles[0];
+            else return { error: 'Không rõ "tất cả" là nhóm của bot nào. Hỏi lại owner tên bot.', bots: profiles };
+        }
+        const matched = all.filter((g) => groupProfiles(g).includes(account)).map((g) => g.groupId);
+        return { matched, unresolved: [], ambiguous: [], profile: account, scope: 'all-of-bot' };
+    }
+
+    const named = list.filter((v) => !isCurrentWord(v));
+    const wantsCurrent = list.length === 0 || list.some(isCurrentWord);
+    const { matched, unresolved, ambiguous } = named.length
+        ? resolveGroupTargets(named, all)
+        : { matched: [], unresolved: [], ambiguous: [] };
+    if (wantsCurrent) {
+        const current = currentGroupFromSession(turn.sessionKey);
+        if (!current) {
+            if (!named.length) {
+                return { error: 'Owner đang nhắn riêng và chưa nói nhóm nào. Hỏi lại owner tên nhóm (hoặc "tất cả nhóm").' };
+            }
+        } else if (!all.some((g) => g.groupId === current)) {
+            return { error: 'Nhóm đang chat chưa nằm trong danh sách Zalo Mod quản lý. Gọi zalo_mod_groups rồi báo owner.', groupId: current };
+        } else if (!matched.includes(current)) {
+            matched.push(current);
+        }
+    }
+    return { matched, unresolved, ambiguous, profile: wantProfile || undefined, scope: wantsCurrent && !named.length ? 'current' : 'named' };
+}
 
 const HISTORY_SCHEMA = {
     type: 'object',
@@ -483,7 +553,8 @@ export function createZaloModAgentTools(host) {
     /** Đọc lại state sau khi ghi — bot phải báo sự thật, không báo ý định. */
     const readBack = (groupIds) => groupIds.map((id) => getGroupState(id));
 
-    function buildTools(requesterSenderId, hostSaysOwner = false) {
+    /** `turn`: ngữ cảnh của lượt đang chạy (sessionKey, accountId của bot nhận lệnh); host gọi factory mỗi lượt. */
+    function buildTools(requesterSenderId, hostSaysOwner = false, turn = {}) {
         return [
             {
                 name: 'zalo_mod_groups',
@@ -551,7 +622,9 @@ export function createZaloModAgentTools(host) {
                     const blocked = guard(requesterSenderId, hostSaysOwner);
                     if (blocked) return blocked;
                     const all = await groupsSnapshot();
-                    const { matched, unresolved, ambiguous } = resolveGroupTargets(params.groups, all);
+                    const picked = pickSettingTargets({ groups: params.groups, profile: params.profile, turn, all });
+                    if (picked.error) return fail(picked.error, { bots: picked.bots, groupId: picked.groupId });
+                    const { matched, unresolved, ambiguous } = picked;
                     if (ambiguous.length) {
                         return fail('Tên nhóm chưa rõ — hỏi lại owner chọn nhóm nào trước khi đổi cấu hình.', { ambiguous, unresolved });
                     }
@@ -568,7 +641,7 @@ export function createZaloModAgentTools(host) {
                         return foldGroupName(info?.name) || id;
                     }));
                     const single = logicalGroups.size <= 1;
-                    const profilePart = params.profile ? { profile: String(params.profile) } : {};
+                    const profilePart = picked.profile ? { profile: String(picked.profile) } : {};
                     const payload = single
                         ? { groupId: matched[0], key: params.key, value: !!params.value, ...profilePart }
                         : { groupIds: matched, key: params.key, value: !!params.value, ...profilePart };
@@ -580,9 +653,10 @@ export function createZaloModAgentTools(host) {
                             value: !!params.value,
                             applied: raw?.count ?? raw?.applied ?? matched.length,
                             runtimePolicy: raw?.runtimePolicy,
+                            scope: picked.scope,
                             groups: readBack(matched),
                             unresolved,
-                            note: 'Đã ghi và đọc lại. Báo cho owner đúng theo mảng groups ở trên.',
+                            note: 'Đã ghi và đọc lại. Báo cho owner đúng theo mảng groups ở trên (kể cả tên nhóm).',
                         });
                         await logRun('zalo_mod_settings', params, result);
                         return result;
@@ -1044,6 +1118,9 @@ export function createZaloModAgentTools(host) {
         // được cấp nhưng mọi lời gọi vẫn chết ở guard với "requester=unknown không phải owner", và
         // bot lại bịa tiếp mã lỗi 404 y như cũ.
         const ownerScheduled = isOwnerScheduledRun(toolContext);
-        return buildTools(requesterSenderId, toolContext?.senderIsOwner === true || ownerScheduled);
+        return buildTools(requesterSenderId, toolContext?.senderIsOwner === true || ownerScheduled, {
+            sessionKey: toolContext?.sessionKey,
+            accountId: toolContext?.agentAccountId || toolContext?.accountId,
+        });
     };
 }

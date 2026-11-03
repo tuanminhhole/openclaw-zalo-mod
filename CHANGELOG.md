@@ -1,3 +1,17 @@
+## [2.33.1] - 2026-11-03
+
+### Bot không đọc được lịch sử nhóm sau khi nâng OpenClaw 2026.9.8
+
+Ghi nhận trên máy của khách ngày 03/11/2026: sau khi nâng OpenClaw từ 2026.9.2 lên 2026.9.8, bot báo
+"statement has been finalized" mỗi lần đọc lịch sử nhóm, nên chỉ lấy được vài tin đầu và lịch tự động
+dựa vào lịch sử nhóm dừng theo. Dữ liệu khung chat vẫn nguyên vẹn, dashboard vẫn đọc được bình thường.
+
+- OpenClaw 2026.9.8 nạp zalo-mod thành nhiều bản chạy song song khi máy có nhiều bot. Bản nạp sau từng
+  đóng cơ sở dữ liệu mà bản nạp trước vẫn đang dùng, làm công cụ đọc tin của bot đầu tiên hỏng cho tới
+  lần khởi động sau, và khởi động lại cũng không hết.
+- Nay bản nạp sau chỉ cho bản trước nghỉ việc nền, không đóng cơ sở dữ liệu. Mọi bot trên máy đọc được
+  lịch sử như trước.
+
 ## [2.33.0] - 2026-10-22
 
 ### Bật, tắt thả tim theo từng nhóm

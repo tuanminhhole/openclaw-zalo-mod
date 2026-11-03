@@ -412,6 +412,27 @@ export function createZaloModEngine({ dataDir, logger, runtime, getConfig, confi
     return engine;
 }
 
+/**
+ * Xử lý engine của lần đăng ký trước khi lần đăng ký này lấy được engine `next`.
+ *
+ * - Cùng một engine: không làm gì.
+ * - Engine của BẢN MÃ KHÁC: chỉ cho nghỉ việc nền, KHÔNG đóng DB. OpenClaw 2026.9.8 nạp plugin thành
+ *   nhiều module song song trong cùng tiến trình (mỗi module một `ENGINE_CODE`), và tool mà module trước
+ *   đã đăng ký cho agent của nó vẫn còn chạy. Đo trên vps_thuy-le 03/11/2026: đóng DB ở đây làm tool
+ *   `zalo_mod_action chat-messages` của agent đầu tiên trả "statement has been finalized" cho tới lần
+ *   khởi động sau, trong khi dashboard và agent thứ hai vẫn đọc bình thường.
+ * - Engine khác cùng bản mã (khác thư mục dữ liệu): tắt hẳn như trước.
+ */
+export function releasePreviousEngine(prev, next) {
+    if (!prev || prev === next) return 'same';
+    if (prev.codeId !== next?.codeId) {
+        try { prev.retire?.(); } catch { }
+        return 'retired';
+    }
+    try { prev.shutdown?.(); } catch { }
+    return 'shutdown';
+}
+
 function hashLite(s) {
     let h = 0;
     for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0;

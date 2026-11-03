@@ -26,7 +26,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { definePluginEntry } from 'openclaw/plugin-sdk/plugin-entry';
 import { ghepLaiMedia } from './src/storage/media-backfill.js';
-import { createZaloModEngine } from './src/integration/zalo-mod-engine.js';
+import { createZaloModEngine, releasePreviousEngine } from './src/integration/zalo-mod-engine.js';
 import { handleCrmAction } from './src/crm/crm-api.js';
 import { buildZaloPeople } from './src/crm/zalo-people.js';
 import { createZcaFacade } from './src/integration/zca-facade.js';
@@ -6685,9 +6685,8 @@ Quy tắc:
         // `dataDir` — nên `createZaloModEngine` trả về đúng cái đang nằm ở đây. Gọi `shutdown()` vô
         // điều kiện là tự đóng SQLite của chính engine vừa lấy ra dùng: dashboard sau đó trả 500
         // `database is not open` / `statement has been finalized`, trong khi dữ liệu vẫn nguyên vẹn.
-        if (globalThis.__zaloModEngine && globalThis.__zaloModEngine !== zEngine) {
-            try { globalThis.__zaloModEngine.shutdown?.(); } catch { }
-        }
+        // Engine của bản mã khác chỉ được cho nghỉ, không đóng DB: xem `releasePreviousEngine`.
+        releasePreviousEngine(globalThis.__zaloModEngine, zEngine);
         globalThis.__zaloModEngine = zEngine; // dashboard/debug access
         const isZaloChannel = (c) => {
             const id = c?.channelId || c?.channel;
